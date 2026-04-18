@@ -1,0 +1,40 @@
+# ============================================
+# BareZen Base — 生产环境配置
+# ============================================
+# 激活方式：启动时添加 --spring.profiles.active=prod
+# 例如：java -jar app.jar --spring.profiles.active=prod
+
+# ---- 服务端口 ----
+server:
+  port: 8080
+
+# ---- 日志级别 ----
+# 生产环境使用 INFO 级别，仅记录业务关键信息。
+logging:
+  level:
+    root: INFO
+    com.linan: WARN                         # 项目代码只输出 WARN 及以上级别
+    org.springframework: WARN               # Spring 框架只输出 WARN 及以上级别
+
+# ---- MyBatis-Plus 配置 ----
+# 生产环境使用 SLF4J 日志，不直接在 stdout 打印 SQL。
+# 如需分析慢 SQL，可在 logback-spring.xml 中为 mapper 包配置独立日志级别。
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
+
+# ---- HikariCP 连接池优化 ----
+# 生产环境的连接池参数应在压测后根据实际负载调整。
+spring:
+  datasource:
+    hikari:
+      minimum-idle: 10                      # 最小空闲连接（生产环境适当调高）
+      maximum-pool-size: 50                 # 最大连接数（根据数据库规格调整）
+      connection-timeout: 10000             # 连接超时缩短到 10 秒
+      idle-timeout: 300000                  # 空闲超时 5 分钟
+      max-lifetime: 1200000                # 连接最大存活 20 分钟
+
+  # ---- Redis 配置 ----
+  # 生产环境 Redis 通常需要密码认证
+  # redis:
+  #   password: ${REDIS_PASSWORD}

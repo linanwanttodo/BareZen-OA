@@ -1,0 +1,105 @@
+# ============================================
+# BareZen Base 应用配置
+# ============================================
+
+# ---- 服务端口与上下文 ----
+server:
+  port: 8080
+  compression:
+    enabled: true
+    mime-types: text/html,text/xml,text/plain,text/css,text/javascript,application/javascript,application/json,application/xml
+    min-response-size: 2048
+  # servlet.context-path: /api  # 如果需要统一前缀可取消注释
+
+# ---- Spring 核心配置 ----
+spring:
+  application:
+    name: BareZen-Base  # 应用名称，用于 Spring Cloud 等服务治理
+
+  # ---- Redis 配置 ----
+  redis:
+    host: localhost
+    port: 6379
+    database: 0
+    timeout: 3000ms
+    lettuce:
+      pool:
+        max-active: 8
+        max-idle: 8
+        min-idle: 0
+
+  # ---- SQL 自动初始化 ----
+  # 注意：生产环境禁止使用此功能，建表应通过专门的 DDL 脚本管理。
+  sql:
+    init:
+      mode: never              # 关闭自动建表，使用独立的 SQL 脚本管理
+      schema-locations: classpath:schema.sql
+
+  # ---- 数据源配置 ----
+  # MySQL 8.0 数据库连接（连接 Docker 中启动的 zen-mysql 容器）
+  datasource:
+    url: jdbc:mysql://localhost:3306/barezen_base?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    username: root
+    password: 123456
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    # HikariCP 连接池配置（Spring Boot 默认连接池）
+    hikari:
+      minimum-idle: 5               # 最小空闲连接数
+      maximum-pool-size: 20         # 最大连接数
+      connection-timeout: 30000     # 连接超时时间（毫秒）
+      idle-timeout: 600000          # 空闲连接超时（10分钟）
+      max-lifetime: 1800000         # 连接最大存活时间（30分钟）
+
+  # ---- 文件上传配置 ----
+  # 默认 1MB，与 SysFileServiceImpl.MAX_FILE_SIZE（100MB）对齐
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 100MB
+
+  # ---- Jackson JSON 序列化配置 ----
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss     # 全局日期格式
+    time-zone: Asia/Shanghai              # 时区
+    serialization:
+      write-dates-as-timestamps: false    # 不使用时间戳格式输出日期
+    # default-property-inclusion: non_null  # 忽略 null 字段（使响应更简洁，按需开启）
+
+  # ---- 配置文件选择 ----
+  # 多环境配置通过 spring.profiles.active 切换
+  # 默认激活 dev 环境，生产环境启动时加 --spring.profiles.active=prod
+  # 配置文件：
+  #   application.yml         —— 公共配置（所有环境共享）
+  #   application-dev.yml     —— 开发环境（SQL 日志、DEBUG 级别）
+  #   application-prod.yml    —— 生产环境（SQL 日志关闭、INFO 级别、连接池优化）
+  profiles:
+    active: dev
+
+# ---- MyBatis-Plus 配置 ----
+mybatis-plus:
+  mapper-locations: classpath*:mapper/**/*.xml
+  type-aliases-package: com.linan.system.entity
+  configuration:
+    map-underscore-to-camel-case: true
+    # log-impl: SQL 日志请在对应环境配置文件中设置（dev 用 StdOutImpl，prod 用 Slf4jImpl）
+
+# ---- JWT 配置 ----
+# 安全要求：
+#   1. 密钥长度必须 >= 32 字符（HMAC-SHA256 需要 256 位密钥）
+#   2. 生产环境务必通过 JWT_SECRET 环境变量覆盖下面的默认密钥
+#   3. 可使用如下命令生成安全密钥：
+#      openssl rand -base64 32
+#   4. JwtUtil 启动时会自动校验密钥强度，弱密钥会阻止应用启动
+jwt:
+  secret: bXktZGV2LWp3dC1zZWNyZXQta2V5LWZvci1sb2NhbC1kZXZlbG9wbWVudA==  # 默认开发密钥（不可用于生产）
+  expiration: 86400000    # Token 过期时间（毫秒），24 小时
+
+# ---- 日志配置 ----
+logging:
+  level:
+    root: INFO                          # 根日志级别
+    com.linan: DEBUG                    # 项目包日志级别（开发环境使用 DEBUG）
+    org.springframework: WARN           # Spring 框架日志级别
+    # org.springframework.jdbc: DEBUG   # 如需查看 SQL 日志可取消注释
+  # pattern:
+  #   console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{50} - %msg%n"

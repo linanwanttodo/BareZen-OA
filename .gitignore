@@ -1,0 +1,45 @@
+# ============================================
+# BareZen Base — 全局 Git 忽略规则
+# ============================================
+
+# --- Node.js / 前端 ---
+node_modules/
+.vite/
+dist/
+
+# --- Java / Gradle 后端 ---
+.gradle/
+build/
+*.class
+*.jar
+*.war
+!gradle/wrapper/gradle-wrapper.jar
+.kotlin/
+
+# --- IDE ---
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+*.swp
+*.swo
+*~
+
+# --- 运行时数据 ---
+uploads/
+backend/data/
+*.log
+
+# --- 系统文件 ---
+.DS_Store
+Thumbs.db
+
+# --- 工具 / 临时目录 ---
+.antigravitycli/
+.sisyphus/
+
+# --- 环境配置（含敏感信息） ---
+.env.local
+.env.production.local
+*.pem

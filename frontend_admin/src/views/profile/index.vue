@@ -1,0 +1,113 @@
+<template>
+  <div class="profile-page p-6 max-w-4xl mx-auto">
+    <!-- 个人信息头部 -->
+    <a-card :bordered="true" class="mb-6">
+      <div class="flex items-center gap-6">
+        <a-avatar :size="64" style="background-color: #3370FF">
+          {{ userInitial }}
+        </a-avatar>
+        <div class="flex-1 min-w-0">
+          <h2 class="text-xl font-bold" style="color: #1D2129">{{ userStore.userInfo?.nickName || '管理员' }}</h2>
+          <p class="text-sm mt-1" style="color: #86909C">@{{ userStore.userInfo?.userName || '-' }}</p>
+          <div class="flex items-center gap-2 mt-2">
+            <a-tag v-for="role in userStore.roles" :key="role" color="blue">{{ role }}</a-tag>
+          </div>
+        </div>
+        <a-button @click="showEditDialog = true">
+          <template #icon><icon-edit /></template>
+          编辑资料
+        </a-button>
+      </div>
+    </a-card>
+
+    <!-- 基本信息 -->
+    <a-card :bordered="true" class="mb-6">
+      <template #title>
+        <div class="flex items-center gap-2">
+          <icon-user style="color: #3370FF" />
+          <span>基本信息</span>
+        </div>
+      </template>
+      <a-descriptions :column="2" :data="profileData" layout="inline-vertical" />
+    </a-card>
+
+    <!-- 编辑资料弹窗 -->
+    <a-modal
+      v-model:visible="showEditDialog"
+      title="编辑个人资料"
+      :width="480"
+      :mask-closable="false"
+      @ok="onEditSubmit"
+      @cancel="showEditDialog = false"
+    >
+      <a-form :model="editForm" layout="vertical">
+        <a-form-item field="nickName" label="昵称" :rules="[{ required: true, message: '请输入昵称' }]">
+          <a-input v-model="editForm.nickName" placeholder="请输入昵称" />
+        </a-form-item>
+        <a-form-item field="email" label="邮箱">
+          <a-input v-model="editForm.email" placeholder="请输入邮箱" />
+        </a-form-item>
+        <a-form-item field="phone" label="手机号">
+          <a-input v-model="editForm.phone" placeholder="请输入手机号" />
+        </a-form-item>
+      </a-form>
+    </a-modal>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { computed, ref, reactive, watch } from 'vue'
+import { Message } from '@arco-design/web-vue'
+import { IconEdit, IconUser } from '@arco-design/web-vue/es/icon'
+import { useUserStore } from '@/stores/user'
+import { updateUserApi } from '@/api/user'
+
+const userStore = useUserStore()
+const userInitial = computed(() => (userStore.userInfo?.nickName || '管').charAt(0).toUpperCase())
+
+const profileData = computed(() => [
+  { label: '用户名', value: userStore.userInfo?.userName || '-' },
+  { label: '昵称', value: userStore.userInfo?.nickName || '-' },
+  { label: '邮箱', value: userStore.userInfo?.email || '-' },
+  { label: '手机号', value: userStore.userInfo?.phone || '-' },
+  { label: '头像', value: userStore.userInfo?.avatar ? '已设置' : '未设置' },
+  { label: '权限标识', value: userStore.permissions.slice(0, 5).join(', ') + (userStore.permissions.length > 5 ? ` +${userStore.permissions.length - 5}` : '') },
+])
+
+// ---- 编辑资料 ----
+const showEditDialog = ref(false)
+
+const editForm = reactive({
+  nickName: '',
+  email: '',
+  phone: '',
+})
+
+// 弹窗打开时回填数据
+watch(showEditDialog, (val) => {
+  if (val && userStore.userInfo) {
+    editForm.nickName = userStore.userInfo.nickName || ''
+    editForm.email = userStore.userInfo.email || ''
+    editForm.phone = userStore.userInfo.phone || ''
+  }
+})
+
+async function onEditSubmit() {
+  const userId = userStore.userInfo?.userId
+  if (!userId) return
+
+  try {
+    await updateUserApi({
+      id: userId,
+      nickName: editForm.nickName,
+      email: editForm.email,
+      phone: editForm.phone,
+    })
+    Message.success('资料更新成功')
+    showEditDialog.value = false
+    await userStore.fetchUserInfo()
+  } catch {
+    // 错误已在拦截器中处理
+  }
+}
+</script>

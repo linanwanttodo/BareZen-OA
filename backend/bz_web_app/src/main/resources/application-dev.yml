@@ -1,0 +1,18 @@
+# ============================================
+# BareZen Base — 开发环境配置
+# ============================================
+# 此文件中的配置会覆盖 application.yml 中的同名配置。
+# 默认激活（见 application.yml 中 spring.profiles.active=dev）。
+
+# ---- 日志级别 ----
+logging:
+  level:
+    root: INFO
+    com.linan: DEBUG                        # 项目代码 DEBUG 级日志
+
+# ---- MyBatis-Plus SQL 日志 ----
+# 将 SQL 打印到标准输出，方便开发调试。
+# 注意：生产环境禁止使用此配置，会泄露数据库结构与数据。
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl

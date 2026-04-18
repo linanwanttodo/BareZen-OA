@@ -1,0 +1,152 @@
+package com.linan.web.controller;
+
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.linan.core.common.api.Result;
+import com.linan.core.common.annotation.OperLog;
+import com.linan.core.security.RequirePermission;
+import com.linan.system.entity.SysRole;
+import com.linan.system.entity.SysRoleMenu;
+import com.linan.system.mapper.SysRoleMapper;
+import com.linan.system.mapper.SysRoleMenuMapper;
+import com.linan.system.service.ISysRoleService;
+import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+/**
+ * 角色管理 Controller
+ *
+ * @author BareZen Team
+ */
+@RestController
+@RequestMapping("/api/system/v1/roles")
+public class SysRoleController {
+
+    @Autowired
+    private SysRoleMapper roleMapper;
+
+    @Autowired
+    private ISysRoleService roleService;
+
+    @Autowired
+    private SysRoleMenuMapper roleMenuMapper;
+
+    /**
+     * 条件分页查询
+     * GET /api/system/v1/roles/list?pageNum=1&pageSize=10&roleName=admin&status=1
+     */
+    @RequirePermission("system:role:list")
+    @GetMapping("/list")
+    public Result<IPage<SysRole>> list(
+            @RequestParam(defaultValue = "1") Integer pageNum,
+            @RequestParam(defaultValue = "10") Integer pageSize,
+            @RequestParam(required = false) String roleName,
+            @RequestParam(required = false) String roleKey,
+            @RequestParam(required = false) String status) {
+
+        Page<SysRole> page = new Page<>(pageNum, pageSize);
+        LambdaQueryWrapper<SysRole> wrapper = new LambdaQueryWrapper<>();
+
+        if (roleName != null && !roleName.isEmpty()) {
+            wrapper.like(SysRole::getRoleName, roleName);
+        }
+        if (roleKey != null && !roleKey.isEmpty()) {
+            wrapper.like(SysRole::getRoleKey, roleKey);
+        }
+        if (status != null && !status.isEmpty()) {
+            wrapper.eq(SysRole::getStatus, status);
+        }
+
+        wrapper.orderByAsc(SysRole::getRoleSort);
+        IPage<SysRole> result = roleService.page(page, wrapper);
+        return Result.success(result);
+    }
+
+    /**
+     * 新增角色
+     */
+    @RequirePermission("system:role:add")
+    @PostMapping
+    public Result<Void> save(@Valid @RequestBody SysRole role) {
+        // 检查角色标识唯一
+        Long count = roleMapper.selectCount(
+                new LambdaQueryWrapper<SysRole>()
+                        .eq(SysRole::getRoleKey, role.getRoleKey()));
+        if (count > 0) {
+            return Result.error("角色标识已存在");
+        }
+        boolean ok = roleService.save(role);
+        return ok ? Result.success(null) : Result.error("新增失败");
+    }
+
+    /**
+     * 更新角色
+     */
+    @RequirePermission("system:role:edit")
+    @PutMapping
+    public Result<Void> update(@Valid @RequestBody SysRole role) {
+        boolean ok = roleService.updateById(role);
+        return ok ? Result.success(null) : Result.error("更新失败");
+    }
+
+    /**
+     * 删除角色
+     */
+    @RequirePermission("system:role:delete")
+    @DeleteMapping("/{id}")
+    public Result<Void> delete(@PathVariable Long id) {
+        boolean ok = roleService.removeById(id);
+        return ok ? Result.success(null) : Result.error("删除失败");
+    }
+
+    /**
+     * 批量删除
+     */
+    @RequirePermission("system:role:delete")
+    @DeleteMapping("/batch")
+    public Result<Void> deleteBatch(@RequestBody List<Long> ids) {
+        boolean ok = roleService.removeByIds(ids);
+        return ok ? Result.success(null) : Result.error("批量删除失败");
+    }
+
+    /**
+     * 给角色分配菜单权限
+     * PUT /api/system/v1/roles/{roleId}/menus
+     */
+    @OperLog(title = "角色管理", businessType = 2)
+    @RequirePermission("system:role:edit")
+    @PutMapping("/{roleId}/menus")
+    public Result<Void> assignMenus(@PathVariable Long roleId, @RequestBody List<Long> menuIds) {
+        // 1. 删除该角色原有的权限关联
+        roleMenuMapper.deleteByRoleId(roleId);
+
+        // 2. 批量插入新的权限关联
+        if (menuIds != null && !menuIds.isEmpty()) {
+            List<SysRoleMenu> list = menuIds.stream().map(menuId -> {
+                SysRoleMenu rm = new SysRoleMenu();
+                rm.setRoleId(roleId);
+                rm.setMenuId(menuId);
+                return rm;
+            }).collect(java.util.stream.Collectors.toList());
+            roleMenuMapper.batchInsert(list);
+        }
+        return Result.success(null);
+    }
+
+    /**
+     * 切换角色状态
+     */
+    @RequirePermission("system:role:edit")
+    @PutMapping("/{id}/status/{status}")
+    public Result<Void> changeStatus(@PathVariable Long id, @PathVariable String status) {
+        SysRole role = new SysRole();
+        role.setId(id);
+        role.setStatus(status);
+        boolean ok = roleService.updateById(role);
+        return ok ? Result.success(null) : Result.error("状态切换失败");
+    }
+}
