@@ -99,6 +99,19 @@ public class XssFilter implements Filter {
                 "accept", "origin", "referer", "host", "user-agent"
         );
 
+        /**
+         * JSON 中不参与 XSS 清洗的字段名（小写）。
+         *
+         * 密码、令牌等敏感字段必须原样透传：Jsoup 清洗会将 {@code &}、{@code <} 等
+         * 字符转义为 HTML 实体（如 {@code &amp;}），导致 BCrypt 哈希对错误字符串
+         * 计算，造成用户密码被"悄悄改写"而无法登录。故这些字段跳过清洗。
+         */
+        private static final Set<String> SKIP_CLEAN_FIELDS = Set.of(
+                "password", "oldpassword", "newpassword", "confirmpassword",
+                "token", "accesstoken", "refreshtoken", "secret", "secretkey",
+                "apikey", "accesskey"
+        );
+
         private byte[] bodyBytes; // 缓存的请求体
 
         public XssRequestWrapper(HttpServletRequest request) throws IOException {
@@ -227,6 +240,10 @@ public class XssFilter implements Filter {
                 while (fieldNames.hasNext()) {
                     String fieldName = fieldNames.next();
                     JsonNode child = objectNode.get(fieldName);
+                    // 敏感字段（密码/令牌等）原样透传，跳过清洗
+                    if (fieldName != null && SKIP_CLEAN_FIELDS.contains(fieldName.toLowerCase(Locale.ROOT))) {
+                        continue;
+                    }
                     if (child.isTextual()) {
                         String cleaned = cleanString(child.asText());
                         objectNode.set(fieldName, new TextNode(cleaned));

@@ -27,7 +27,7 @@ public class RateLimitAspect {
     private static final String RATE_LIMIT_PREFIX = "rate_limit:";
 
     /**
-     * Lua 脚本：滑动窗口计数器，每次调用都重新设置 TTL 防止 key 永久存在。
+     * Lua 脚本：固定窗口计数器，每次调用都重新设置 TTL 防止 key 永久存在。
      *
      * KEYS[1] = 限流 key
      * ARGV[1] = 窗口内最大请求数

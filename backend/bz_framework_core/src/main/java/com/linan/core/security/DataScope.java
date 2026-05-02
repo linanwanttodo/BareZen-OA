@@ -5,8 +5,9 @@ import java.lang.annotation.*;
 /**
  * 数据权限注解
  *
- * <p>标注在 Controller 方法或类上，由 {@code DataScopeInterceptor} 自动解析，
- * 根据当前用户的数据权限范围，向 MyBatis-Plus 查询追加部门/用户过滤条件。</p>
+ * <p>标注在 Mapper 接口方法上（或 Mapper 接口类上），由
+ * {@link DataScopeInterceptor} 根据 MappedStatement 的 ID 反射查找并生效。
+ * 当方法标注该注解后，SELECT 查询会自动追加当前用户的数据范围过滤条件。</p>
  *
  * <p>数据权限范围（定义在 sys_role.data_scope）：</p>
  * <ul>
@@ -16,10 +17,10 @@ import java.lang.annotation.*;
  *   <li>4：全部数据（超级管理员）</li>
  * </ul>
  *
- * <p>使用方式：</p>
+ * <p>使用方式（Mapper 接口方法）：</p>
  * <pre>{@code
  * @DataScope(deptAlias = "d", userAlias = "u")
- * public Result<IPage<SysUser>> list(...) { ... }
+ * List<SysUser> selectUsersByRoleDeptPage(...);
  * }</pre>
  *
  * @author BareZen Team
