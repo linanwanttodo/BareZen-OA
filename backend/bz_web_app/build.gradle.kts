@@ -20,6 +20,10 @@ dependencies {
     // Spring Boot Data Redis（在线用户监控、接口限流、防重复提交需要）
     implementation("org.springframework.boot:spring-boot-starter-data-redis")
 
+    // Lettuce 连接池支持（spring.data.redis.lettuce.pool.* 配置依赖 commons-pool2，
+    // 缺少此依赖时连接池配置会被静默忽略，导致并发下连接数不受控）
+    implementation("org.apache.commons:commons-pool2")
+
     // Spring Boot Cache（权限缓存、字典缓存）
     implementation("org.springframework.boot:spring-boot-starter-cache")
 
