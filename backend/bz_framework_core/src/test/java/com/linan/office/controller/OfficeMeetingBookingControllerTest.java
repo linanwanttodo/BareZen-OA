@@ -6,6 +6,7 @@ import com.linan.core.common.api.Result;
 import com.linan.core.security.interceptor.AuthInterceptor;
 import com.linan.office.entity.OfficeMeetingBooking;
 import com.linan.office.entity.OfficeMeetingRoom;
+import com.linan.office.mapper.OfficeMeetingRoomMapper;
 import com.linan.office.service.IOfficeMeetingBookingService;
 import com.linan.office.service.IOfficeMeetingRoomService;
 import org.junit.jupiter.api.AfterEach;
@@ -26,7 +27,7 @@ import static org.mockito.Mockito.*;
 /**
  * 会议预订 Controller 单元测试
  *
- * <p>覆盖核心业务规则：会议室存在性校验、时间冲突拒绝、时间合法性。</p>
+ * <p>覆盖核心业务规则：会议室存在性校验（行锁查询）、时间冲突拒绝、时间合法性。</p>
  */
 @ExtendWith(MockitoExtension.class)
 class OfficeMeetingBookingControllerTest {
@@ -36,6 +37,9 @@ class OfficeMeetingBookingControllerTest {
 
     @Mock
     private IOfficeMeetingRoomService roomService;
+
+    @Mock
+    private OfficeMeetingRoomMapper roomMapper;
 
     @InjectMocks
     private OfficeMeetingBookingController controller;
@@ -62,7 +66,7 @@ class OfficeMeetingBookingControllerTest {
         booking.setTitle("周会");
         booking.setStartTime("2026-08-10 09:00");
         booking.setEndTime("2026-08-10 10:00");
-        when(roomService.getById(999L)).thenReturn(null);
+        when(roomMapper.selectByIdForUpdate(999L)).thenReturn(null);
 
         Result<Void> result = controller.save(booking);
 
@@ -83,7 +87,7 @@ class OfficeMeetingBookingControllerTest {
         OfficeMeetingRoom room = new OfficeMeetingRoom();
         room.setId(1L);
         room.setRoomName("一号会议室");
-        when(roomService.getById(1L)).thenReturn(room);
+        when(roomMapper.selectByIdForUpdate(1L)).thenReturn(room);
 
         // 模拟已存在一条重叠预订
         mockBookingConflict(1L);
@@ -123,7 +127,7 @@ class OfficeMeetingBookingControllerTest {
         OfficeMeetingRoom room = new OfficeMeetingRoom();
         room.setId(1L);
         room.setRoomName("一号会议室");
-        when(roomService.getById(1L)).thenReturn(room);
+        when(roomMapper.selectByIdForUpdate(1L)).thenReturn(room);
 
         // 无时间冲突
         mockBookingConflict(0L);

@@ -82,7 +82,7 @@
               <a-table-column :title="$t('monitor.operLog.operTime')" data-index="operTime" />
               <a-table-column :title="$t('common.operate')" align="right">
                 <template #cell="{ record }">
-                  <a-button v-permission="'monitor:oper-log:list'" type="text" size="small" @click="handleDetail(record)">{{ $t('monitor.operLog.detail') }}</a-button>
+                  <a-button v-permission="'monitor:operlog:list'" type="text" size="small" @click="handleDetail(record)">{{ $t('monitor.operLog.detail') }}</a-button>
                 </template>
               </a-table-column>
             </template>

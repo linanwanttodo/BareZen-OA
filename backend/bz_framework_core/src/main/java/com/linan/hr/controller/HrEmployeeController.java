@@ -61,6 +61,8 @@ public class HrEmployeeController {
 
         wrapper.orderByDesc(HrEmployee::getCreateTime);
         IPage<HrEmployee> result = employeeService.page(page, wrapper);
+        // 隐私保护：列表接口对身份证号脱敏（详情接口保留完整值供编辑回显）
+        result.getRecords().forEach(this::maskIdCard);
         return Result.page(result);
     }
 
@@ -112,5 +114,21 @@ public class HrEmployeeController {
             return Result.error("员工不存在");
         }
         return Result.success(employee);
+    }
+
+    /**
+     * 身份证号脱敏：保留前 4 位与后 4 位，中间以星号代替。
+     * 例如 110101199001011234 → 1101**********1234
+     */
+    private void maskIdCard(HrEmployee employee) {
+        if (employee == null || employee.getIdCard() == null) {
+            return;
+        }
+        String idCard = employee.getIdCard().trim();
+        if (idCard.length() <= 8) {
+            employee.setIdCard("****");
+            return;
+        }
+        employee.setIdCard(idCard.substring(0, 4) + "*".repeat(idCard.length() - 8) + idCard.substring(idCard.length() - 4));
     }
 }
