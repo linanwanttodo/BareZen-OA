@@ -9,9 +9,13 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 /**
  * 数据字典 Controller
  */
+@Tag(name = "字典管理", description = "系统管理 - 数据字典查询")
 @RestController
 @RequestMapping("/api/system/v1/dict/data")
 public class SysDictDataController {
@@ -24,6 +28,7 @@ public class SysDictDataController {
      * GET /api/system/v1/dict/data/type/{dictType}
      */
     @RequirePermission("system:dict:list")
+    @Operation(summary = "按类型查询字典数据")
     @GetMapping("/type/{dictType}")
     public Result<List<SysDictData>> getByType(@PathVariable String dictType) {
         List<SysDictData> list = dictDataService.selectDictDataByType(dictType);

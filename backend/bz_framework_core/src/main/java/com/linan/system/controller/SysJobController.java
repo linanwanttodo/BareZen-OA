@@ -13,6 +13,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 /**
  * 定时任务控制器
  *
@@ -21,6 +24,7 @@ import org.springframework.web.bind.annotation.*;
  * @author BareZen Team
  */
 @Slf4j
+@Tag(name = "定时任务", description = "系统监控 - 定时任务管理")
 @RestController
 @RequestMapping("/api/system/v1/jobs")
 public class SysJobController {
@@ -40,6 +44,7 @@ public class SysJobController {
      * @return 分页结果
      */
     @RequirePermission("monitor:job:list")
+    @Operation(summary = "分页查询定时任务")
     @GetMapping("/page")
     public Result<PageResult<SysJob>> page(
             @RequestParam(defaultValue = "1") Integer pageNum,
@@ -64,6 +69,7 @@ public class SysJobController {
      * @return 任务实体
      */
     @RequirePermission("monitor:job:list")
+    @Operation(summary = "查询定时任务详情")
     @GetMapping("/{id}")
     public Result<SysJob> getById(@PathVariable Long id) {
         SysJob job = jobService.getById(id);
@@ -80,6 +86,7 @@ public class SysJobController {
      */
     @RequirePermission("monitor:job:add")
     @OperLog(title = "定时任务", businessType = 1)
+    @Operation(summary = "新增定时任务")
     @PostMapping
     public Result<Void> add(@RequestBody SysJob job) {
         try {
@@ -105,6 +112,7 @@ public class SysJobController {
      */
     @RequirePermission("monitor:job:edit")
     @OperLog(title = "定时任务", businessType = 2)
+    @Operation(summary = "修改定时任务")
     @PutMapping
     public Result<Void> update(@RequestBody SysJob job) {
         if (job.getId() == null) {
@@ -133,6 +141,7 @@ public class SysJobController {
      */
     @RequirePermission("monitor:job:delete")
     @OperLog(title = "定时任务", businessType = 3)
+    @Operation(summary = "删除定时任务")
     @DeleteMapping("/{id}")
     public Result<Void> delete(@PathVariable Long id) {
         SysJob job = jobService.getById(id);
@@ -159,6 +168,7 @@ public class SysJobController {
      */
     @RequirePermission("monitor:job:edit")
     @OperLog(title = "定时任务", businessType = 2)
+    @Operation(summary = "暂停定时任务")
     @PutMapping("/{id}/pause")
     public Result<Void> pause(@PathVariable Long id) {
         SysJob job = jobService.getById(id);
@@ -185,6 +195,7 @@ public class SysJobController {
      */
     @RequirePermission("monitor:job:edit")
     @OperLog(title = "定时任务", businessType = 2)
+    @Operation(summary = "恢复定时任务")
     @PutMapping("/{id}/resume")
     public Result<Void> resume(@PathVariable Long id) {
         SysJob job = jobService.getById(id);
@@ -211,6 +222,7 @@ public class SysJobController {
      */
     @RequirePermission("monitor:job:edit")
     @OperLog(title = "定时任务", businessType = 2)
+    @Operation(summary = "立即执行定时任务")
     @PutMapping("/{id}/run")
     public Result<Void> run(@PathVariable Long id) {
         SysJob job = jobService.getById(id);
@@ -236,6 +248,7 @@ public class SysJobController {
      * @return 校验结果
      */
     @RequirePermission("monitor:job:list")
+    @Operation(summary = "校验 Cron 表达式")
     @GetMapping("/check-cron")
     public Result<Boolean> checkCron(@RequestParam String cronExpression) {
         boolean valid = jobService.checkCronExpression(cronExpression);

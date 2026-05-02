@@ -10,11 +10,16 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 @PassAuth
+@Tag(name = "公共接口", description = "健康检查等公共端点")
 @RestController
 @RequestMapping("/api/common/v1")
 public class CommonController {
 
+    @Operation(summary = "服务健康检查")
     @GetMapping("/health")
     public Result<Map<String, Object>> health() {
         Map<String, Object> info = new HashMap<>();

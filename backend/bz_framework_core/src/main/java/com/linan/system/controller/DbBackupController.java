@@ -18,11 +18,15 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 /**
  * 数据库备份 Controller
  *
  * @author BareZen Team
  */
+@Tag(name = "数据备份", description = "系统监控 - 数据库备份管理")
 @RestController
 @RequestMapping("/api/system/v1/backup")
 public class DbBackupController {
@@ -36,6 +40,7 @@ public class DbBackupController {
     @RateLimit(key = "system:backup:create", limit = 3, window = 60)
     @OperLog(title = "数据库备份", businessType = 1)
     @RequirePermission("system:backup:add")
+    @Operation(summary = "创建数据库备份")
     @PostMapping("/create")
     public Result<Map<String, Object>> createBackup() {
         Map<String, Object> result = backupService.createBackup();
@@ -49,6 +54,7 @@ public class DbBackupController {
      * 备份列表
      */
     @RequirePermission("system:backup:list")
+    @Operation(summary = "查询备份列表")
     @GetMapping("/list")
     public Result<List<Map<String, Object>>> listBackups() {
         return Result.success(backupService.listBackups());
@@ -62,6 +68,7 @@ public class DbBackupController {
      * 下载备份文件
      */
     @RequirePermission("system:backup:list")
+    @Operation(summary = "下载数据库备份")
     @GetMapping("/download/{filename}")
     public void download(@PathVariable String filename, HttpServletResponse response) {
         // 路径遍历防护：校验文件名格式
@@ -101,6 +108,7 @@ public class DbBackupController {
      */
     @OperLog(title = "数据库备份", businessType = 3)
     @RequirePermission("system:backup:delete")
+    @Operation(summary = "删除数据库备份")
     @DeleteMapping("/{filename}")
     public Result<Void> delete(@PathVariable String filename) {
         return backupService.deleteBackup(filename)

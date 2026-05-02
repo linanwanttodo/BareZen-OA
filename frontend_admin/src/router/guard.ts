@@ -26,11 +26,6 @@ router.beforeEach(async (to: RouteLocationNormalized, _from, next) => {
   const hasToken = userStore.token
 
   if (hasToken) {
-    if (to.path === '/login') {
-      next({ path: '/dashboard' })
-      return
-    }
-
     // 用户信息尚未加载 → 先请求
     if (!userStore.userInfo) {
       try {
@@ -42,7 +37,8 @@ router.beforeEach(async (to: RouteLocationNormalized, _from, next) => {
       }
     }
 
-    // 从后端加载菜单并生成动态路由
+    // 从后端加载菜单并生成动态路由（须在跳转 /dashboard 之前完成，
+    // 否则 /dashboard 尚未挂载会落入 catch-all 404）
     const permissionStore = usePermissionStore()
     if (permissionStore.menuList.length === 0) {
       try {
@@ -58,6 +54,12 @@ router.beforeEach(async (to: RouteLocationNormalized, _from, next) => {
       } catch {
         // 菜单加载失败不影响导航
       }
+    }
+
+    // 已登录访问登录页 → 跳仪表盘（此时动态路由已挂载）
+    if (to.path === '/login') {
+      next({ path: '/dashboard' })
+      return
     }
 
     next()

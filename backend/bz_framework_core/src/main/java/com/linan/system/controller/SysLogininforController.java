@@ -11,6 +11,10 @@ import com.linan.system.service.ISysLogininforService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
+@Tag(name = "登录日志", description = "系统监控 - 登录日志查询与清理")
 @RestController
 @RequestMapping("/api/system/v1/logininfor")
 public class SysLogininforController {
@@ -19,6 +23,7 @@ public class SysLogininforController {
     private ISysLogininforService logininforService;
 
     @RequirePermission("monitor:logininfor:list")
+    @Operation(summary = "分页查询登录日志")
     @GetMapping("/page")
     public Result<PageResult<SysLogininfor>> list(
             @RequestParam(defaultValue = "1") Integer pageNum,
@@ -39,6 +44,7 @@ public class SysLogininforController {
 
     @OperLog(title = "登录日志", businessType = 8)
     @RequirePermission("monitor:logininfor:delete")
+    @Operation(summary = "清空登录日志")
     @DeleteMapping("/clean")
     public Result<Void> clean() {
         logininforService.remove(new LambdaQueryWrapper<>());

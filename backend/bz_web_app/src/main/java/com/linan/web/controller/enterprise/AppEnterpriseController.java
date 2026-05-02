@@ -20,6 +20,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
@@ -32,6 +35,7 @@ import java.util.stream.Collectors;
  * 提供工作台、通知公告、通讯录、待办事项等接口
  */
 @Slf4j
+@Tag(name = "员工门户", description = "用户前台 - 工作台/公告/通讯录/待办")
 @RestController
 @RequestMapping("/api/app/v1")
 public class AppEnterpriseController {
