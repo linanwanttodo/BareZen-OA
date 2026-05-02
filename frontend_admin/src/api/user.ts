@@ -40,6 +40,11 @@ export function addUserApi(data: Partial<SysUser> & { password?: string }) {
   return request.post<void>('/system/v1/users', data)
 }
 
+/** 批量创建账号（含强密码策略校验） */
+export function batchAddUsersApi(data: Array<Partial<SysUser> & { password: string }>) {
+  return request.post<number>('/system/v1/users/batch', data)
+}
+
 /** 修改用户 */
 export function updateUserApi(data: Partial<SysUser>) {
   return request.put<void>('/system/v1/users', data)

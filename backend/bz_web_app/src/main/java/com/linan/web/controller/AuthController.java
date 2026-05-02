@@ -252,15 +252,11 @@ public class AuthController {
         if (user.getUserName() == null || user.getUserName().isBlank()) {
             return Result.error("用户名不能为空");
         }
-        // 密码强度策略：长度 >= 8 位，且至少包含字母和数字（避免纯数字/纯字母弱口令）
+        // 密码强度策略：长度 >= 8 位，且包含大小写字母、数字与特殊字符
         String pwd = user.getPassword();
-        if (pwd == null || pwd.length() < 8) {
-            return Result.error("密码长度不能少于8位");
-        }
-        boolean hasLetter = pwd.matches(".*[a-zA-Z].*");
-        boolean hasDigit = pwd.matches(".*\\d.*");
-        if (!(hasLetter && hasDigit)) {
-            return Result.error("密码必须同时包含字母和数字");
+        String policyMsg = PasswordUtil.validatePasswordPolicy(pwd);
+        if (policyMsg != null) {
+            return Result.error(policyMsg);
         }
         if (user.getNickName() == null || user.getNickName().isBlank()) {
             user.setNickName(user.getUserName());
@@ -454,12 +450,10 @@ public class AuthController {
         if (oldPassword == null || newPassword == null) {
             return Result.error("参数不完整");
         }
-        // 新密码强度策略：与注册接口保持一致（长度 >= 8 位，字母+数字）
-        if (newPassword.length() < 8) {
-            return Result.error("新密码长度不能少于8位");
-        }
-        if (!(newPassword.matches(".*[a-zA-Z].*") && newPassword.matches(".*\\d.*"))) {
-            return Result.error("新密码必须同时包含字母和数字");
+        // 新密码强度策略：与注册接口保持一致（长度 >= 8 位，大小写字母+数字+特殊字符）
+        String policyMsg = PasswordUtil.validatePasswordPolicy(newPassword);
+        if (policyMsg != null) {
+            return Result.error(policyMsg);
         }
 
         // 验证旧密码

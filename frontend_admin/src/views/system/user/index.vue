@@ -34,6 +34,10 @@
               <template #icon><icon-plus /></template>
               {{ $t('user.addUser') }}
             </a-button>
+            <a-button v-permission="'system:user:add'" @click="batchVisible = true">
+              <template #icon><icon-user-group /></template>
+              {{ $t('user.batchAdd') }}
+            </a-button>
             <a-button v-permission="'system:user:delete'" status="danger" :disabled="!selectedIds.length" @click="handleBatchDelete">
               <template #icon><icon-delete /></template>
               {{ $t('user.batchDelete') }}
@@ -207,7 +211,39 @@
         <a-form-item field="password" :label="$t('user.newPassword')" :rules="[{ required: true, message: $t('user.newPassword') + $t('validation.required', { field: '' }) }]">
           <a-input-password v-model="resetPwdData.password" :placeholder="$t('user.newPassword')" />
         </a-form-item>
+        <div v-if="resetPwdData.password" class="mb-4 rounded-md bg-[var(--muted)] p-3 text-xs text-[var(--muted-foreground)]">
+          <p class="mb-1 font-medium">{{ $t('user.pwdPolicyTitle') }}</p>
+          <p :class="passwordRules.length" v-for="rule in passwordRules" :key="rule.label">
+            <span :class="rule.valid ? 'text-[var(--success)]' : 'text-[var(--muted-foreground)]'">
+              {{ rule.valid ? '已满足' : '未满足' }} {{ rule.label }}
+            </span>
+          </p>
+        </div>
       </a-form>
+    </a-modal>
+
+    <!-- 批量创建账号弹窗 -->
+    <a-modal
+      v-model:visible="batchVisible"
+      :title="$t('user.batchAdd')"
+      :width="640"
+      @ok="handleBatchAdd"
+      @cancel="batchVisible = false"
+      :ok-loading="batchLoading"
+    >
+      <div class="mb-3 text-sm text-[var(--muted-foreground)]">{{ $t('user.batchTip') }}</div>
+      <a-textarea
+        v-model="batchText"
+        :placeholder="$t('user.batchPlaceholder')"
+        :auto-size="{ minRows: 8, maxRows: 16 }"
+      />
+      <div v-if="batchError" class="mt-3 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">{{ batchError }}</div>
+      <div class="mt-3 rounded-md bg-[var(--muted)] p-3 text-xs text-[var(--muted-foreground)]">
+        <p class="mb-1 font-medium">{{ $t('user.pwdPolicyTitle') }}</p>
+        <p v-for="rule in batchPasswordRules" :key="rule.label" :class="rule.valid ? 'text-[var(--success)]' : 'text-[var(--muted-foreground)]'">
+          {{ rule.valid ? '已满足' : '未满足' }} {{ rule.label }}
+        </p>
+      </div>
     </a-modal>
 
     <!-- 分配部门弹窗 -->
@@ -492,6 +528,82 @@ async function onResetPwdConfirm() {
     resetPwdVisible.value = false
   } catch {
     /* interceptor handles */
+  }
+}
+
+// ============ 密码强度规则（实时校验，仿大型网站） ============
+interface PwdRule {
+  label: string
+  valid: boolean
+}
+
+function computePasswordRules(pwd: string): PwdRule[] {
+  return [
+    { label: t('user.pwdRuleLength'), valid: pwd.length >= 8 },
+    { label: t('user.pwdRuleUpper'), valid: /[A-Z]/.test(pwd) },
+    { label: t('user.pwdRuleLower'), valid: /[a-z]/.test(pwd) },
+    { label: t('user.pwdRuleDigit'), valid: /\d/.test(pwd) },
+    { label: t('user.pwdRuleSpecial'), valid: /[^A-Za-z0-9]/.test(pwd) },
+  ]
+}
+
+const passwordRules = computed(() => computePasswordRules(resetPwdData.password))
+
+// ============ 批量创建账号 ============
+const batchVisible = ref(false)
+const batchLoading = ref(false)
+const batchText = ref('')
+const batchError = ref('')
+
+/** 批量密码规则：默认取第一行解析出的密码（若输入为空则全不满足） */
+const batchPasswordRules = computed(() => {
+  const first = parseBatchLines()[0]?.password || ''
+  return computePasswordRules(first)
+})
+
+interface BatchLine {
+  userName: string
+  password: string
+}
+
+/** 解析批量输入：每行 "用户名,密码"（支持中英文逗号、空格/制表符分隔） */
+function parseBatchLines(): BatchLine[] {
+  const lines: BatchLine[] = []
+  for (const raw of batchText.value.split('\n')) {
+    const line = raw.trim()
+    if (!line) continue
+    const parts = line.split(/[,，\s\t]+/).filter(Boolean)
+    if (parts.length >= 2) {
+      lines.push({ userName: parts[0].trim(), password: parts[1].trim() })
+    }
+  }
+  return lines
+}
+
+async function handleBatchAdd() {
+  batchError.value = ''
+  const lines = parseBatchLines()
+  if (!lines.length) {
+    batchError.value = t('user.batchEmptyError')
+    return
+  }
+  // 前端先做一次强密码策略校验，给出友好提示
+  const invalid = lines.find((l) => computePasswordRules(l.password).some((r) => !r.valid))
+  if (invalid) {
+    batchError.value = t('user.batchPwdError', { name: invalid.userName })
+    return
+  }
+  batchLoading.value = true
+  try {
+    const created = await batchAddUsersApi(lines.map((l) => ({ userName: l.userName, password: l.password })))
+    Message.success(t('user.batchAddSuccess', { count: String(created ?? lines.length) }))
+    batchVisible.value = false
+    batchText.value = ''
+    loadTable()
+  } catch {
+    /* interceptor handles */
+  } finally {
+    batchLoading.value = false
   }
 }
 

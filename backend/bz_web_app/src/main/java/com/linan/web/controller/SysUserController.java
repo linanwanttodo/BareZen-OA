@@ -88,6 +88,18 @@ public class SysUserController extends BaseController<SysUser, ISysUserService> 
     }
 
     /**
+     * 批量创建账号（每个账号均校验强密码策略与用户名唯一性，任一失败整体回滚）
+     */
+    @Operation(summary = "批量创建账号")
+    @OperLog(title = "用户管理", businessType = 1)
+    @RequirePermission("system:user:add")
+    @PostMapping("/batch")
+    public Result<Integer> batchSave(@RequestBody List<SysUser> users) {
+        int created = userService.batchAddUsers(users);
+        return Result.success(created);
+    }
+
+    /**
      * 更新用户
      */
     @Operation(summary = "修改用户")

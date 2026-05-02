@@ -24,6 +24,14 @@ public interface ISysUserService extends IService<SysUser> {
     void addUser(SysUser user);
 
     /**
+     * 批量新增用户（每个账号均校验强密码策略与用户名唯一性，任一失败则整体回滚）
+     *
+     * @param users 用户列表（userName、password 必填，nickName 缺省取 userName）
+     * @return 成功创建的数量
+     */
+    int batchAddUsers(List<SysUser> users);
+
+    /**
      * 更新用户（可选密码加密）
      */
     void updateUser(SysUser user);

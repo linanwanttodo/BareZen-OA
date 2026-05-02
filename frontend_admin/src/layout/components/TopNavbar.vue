@@ -80,6 +80,25 @@
         <a-form-item field="newPassword" :label="$t('profile.newPassword')">
           <a-input-password v-model="pwdForm.newPassword" :placeholder="$t('profile.newPasswordPlaceholder')" />
         </a-form-item>
+        <!-- 密码强度指示条（仿大型网站） -->
+        <div v-if="pwdForm.newPassword" class="-mt-2 mb-2">
+          <div class="flex gap-1">
+            <div
+              v-for="i in 4"
+              :key="i"
+              class="h-1.5 flex-1 rounded"
+              :class="strengthBarClass(i)"
+            ></div>
+          </div>
+          <p class="mt-1 text-xs" :class="strengthTextClass">{{ strengthText }}</p>
+        </div>
+        <!-- 校验规则清单 -->
+        <div v-if="pwdForm.newPassword" class="mb-2 rounded-md bg-[var(--muted)] p-3 text-xs">
+          <p class="mb-1 font-medium">{{ $t('user.pwdPolicyTitle') }}</p>
+          <p v-for="rule in passwordRules" :key="rule.label" :class="rule.valid ? 'text-[var(--success)]' : 'text-[var(--muted-foreground)]'">
+            {{ rule.valid ? '已满足' : '未满足' }} {{ rule.label }}
+          </p>
+        </div>
         <a-form-item field="confirmPassword" :label="$t('profile.confirmPassword')">
           <a-input-password v-model="pwdForm.confirmPassword" :placeholder="$t('profile.confirmPasswordPlaceholder')" />
         </a-form-item>
@@ -203,6 +222,53 @@ const pwdForm = reactive({
   newPassword: '',
   confirmPassword: '',
 })
+
+// ---- 密码强度实时校验（仿大型网站） ----
+interface PwdRule {
+  label: string
+  valid: boolean
+}
+
+function computePasswordRules(pwd: string): PwdRule[] {
+  return [
+    { label: t('user.pwdRuleLength'), valid: pwd.length >= 8 },
+    { label: t('user.pwdRuleUpper'), valid: /[A-Z]/.test(pwd) },
+    { label: t('user.pwdRuleLower'), valid: /[a-z]/.test(pwd) },
+    { label: t('user.pwdRuleDigit'), valid: /\d/.test(pwd) },
+    { label: t('user.pwdRuleSpecial'), valid: /[^A-Za-z0-9]/.test(pwd) },
+  ]
+}
+
+const passwordRules = computed(() => computePasswordRules(pwdForm.newPassword))
+
+const satisfiedCount = computed(() => passwordRules.value.filter((r) => r.valid).length)
+
+const strengthLevel = computed(() => {
+  const n = satisfiedCount.value
+  if (n >= 5) return 3
+  if (n >= 3) return 2
+  if (n >= 1) return 1
+  return 0
+})
+
+const strengthText = computed(() => {
+  const map = [t('user.pwdStrength0'), t('user.pwdStrength1'), t('user.pwdStrength2'), t('user.pwdStrength3')]
+  return pwdForm.newPassword ? map[strengthLevel.value] : ''
+})
+
+const strengthTextClass = computed(() => {
+  const map = ['text-red-500', 'text-orange-500', 'text-yellow-600', 'text-green-500']
+  return map[strengthLevel.value]
+})
+
+function strengthBarClass(barIndex: number): string {
+  const level = strengthLevel.value
+  if (barIndex <= level) {
+    const colors = ['bg-red-400', 'bg-orange-400', 'bg-yellow-500', 'bg-green-500']
+    return colors[level]
+  }
+  return 'bg-[var(--border)]'
+}
 
 async function onPwdSubmit() {
   if (!pwdForm.oldPassword || !pwdForm.newPassword || !pwdForm.confirmPassword) {
