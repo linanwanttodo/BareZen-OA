@@ -1,6 +1,7 @@
 package com.linan.article.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.linan.article.entity.ArtArticle;
@@ -10,8 +11,10 @@ import com.linan.article.mapper.ArtFavoriteMapper;
 import com.linan.article.service.IArtFavoriteService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -21,6 +24,7 @@ public class ArtFavoriteServiceImpl extends ServiceImpl<ArtFavoriteMapper, ArtFa
     private ArtArticleMapper articleMapper;
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public boolean toggle(Long userId, Long articleId) {
         LambdaQueryWrapper<ArtFavorite> qw = new LambdaQueryWrapper<>();
         qw.eq(ArtFavorite::getUserId, userId)
@@ -49,36 +53,8 @@ public class ArtFavoriteServiceImpl extends ServiceImpl<ArtFavoriteMapper, ArtFa
 
     @Override
     public Page<ArtArticle> pageFavorites(Long userId, Page<ArtArticle> page) {
-        // 先查收藏记录（按时间倒序）
-        LambdaQueryWrapper<ArtFavorite> favQw = new LambdaQueryWrapper<>();
-        favQw.eq(ArtFavorite::getUserId, userId)
-              .orderByDesc(ArtFavorite::getCreateTime);
-
-        Page<ArtFavorite> favPage = new Page<>(page.getCurrent(), page.getSize());
-        Page<ArtFavorite> favResult = baseMapper.selectPage(favPage, favQw);
-
-        // 转换为文章分页
-        Page<ArtArticle> result = new Page<>(page.getCurrent(), page.getSize(), favResult.getTotal());
-
-        List<Long> articleIds = favResult.getRecords().stream()
-                .map(ArtFavorite::getArticleId)
-                .collect(Collectors.toList());
-
-        if (articleIds.isEmpty()) {
-            result.setRecords(List.of());
-            return result;
-        }
-
-        // 批量查询文章
-        List<ArtArticle> articles = articleMapper.selectBatchIds(articleIds);
-
-        // 保持收藏的顺序
-        List<ArtArticle> ordered = articleIds.stream()
-                .map(id -> articles.stream().filter(a -> a.getId().equals(id)).findFirst().orElse(null))
-                .filter(a -> a != null)
-                .collect(Collectors.toList());
-
-        result.setRecords(ordered);
-        return result;
+        // 单次 JOIN 查询，按收藏时间倒序，替代原来的 N+1 方案
+        IPage<ArtArticle> result = articleMapper.selectFavoritedArticlesByUserId(page, userId);
+        return (Page<ArtArticle>) result;
     }
 }
