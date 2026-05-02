@@ -446,7 +446,6 @@ export default {
     roleCount: '角色总数',
     menuCount: '菜单数量',
     onlineCount: '在线用户',
-    articleCount: '文章总数',
     noticeCount: '公告数',
     todayVisits: '今日访问',
     latestNotices: '最新公告',

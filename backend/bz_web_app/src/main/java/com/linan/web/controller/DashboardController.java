@@ -1,8 +1,6 @@
 package com.linan.web.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.linan.article.entity.ArtArticle;
-import com.linan.article.service.IArtArticleService;
 import com.linan.core.common.api.Result;
 import com.linan.core.security.RequirePermission;
 import com.linan.system.entity.SysOperLog;
@@ -36,9 +34,6 @@ public class DashboardController {
     private ISysUserService userService;
 
     @Autowired
-    private IArtArticleService articleService;
-
-    @Autowired
     private JdbcTemplate jdbcTemplate;
 
     @Autowired
@@ -67,18 +62,11 @@ public class DashboardController {
         long userCount = userService.count();
         data.put("userCount", userCount);
 
-        // 4. 文章总数
-        long articleCount = articleService.count();
-        data.put("articleCount", articleCount);
-
-        // 5. 近7天新增文章趋势
-        data.put("articleTrend", getArticleTrend());
-
-        // 6. 在线用户数
+        // 4. 在线用户数
         long onlineCount = onlineUserService.countOnlineUsers();
         data.put("onlineCount", onlineCount);
 
-        // 7. 文件总数
+        // 5. 文件总数
         long fileCount = fileService.count();
         data.put("fileCount", fileCount);
 
@@ -122,29 +110,5 @@ public class DashboardController {
         """;
         List<Map<String, Object>> rows = jdbcTemplate.queryForList(sql);
         return rows;
-    }
-
-    private List<Map<String, Object>> getArticleTrend() {
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-        Calendar cal = Calendar.getInstance();
-
-        List<String> days = new ArrayList<>();
-        for (int i = 6; i >= 0; i--) {
-            cal.setTime(new Date());
-            cal.add(Calendar.DAY_OF_YEAR, -i);
-            days.add(sdf.format(cal.getTime()));
-        }
-
-        List<Map<String, Object>> result = new ArrayList<>();
-        for (String day : days) {
-            Long count = articleService.lambdaQuery()
-                    .apply("DATE(create_time) = {0}", day)
-                    .count();
-            Map<String, Object> item = new HashMap<>();
-            item.put("date", day);
-            item.put("count", count);
-            result.add(item);
-        }
-        return result;
     }
 }

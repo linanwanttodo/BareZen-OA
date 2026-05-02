@@ -4,8 +4,6 @@ import request from './request'
 export interface ChartData {
   visitTrend: { date: string; count: number }[]
   roleDistribution: { name: string; value: number }[]
-  articleCount: number
-  articleTrend: { date: string; count: number }[]
 }
 
 /** 获取仪表盘图表数据 */

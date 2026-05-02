@@ -250,12 +250,11 @@ public class GenServiceImpl implements IGenService {
         if (tableName == null) return "system";
         String lower = tableName.toLowerCase();
         if (lower.startsWith("sys_")) return "system";
-        if (lower.startsWith("art_")) return "article";
         return "system";
     }
 
     private String toPermName(String tableName) {
-        // sys_notice -> notice, art_article -> article, todo_item -> todo_item
+        // sys_notice -> notice, todo_item -> todo_item
         String name = tableName;
         if (name.contains("_")) {
             int idx = name.indexOf('_');

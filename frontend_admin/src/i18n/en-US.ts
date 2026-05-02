@@ -446,7 +446,6 @@ export default {
     roleCount: 'Total Roles',
     menuCount: 'Total Menus',
     onlineCount: 'Online Users',
-    articleCount: 'Total Articles',
     noticeCount: 'Announcements',
     todayVisits: 'Today Visits',
     latestNotices: 'Latest Announcements',

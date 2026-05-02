@@ -131,7 +131,6 @@ const statCards = ref([
   { title: t('dashboard.roleCount'), titleKey: 'dashboard.roleCount', key: 'roleCount', value: '-', icon: IconUserGroup, color: '#00B42A' },
   { title: t('dashboard.menuCount'), titleKey: 'dashboard.menuCount', key: 'menuCount', value: '-', icon: IconApps, color: '#FF7D00' },
   { title: t('dashboard.onlineCount'), titleKey: 'dashboard.onlineCount', key: 'onlineCount', value: '-', icon: IconEye, color: '#722ED1' },
-  { title: t('dashboard.articleCount'), titleKey: 'dashboard.articleCount', key: 'articleCount', value: '-', icon: IconFile, color: '#F53F3F' },
   { title: t('dashboard.noticeCount'), titleKey: 'dashboard.noticeCount', key: 'noticeCount', value: '-', icon: IconNotification, color: '#F7BA1E' },
 ])
 
@@ -259,7 +258,6 @@ async function loadCharts() {
     const res = await getDashboardChartsApi()
     const data = res.data
     if (data) {
-      setStat('articleCount', String(data.articleCount ?? '-'))
       await nextTick()
       initLineChart(data.visitTrend)
       initPieChart(data.roleDistribution)
