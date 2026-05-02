@@ -15,4 +15,9 @@ public class SysNotice extends BaseEntity {
     private String noticeType;
     private String status;
     private String scope;
+    /** 是否强制阅读（Y=是 N=否） */
+    private String requireRead;
+    /** 当前用户是否已读（非持久化，接口返回用） */
+    @com.baomidou.mybatisplus.annotation.TableField(exist = false)
+    private Boolean isRead;
 }

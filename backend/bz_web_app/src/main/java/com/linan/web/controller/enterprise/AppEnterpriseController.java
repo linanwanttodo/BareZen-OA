@@ -8,10 +8,12 @@ import com.linan.core.common.api.Result;
 import com.linan.core.security.PassAuth;
 import com.linan.core.security.interceptor.AuthInterceptor;
 import com.linan.system.entity.SysNotice;
+import com.linan.system.entity.SysNoticeRead;
 import com.linan.system.entity.SysUser;
 import com.linan.system.entity.TodoItem;
 import com.linan.system.mapper.SysRoleMapper;
 import com.linan.system.mapper.SysUserMapper;
+import com.linan.system.service.ISysNoticeReadService;
 import com.linan.system.service.ISysNoticeService;
 import com.linan.system.service.ITodoItemService;
 import lombok.extern.slf4j.Slf4j;
@@ -36,6 +38,9 @@ public class AppEnterpriseController {
 
     @Autowired
     private ISysNoticeService noticeService;
+
+    @Autowired
+    private ISysNoticeReadService noticeReadService;
 
     @Autowired
     private ITodoItemService todoItemService;
@@ -135,6 +140,17 @@ public class AppEnterpriseController {
 
             Page<SysNotice> p = new Page<>(page, pageSize);
             IPage<SysNotice> result = noticeService.page(p, wrapper);
+
+            // 已读标记：登录用户可见自己已读的公告
+            if (userId != null && result.getRecords() != null && !result.getRecords().isEmpty()) {
+                List<Long> noticeIds = result.getRecords().stream()
+                        .map(SysNotice::getId).toList();
+                List<Long> readIds = noticeReadService.lambdaQuery()
+                        .in(SysNoticeRead::getNoticeId, noticeIds)
+                        .eq(SysNoticeRead::getUserId, userId)
+                        .list().stream().map(SysNoticeRead::getNoticeId).toList();
+                result.getRecords().forEach(n -> n.setIsRead(readIds.contains(n.getId())));
+            }
             return Result.page(result);
         } catch (Exception e) {
             log.error("查询公告列表失败", e);
@@ -157,6 +173,21 @@ public class AppEnterpriseController {
         Long userId = AuthInterceptor.getCurrentUserId();
         if (userId == null && !"public".equals(notice.getScope())) {
             return Result.error("公告不存在或已下架");
+        }
+        // 已读回执：登录用户查看即记录已读（幂等：已存在则跳过）
+        if (userId != null) {
+            boolean alreadyRead = noticeReadService.lambdaQuery()
+                    .eq(SysNoticeRead::getNoticeId, id)
+                    .eq(SysNoticeRead::getUserId, userId)
+                    .count() > 0;
+            if (!alreadyRead) {
+                SysNoticeRead read = new SysNoticeRead();
+                read.setNoticeId(id);
+                read.setUserId(userId);
+                read.setReadTime(LocalDateTime.now());
+                noticeReadService.save(read);
+            }
+            notice.setIsRead(true);
         }
         return Result.success(notice);
     }
