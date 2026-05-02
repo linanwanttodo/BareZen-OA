@@ -1,8 +1,9 @@
 package com.linan.system.entity;
 
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.linan.core.common.entity.BaseEntity;
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.linan.core.common.validation.ValueInEnum;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -29,8 +30,8 @@ public class SysUser extends BaseEntity {
     @NotBlank(message = "用户昵称不能为空")
     private String nickName;
 
-    /** 密码（BCrypt加密存储，序列化JSON时隐藏） */
-    @JsonIgnore
+    /** 密码（BCrypt 存储；仅允许写入，响应中永不返回） */
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String password;
 
     /** 邮箱 */
@@ -41,13 +42,14 @@ public class SysUser extends BaseEntity {
     @Pattern(regexp = "^1[3-9]\\d{9}$", message = "手机号格式不正确")
     private String phone;
 
-    /** 性别：0=未知 1=男 2=女 */
+    /** 性别：0=男 1=女 2=未知（与数据库 sys_user.sex COMMENT 保持一致） */
+    @ValueInEnum(value = {"0", "1", "2"}, message = "性别值不在允许范围内")
     private String sex;
 
     /** 头像路径 */
     private String avatar;
 
-    /** 状态：0=停用 1=正常 */
+    /** 状态：0=正常 1=停用（与 sys_user / 角色表约定一致） */
     @NotBlank(message = "状态不能为空")
     private String status;
 

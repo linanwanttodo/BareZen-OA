@@ -1,5 +1,6 @@
 package com.linan.system.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.linan.system.entity.SysDept;
 import com.linan.system.mapper.SysDeptMapper;
@@ -20,5 +21,22 @@ public class SysDeptServiceImpl extends ServiceImpl<SysDeptMapper, SysDept> impl
     public List<SysDept> getDeptTree() {
         // 查出所有未删除部门，前端递归构建树
         return baseMapper.selectAllDept();
+    }
+
+    @Override
+    public boolean hasChildDept(Long deptId) {
+        Long count = baseMapper.selectCount(
+                new LambdaQueryWrapper<SysDept>()
+                        .eq(SysDept::getParentId, deptId)
+                        .eq(SysDept::getDelFlag, 0));
+        return count > 0;
+    }
+
+    @Override
+    public void updateDeptStatus(Long deptId, String status) {
+        SysDept dept = new SysDept();
+        dept.setId(deptId);
+        dept.setStatus(status);
+        baseMapper.updateById(dept);
     }
 }

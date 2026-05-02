@@ -1,6 +1,7 @@
 package com.linan.system.controller;
 
 import com.linan.core.common.api.Result;
+import com.linan.core.security.RequirePermission;
 import com.linan.system.entity.SysDictData;
 import com.linan.system.service.ISysDictDataService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +23,7 @@ public class SysDictDataController {
      * 根据字典类型查询字典数据列表（带缓存）
      * GET /api/system/v1/dict/data/type/{dictType}
      */
+    @RequirePermission("system:dict:list")
     @GetMapping("/type/{dictType}")
     public Result<List<SysDictData>> getByType(@PathVariable String dictType) {
         List<SysDictData> list = dictDataService.selectDictDataByType(dictType);

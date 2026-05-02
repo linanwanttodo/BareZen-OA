@@ -23,4 +23,9 @@ public interface ISysDictDataService {
      * @param dictType 字典类型
      */
     void clearDictCache(String dictType);
+
+    /**
+     * 清空所有字典缓存（管理员在字典管理页面调用）
+     */
+    void clearAllDictCache();
 }

@@ -8,7 +8,10 @@ import com.linan.system.entity.SysFile;
 import com.linan.system.mapper.SysFileMapper;
 import com.linan.system.service.ISysFileService;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.apache.commons.io.FilenameUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -19,18 +22,24 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
+@Slf4j
 @Service
 public class SysFileServiceImpl extends ServiceImpl<SysFileMapper, SysFile> implements ISysFileService {
 
-    private static final String BASE_PATH = System.getProperty("user.dir") + "/uploads/";
+    /** 文件存储根路径，默认 <user.dir>/uploads，可通过 barezen.upload-path 或环境变量 BAREZEN_UPLOAD_PATH 覆盖 */
+    private final String basePath;
 
     /** 允许上传的文件后缀白名单（空=不限制） */
-    private static final java.util.Set<String> ALLOWED_EXTENSIONS = java.util.Set.of(
+    private static final Set<String> ALLOWED_EXTENSIONS = Set.of(
             "jpg", "jpeg", "png", "gif", "webp", "svg", "bmp", "ico",
             "doc", "docx", "xls", "xlsx", "ppt", "pptx", "pdf", "txt", "csv",
             "mp4", "avi", "mov", "wmv", "flv", "mkv",
@@ -41,6 +50,17 @@ public class SysFileServiceImpl extends ServiceImpl<SysFileMapper, SysFile> impl
 
     /** 允许上传的最大文件大小（100 MB） */
     private static final long MAX_FILE_SIZE = 100 * 1024 * 1024L;
+
+    public SysFileServiceImpl(@Value("${barezen.upload-path:#{systemProperties['user.dir'] + '/uploads'}}") String uploadPath) {
+        // 如果配置的是相对路径，基于 user.dir 解析
+        if (uploadPath.startsWith("./") || uploadPath.startsWith("../") || uploadPath.equals(".")) {
+            this.basePath = new File(System.getProperty("user.dir"), uploadPath).getAbsolutePath() + "/";
+        } else if (!uploadPath.endsWith("/")) {
+            this.basePath = uploadPath + "/";
+        } else {
+            this.basePath = uploadPath;
+        }
+    }
 
     @Override
     public SysFile uploadFile(MultipartFile file, Long folderId, String scope) throws IOException {
@@ -54,48 +74,81 @@ public class SysFileServiceImpl extends ServiceImpl<SysFileMapper, SysFile> impl
         }
 
         String originalName = file.getOriginalFilename();
-        String suffix = originalName != null && originalName.contains(".")
-                ? originalName.substring(originalName.lastIndexOf(".") + 1).toLowerCase()
+        // 使用 FilenameUtils.getExtension() 安全提取后缀，避免 lastIndexOf 绕过问题
+        String suffix = originalName != null
+                ? FilenameUtils.getExtension(originalName).toLowerCase()
                 : "";
 
         // 校验文件后缀白名单
         if (!suffix.isEmpty() && !ALLOWED_EXTENSIONS.contains(suffix)) {
             throw new IllegalArgumentException("不支持的文件类型: ." + suffix);
         }
-        String ext = suffix.isEmpty() ? "" : "." + suffix;
-        String fileName = UUID.randomUUID().toString().replace("-", "") + ext;
 
-        String datePath = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy/MM/dd"));
-        String dirPath = BASE_PATH + datePath;
-        File dir = new File(dirPath);
-        if (!dir.exists()) {
-            dir.mkdirs();
+        // 先将上传内容写入临时文件（MultipartFile 的流只能消费一次，
+        // 不能先 transferTo 做 MIME 检测再次 transferTo 保存），
+        // MIME 检测通过后直接将临时文件移动到目标位置
+        Path tempFile = Files.createTempFile("upload-", suffix.isEmpty() ? ".tmp" : "." + suffix);
+        try {
+            file.transferTo(tempFile.toFile());
+
+            // 校验文件内容 MIME 类型（防止魔数篡改）
+            if (!suffix.isEmpty()) {
+                try {
+                    String detectedMime = Files.probeContentType(tempFile);
+                    if (detectedMime != null) {
+                        // 检查 MIME 类型是否与后缀匹配（图片类型验证）
+                        if (suffix.matches("jpg|jpeg|png|gif|webp|bmp|ico")) {
+                            if (!detectedMime.startsWith("image/")) {
+                                throw new IllegalArgumentException("文件内容与扩展名不匹配，检测到 MIME: " + detectedMime);
+                            }
+                        } else if ("svg".equals(suffix) && !"image/svg+xml".equals(detectedMime)) {
+                            throw new IllegalArgumentException("文件内容与扩展名不匹配");
+                        }
+                    }
+                } catch (IOException e) {
+                    // MIME 检测失败时仅记录日志，不阻断上传
+                    log.warn("MIME 类型检测失败: {}", e.getMessage());
+                }
+            }
+
+            String ext = suffix.isEmpty() ? "" : "." + suffix;
+            String fileName = UUID.randomUUID().toString().replace("-", "") + ext;
+
+            String datePath = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy/MM/dd"));
+            String dirPath = basePath + datePath;
+            File dir = new File(dirPath);
+            if (!dir.exists() && !dir.mkdirs()) {
+                throw new IOException("创建上传目录失败: " + dirPath);
+            }
+
+            File dest = new File(dirPath + "/" + fileName);
+            Files.move(tempFile, dest.toPath(), StandardCopyOption.REPLACE_EXISTING);
+
+            // 存储相对路径，避免项目迁移或部署路径变化导致文件无法访问
+            String relativePath = datePath + "/" + fileName;
+
+            SysFile sysFile = new SysFile();
+            sysFile.setFileName(fileName);
+            sysFile.setOriginalName(originalName != null ? originalName : "unknown");
+            sysFile.setFilePath(relativePath);
+            sysFile.setFileSize(file.getSize());
+            sysFile.setFileType(detectFileType(suffix));
+            sysFile.setStorageType("local");
+            sysFile.setIsFolder(0);
+            sysFile.setFolderId(folderId != null ? folderId : 0L);
+            sysFile.setScope(StringUtils.hasText(scope) ? scope : "admin");
+            sysFile.setSortOrder(0);
+            this.save(sysFile);
+
+            // save 后获取 ID，构造访问 URL
+            sysFile.setFileUrl("/api/system/v1/files/download/" + sysFile.getId());
+            this.updateById(sysFile);
+
+            return sysFile;
+        } finally {
+            // 正常流程中临时文件已被 move 走，这里仅清理异常退出时的残留
+            Files.deleteIfExists(tempFile);
         }
-
-        File dest = new File(dirPath + "/" + fileName);
-        file.transferTo(dest);
-
-        // 存储相对路径，避免项目迁移或部署路径变化导致文件无法访问
-        String relativePath = datePath + "/" + fileName;
-
-        SysFile sysFile = new SysFile();
-        sysFile.setFileName(fileName);
-        sysFile.setOriginalName(originalName != null ? originalName : "unknown");
-        sysFile.setFilePath(relativePath);
-        sysFile.setFileSize(file.getSize());
-        sysFile.setFileType(detectFileType(suffix));
-        sysFile.setStorageType("local");
-        sysFile.setIsFolder(0);
-        sysFile.setFolderId(folderId != null ? folderId : 0L);
-        sysFile.setScope(StringUtils.hasText(scope) ? scope : "admin");
-        sysFile.setSortOrder(0);
-        this.save(sysFile);
-
-        // save 后获取 ID，构造访问 URL
-        sysFile.setFileUrl("/api/system/v1/files/download/" + sysFile.getId());
-        this.updateById(sysFile);
-
-        return sysFile;
     }
 
     @Override
@@ -108,8 +161,8 @@ public class SysFileServiceImpl extends ServiceImpl<SysFileMapper, SysFile> impl
             throw new RuntimeException("文件夹不可下载");
         }
 
-        // 用 BASE_PATH 拼出完整磁盘路径
-        File file = new File(BASE_PATH + sysFile.getFilePath());
+        // 用 basePath 拼出完整磁盘路径
+        File file = new File(basePath + sysFile.getFilePath());
         if (!file.exists()) {
             throw new RuntimeException("文件已丢失");
         }
@@ -153,9 +206,9 @@ public class SysFileServiceImpl extends ServiceImpl<SysFileMapper, SysFile> impl
         // 删除物理文件（仅文件）
         if ((sysFile.getIsFolder() == null || sysFile.getIsFolder() == 0)
                 && StringUtils.hasText(sysFile.getFilePath())) {
-            File file = new File(BASE_PATH + sysFile.getFilePath());
-            if (file.exists()) {
-                file.delete();
+            File file = new File(basePath + sysFile.getFilePath());
+            if (file.exists() && !file.delete()) {
+                log.warn("物理文件删除失败: {}", file.getAbsolutePath());
             }
         }
 
@@ -271,7 +324,7 @@ public class SysFileServiceImpl extends ServiceImpl<SysFileMapper, SysFile> impl
             // 删除物理文件
             if ((child.getIsFolder() == null || child.getIsFolder() == 0)
                     && StringUtils.hasText(child.getFilePath())) {
-                File file = new File(BASE_PATH + child.getFilePath());
+                File file = new File(basePath + child.getFilePath());
                 if (file.exists()) {
                     file.delete();
                 }

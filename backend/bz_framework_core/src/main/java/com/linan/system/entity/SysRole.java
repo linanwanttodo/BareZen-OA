@@ -24,5 +24,8 @@ public class SysRole extends BaseEntity {
     @NotBlank(message = "状态不能为空")
     private String status;
 
+    /** 数据权限范围：1=仅本人 2=本部门 3=本部门及子部门 4=全部 */
+    private Integer dataScope;
+
     private String remark;
 }

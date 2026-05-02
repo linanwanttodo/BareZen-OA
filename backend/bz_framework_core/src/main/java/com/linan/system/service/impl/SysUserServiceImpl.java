@@ -29,9 +29,6 @@ import java.util.stream.Collectors;
 public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> implements ISysUserService {
 
     @Autowired
-    private SysUserMapper userMapper;
-
-    @Autowired
     private SysUserRoleMapper userRoleMapper;
 
     @Autowired
@@ -42,7 +39,7 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
         if (userName == null || userName.trim().isEmpty()) {
             return null;
         }
-        return userMapper.selectOne(
+        return baseMapper.selectOne(
                 new LambdaQueryWrapper<SysUser>()
                         .eq(SysUser::getUserName, userName.trim()));
     }
@@ -58,7 +55,7 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
         }
 
         // 检查用户名唯一
-        Long count = userMapper.selectCount(
+        Long count = baseMapper.selectCount(
                 new LambdaQueryWrapper<SysUser>()
                         .eq(SysUser::getUserName, user.getUserName().trim()));
         if (count > 0) {
@@ -75,7 +72,7 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
             user.setStatus("0");
         }
 
-        int rows = userMapper.insert(user);
+        int rows = baseMapper.insert(user);
         if (rows <= 0) {
             throw new BusinessException("新增用户失败");
         }
@@ -119,7 +116,7 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
             throw new BusinessException("新密码长度不能少于6位");
         }
 
-        SysUser user = userMapper.selectById(userId);
+        SysUser user = baseMapper.selectById(userId);
         if (user == null) {
             throw new BusinessException("用户不存在");
         }
@@ -131,7 +128,7 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
 
         // 更新新密码
         user.setPassword(PasswordUtil.encode(newPassword));
-        userMapper.updateById(user);
+        baseMapper.updateById(user);
     }
 
     @Override

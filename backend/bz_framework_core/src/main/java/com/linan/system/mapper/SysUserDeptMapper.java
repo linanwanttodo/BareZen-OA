@@ -29,6 +29,12 @@ public interface SysUserDeptMapper {
     List<SysUserDept> selectByUserId(@Param("userId") Long userId);
 
     /**
+     * 根据用户ID查询其所属的所有部门ID
+     */
+    @Select("SELECT dept_id FROM sys_user_dept WHERE user_id = #{userId}")
+    List<Long> selectDeptIdsByUserId(@Param("userId") Long userId);
+
+    /**
      * 根据用户ID删除所有部门关联
      */
     void deleteByUserId(@Param("userId") Long userId);
