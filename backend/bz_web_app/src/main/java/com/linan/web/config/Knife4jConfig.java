@@ -5,8 +5,16 @@ import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 
+/**
+ * Knife4j/Swagger 接口文档配置
+ *
+ * 仅在开发环境（dev）下加载，生产环境（prod）不会暴露 API 文档。
+ * 通过 @Profile("dev") 确保生产环境无法访问 /doc.html、/v3/api-docs 等 Swagger 端点。
+ */
 @Configuration
+@Profile("dev")
 public class Knife4jConfig {
 
     @Bean

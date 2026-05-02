@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.linan.core.common.annotation.OperLog;
+import com.linan.core.common.api.PageResult;
 import com.linan.core.common.api.Result;
 import com.linan.core.common.controller.BaseController;
 import com.linan.core.security.RequirePermission;
@@ -18,12 +19,16 @@ import org.springframework.web.bind.annotation.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 /**
  * 系统用户 Controller
  *
  * 职责：参数校验、请求路由、调用 Service 层
  * Service 层负责具体业务逻辑
  */
+@Tag(name = "用户管理", description = "系统用户 CRUD")
 @RestController
 @RequestMapping("/api/system/v1/users")
 public class SysUserController extends BaseController<SysUser, ISysUserService> {
@@ -43,8 +48,9 @@ public class SysUserController extends BaseController<SysUser, ISysUserService> 
      * 条件分页查询
      */
     @RequirePermission("system:user:list")
-    @GetMapping("/list")
-    public Result<IPage<SysUser>> list(
+    @Operation(summary = "分页查询用户")
+    @GetMapping("/page")
+    public Result<PageResult<SysUser>> list(
             @RequestParam(defaultValue = "1") Integer pageNum,
             @RequestParam(defaultValue = "10") Integer pageSize,
             @RequestParam(required = false) String userName,
@@ -66,12 +72,13 @@ public class SysUserController extends BaseController<SysUser, ISysUserService> 
 
         wrapper.orderByDesc(SysUser::getCreateTime);
         IPage<SysUser> result = userService.page(page, wrapper);
-        return Result.success(result);
+        return Result.page(result);
     }
 
     /**
      * 新增用户
      */
+    @Operation(summary = "新增用户")
     @OperLog(title = "用户管理", businessType = 1)
     @RequirePermission("system:user:add")
     @PostMapping
@@ -83,6 +90,7 @@ public class SysUserController extends BaseController<SysUser, ISysUserService> 
     /**
      * 更新用户
      */
+    @Operation(summary = "修改用户")
     @OperLog(title = "用户管理", businessType = 2)
     @RequirePermission("system:user:edit")
     @PutMapping
@@ -94,6 +102,7 @@ public class SysUserController extends BaseController<SysUser, ISysUserService> 
     /**
      * 删除用户
      */
+    @Operation(summary = "删除用户")
     @OperLog(title = "用户管理", businessType = 3)
     @RequirePermission("system:user:delete")
     @DeleteMapping("/{id}")
@@ -105,6 +114,7 @@ public class SysUserController extends BaseController<SysUser, ISysUserService> 
     /**
      * 批量删除
      */
+    @Operation(summary = "批量删除用户")
     @RequirePermission("system:user:delete")
     @DeleteMapping("/batch")
     public Result<Void> deleteBatch(@RequestBody List<Long> ids) {
@@ -115,6 +125,7 @@ public class SysUserController extends BaseController<SysUser, ISysUserService> 
     /**
      * 切换用户状态
      */
+    @Operation(summary = "切换用户状态")
     @RequirePermission("system:user:edit")
     @PutMapping("/{id}/status/{status}")
     public Result<Void> changeStatus(@PathVariable Long id, @PathVariable String status) {
@@ -130,6 +141,7 @@ public class SysUserController extends BaseController<SysUser, ISysUserService> 
     /**
      * 获取用户已分配的角色ID列表
      */
+    @Operation(summary = "获取用户角色")
     @RequirePermission("system:user:list")
     @GetMapping("/{userId}/roles")
     public Result<List<Long>> getUserRoles(@PathVariable Long userId) {
@@ -140,6 +152,7 @@ public class SysUserController extends BaseController<SysUser, ISysUserService> 
     /**
      * 分配用户角色（全量覆盖）
      */
+    @Operation(summary = "分配用户角色")
     @RequirePermission("system:user:edit")
     @PutMapping("/{userId}/roles")
     public Result<Void> assignRoles(@PathVariable Long userId, @RequestBody List<Long> roleIds) {
@@ -155,7 +168,7 @@ public class SysUserController extends BaseController<SysUser, ISysUserService> 
      */
     @RequirePermission("system:user:list")
     @GetMapping("/filter")
-    public Result<Map<String, Object>> filterUsers(
+    public Result<PageResult<SysUser>> filterUsers(
             @RequestParam(required = false) String roleIds,
             @RequestParam(required = false) String deptIds,
             @RequestParam(required = false) String userName,
@@ -177,12 +190,8 @@ public class SysUserController extends BaseController<SysUser, ISysUserService> 
         Page<SysUser> page = new Page<>(pageNum, pageSize);
         Page<SysUser> resultPage = userMapper.selectUsersByRoleDeptPage(page, roleIdList, deptIdList, userName, status);
 
-        Map<String, Object> result = new HashMap<>();
-        result.put("total", resultPage.getTotal());
-        result.put("records", resultPage.getRecords());
-        result.put("pageNum", resultPage.getCurrent());
-        result.put("pageSize", resultPage.getSize());
-        return Result.success(result);
+        // 统一分页返回结构（list 字段），与前端 PageData 类型约定一致
+        return Result.page(resultPage);
     }
 
     // ============ 部门分配 ============

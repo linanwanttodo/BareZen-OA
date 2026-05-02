@@ -16,3 +16,20 @@ logging:
 mybatis-plus:
   configuration:
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+# ---- Flyway 配置（开发环境） ----
+# 开发环境自动修复 Flyway 元数据（当检测到上次迁移失败时自动执行 repair）
+# 生产环境需手动 flyway repair
+spring:
+  flyway:
+    repair-on-migrate: true
+
+# ---- JWT 开发环境默认密钥 ----
+# 仅用于本地开发，避免每次启动都要手动设置 JWT_SECRET 环境变量。
+# 注意：
+#   1. 此密钥仅 dev profile 生效，生产环境（application-prod.yml）不设置默认值，
+#      生产启动仍会因缺少 JWT_SECRET 而 fail-fast，符合安全规范。
+#   2. 此密钥不在 JwtUtil 的 KNOWN_WEAK_SECRETS 黑名单中，可通过启动校验。
+#   3. 生产部署前请务必通过 openssl rand -base64 32 生成随机密钥并注入 JWT_SECRET。
+jwt:
+  secret: dev-only-DO-NOT-USE-IN-PROD-replace-with-openssl-rand-base64-32

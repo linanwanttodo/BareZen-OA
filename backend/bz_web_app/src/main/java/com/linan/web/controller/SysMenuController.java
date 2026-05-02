@@ -1,45 +1,42 @@
 package com.linan.web.controller;
 
+import com.linan.core.common.annotation.OperLog;
 import com.linan.core.common.api.Result;
 import com.linan.core.security.RequirePermission;
 import com.linan.core.security.interceptor.AuthInterceptor;
-import com.linan.system.mapper.SysRoleMenuMapper;
 import com.linan.system.entity.SysMenu;
-import com.linan.system.mapper.SysMenuMapper;
 import com.linan.system.service.ISysMenuService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.*;
+import java.util.List;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 /**
  * 菜单管理 Controller
  *
  * @author BareZen Team
  */
+@Tag(name = "菜单管理", description = "菜单树、CRUD 与权限标识管理")
 @RestController
 @RequestMapping("/api/system/v1/menus")
 public class SysMenuController {
 
     @Autowired
-    private SysMenuMapper menuMapper;
-
-    @Autowired
     private ISysMenuService menuService;
-
-    @Autowired
-    private SysRoleMenuMapper roleMenuMapper;
 
     /**
      * 获取当前用户的路由菜单（用于前端动态路由）
      * GET /api/system/v1/menus/routers
      */
+    @Operation(summary = "获取当前用户路由菜单")
     @GetMapping("/routers")
     public Result<List<SysMenu>> getRouters() {
         Long userId = AuthInterceptor.getCurrentUserId();
-        List<SysMenu> menus = menuMapper.selectMenusByUserId(userId);
-        List<SysMenu> tree = buildTree(menus);
+        List<SysMenu> tree = menuService.selectMenuTree(userId);
         return Result.success(tree);
     }
 
@@ -48,14 +45,10 @@ public class SysMenuController {
      * GET /api/system/v1/menus/treeselect
      */
     @RequirePermission("system:menu:list")
+    @Operation(summary = "获取完整菜单树")
     @GetMapping("/treeselect")
     public Result<List<SysMenu>> treeselect() {
-        List<SysMenu> all = menuService.lambdaQuery()
-                .in(SysMenu::getMenuType, "M", "C")
-                .eq(SysMenu::getDelFlag, 0)
-                .orderByAsc(SysMenu::getOrderNum)
-                .list();
-        List<SysMenu> tree = buildTree(all);
+        List<SysMenu> tree = menuService.selectMenuTreeList();
         return Result.success(tree);
     }
 
@@ -63,18 +56,18 @@ public class SysMenuController {
      * 分页查询菜单列表
      */
     @RequirePermission("system:menu:list")
+    @Operation(summary = "分页查询菜单列表")
     @GetMapping("/list")
     public Result<List<SysMenu>> list() {
-        List<SysMenu> list = menuService.lambdaQuery()
-                .eq(SysMenu::getDelFlag, 0)
-                .orderByAsc(SysMenu::getOrderNum)
-                .list();
+        List<SysMenu> list = menuService.selectMenuList();
         return Result.success(list);
     }
 
     /**
      * 新增菜单
      */
+    @Operation(summary = "新增菜单")
+    @OperLog(title = "菜单管理", businessType = 1)
     @RequirePermission("system:menu:add")
     @PostMapping
     public Result<Void> save(@Valid @RequestBody SysMenu menu) {
@@ -85,6 +78,8 @@ public class SysMenuController {
     /**
      * 更新菜单
      */
+    @Operation(summary = "更新菜单")
+    @OperLog(title = "菜单管理", businessType = 2)
     @RequirePermission("system:menu:edit")
     @PutMapping
     public Result<Void> update(@Valid @RequestBody SysMenu menu) {
@@ -95,50 +90,20 @@ public class SysMenuController {
     /**
      * 删除菜单
      */
+    @Operation(summary = "删除菜单")
+    @OperLog(title = "菜单管理", businessType = 3)
     @RequirePermission("system:menu:delete")
     @DeleteMapping("/{id}")
     public Result<Void> delete(@PathVariable Long id) {
         // 检查是否有子菜单
-        Long childCount = menuService.lambdaQuery()
-                .eq(SysMenu::getParentId, id)
-                .eq(SysMenu::getDelFlag, 0)
-                .count();
-        if (childCount > 0) {
+        if (menuService.countChildMenus(id) > 0) {
             return Result.error("请先删除子菜单");
         }
         // 检查是否有角色引用此菜单
-        Long roleCount = roleMenuMapper.countByMenuId(id);
-        if (roleCount > 0) {
+        if (menuService.countRoleMenu(id) > 0) {
             return Result.error("该菜单已被角色引用，无法删除");
         }
         boolean ok = menuService.removeById(id);
         return ok ? Result.success(null) : Result.error("删除失败");
-    }
-
-    /**
-     * 构建菜单树
-     */
-    private List<SysMenu> buildTree(List<SysMenu> list) {
-        List<SysMenu> tree = new ArrayList<>();
-        for (SysMenu menu : list) {
-            if (menu.getParentId() == 0) {
-                menu.setChildren(getChildren(menu.getId(), list));
-                tree.add(menu);
-            }
-        }
-        tree.sort(Comparator.comparingInt(m -> m.getOrderNum() == null ? 0 : m.getOrderNum()));
-        return tree;
-    }
-
-    private List<SysMenu> getChildren(Long parentId, List<SysMenu> all) {
-        List<SysMenu> children = new ArrayList<>();
-        for (SysMenu menu : all) {
-            if (parentId.equals(menu.getParentId())) {
-                menu.setChildren(getChildren(menu.getId(), all));
-                children.add(menu);
-            }
-        }
-        children.sort(Comparator.comparingInt(m -> m.getOrderNum() == null ? 0 : m.getOrderNum()));
-        return children;
     }
 }

@@ -1,9 +1,14 @@
+version: '3.8'
+
 services:
+  # ============================================
+  # MySQL 8.0 数据库服务
+  # ============================================
   mysql:
     image: mysql:8.0
     container_name: zen-mysql
     environment:
-      MYSQL_ROOT_PASSWORD: 123456
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-123456}
       MYSQL_DATABASE: barezen_base
       TZ: Asia/Shanghai
     ports:
@@ -16,7 +21,16 @@ services:
       --collation-server=utf8mb4_unicode_ci
     networks:
       - zen-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
 
+  # ============================================
+  # Redis 7.0 缓存服务
+  # ============================================
   redis:
     image: redis:7.0
     container_name: zen-redis
@@ -26,7 +40,57 @@ services:
       - ./data/redis:/data
     networks:
       - zen-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ============================================
+  # BareZen Base 应用服务
+  # ============================================
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: zen-app
+    ports:
+      - "8080:8080"
+    environment:
+      # 数据库连接（Docker 网络内通过服务名访问）
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: ${DB_NAME:-barezen_base}
+      DB_USER: ${DB_USER:-root}
+      DB_PASSWORD: ${DB_PASSWORD:-123456}
+      # Redis 连接（Docker 网络内通过服务名访问）
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+      # JWT 配置
+      JWT_SECRET: ${JWT_SECRET:-bXktZGV2LWp3dC1zZWNyZXQta2V5LWZvci1sb2NhbC1kZXZlbG9wbWVudA==}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-86400000}
+      # 业务配置
+      AUTH_REGISTER_ENABLED: ${AUTH_REGISTER_ENABLED:-false}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-}
+      BAREZEN_UPLOAD_PATH: /app/uploads
+      # 时区
+      TZ: Asia/Shanghai
+    volumes:
+      - app-uploads:/app/uploads
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - zen-network
+    restart: unless-stopped
 
 networks:
   zen-network:
     driver: bridge
+
+volumes:
+  app-uploads:

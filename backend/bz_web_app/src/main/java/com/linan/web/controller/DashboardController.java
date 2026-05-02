@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.linan.article.entity.ArtArticle;
 import com.linan.article.service.IArtArticleService;
 import com.linan.core.common.api.Result;
+import com.linan.core.security.RequirePermission;
 import com.linan.system.entity.SysOperLog;
 import com.linan.system.service.ISysOperLogService;
 import com.linan.system.service.ISysUserService;
@@ -17,9 +18,13 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 /**
  * 管理端仪表盘数据聚合 Controller
  */
+@Tag(name = "仪表盘", description = "管理端仪表盘数据聚合")
 @RestController
 @RequestMapping("/api/system/v1/dashboard")
 public class DashboardController {
@@ -36,26 +41,46 @@ public class DashboardController {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
+    @Autowired
+    private com.linan.system.monitor.OnlineUserService onlineUserService;
+
+    @Autowired
+    private com.linan.system.service.ISysFileService fileService;
+
     /**
      * 获取图表数据
      * GET /api/system/v1/dashboard/charts
      */
+    @RequirePermission("system:dashboard:list")
+    @Operation(summary = "获取仪表盘图表数据")
     @GetMapping("/charts")
     public Result<Map<String, Object>> charts() {
         Map<String, Object> data = new HashMap<>();
 
-        // 1. 近7天操作日志趋势 — 每天的操作次数作为"访问量"
+        // 1. 近7天操作日志趋势
         data.put("visitTrend", getVisitTrend());
 
-        // 2. 用户角色分布 — 统计每个角色的用户数
+        // 2. 用户角色分布
         data.put("roleDistribution", getRoleDistribution());
 
-        // 3. 文章总数
+        // 3. 用户总数
+        long userCount = userService.count();
+        data.put("userCount", userCount);
+
+        // 4. 文章总数
         long articleCount = articleService.count();
         data.put("articleCount", articleCount);
 
-        // 4. 近7天新增文章趋势
+        // 5. 近7天新增文章趋势
         data.put("articleTrend", getArticleTrend());
+
+        // 6. 在线用户数
+        long onlineCount = onlineUserService.countOnlineUsers();
+        data.put("onlineCount", onlineCount);
+
+        // 7. 文件总数
+        long fileCount = fileService.count();
+        data.put("fileCount", fileCount);
 
         return Result.success(data);
     }

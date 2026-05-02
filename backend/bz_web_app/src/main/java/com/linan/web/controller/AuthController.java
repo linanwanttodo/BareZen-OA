@@ -1,60 +1,93 @@
 package com.linan.web.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.linan.core.common.annotation.RateLimit;
 import com.linan.core.common.api.Result;
 import com.linan.core.security.JwtUtil;
 import com.linan.core.security.PassAuth;
 import com.linan.core.security.PasswordUtil;
 import com.linan.core.security.interceptor.AuthInterceptor;
+import com.linan.system.entity.SysLogininfor;
 import com.linan.system.entity.SysRole;
 import com.linan.system.entity.SysUser;
+import com.linan.system.mapper.SysLogininforMapper;
 import com.linan.system.mapper.SysMenuMapper;
 import com.linan.system.mapper.SysRoleMapper;
 import com.linan.system.mapper.SysUserMapper;
 import com.linan.system.monitor.OnlineUserService;
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
+import java.security.SecureRandom;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 /**
  * 登录认证 Controller
  *
  * @author BareZen Team
  */
+@Slf4j
+@Tag(name = "登录认证", description = "用户登录、注册、密码管理")
 @RestController
 @RequestMapping("/api/auth/v1")
 public class AuthController {
 
-    @Autowired
-    private SysUserMapper userMapper;
+    private final SysUserMapper userMapper;
+    private final SysRoleMapper roleMapper;
+    private final SysMenuMapper menuMapper;
+    private final RedisTemplate<String, Object> redisTemplate;
+    private final OnlineUserService onlineUserService;
+    private final JwtUtil jwtUtil;
+    private final SysLogininforMapper logininforMapper;
 
-    @Autowired
-    private SysRoleMapper roleMapper;
+    public AuthController(SysUserMapper userMapper, SysRoleMapper roleMapper,
+                          SysMenuMapper menuMapper, RedisTemplate<String, Object> redisTemplate,
+                          OnlineUserService onlineUserService, JwtUtil jwtUtil,
+                          SysLogininforMapper logininforMapper) {
+        this.userMapper = userMapper;
+        this.roleMapper = roleMapper;
+        this.menuMapper = menuMapper;
+        this.redisTemplate = redisTemplate;
+        this.onlineUserService = onlineUserService;
+        this.jwtUtil = jwtUtil;
+        this.logininforMapper = logininforMapper;
+    }
 
-    @Autowired
-    private SysMenuMapper menuMapper;
+    /** 是否开放注册，生产默认关闭 */
+    @Value("${auth.register-enabled:false}")
+    private boolean registerEnabled;
 
-    @Autowired
-    private RedisTemplate<String, Object> redisTemplate;
+    /** 登录失败锁定阈值 */
+    private static final int LOGIN_MAX_ATTEMPTS = 5;
 
-    @Autowired
-    private OnlineUserService onlineUserService;
+    /** 锁定时间（分钟） */
+    private static final int LOGIN_LOCK_MINUTES = 15;
 
-    @Autowired
-    private JwtUtil jwtUtil;
+    private static final Set<String> AVATAR_ALLOWED_EXT = Set.of(".jpg", ".jpeg", ".png", ".gif", ".webp");
+    private static final long AVATAR_MAX_SIZE = 2 * 1024 * 1024L;
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     /**
      * 用户登录
      * POST /api/auth/v1/login
      */
     @PassAuth
+    @RateLimit(key = "auth:login", limit = 10, window = 60)
+    @Operation(summary = "用户登录")
     @PostMapping("/login")
     public Result<Map<String, Object>> login(@RequestBody Map<String, String> body) {
         String username = body.get("username");
@@ -84,31 +117,55 @@ public class AuthController {
             return Result.error("密码不能为空");
         }
 
+        // 账号锁定检查
+        String lockKey = "account_lock:" + username;
+        Object failCountObj = redisTemplate.opsForValue().get(lockKey);
+        int failCount = 0;
+        if (failCountObj instanceof Number) {
+            failCount = ((Number) failCountObj).intValue();
+        }
+        if (failCount >= LOGIN_MAX_ATTEMPTS) {
+            recordLoginLog(username, "1", "账号已被锁定");
+            return Result.error("账号已被锁定，请 " + LOGIN_LOCK_MINUTES + " 分钟后再试");
+        }
+
         // 查询用户
         SysUser user = userMapper.selectOne(
                 new LambdaQueryWrapper<SysUser>()
                         .eq(SysUser::getUserName, username));
 
         if (user == null) {
+            recordLoginFailure(lockKey);
+            recordLoginLog(username, "1", "用户不存在");
             return Result.error("用户名或密码错误");
+        }
+
+        // 先检查账号状态（在密码验证之前），避免已停用账号的密码被暴力尝试
+        if ("1".equals(user.getStatus())) {
+            recordLoginLog(username, "1", "账号已停用");
+            return Result.error("该账号已被停用");
         }
 
         // 验证密码
         if (!PasswordUtil.matches(password, user.getPassword())) {
+            recordLoginFailure(lockKey);
+            recordLoginLog(username, "1", "密码错误");
             return Result.error("用户名或密码错误");
         }
 
-        // 检查状态（数据库：0=正常 1=停用）
-        if ("1".equals(user.getStatus())) {
-            return Result.error("该账号已被停用");
-        }
+        // 登录成功，清除失败计数
+        redisTemplate.delete(lockKey);
+        recordLoginLog(username, "0", "登录成功");
 
         // 生成 Token
         String token = jwtUtil.createToken(user.getId(), user.getUserName());
 
-        // 记录在线用户
-        String loginIp = "127.0.0.1";
+        // 记录在线用户（使用真实客户端 IP）
+        String loginIp = getClientIp();
         onlineUserService.recordLogin(user.getId(), user.getUserName(), user.getNickName(), token, loginIp);
+
+        // 设置 httpOnly Cookie（bz_token），降低 XSS 窃取 Token 风险
+        setAuthCookie(token);
 
         // 返回 Token + 用户信息
         Map<String, Object> data = new HashMap<>();
@@ -124,8 +181,10 @@ public class AuthController {
      * 上传头像
      * POST /api/auth/v1/avatar
      */
+    @RateLimit(key = "auth:avatar", limit = 5, window = 60)
+    @Operation(summary = "上传头像")
     @PostMapping("/avatar")
-    public Result<Map<String, String>> uploadAvatar(@RequestParam("file") MultipartFile file) {
+    public Result<Map<String, String>> uploadAvatar(@Parameter(description = "头像文件") @RequestParam("file") MultipartFile file) {
         Long userId = AuthInterceptor.getCurrentUserId();
         if (userId == null) {
             return Result.error("未登录");
@@ -134,12 +193,18 @@ public class AuthController {
         if (file == null || file.isEmpty()) {
             return Result.error("上传文件不能为空");
         }
+        if (file.getSize() > AVATAR_MAX_SIZE) {
+            return Result.error("头像大小不能超过 2MB");
+        }
 
         try {
             String originalName = file.getOriginalFilename();
             String suffix = originalName != null && originalName.contains(".")
-                    ? originalName.substring(originalName.lastIndexOf("."))
+                    ? originalName.substring(originalName.lastIndexOf(".")).toLowerCase()
                     : ".jpg";
+            if (!AVATAR_ALLOWED_EXT.contains(suffix)) {
+                return Result.error("仅支持 jpg/png/gif/webp 头像");
+            }
 
             String fileName = UUID.randomUUID().toString().replace("-", "") + suffix;
 
@@ -166,28 +231,53 @@ public class AuthController {
             result.put("avatar", avatarPath);
             return Result.success(result);
         } catch (Exception e) {
-            return Result.error("头像上传失败: " + e.getMessage());
+            log.error("头像上传失败", e);
+            return Result.error("头像上传失败，请稍后重试");
         }
     }
 
     /**
      * 用户注册
      * POST /api/auth/v1/register
+     * 默认关闭，需 auth.register-enabled=true 才可使用
      */
     @PassAuth
+    @RateLimit(key = "auth:register", limit = 5, window = 60)
+    @Operation(summary = "用户注册")
     @PostMapping("/register")
     public Result<Void> register(@RequestBody SysUser user) {
-        // 检查用户名是否已存在
+        if (!registerEnabled) {
+            return Result.error("注册功能已关闭");
+        }
+        if (user.getUserName() == null || user.getUserName().isBlank()) {
+            return Result.error("用户名不能为空");
+        }
+        // 密码强度策略：长度 >= 8 位，且至少包含字母和数字（避免纯数字/纯字母弱口令）
+        String pwd = user.getPassword();
+        if (pwd == null || pwd.length() < 8) {
+            return Result.error("密码长度不能少于8位");
+        }
+        boolean hasLetter = pwd.matches(".*[a-zA-Z].*");
+        boolean hasDigit = pwd.matches(".*\\d.*");
+        if (!(hasLetter && hasDigit)) {
+            return Result.error("密码必须同时包含字母和数字");
+        }
+        if (user.getNickName() == null || user.getNickName().isBlank()) {
+            user.setNickName(user.getUserName());
+        }
+
+        // 检查用户名是否已存在（无论是否存在均返回成功，防止枚举已注册用户）
         Long count = userMapper.selectCount(
                 new LambdaQueryWrapper<SysUser>()
                         .eq(SysUser::getUserName, user.getUserName()));
         if (count > 0) {
-            return Result.error("用户名已存在");
+            return Result.success(null);
         }
 
         // 加密密码
         user.setPassword(PasswordUtil.encode(user.getPassword()));
         user.setStatus("0");
+        user.setId(null);
 
         int rows = userMapper.insert(user);
         return rows > 0 ? Result.success(null) : Result.error("注册失败");
@@ -200,10 +290,13 @@ public class AuthController {
      * 返回一个简单的字符串验证码（4位数字字母）。
      * 生产环境建议使用滑动验证码或第三方服务（如腾讯防水墙）。
      */
+    @PassAuth
+    @RateLimit(key = "auth:captcha", limit = 10, window = 60)
+    @Operation(summary = "获取验证码")
     @GetMapping("/captcha")
     public Result<Map<String, String>> captcha() {
         String uuid = java.util.UUID.randomUUID().toString().replace("-", "");
-        String code = generateCode(4);
+        String code = generateCode(6);
 
         redisTemplate.opsForValue().set("captcha:" + uuid, code, 5, java.util.concurrent.TimeUnit.MINUTES);
 
@@ -216,9 +309,8 @@ public class AuthController {
     private String generateCode(int length) {
         String chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
         StringBuilder sb = new StringBuilder();
-        java.util.Random random = new java.util.Random();
         for (int i = 0; i < length; i++) {
-            sb.append(chars.charAt(random.nextInt(chars.length())));
+            sb.append(chars.charAt(SECURE_RANDOM.nextInt(chars.length())));
         }
         return sb.toString();
     }
@@ -227,25 +319,25 @@ public class AuthController {
      * 生成带干扰线、噪点和字符旋转扭曲的 SVG 验证码，防止 OCR 识别
      */
     private String generateSvgCaptcha(String code) {
-        java.util.Random random = new java.util.Random();
-        int width = 150;
-        int height = 50;
+        SecureRandom random = SECURE_RANDOM;
+        int width = 160;
+        int height = 55;
         StringBuilder svg = new StringBuilder();
         svg.append("<svg xmlns='http://www.w3.org/2000/svg' width='").append(width).append("' height='").append(height).append("'>");
 
         // 背景
         svg.append("<rect fill='#f0f0f0' width='").append(width).append("' height='").append(height).append("'/>");
 
-        // 噪点 — 随机小圆点
-        for (int i = 0; i < 80; i++) {
+        // 噪点 — 随机小圆点（增强：从80增加到150个）
+        for (int i = 0; i < 150; i++) {
             int x = random.nextInt(width);
             int y = random.nextInt(height);
             String color = randomRgb(random);
-            svg.append("<circle cx='").append(x).append("' cy='").append(y).append("' r='1' fill='").append(color).append("' opacity='0.6'/>");
+            svg.append("<circle cx='").append(x).append("' cy='").append(y).append("' r='").append(random.nextBoolean() ? 1 : 2).append("' fill='").append(color).append("' opacity='0.7'/>");
         }
 
-        // 干扰线 — 5条随机曲线
-        for (int i = 0; i < 5; i++) {
+        // 干扰线 — 8条随机曲线（增强：从5条增加到8条）
+        for (int i = 0; i < 8; i++) {
             String color = randomRgb(random);
             int x1 = random.nextInt(width);
             int y1 = random.nextInt(height);
@@ -276,8 +368,8 @@ public class AuthController {
                .append(">").append(code.charAt(i)).append("</text>");
         }
 
-        // 额外干扰弧线
-        for (int i = 0; i < 3; i++) {
+        // 额外干扰弧线（增强：从3条增加到5条）
+        for (int i = 0; i < 5; i++) {
             String color = randomRgb(random);
             svg.append("<line x1='").append(random.nextInt(width)).append("' y1='").append(random.nextInt(height))
                .append("' x2='").append(random.nextInt(width)).append("' y2='").append(random.nextInt(height))
@@ -293,7 +385,7 @@ public class AuthController {
         }
     }
 
-    private String randomRgb(java.util.Random random) {
+    private String randomRgb(SecureRandom random) {
         int r = random.nextInt(150) + 50;
         int g = random.nextInt(150) + 50;
         int b = random.nextInt(150) + 50;
@@ -304,6 +396,7 @@ public class AuthController {
      * 获取当前登录用户信息
      * GET /api/auth/v1/current/user
      */
+    @Operation(summary = "获取当前用户信息")
     @GetMapping("/current/user")
     public Result<Map<String, Object>> getCurrentUser() {
         Long userId = AuthInterceptor.getCurrentUserId();
@@ -344,8 +437,12 @@ public class AuthController {
      * 修改密码
      * PUT /api/auth/v1/password
      */
+    @RateLimit(key = "auth:password", limit = 5, window = 60)
+    @Operation(summary = "修改密码")
     @PutMapping("/password")
-    public Result<Void> changePassword(@RequestBody Map<String, String> body) {
+    public Result<Void> changePassword(
+            @RequestBody Map<String, String> body,
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
         Long userId = AuthInterceptor.getCurrentUserId();
         if (userId == null) {
             return Result.error("未登录");
@@ -356,6 +453,13 @@ public class AuthController {
 
         if (oldPassword == null || newPassword == null) {
             return Result.error("参数不完整");
+        }
+        // 新密码强度策略：与注册接口保持一致（长度 >= 8 位，字母+数字）
+        if (newPassword.length() < 8) {
+            return Result.error("新密码长度不能少于8位");
+        }
+        if (!(newPassword.matches(".*[a-zA-Z].*") && newPassword.matches(".*\\d.*"))) {
+            return Result.error("新密码必须同时包含字母和数字");
         }
 
         // 验证旧密码
@@ -368,6 +472,17 @@ public class AuthController {
         user.setPassword(PasswordUtil.encode(newPassword));
         userMapper.updateById(user);
 
+        // 密码修改成功后，将当前 Token 加入黑名单，使用户需要重新登录
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7);
+            String digest = jwtUtil.getTokenDigest(token);
+            redisTemplate.opsForValue().set("blacklist:" + digest, "password_changed",
+                    24, java.util.concurrent.TimeUnit.HOURS);
+            onlineUserService.forceLogout(token);
+        }
+        // 清除 httpOnly Cookie，强制用户重新登录
+        clearAuthCookie();
+
         return Result.success(null);
     }
 
@@ -375,13 +490,18 @@ public class AuthController {
      * 用户退出登录
      * POST /api/auth/v1/logout
      */
+    @Operation(summary = "退出登录")
     @PostMapping("/logout")
-    public Result<Void> logout(@RequestHeader("Authorization") String authHeader) {
+    public Result<Void> logout(@RequestHeader(value = "Authorization", required = false) String authHeader) {
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7);
-            // 将 Token 加入黑名单，设置过期时间与 JWT 一致（24小时）
-            redisTemplate.opsForValue().set("blacklist:" + token, "logout", 24, java.util.concurrent.TimeUnit.HOURS);
+            String digest = jwtUtil.getTokenDigest(token);
+            // 黑名单使用 digest，避免存完整 JWT
+            redisTemplate.opsForValue().set("blacklist:" + digest, "logout", 24, java.util.concurrent.TimeUnit.HOURS);
+            onlineUserService.forceLogout(token);
         }
+        // 清除 httpOnly Cookie
+        clearAuthCookie();
         return Result.success(null);
     }
 
@@ -389,8 +509,10 @@ public class AuthController {
      * Token刷新
      * POST /api/auth/v1/refresh
      */
+    @Operation(summary = "刷新Token")
     @PostMapping("/refresh")
-    public Result<Map<String, Object>> refreshToken() {
+    public Result<Map<String, Object>> refreshToken(
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
         Long userId = AuthInterceptor.getCurrentUserId();
         if (userId == null) {
             return Result.error("未登录");
@@ -400,13 +522,161 @@ public class AuthController {
         if (user == null) {
             return Result.error("用户不存在");
         }
+        if ("1".equals(user.getStatus())) {
+            return Result.error("该账号已被停用");
+        }
 
-        // 生成新 Token
+        // 旧 token 立即失效
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String oldToken = authHeader.substring(7);
+            String digest = jwtUtil.getTokenDigest(oldToken);
+            redisTemplate.opsForValue().set("blacklist:" + digest, "refresh", 24, java.util.concurrent.TimeUnit.HOURS);
+            onlineUserService.forceLogout(oldToken);
+        }
+
+        // 生成新 Token 并记录在线（使用真实客户端 IP）
         String newToken = jwtUtil.createToken(user.getId(), user.getUserName());
+        onlineUserService.recordLogin(user.getId(), user.getUserName(), user.getNickName(), newToken, getClientIp());
+
+        // 同步刷新 httpOnly Cookie
+        setAuthCookie(newToken);
 
         Map<String, Object> data = new HashMap<>();
         data.put("token", newToken);
 
         return Result.success(data);
+    }
+
+    /**
+     * 记录登录日志
+     */
+    private void recordLoginLog(String username, String status, String msg) {
+        try {
+            SysLogininfor loginLog = new SysLogininfor();
+            loginLog.setUserName(username);
+            loginLog.setStatus(status);
+            loginLog.setMsg(msg != null && msg.length() > 200 ? msg.substring(0, 200) : msg);
+            loginLog.setIpAddr(getClientIp());
+            loginLog.setLoginTime(java.time.LocalDateTime.now());
+            logininforMapper.insert(loginLog);
+        } catch (Exception e) {
+            // 静默处理，不影响登录流程
+        }
+    }
+
+    /**
+     * 获取客户端真实 IP 地址
+     *
+     * <p>依次从 X-Forwarded-For、X-Real-IP、RemoteAddr 中获取，
+     * 处理反向代理场景下的 IP 透传。</p>
+     *
+     * @return 客户端 IP 地址，获取失败返回 "unknown"
+     */
+    private String getClientIp() {
+        try {
+            ServletRequestAttributes attributes =
+                    (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+            if (attributes == null) {
+                return "unknown";
+            }
+            HttpServletRequest request = attributes.getRequest();
+            String ip = request.getHeader("X-Forwarded-For");
+            if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+                ip = request.getHeader("X-Real-IP");
+            }
+            if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+                ip = request.getRemoteAddr();
+            }
+            if (ip != null && ip.contains(",")) {
+                ip = ip.split(",")[0].trim();
+            }
+            return ip != null ? ip : "unknown";
+        } catch (Exception e) {
+            return "unknown";
+        }
+    }
+
+    /**
+     * 设置 httpOnly Cookie 携带 JWT Token
+     *
+     * <p>Cookie 属性：</p>
+     * <ul>
+     *   <li>{@code httpOnly=true}：禁止 JS 读取，降低 XSS 窃取风险</li>
+     *   <li>{@code secure}：生产环境（HTTPS）启用，开发环境（HTTP）关闭</li>
+     *   <li>{@code SameSite=Strict}：防御跨站请求伪造（CSRF）</li>
+     *   <li>{@code path=/}、{@code maxAge} 与 JWT 过期时间一致</li>
+     * </ul>
+     *
+     * @param token JWT Token
+     */
+    private void setAuthCookie(String token) {
+        try {
+            ServletRequestAttributes attributes =
+                    (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+            if (attributes == null) {
+                return;
+            }
+            jakarta.servlet.http.HttpServletResponse response = attributes.getResponse();
+            if (response == null) {
+                return;
+            }
+            // 通过请求 scheme 判断是否 HTTPS，决定 secure 标志
+            HttpServletRequest req = attributes.getRequest();
+            boolean secure = "https".equalsIgnoreCase(req.getScheme())
+                    || "https".equalsIgnoreCase(req.getHeader("X-Forwarded-Proto"));
+            jakarta.servlet.http.Cookie cookie = new jakarta.servlet.http.Cookie("bz_token", token);
+            cookie.setHttpOnly(true);
+            cookie.setSecure(secure);
+            cookie.setPath("/");
+            // SameSite=Strict 需通过响应头手动设置（Servlet 6.0 前 Cookie API 不支持）
+            // maxAge 单位：秒；jwt 过期时间单位：毫秒
+            cookie.setMaxAge((int) java.util.concurrent.TimeUnit.MILLISECONDS.toSeconds(
+                    24L * 60 * 60 * 1000)); // 24 小时，与默认 JWT_EXPIRATION 对齐
+            response.addCookie(cookie);
+            // 显式补充 SameSite=Strict（兼容 Servlet 5/6）
+            String sameSite = secure ? "SameSite=Strict" : "SameSite=Lax";
+            // 已存在的 Set-Cookie 头由 addCookie 产生，此处再追加一条带 SameSite 的指令
+            response.addHeader("Set-Cookie",
+                    "bz_token=" + token + "; Path=/; Max-Age=86400; "
+                            + (secure ? "Secure; " : "") + "HttpOnly; " + sameSite);
+        } catch (Exception e) {
+            log.warn("设置 httpOnly Cookie 失败: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * 清除 httpOnly 认证 Cookie（登出 / 改密 时调用）
+     */
+    private void clearAuthCookie() {
+        try {
+            ServletRequestAttributes attributes =
+                    (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+            if (attributes == null) {
+                return;
+            }
+            jakarta.servlet.http.HttpServletResponse response = attributes.getResponse();
+            if (response == null) {
+                return;
+            }
+            jakarta.servlet.http.Cookie cookie = new jakarta.servlet.http.Cookie("bz_token", "");
+            cookie.setHttpOnly(true);
+            cookie.setPath("/");
+            cookie.setMaxAge(0); // 立即删除
+            response.addCookie(cookie);
+            response.addHeader("Set-Cookie",
+                    "bz_token=; Path=/; Max-Age=0; HttpOnly; SameSite=Strict");
+        } catch (Exception e) {
+            log.warn("清除 httpOnly Cookie 失败: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * 记录登录失败计数（Redis 原子递增）
+     */
+    private void recordLoginFailure(String lockKey) {
+        Long current = redisTemplate.opsForValue().increment(lockKey);
+        if (current != null && current == 1) {
+            redisTemplate.expire(lockKey, LOGIN_LOCK_MINUTES, java.util.concurrent.TimeUnit.MINUTES);
+        }
     }
 }

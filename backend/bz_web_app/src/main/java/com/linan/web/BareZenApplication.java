@@ -2,6 +2,8 @@ package com.linan.web;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cache.annotation.EnableCaching;
+import org.springframework.scheduling.annotation.EnableAsync;
 
 /**
  * BareZen Base 后端应用主启动类
@@ -35,6 +37,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
         "com.linan.article",
         "com.linan.web"
 })
+@EnableAsync
+@EnableCaching
 public class BareZenApplication {
 
     /**

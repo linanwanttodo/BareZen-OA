@@ -8,13 +8,21 @@
 server:
   port: 8080
 
-# ---- 日志级别 ----
-# 生产环境使用 INFO 级别，仅记录业务关键信息。
+# ---- 日志级别与文件轮转 ----
+# 生产环境使用 INFO 级别，仅记录业务关键信息；
+# 日志写入文件并按大小/时间轮转，避免磁盘写满。
 logging:
   level:
     root: INFO
     com.linan: WARN                         # 项目代码只输出 WARN 及以上级别
     org.springframework: WARN               # Spring 框架只输出 WARN 及以上级别
+  file:
+    name: ${LOG_FILE:logs/barezen.log}      # 日志文件路径，可通过环境变量覆盖
+  logback:
+    rollingpolicy:
+      max-file-size: 50MB                   # 单文件最大 50MB
+      max-history: 30                       # 保留 30 天
+      total-size-cap: 2GB                   # 总大小上限 2GB
 
 # ---- MyBatis-Plus 配置 ----
 # 生产环境使用 SLF4J 日志，不直接在 stdout 打印 SQL。
@@ -27,6 +35,9 @@ mybatis-plus:
 # 生产环境的连接池参数应在压测后根据实际负载调整。
 spring:
   datasource:
+    url: jdbc:mysql://${DB_HOST}:${DB_PORT:3306}/${DB_NAME}?useUnicode=true&characterEncoding=utf-8&useSSL=true&serverTimezone=Asia/Shanghai
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
     hikari:
       minimum-idle: 10                      # 最小空闲连接（生产环境适当调高）
       maximum-pool-size: 50                 # 最大连接数（根据数据库规格调整）
@@ -35,6 +46,30 @@ spring:
       max-lifetime: 1200000                # 连接最大存活 20 分钟
 
   # ---- Redis 配置 ----
-  # 生产环境 Redis 通常需要密码认证
-  # redis:
-  #   password: ${REDIS_PASSWORD}
+  # 生产环境 Redis 通常需要密码认证（Spring Boot 3.x 前缀为 spring.data.redis）
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+
+# 生产必须通过环境变量注入 JWT_SECRET（至少 32 字符）
+jwt:
+  secret: ${JWT_SECRET}
+  expiration: ${JWT_EXPIRATION:86400000}
+
+auth:
+  register-enabled: ${AUTH_REGISTER_ENABLED:false}
+
+cors:
+  allowed-origins: ${CORS_ALLOWED_ORIGINS}
+
+# Actuator：生产默认仅暴露健康检查
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never

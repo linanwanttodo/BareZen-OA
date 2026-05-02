@@ -3,17 +3,18 @@ package com.linan.web.controller.enterprise;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.linan.core.common.api.PageResult;
 import com.linan.core.common.api.Result;
 import com.linan.core.security.PassAuth;
 import com.linan.core.security.interceptor.AuthInterceptor;
 import com.linan.system.entity.SysNotice;
-import com.linan.system.entity.SysRole;
 import com.linan.system.entity.SysUser;
 import com.linan.system.entity.TodoItem;
 import com.linan.system.mapper.SysRoleMapper;
 import com.linan.system.mapper.SysUserMapper;
 import com.linan.system.service.ISysNoticeService;
 import com.linan.system.service.ITodoItemService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -28,6 +29,7 @@ import java.util.stream.Collectors;
  * 企业用户端 API 控制器
  * 提供工作台、通知公告、通讯录、待办事项等接口
  */
+@Slf4j
 @RestController
 @RequestMapping("/api/app/v1")
 public class AppEnterpriseController {
@@ -116,7 +118,7 @@ public class AppEnterpriseController {
      */
     @PassAuth
     @GetMapping("/notices")
-    public Result<Map<String, Object>> noticeList(
+    public Result<PageResult<SysNotice>> noticeList(
             @RequestParam(defaultValue = "1") Integer page,
             @RequestParam(defaultValue = "10") Integer pageSize) {
         try {
@@ -133,15 +135,9 @@ public class AppEnterpriseController {
 
             Page<SysNotice> p = new Page<>(page, pageSize);
             IPage<SysNotice> result = noticeService.page(p, wrapper);
-
-            Map<String, Object> data = new HashMap<>();
-            data.put("records", result.getRecords());
-            data.put("total", result.getTotal());
-            data.put("current", result.getCurrent());
-            data.put("size", result.getSize());
-            data.put("pages", result.getPages());
-            return Result.success(data);
+            return Result.page(result);
         } catch (Exception e) {
+            log.error("查询公告列表失败", e);
             return Result.error("查询公告失败");
         }
     }
@@ -172,13 +168,13 @@ public class AppEnterpriseController {
      * GET /api/app/v1/contacts?page=1&pageSize=20&keyword=xxx
      */
     @GetMapping("/contacts")
-    public Result<Map<String, Object>> contactList(
+    public Result<PageResult<Map<String, Object>>> contactList(
             @RequestParam(defaultValue = "1") Integer page,
             @RequestParam(defaultValue = "20") Integer pageSize,
             @RequestParam(required = false) String keyword) {
         try {
             LambdaQueryWrapper<SysUser> wrapper = new LambdaQueryWrapper<SysUser>()
-                    .eq(SysUser::getStatus, "1"); // 只查正常状态用户
+                    .eq(SysUser::getStatus, "0"); // 只查正常状态用户（0=正常 1=停用）
 
             if (keyword != null && !keyword.isEmpty()) {
                 wrapper.and(w -> w
@@ -193,6 +189,23 @@ public class AppEnterpriseController {
             Page<SysUser> p = new Page<>(page, pageSize);
             IPage<SysUser> result = userMapper.selectPage(p, wrapper);
 
+            // 批量查询当页所有用户的角色，避免逐用户循环查询的 N+1 问题
+            List<Long> userIds = result.getRecords().stream()
+                    .map(SysUser::getId)
+                    .collect(Collectors.toList());
+            Map<Long, List<String>> roleNameMap = new HashMap<>();
+            if (!userIds.isEmpty()) {
+                try {
+                    for (Map<String, Object> row : roleMapper.selectRoleNamesByUserIds(userIds)) {
+                        Long uid = ((Number) row.get("userId")).longValue();
+                        roleNameMap.computeIfAbsent(uid, k -> new java.util.ArrayList<>())
+                                .add(String.valueOf(row.get("roleName")));
+                    }
+                } catch (Exception e) {
+                    log.warn("批量查询用户角色失败", e);
+                }
+            }
+
             // 脱敏：隐藏密码等敏感信息，附加角色信息
             List<Map<String, Object>> contacts = result.getRecords().stream().map(user -> {
                 Map<String, Object> map = new HashMap<>();
@@ -203,26 +216,19 @@ public class AppEnterpriseController {
                 map.put("phone", user.getPhone());
                 map.put("sex", user.getSex());
                 map.put("avatar", user.getAvatar());
-
-                // 查询角色
-                try {
-                    List<SysRole> roles = roleMapper.selectRolesByUserId(user.getId());
-                    map.put("roleNames", roles.stream().map(SysRole::getRoleName).collect(Collectors.toList()));
-                } catch (Exception e) {
-                    map.put("roleNames", List.of());
-                }
-
+                map.put("roleNames", roleNameMap.getOrDefault(user.getId(), List.of()));
                 return map;
             }).collect(Collectors.toList());
 
-            Map<String, Object> data = new HashMap<>();
-            data.put("records", contacts);
-            data.put("total", result.getTotal());
-            data.put("current", result.getCurrent());
-            data.put("size", result.getSize());
-            data.put("pages", result.getPages());
-            return Result.success(data);
+            PageResult<Map<String, Object>> pageResult = new PageResult<>();
+            pageResult.setTotal(result.getTotal());
+            pageResult.setPageNum(result.getCurrent());
+            pageResult.setPageSize(result.getSize());
+            pageResult.setPages(result.getPages());
+            pageResult.setList(contacts);
+            return Result.success(pageResult);
         } catch (Exception e) {
+            log.error("查询通讯录失败", e);
             return Result.error("查询通讯录失败");
         }
     }
@@ -234,7 +240,7 @@ public class AppEnterpriseController {
      * GET /api/app/v1/todos?page=1&pageSize=10&status=0
      */
     @GetMapping("/todos")
-    public Result<Map<String, Object>> todoList(
+    public Result<PageResult<TodoItem>> todoList(
             @RequestParam(defaultValue = "1") Integer page,
             @RequestParam(defaultValue = "10") Integer pageSize,
             @RequestParam(required = false) Integer status) {
@@ -257,15 +263,9 @@ public class AppEnterpriseController {
 
             Page<TodoItem> p = new Page<>(page, pageSize);
             IPage<TodoItem> result = todoItemService.page(p, wrapper);
-
-            Map<String, Object> data = new HashMap<>();
-            data.put("records", result.getRecords());
-            data.put("total", result.getTotal());
-            data.put("current", result.getCurrent());
-            data.put("size", result.getSize());
-            data.put("pages", result.getPages());
-            return Result.success(data);
+            return Result.page(result);
         } catch (Exception e) {
+            log.error("查询待办列表失败, userId={}", userId, e);
             return Result.error("查询待办失败");
         }
     }
@@ -293,6 +293,7 @@ public class AppEnterpriseController {
             boolean ok = todoItemService.save(todo);
             return ok ? Result.success(null) : Result.error("新增失败");
         } catch (Exception e) {
+            log.error("新增待办失败, userId={}", userId, e);
             return Result.error("新增待办失败");
         }
     }
@@ -323,6 +324,7 @@ public class AppEnterpriseController {
             boolean ok = todoItemService.updateById(todo);
             return ok ? Result.success(null) : Result.error("更新失败");
         } catch (Exception e) {
+            log.error("更新待办失败, userId={}", userId, e);
             return Result.error("更新待办失败");
         }
     }
@@ -347,6 +349,7 @@ public class AppEnterpriseController {
             boolean ok = todoItemService.removeById(id);
             return ok ? Result.success(null) : Result.error("删除失败");
         } catch (Exception e) {
+            log.error("删除待办失败, userId={}, todoId={}", userId, id, e);
             return Result.error("删除待办失败");
         }
     }
@@ -386,6 +389,7 @@ public class AppEnterpriseController {
             userMapper.updateById(user);
             return Result.success(null);
         } catch (Exception e) {
+            log.error("更新个人资料失败, userId={}", userId, e);
             return Result.error("更新资料失败");
         }
     }
