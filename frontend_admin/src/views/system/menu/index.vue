@@ -50,9 +50,9 @@
                   <icon-right v-if="record.hasChildren && !expandedIds.includes(record.node.id)" class="cursor-pointer mr-1" @click="toggleExpand(record.node.id)" />
                   <icon-down v-if="record.hasChildren && expandedIds.includes(record.node.id)" class="cursor-pointer mr-1" @click="toggleExpand(record.node.id)" />
                   <span v-if="!record.hasChildren" class="inline-block w-5" />
-                  <icon-folder v-if="record.node.menuType === 'M'" class="mr-1.5" style="color: #3370FF" />
-                  <icon-menu v-if="record.node.menuType === 'C'" class="mr-1.5" style="color: #3370FF" />
-                  <icon-command v-if="record.node.menuType === 'F'" class="mr-1.5" style="color: #3370FF" />
+                  <icon-folder v-if="record.node.menuType === 'M'" class="mr-1.5" style="color: var(--primary)" />
+                  <icon-menu v-if="record.node.menuType === 'C'" class="mr-1.5" style="color: var(--primary)" />
+                  <icon-command v-if="record.node.menuType === 'F'" class="mr-1.5" style="color: var(--primary)" />
                   <span>{{ record.node.menuName }}</span>
                 </div>
               </template>

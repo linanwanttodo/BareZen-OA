@@ -115,7 +115,7 @@ function onTagRemove(path: string) {
   color: #4E5969;
 }
 .tags-view__item--active {
-  color: #3370FF;
+  color: var(--primary);
   background: #E8F3FF;
 }
 

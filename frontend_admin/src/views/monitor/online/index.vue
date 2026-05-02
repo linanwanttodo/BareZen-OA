@@ -39,7 +39,7 @@
               <a-table-column :title="$t('user.nickName')">
                 <template #cell="{ record }">
                   <div class="flex items-center gap-2">
-                    <a-avatar :size="24" :style="{ backgroundColor: '#3370FF' }">{{ record.nickName?.charAt(0) || '?' }}</a-avatar>
+                    <a-avatar :size="24" :style="{ backgroundColor: 'var(--primary)' }">{{ record.nickName?.charAt(0) || '?' }}</a-avatar>
                     <div class="flex flex-col">
                       <span class="text-sm font-medium text-[var(--foreground)]">{{ record.nickName }}</span>
                       <span class="text-xs text-[var(--muted-foreground)]">{{ record.userName }}</span>

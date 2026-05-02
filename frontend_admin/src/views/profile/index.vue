@@ -3,7 +3,7 @@
     <!-- 个人信息头部 -->
     <a-card :bordered="true" class="mb-6">
       <div class="flex items-center gap-6">
-        <a-avatar :size="64" style="background-color: #3370FF">
+        <a-avatar :size="64" style="background-color: var(--primary)">
           {{ userInitial }}
         </a-avatar>
         <div class="flex-1 min-w-0">
@@ -24,7 +24,7 @@
     <a-card :bordered="true" class="mb-6">
       <template #title>
         <div class="flex items-center gap-2">
-          <icon-user style="color: #3370FF" />
+          <icon-user style="color: var(--primary)" />
           <span>{{ $t('profile.basicInfo') }}</span>
         </div>
       </template>

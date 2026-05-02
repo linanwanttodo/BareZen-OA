@@ -184,6 +184,6 @@ onMounted(() => {
 
 <style scoped>
 .brand-panel {
-  background-color: #3370FF;
+  background-color: var(--primary);
 }
 </style>

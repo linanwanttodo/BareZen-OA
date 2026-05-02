@@ -127,7 +127,7 @@ const loading = ref(true)
 
 // ============ 统计卡片 ============
 const statCards = ref([
-  { title: t('dashboard.userCount'), titleKey: 'dashboard.userCount', key: 'userCount', value: '-', icon: IconUser, color: '#3370FF' },
+  { title: t('dashboard.userCount'), titleKey: 'dashboard.userCount', key: 'userCount', value: '-', icon: IconUser, color: 'var(--primary)' },
   { title: t('dashboard.roleCount'), titleKey: 'dashboard.roleCount', key: 'roleCount', value: '-', icon: IconUserGroup, color: '#00B42A' },
   { title: t('dashboard.menuCount'), titleKey: 'dashboard.menuCount', key: 'menuCount', value: '-', icon: IconApps, color: '#FF7D00' },
   { title: t('dashboard.onlineCount'), titleKey: 'dashboard.onlineCount', key: 'onlineCount', value: '-', icon: IconEye, color: '#722ED1' },
@@ -175,9 +175,9 @@ function initLineChart(visitTrend: { date: string; count: number }[]) {
         type: 'line',
         smooth: true,
         data: counts,
-        lineStyle: { width: 2, color: '#3370FF' },
+        lineStyle: { width: 2, color: 'var(--primary)' },
         areaStyle: { color: 'rgba(51,112,255,0.12)' },
-        itemStyle: { color: '#3370FF' },
+        itemStyle: { color: 'var(--primary)' },
         symbol: 'circle',
         symbolSize: 6,
       },
@@ -188,7 +188,7 @@ function initLineChart(visitTrend: { date: string; count: number }[]) {
 function initPieChart(roleDistribution: { name: string; value: number }[]) {
   if (!pieChartRef.value) return
   pieChart = echarts.init(pieChartRef.value)
-  const colors = ['#3370FF', '#00B42A', '#FF7D00', '#722ED1', '#F53F3F', '#F7BA1E', '#0FC6C2']
+  const colors = ['var(--primary)', '#00B42A', '#FF7D00', '#722ED1', '#F53F3F', '#F7BA1E', '#0FC6C2']
   const data = roleDistribution.map((item, i) => ({
     value: item.value,
     name: item.name,

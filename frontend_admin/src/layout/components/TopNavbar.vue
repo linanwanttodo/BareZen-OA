@@ -282,7 +282,7 @@ async function onPwdSubmit() {
 .top-navbar__nav-item--active,
 .top-navbar__nav-item--active:hover {
   background: #E8F3FF;
-  color: #3370FF;
+  color: var(--primary);
   font-weight: 500;
 }
 .top-navbar__arrow {
@@ -322,7 +322,7 @@ async function onPwdSubmit() {
   background: var(--hover-bg, #f5f5f5);
 }
 .top-navbar__dropdown-item--active {
-  color: #3370FF;
+  color: var(--primary);
   background: #E8F3FF;
 }
 .top-navbar__right {
@@ -343,7 +343,7 @@ async function onPwdSubmit() {
 .top-navbar__avatar {
   width: 28px; height: 28px;
   border-radius: 50%;
-  background: #3370FF;
+  background: var(--primary);
   color: #fff;
   display: flex;
   align-items: center;
