@@ -11,6 +11,7 @@ import com.linan.core.security.RequirePermission;
 import com.linan.core.security.interceptor.AuthInterceptor;
 import com.linan.hr.entity.AttLeaveRequest;
 import com.linan.hr.service.IAttLeaveRequestService;
+import com.linan.system.service.IApprovalFlowLogService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
@@ -42,6 +43,9 @@ public class AttLeaveRequestController {
 
     @Autowired
     private ApplicationEventPublisher eventPublisher;
+
+    @Autowired
+    private IApprovalFlowLogService flowLogService;
 
     /**
      * 分页查询请假记录
@@ -101,6 +105,10 @@ public class AttLeaveRequestController {
         }
         request.setStatus("0");
         boolean ok = leaveService.save(request);
+        if (ok) {
+            flowLogService.record("leave", request.getId(), "提交申请", "0",
+                    request.getUserId(), request.getUserName(), null);
+        }
         return ok ? Result.success(null) : Result.error("提交失败");
     }
 
@@ -143,6 +151,10 @@ public class AttLeaveRequestController {
 
         boolean ok = leaveService.updateById(leave);
         if (ok) {
+            // 记录流程节点：审批通过/驳回
+            String node = "pass".equals(action) ? "审批通过" : "审批驳回";
+            flowLogService.record("leave", leave.getId(), node, leave.getStatus(),
+                    approverId, AuthInterceptor.getCurrentUsername(), remark);
             // 审批结果通知申请人（通过/驳回均推送）
             String result = "pass".equals(action) ? "已通过" : "已驳回";
             eventPublisher.publishEvent(new ApprovalCompletedEvent(
@@ -176,6 +188,10 @@ public class AttLeaveRequestController {
         }
         leave.setStatus("3");
         boolean ok = leaveService.updateById(leave);
+        if (ok) {
+            flowLogService.record("leave", leave.getId(), "撤销申请", "3",
+                    userId, AuthInterceptor.getCurrentUsername(), null);
+        }
         return ok ? Result.success(null) : Result.error("撤销失败");
     }
 

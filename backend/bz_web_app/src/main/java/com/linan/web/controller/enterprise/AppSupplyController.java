@@ -10,6 +10,7 @@ import com.linan.office.entity.OfficeSupply;
 import com.linan.office.entity.OfficeSupplyRequest;
 import com.linan.office.service.IOfficeSupplyRequestService;
 import com.linan.office.service.IOfficeSupplyService;
+import com.linan.system.service.IApprovalFlowLogService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,6 +38,9 @@ public class AppSupplyController {
 
     @Autowired
     private IOfficeSupplyRequestService requestService;
+
+    @Autowired
+    private IApprovalFlowLogService flowLogService;
 
     /**
      * 可申领用品列表
@@ -124,6 +128,10 @@ public class AppSupplyController {
             request.setUserId(userId);
             request.setStatus("0");
             boolean ok = requestService.save(request);
+            if (ok) {
+                flowLogService.record("supply", request.getId(), "提交申请", "0",
+                        userId, request.getUserName(), null);
+            }
             return ok ? Result.success(null) : Result.error("提交失败");
         } catch (Exception e) {
             log.error("提交申领失败, userId={}", userId, e);
@@ -154,6 +162,10 @@ public class AppSupplyController {
         }
         request.setStatus("3");
         boolean ok = requestService.updateById(request);
+        if (ok) {
+            flowLogService.record("supply", request.getId(), "撤销申请", "3",
+                    userId, request.getUserName(), null);
+        }
         return ok ? Result.success(null) : Result.error("撤销失败");
     }
 }

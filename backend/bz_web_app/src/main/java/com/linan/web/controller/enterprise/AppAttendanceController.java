@@ -12,6 +12,7 @@ import com.linan.hr.entity.HrWorkLog;
 import com.linan.hr.service.IAttOvertimeRequestService;
 import com.linan.hr.service.IAttTravelRequestService;
 import com.linan.hr.service.IHrWorkLogService;
+import com.linan.system.service.IApprovalFlowLogService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,6 +45,9 @@ public class AppAttendanceController {
 
     @Autowired
     private IHrWorkLogService workLogService;
+
+    @Autowired
+    private IApprovalFlowLogService flowLogService;
 
     // ==================== 加班申请 ====================
 
@@ -98,6 +102,10 @@ public class AppAttendanceController {
             request.setUserId(userId);
             request.setStatus("0");
             boolean ok = overtimeService.save(request);
+            if (ok) {
+                flowLogService.record("overtime", request.getId(), "提交申请", "0",
+                        userId, request.getUserName(), null);
+            }
             return ok ? Result.success(null) : Result.error("提交失败");
         } catch (Exception e) {
             log.error("提交加班申请失败, userId={}", userId, e);
@@ -128,6 +136,10 @@ public class AppAttendanceController {
         }
         request.setStatus("3");
         boolean ok = overtimeService.updateById(request);
+        if (ok) {
+            flowLogService.record("overtime", request.getId(), "撤销申请", "3",
+                    userId, request.getUserName(), null);
+        }
         return ok ? Result.success(null) : Result.error("撤销失败");
     }
 
@@ -184,6 +196,10 @@ public class AppAttendanceController {
             request.setUserId(userId);
             request.setStatus("0");
             boolean ok = travelService.save(request);
+            if (ok) {
+                flowLogService.record("travel", request.getId(), "提交申请", "0",
+                        userId, request.getUserName(), null);
+            }
             return ok ? Result.success(null) : Result.error("提交失败");
         } catch (Exception e) {
             log.error("提交出差申请失败, userId={}", userId, e);
@@ -214,6 +230,10 @@ public class AppAttendanceController {
         }
         request.setStatus("3");
         boolean ok = travelService.updateById(request);
+        if (ok) {
+            flowLogService.record("travel", request.getId(), "撤销申请", "3",
+                    userId, request.getUserName(), null);
+        }
         return ok ? Result.success(null) : Result.error("撤销失败");
     }
 

@@ -59,6 +59,7 @@
                   <a-button v-if="record.approveRemark" size="small" @click="showRemark(record)">
                     {{ $t('overtime.viewRemark') }}
                   </a-button>
+                  <a-button size="small" @click="openFlow(record)">{{ $t('overtime.flow') }}</a-button>
                   <a-popconfirm :content="$t('common.deleteConfirm')" @ok="handleDelete(record)">
                     <a-button v-permission="'hr:overtime:delete'" size="small" status="danger">{{ $t('common.delete') }}</a-button>
                   </a-popconfirm>
@@ -78,6 +79,19 @@
         </div>
       </a-spin>
     </a-card>
+
+    <!-- 流程进度弹窗 -->
+    <a-modal v-model:visible="flowVisible" :title="$t('overtime.flow')" :width="520" footer-only>
+      <a-steps v-if="flowNodes.length" direction="vertical" :current="currentStep">
+        <a-step
+          v-for="node in flowNodes"
+          :key="node.id"
+          :title="node.nodeName"
+          :description="`${node.operatorName || '-'} · ${node.createTime}${node.remark ? ' · ' + node.remark : ''}`"
+        />
+      </a-steps>
+      <a-empty v-else :description="$t('overtime.flowEmpty')" />
+    </a-modal>
 
     <!-- 审批弹窗 -->
     <a-modal v-model:visible="approveVisible" :title="$t('overtime.approve')" :width="480"
@@ -101,6 +115,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { Message } from '@arco-design/web-vue'
 import { getOvertimePageApi, approveOvertimeApi, revokeOvertimeApi, deleteOvertimeApi, type AttOvertimeRequest } from '@/api/overtime'
+import { getFlowLogsApi, type ApprovalFlowNode } from '@/api/flowlog'
 
 const loading = ref(false)
 const approving = ref(false)
@@ -175,6 +190,22 @@ async function handleDelete(record: AttOvertimeRequest) {
 
 function showRemark(record: AttOvertimeRequest) {
   Message.info(`${record.approveRemark || '-'}`, 5000)
+}
+
+// ============ 流程进度 ============
+const flowVisible = ref(false)
+const flowNodes = ref<ApprovalFlowNode[]>([])
+const currentStep = ref(0)
+
+async function openFlow(record: AttOvertimeRequest) {
+  try {
+    const res = await getFlowLogsApi('overtime', record.id)
+    flowNodes.value = res.data || []
+    currentStep.value = Math.max(0, flowNodes.value.length - 1)
+    flowVisible.value = true
+  } catch (err) {
+    console.error('overtime flow error:', err)
+  }
 }
 
 onMounted(loadData)

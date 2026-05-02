@@ -33,6 +33,9 @@ class AttLeaveRequestControllerTest {
     @Mock
     private org.springframework.context.ApplicationEventPublisher eventPublisher;
 
+    @Mock
+    private com.linan.system.service.IApprovalFlowLogService flowLogService;
+
     @InjectMocks
     private AttLeaveRequestController controller;
 

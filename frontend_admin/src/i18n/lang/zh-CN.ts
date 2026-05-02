@@ -303,6 +303,8 @@ export default {
     approvePass: '通过',
     approveReject: '驳回',
     approveRemark: '审批意见',
+    flow: '流程进度',
+    flowEmpty: '暂无流程记录',
   },
   asset: {
     title: '资产台账',
@@ -372,6 +374,8 @@ export default {
     approvePass: '通过',
     approveReject: '驳回',
     approveRemark: '审批意见',
+    flow: '流程进度',
+    flowEmpty: '暂无流程记录',
   },
   kb: {
     docList: '知识文档',
@@ -410,6 +414,8 @@ export default {
     approvePass: '通过',
     approveReject: '驳回',
     approveRemark: '审批意见',
+    flow: '流程进度',
+    flowEmpty: '暂无流程记录',
   },
   overtime: {
     title: '加班申请',
@@ -430,6 +436,8 @@ export default {
     approvePass: '通过',
     approveReject: '驳回',
     approveRemark: '审批意见',
+    flow: '流程进度',
+    flowEmpty: '暂无流程记录',
   },
   travel: {
     title: '出差申请',
@@ -451,6 +459,8 @@ export default {
     approvePass: '通过',
     approveReject: '驳回',
     approveRemark: '审批意见',
+    flow: '流程进度',
+    flowEmpty: '暂无流程记录',
   },
   worklog: {
     title: '工作日志',
@@ -495,6 +505,8 @@ export default {
     approvePass: '通过',
     approveReject: '驳回',
     approveRemark: '审批意见',
+    flow: '流程进度',
+    flowEmpty: '暂无流程记录',
   },
   notice: {
     title: '通知公告',

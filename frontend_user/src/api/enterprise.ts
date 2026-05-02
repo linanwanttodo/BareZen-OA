@@ -145,3 +145,12 @@ export function submitSupplyRequestApi(data: Partial<SupplyRequest>) {
 export function revokeSupplyRequestApi(id: string) {
   return request.put<any, ApiResult<void>>(`/app/v1/supplies/requests/${encodeURIComponent(id)}/revoke`)
 }
+
+// ==================== 审批流程进度 ====================
+
+/** 查询我的申请流程节点 */
+export function getFlowLogsApi(bizType: string, bizId: string) {
+  return request.get<any, ApiResult<FlowLog[]>>('/app/v1/flow-logs', {
+    params: { bizType, bizId },
+  })
+}

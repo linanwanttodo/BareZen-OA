@@ -11,6 +11,7 @@ import com.linan.core.security.RequirePermission;
 import com.linan.core.security.interceptor.AuthInterceptor;
 import com.linan.office.entity.OfficeVehicleRequest;
 import com.linan.office.service.IOfficeVehicleRequestService;
+import com.linan.system.service.IApprovalFlowLogService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
@@ -42,6 +43,9 @@ public class OfficeVehicleRequestController {
 
     @Autowired
     private ApplicationEventPublisher eventPublisher;
+
+    @Autowired
+    private IApprovalFlowLogService flowLogService;
 
     /**
      * 分页查询用车申请
@@ -93,6 +97,10 @@ public class OfficeVehicleRequestController {
         }
         request.setStatus("0");
         boolean ok = vehicleService.save(request);
+        if (ok) {
+            flowLogService.record("vehicle", request.getId(), "提交申请", "0",
+                    request.getApplicantId(), request.getApplicantName(), null);
+        }
         return ok ? Result.success(null) : Result.error("提交失败");
     }
 
@@ -133,6 +141,9 @@ public class OfficeVehicleRequestController {
         request.setApproveRemark(remark);
         boolean ok = vehicleService.updateById(request);
         if (ok) {
+            String node = "pass".equals(action) ? "审批通过" : "审批驳回";
+            flowLogService.record("vehicle", request.getId(), node, request.getStatus(),
+                    approverId, AuthInterceptor.getCurrentUsername(), remark);
             String result = "pass".equals(action) ? "已通过" : "已驳回";
             eventPublisher.publishEvent(new ApprovalCompletedEvent(
                     request.getApplicantId(),
@@ -164,6 +175,10 @@ public class OfficeVehicleRequestController {
         }
         request.setStatus("3");
         boolean ok = vehicleService.updateById(request);
+        if (ok) {
+            flowLogService.record("vehicle", request.getId(), "取消申请", "3",
+                    userId, AuthInterceptor.getCurrentUsername(), null);
+        }
         return ok ? Result.success(null) : Result.error("取消失败");
     }
 

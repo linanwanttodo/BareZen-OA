@@ -122,6 +122,7 @@
                     <a-button v-if="record.approveRemark" size="small" @click="showRemark(record)">
                       {{ $t('supply.viewRemark') }}
                     </a-button>
+                    <a-button size="small" @click="openFlow(record)">{{ $t('supply.flow') }}</a-button>
                     <a-popconfirm :content="$t('common.deleteConfirm')" @ok="handleDeleteRequest(record)">
                       <a-button v-permission="'office:supply:delete'" size="small" status="danger">{{ $t('common.delete') }}</a-button>
                     </a-popconfirm>
@@ -178,6 +179,19 @@
       </a-form>
     </a-modal>
 
+    <!-- 流程进度弹窗 -->
+    <a-modal v-model:visible="flowVisible" :title="$t('supply.flow')" :width="520" footer-only>
+      <a-steps v-if="flowNodes.length" direction="vertical" :current="currentStep">
+        <a-step
+          v-for="node in flowNodes"
+          :key="node.id"
+          :title="node.nodeName"
+          :description="`${node.operatorName || '-'} · ${node.createTime}${node.remark ? ' · ' + node.remark : ''}`"
+        />
+      </a-steps>
+      <a-empty v-else :description="$t('supply.flowEmpty')" />
+    </a-modal>
+
     <!-- 审批弹窗 -->
     <a-modal v-model:visible="approveVisible" :title="$t('supply.approve')" :width="480"
              @ok="handleApprove" @cancel="approveVisible = false" :ok-loading="approving">
@@ -204,6 +218,7 @@ import {
   getSupplyRequestPageApi, approveSupplyRequestApi, deleteSupplyRequestApi,
   type OfficeSupply, type OfficeSupplyRequest,
 } from '@/api/supply'
+import { getFlowLogsApi, type ApprovalFlowNode } from '@/api/flowlog'
 
 const activeTab = ref('supply')
 const loading = ref(false)
@@ -322,6 +337,22 @@ async function handleDeleteRequest(record: OfficeSupplyRequest) {
 
 function showRemark(record: OfficeSupplyRequest) {
   Message.info(`${record.approveRemark || '-'}`, 5000)
+}
+
+// ============ 流程进度 ============
+const flowVisible = ref(false)
+const flowNodes = ref<ApprovalFlowNode[]>([])
+const currentStep = ref(0)
+
+async function openFlow(record: OfficeSupplyRequest) {
+  try {
+    const res = await getFlowLogsApi('supply', record.id)
+    flowNodes.value = res.data || []
+    currentStep.value = Math.max(0, flowNodes.value.length - 1)
+    flowVisible.value = true
+  } catch (err) {
+    console.error('supply flow error:', err)
+  }
 }
 
 onMounted(() => { loadSupplies(); loadRequests() })

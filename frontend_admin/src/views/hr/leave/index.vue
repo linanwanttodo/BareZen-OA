@@ -72,6 +72,7 @@
                   <a-button v-if="record.approveRemark" size="small" @click="showRemark(record)">
                     {{ $t('leave.viewRemark') }}
                   </a-button>
+                  <a-button size="small" @click="openFlow(record)">{{ $t('leave.flow') }}</a-button>
                   <a-popconfirm :content="$t('common.deleteConfirm')" @ok="handleDelete(record)">
                     <a-button v-permission="'hr:leave:delete'" size="small" status="danger">{{ $t('common.delete') }}</a-button>
                   </a-popconfirm>
@@ -91,6 +92,19 @@
         </div>
       </a-spin>
     </a-card>
+
+    <!-- 流程进度弹窗 -->
+    <a-modal v-model:visible="flowVisible" :title="$t('leave.flow')" :width="520" footer-only>
+      <a-steps v-if="flowNodes.length" direction="vertical" :current="currentStep">
+        <a-step
+          v-for="node in flowNodes"
+          :key="node.id"
+          :title="node.nodeName"
+          :description="`${node.operatorName || '-'} · ${node.createTime}${node.remark ? ' · ' + node.remark : ''}`"
+        />
+      </a-steps>
+      <a-empty v-else :description="$t('leave.flowEmpty')" />
+    </a-modal>
 
     <!-- 请假申请弹窗 -->
     <a-modal v-model:visible="addVisible" :title="$t('leave.apply')" :width="560"
@@ -143,6 +157,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { Message } from '@arco-design/web-vue'
 import { getLeavePageApi, submitLeaveApi, approveLeaveApi, revokeLeaveApi, deleteLeaveApi, type AttLeaveRequest } from '@/api/leave'
+import { getFlowLogsApi, type ApprovalFlowNode } from '@/api/flowlog'
 import { useUserStore } from '@/stores/user'
 
 const userStore = useUserStore()
@@ -286,6 +301,23 @@ async function handleDelete(record: AttLeaveRequest) {
 
 function showRemark(record: AttLeaveRequest) {
   Message.info(`${record.approveRemark || '-'}`, 5000)
+}
+
+// ============ 流程进度 ============
+const flowVisible = ref(false)
+const flowNodes = ref<ApprovalFlowNode[]>([])
+const currentStep = ref(0)
+
+async function openFlow(record: AttLeaveRequest) {
+  try {
+    const res = await getFlowLogsApi('leave', record.id)
+    flowNodes.value = res.data || []
+    // 已完成的节点数 = 总节点数 - 1（最后一个节点为当前/终态）
+    currentStep.value = Math.max(0, flowNodes.value.length - 1)
+    flowVisible.value = true
+  } catch (err) {
+    console.error('leave flow error:', err)
+  }
 }
 
 onMounted(loadData)

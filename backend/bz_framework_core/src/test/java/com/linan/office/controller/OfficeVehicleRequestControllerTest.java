@@ -33,6 +33,9 @@ class OfficeVehicleRequestControllerTest {
     @Mock
     private org.springframework.context.ApplicationEventPublisher eventPublisher;
 
+    @Mock
+    private com.linan.system.service.IApprovalFlowLogService flowLogService;
+
     @InjectMocks
     private OfficeVehicleRequestController controller;
 

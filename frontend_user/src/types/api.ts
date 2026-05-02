@@ -229,3 +229,16 @@ export interface SupplyRequest {
   approveRemark: string
   createTime: string
 }
+
+/** 审批流程节点 */
+export interface FlowLog {
+  id: string
+  bizType: string
+  bizId: string
+  nodeName: string
+  nodeStatus: string
+  operatorId: string
+  operatorName: string
+  remark: string
+  createTime: string
+}

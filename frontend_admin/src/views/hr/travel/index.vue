@@ -60,6 +60,7 @@
                   <a-button v-if="record.approveRemark" size="small" @click="showRemark(record)">
                     {{ $t('travel.viewRemark') }}
                   </a-button>
+                  <a-button size="small" @click="openFlow(record)">{{ $t('travel.flow') }}</a-button>
                   <a-popconfirm :content="$t('common.deleteConfirm')" @ok="handleDelete(record)">
                     <a-button v-permission="'hr:travel:delete'" size="small" status="danger">{{ $t('common.delete') }}</a-button>
                   </a-popconfirm>
@@ -79,6 +80,19 @@
         </div>
       </a-spin>
     </a-card>
+
+    <!-- 流程进度弹窗 -->
+    <a-modal v-model:visible="flowVisible" :title="$t('travel.flow')" :width="520" footer-only>
+      <a-steps v-if="flowNodes.length" direction="vertical" :current="currentStep">
+        <a-step
+          v-for="node in flowNodes"
+          :key="node.id"
+          :title="node.nodeName"
+          :description="`${node.operatorName || '-'} · ${node.createTime}${node.remark ? ' · ' + node.remark : ''}`"
+        />
+      </a-steps>
+      <a-empty v-else :description="$t('travel.flowEmpty')" />
+    </a-modal>
 
     <!-- 审批弹窗 -->
     <a-modal v-model:visible="approveVisible" :title="$t('travel.approve')" :width="480"
@@ -102,6 +116,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { Message } from '@arco-design/web-vue'
 import { getTravelPageApi, approveTravelApi, revokeTravelApi, deleteTravelApi, type AttTravelRequest } from '@/api/travel'
+import { getFlowLogsApi, type ApprovalFlowNode } from '@/api/flowlog'
 
 const loading = ref(false)
 const approving = ref(false)
@@ -176,6 +191,22 @@ async function handleDelete(record: AttTravelRequest) {
 
 function showRemark(record: AttTravelRequest) {
   Message.info(`${record.approveRemark || '-'}`, 5000)
+}
+
+// ============ 流程进度 ============
+const flowVisible = ref(false)
+const flowNodes = ref<ApprovalFlowNode[]>([])
+const currentStep = ref(0)
+
+async function openFlow(record: AttTravelRequest) {
+  try {
+    const res = await getFlowLogsApi('travel', record.id)
+    flowNodes.value = res.data || []
+    currentStep.value = Math.max(0, flowNodes.value.length - 1)
+    flowVisible.value = true
+  } catch (err) {
+    console.error('travel flow error:', err)
+  }
 }
 
 onMounted(loadData)

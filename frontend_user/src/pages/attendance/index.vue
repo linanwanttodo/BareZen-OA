@@ -64,6 +64,7 @@
               <a-button v-if="item.status === '0'" size="small" status="danger" @click="handleRevokeOvertime(item)">
                 {{ $t('attendance.revoke') }}
               </a-button>
+              <a-button size="small" @click="openFlow('overtime', item.id)">{{ $t('attendance.flow') }}</a-button>
             </div>
           </div>
           <a-empty v-else :description="$t('attendance.noData')" />
@@ -122,12 +123,26 @@
               <a-button v-if="item.status === '0'" size="small" status="danger" @click="handleRevokeTravel(item)">
                 {{ $t('attendance.revoke') }}
               </a-button>
+              <a-button size="small" @click="openFlow('travel', item.id)">{{ $t('attendance.flow') }}</a-button>
             </div>
           </div>
           <a-empty v-else :description="$t('attendance.noData')" />
         </a-spin>
       </a-card>
     </div>
+
+    <!-- 流程进度弹窗 -->
+    <a-modal v-model:visible="flowVisible" :title="$t('attendance.flow')" :width="520" footer-only>
+      <a-steps v-if="flowNodes.length" direction="vertical" :current="currentStep">
+        <a-step
+          v-for="node in flowNodes"
+          :key="node.id"
+          :title="node.nodeName"
+          :description="`${node.operatorName || '-'} · ${node.createTime}${node.remark ? ' · ' + node.remark : ''}`"
+        />
+      </a-steps>
+      <a-empty v-else :description="$t('attendance.flowEmpty')" />
+    </a-modal>
   </div>
 </template>
 
@@ -137,7 +152,8 @@ import { Message } from '@arco-design/web-vue'
 import {
   getMyOvertimesApi, submitOvertimeApi, revokeOvertimeApi,
   getMyTravelsApi, submitTravelApi, revokeTravelApi,
-  type OvertimeRequest, type TravelRequest,
+  getFlowLogsApi,
+  type OvertimeRequest, type TravelRequest, type FlowLog,
 } from '@/api/enterprise'
 import { useUserStore } from '@/stores/user'
 
@@ -268,6 +284,22 @@ async function handleRevokeTravel(item: TravelRequest) {
   await revokeTravelApi(item.id)
   Message.success('已撤销')
   loadTravels()
+}
+
+// ============ 流程进度 ============
+const flowVisible = ref(false)
+const flowNodes = ref<FlowLog[]>([])
+const currentStep = ref(0)
+
+async function openFlow(bizType: string, bizId: string) {
+  try {
+    const res = await getFlowLogsApi(bizType, bizId)
+    flowNodes.value = res.data || []
+    currentStep.value = Math.max(0, flowNodes.value.length - 1)
+    flowVisible.value = true
+  } catch (err) {
+    console.error('attendance flow error:', err)
+  }
 }
 
 onMounted(loadOvertimes)

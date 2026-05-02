@@ -98,6 +98,8 @@ export default {
     revoke: 'Revoke',
     approveRemark: 'Remark',
     noData: 'No requests yet',
+    flow: 'Flow Progress',
+    flowEmpty: 'No flow records yet',
   },
   worklog: {
     title: 'Work Logs',
@@ -153,6 +155,8 @@ export default {
     revoke: 'Revoke',
     noSupply: 'No supplies available',
     noRequest: 'No requests yet',
+    flow: 'Flow Progress',
+    flowEmpty: 'No flow records yet',
   },
   profile: {
     title: 'Profile',

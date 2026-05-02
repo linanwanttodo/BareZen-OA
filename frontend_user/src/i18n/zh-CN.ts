@@ -98,6 +98,8 @@ export default {
     revoke: '撤销',
     approveRemark: '审批意见',
     noData: '暂无申请记录',
+    flow: '流程进度',
+    flowEmpty: '暂无流程记录',
   },
   worklog: {
     title: '工作日志',
@@ -153,6 +155,8 @@ export default {
     revoke: '撤销',
     noSupply: '暂无可用用品',
     noRequest: '暂无申领记录',
+    flow: '流程进度',
+    flowEmpty: '暂无流程记录',
   },
   profile: {
     title: '个人中心',

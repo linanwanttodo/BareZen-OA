@@ -13,6 +13,7 @@ import com.linan.office.entity.OfficeSupply;
 import com.linan.office.entity.OfficeSupplyRequest;
 import com.linan.office.service.IOfficeSupplyRequestService;
 import com.linan.office.service.IOfficeSupplyService;
+import com.linan.system.service.IApprovalFlowLogService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
@@ -47,6 +48,9 @@ public class OfficeSupplyController {
 
     @Autowired
     private ApplicationEventPublisher eventPublisher;
+
+    @Autowired
+    private IApprovalFlowLogService flowLogService;
 
     // ============ 用品管理 ============
 
@@ -188,6 +192,9 @@ public class OfficeSupplyController {
         request.setApproveRemark(remark);
         boolean ok = requestService.updateById(request);
         if (ok) {
+            String node = "pass".equals(action) ? "审批通过" : "审批驳回";
+            flowLogService.record("supply", request.getId(), node, request.getStatus(),
+                    approverId, AuthInterceptor.getCurrentUsername(), remark);
             String result = "pass".equals(action) ? "已通过" : "已驳回";
             eventPublisher.publishEvent(new ApprovalCompletedEvent(
                     request.getUserId(),

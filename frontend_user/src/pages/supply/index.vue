@@ -58,11 +58,25 @@
             <a-button v-if="item.status === '0'" size="small" status="danger" @click="handleRevoke(item)">
               {{ $t('supplyApply.revoke') }}
             </a-button>
+            <a-button size="small" @click="openFlow(item.id)">{{ $t('supplyApply.flow') }}</a-button>
           </div>
         </div>
         <a-empty v-else :description="$t('supplyApply.noRequest')" />
       </a-spin>
     </div>
+
+    <!-- 流程进度弹窗 -->
+    <a-modal v-model:visible="flowVisible" :title="$t('supplyApply.flow')" :width="520" footer-only>
+      <a-steps v-if="flowNodes.length" direction="vertical" :current="currentStep">
+        <a-step
+          v-for="node in flowNodes"
+          :key="node.id"
+          :title="node.nodeName"
+          :description="`${node.operatorName || '-'} · ${node.createTime}${node.remark ? ' · ' + node.remark : ''}`"
+        />
+      </a-steps>
+      <a-empty v-else :description="$t('supplyApply.flowEmpty')" />
+    </a-modal>
 
     <!-- 申领弹窗 -->
     <a-modal v-model:visible="applyVisible" :title="$t('supplyApply.apply')" :width="480"
@@ -87,7 +101,8 @@ import { ref, reactive, onMounted } from 'vue'
 import { Message } from '@arco-design/web-vue'
 import {
   getSuppliesApi, getMySupplyRequestsApi, submitSupplyRequestApi, revokeSupplyRequestApi,
-  type Supply, type SupplyRequest,
+  getFlowLogsApi,
+  type Supply, type SupplyRequest, type FlowLog,
 } from '@/api/enterprise'
 import { useUserStore } from '@/stores/user'
 
@@ -171,6 +186,22 @@ async function handleRevoke(item: SupplyRequest) {
   await revokeSupplyRequestApi(item.id)
   Message.success('已撤销')
   loadRequests()
+}
+
+// ============ 流程进度 ============
+const flowVisible = ref(false)
+const flowNodes = ref<FlowLog[]>([])
+const currentStep = ref(0)
+
+async function openFlow(bizId: string) {
+  try {
+    const res = await getFlowLogsApi('supply', bizId)
+    flowNodes.value = res.data || []
+    currentStep.value = Math.max(0, flowNodes.value.length - 1)
+    flowVisible.value = true
+  } catch (err) {
+    console.error('supply flow error:', err)
+  }
 }
 
 onMounted(loadSupplies)

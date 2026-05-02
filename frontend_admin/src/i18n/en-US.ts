@@ -303,6 +303,8 @@ export default {
     approvePass: 'Approve',
     approveReject: 'Reject',
     approveRemark: 'Approval Remark',
+    flow: 'Flow Progress',
+    flowEmpty: 'No flow records yet',
   },
   asset: {
     title: 'Asset Ledger',
@@ -372,6 +374,8 @@ export default {
     approvePass: 'Approve',
     approveReject: 'Reject',
     approveRemark: 'Approval Remark',
+    flow: 'Flow Progress',
+    flowEmpty: 'No flow records yet',
   },
   kb: {
     docList: 'Knowledge Docs',
@@ -430,6 +434,8 @@ export default {
     approvePass: 'Approve',
     approveReject: 'Reject',
     approveRemark: 'Approval Remark',
+    flow: 'Flow Progress',
+    flowEmpty: 'No flow records yet',
   },
   travel: {
     title: 'Travel Request',
@@ -451,6 +457,8 @@ export default {
     approvePass: 'Approve',
     approveReject: 'Reject',
     approveRemark: 'Approval Remark',
+    flow: 'Flow Progress',
+    flowEmpty: 'No flow records yet',
   },
   worklog: {
     title: 'Work Logs',
@@ -495,6 +503,8 @@ export default {
     approvePass: 'Approve',
     approveReject: 'Reject',
     approveRemark: 'Approval Remark',
+    flow: 'Flow Progress',
+    flowEmpty: 'No flow records yet',
   },
   notice: {
     title: 'Notice & Announcement',

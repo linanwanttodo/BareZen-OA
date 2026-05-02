@@ -11,6 +11,7 @@ import com.linan.core.security.RequirePermission;
 import com.linan.core.security.interceptor.AuthInterceptor;
 import com.linan.hr.entity.AttTravelRequest;
 import com.linan.hr.service.IAttTravelRequestService;
+import com.linan.system.service.IApprovalFlowLogService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
@@ -42,6 +43,9 @@ public class AttTravelRequestController {
 
     @Autowired
     private ApplicationEventPublisher eventPublisher;
+
+    @Autowired
+    private IApprovalFlowLogService flowLogService;
 
     /**
      * 分页查询出差记录
@@ -93,6 +97,10 @@ public class AttTravelRequestController {
         }
         request.setStatus("0");
         boolean ok = travelService.save(request);
+        if (ok) {
+            flowLogService.record("travel", request.getId(), "提交申请", "0",
+                    request.getUserId(), request.getUserName(), null);
+        }
         return ok ? Result.success(null) : Result.error("提交失败");
     }
 
@@ -130,6 +138,9 @@ public class AttTravelRequestController {
         request.setApproveRemark(remark);
         boolean ok = travelService.updateById(request);
         if (ok) {
+            String node = "pass".equals(action) ? "审批通过" : "审批驳回";
+            flowLogService.record("travel", request.getId(), node, request.getStatus(),
+                    approverId, AuthInterceptor.getCurrentUsername(), remark);
             String result = "pass".equals(action) ? "已通过" : "已驳回";
             eventPublisher.publishEvent(new ApprovalCompletedEvent(
                     request.getUserId(),
@@ -161,6 +172,10 @@ public class AttTravelRequestController {
         }
         request.setStatus("3");
         boolean ok = travelService.updateById(request);
+        if (ok) {
+            flowLogService.record("travel", request.getId(), "撤销申请", "3",
+                    userId, AuthInterceptor.getCurrentUsername(), null);
+        }
         return ok ? Result.success(null) : Result.error("撤销失败");
     }
 

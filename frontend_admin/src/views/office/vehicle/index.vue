@@ -71,6 +71,7 @@
                   <a-button v-if="record.approveRemark" size="small" @click="showRemark(record)">
                     {{ $t('office.viewRemark') }}
                   </a-button>
+                  <a-button size="small" @click="openFlow(record)">{{ $t('office.flow') }}</a-button>
                   <a-popconfirm :content="$t('common.deleteConfirm')" @ok="handleDelete(record)">
                     <a-button v-permission="'office:vehicle:delete'" size="small" status="danger">{{ $t('common.delete') }}</a-button>
                   </a-popconfirm>
@@ -90,6 +91,19 @@
         </div>
       </a-spin>
     </a-card>
+
+    <!-- 流程进度弹窗 -->
+    <a-modal v-model:visible="flowVisible" :title="$t('office.flow')" :width="520" footer-only>
+      <a-steps v-if="flowNodes.length" direction="vertical" :current="currentStep">
+        <a-step
+          v-for="node in flowNodes"
+          :key="node.id"
+          :title="node.nodeName"
+          :description="`${node.operatorName || '-'} · ${node.createTime}${node.remark ? ' · ' + node.remark : ''}`"
+        />
+      </a-steps>
+      <a-empty v-else :description="$t('office.flowEmpty')" />
+    </a-modal>
 
     <!-- 用车申请弹窗 -->
     <a-modal v-model:visible="addVisible" :title="$t('office.applyVehicle')" :width="560"
@@ -145,6 +159,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { Message } from '@arco-design/web-vue'
 import { getVehiclePageApi, submitVehicleApi, approveVehicleApi, cancelVehicleApi, deleteVehicleApi, type OfficeVehicleRequest } from '@/api/office'
+import { getFlowLogsApi, type ApprovalFlowNode } from '@/api/flowlog'
 import { useUserStore } from '@/stores/user'
 
 const userStore = useUserStore()
@@ -291,6 +306,22 @@ async function handleDelete(record: OfficeVehicleRequest) {
 
 function showRemark(record: OfficeVehicleRequest) {
   Message.info(`${record.approveRemark || '-'}`, 5000)
+}
+
+// ============ 流程进度 ============
+const flowVisible = ref(false)
+const flowNodes = ref<ApprovalFlowNode[]>([])
+const currentStep = ref(0)
+
+async function openFlow(record: OfficeVehicleRequest) {
+  try {
+    const res = await getFlowLogsApi('vehicle', record.id)
+    flowNodes.value = res.data || []
+    currentStep.value = Math.max(0, flowNodes.value.length - 1)
+    flowVisible.value = true
+  } catch (err) {
+    console.error('vehicle flow error:', err)
+  }
 }
 
 onMounted(loadData)
