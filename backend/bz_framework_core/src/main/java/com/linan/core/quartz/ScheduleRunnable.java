@@ -170,14 +170,13 @@ public class ScheduleRunnable implements Job {
      * 数据库自增主键 jobId.toString()，这里直接解析回 Long，
      * 使 sys_job_log.job_id 能与 sys_job.id 正确关联。</p>
      *
-     * <p>若名称不是纯数字（异常场景），回退到原有 hashCode 逻辑，避免解析失败。</p>
+     * <p>若名称不是纯数字（异常场景），回退到 hashCode 逻辑，避免解析失败。</p>
      */
-    private Long parseJobIdFromKey(JobExecutionContext context) {
+    static Long parseJobIdFromKey(JobExecutionContext context) {
         String keyName = context.getJobDetail().getKey().getName();
         try {
             return Long.parseLong(keyName);
         } catch (NumberFormatException e) {
-            log.warn("定时任务 JobKey 名称非纯数字，回退 hashCode: {}", keyName);
             return (long) (context.getJobDetail().getKey().hashCode() & 0x7fffffff);
         }
     }
