@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { getToken, setToken, removeToken } from '@/utils/auth'
 import { loginApi, getCurrentUserApi, logoutApi } from '@/api/auth'
+import { usePermissionStore } from '@/stores/permission'
 import type { LoginParams, CurrentUser } from '@/types/api'
 
 export const useUserStore = defineStore('user', () => {
@@ -47,6 +48,8 @@ export const useUserStore = defineStore('user', () => {
     roles.value = []
     permissions.value = []
     removeToken()
+    // 同步清空菜单/路由缓存，避免换账号登录后沿用上一个账号的动态路由
+    usePermissionStore().resetPermission()
   }
 
   /** 检查权限 */

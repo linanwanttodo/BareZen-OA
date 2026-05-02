@@ -1,5 +1,5 @@
 <template>
-  <ErrorPage code="404" message="页面不存在" />
+  <ErrorPage code="404" :message="$t('error.404')" />
 </template>
 
 <script setup lang="ts">

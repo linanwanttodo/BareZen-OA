@@ -5,15 +5,15 @@
       <a-card :bordered="true" class="flex flex-col">
         <template #title>
           <div class="flex items-center justify-between w-full">
-            <span>字典类型</span>
-            <a-button type="primary" size="small" @click="handleAddType">
+            <span>{{ $t('dict.title') }}</span>
+            <a-button v-permission="'system:dict:add'" type="primary" size="small" @click="handleAddType">
               <template #icon><icon-plus /></template>
-              新增
+              {{ $t('common.add') }}
             </a-button>
           </div>
         </template>
         <div class="mb-3">
-          <a-input-search v-model="typeSearch" placeholder="搜索字典名称/类型" allow-clear />
+          <a-input-search v-model="typeSearch" :placeholder="$t('dict.searchPlaceholder')" allow-clear />
         </div>
         <div class="dict-type-list flex-1 overflow-y-auto" style="max-height: 500px">
           <div
@@ -27,16 +27,16 @@
               <span class="dict-type-item__name">{{ item.dictName }}</span>
               <span class="dict-type-item__key">{{ item.dictType }}</span>
             </div>
-            <a-tag v-if="item.status === '1'" color="red" size="small">停用</a-tag>
+            <a-tag v-if="item.status === '1'" color="red" size="small">{{ $t('common.disable') }}</a-tag>
             <a-dropdown>
               <icon-more class="cursor-pointer" style="color: #86909C" />
               <template #content>
-                <a-doption @click="handleEditType(item)">编辑</a-doption>
-                <a-doption @click="handleDeleteType(item)" status="danger">删除</a-doption>
+                <a-doption v-permission="'system:dict:edit'" @click="handleEditType(item)">{{ $t('common.edit') }}</a-doption>
+                <a-doption v-permission="'system:dict:delete'" @click="handleDeleteType(item)" status="danger">{{ $t('common.delete') }}</a-doption>
               </template>
             </a-dropdown>
           </div>
-          <a-empty v-if="!filteredDictTypes.length" description="暂无数据" />
+          <a-empty v-if="!filteredDictTypes.length" :description="$t('common.noData')" />
         </div>
         <div v-if="typePagination.total > typePagination.pageSize" class="mt-3 pt-3" style="border-top: 1px solid #E5E6EB">
           <a-pagination
@@ -54,48 +54,48 @@
         <template #title>
           <div class="flex items-center justify-between w-full">
             <div class="flex items-center gap-2">
-              <span>字典数据</span>
+              <span>{{ $t('dict.dataTitle') }}</span>
               <a-tag v-if="selectedType" color="blue">{{ selectedType.dictName }}</a-tag>
             </div>
-            <a-button type="primary" size="small" :disabled="!selectedType" @click="handleAddData">
+            <a-button v-permission="'system:dict:add'" type="primary" size="small" :disabled="!selectedType" @click="handleAddData">
               <template #icon><icon-plus /></template>
-              新增
+              {{ $t('common.add') }}
             </a-button>
           </div>
         </template>
         <template v-if="selectedType">
           <div class="mb-3 flex items-center gap-2">
-            <a-input v-model="dataSearchForm.dictLabel" placeholder="字典标签" allow-clear style="width: 180px" />
-            <a-button type="primary" size="small" @click="loadData">搜索</a-button>
+            <a-input v-model="dataSearchForm.dictLabel" :placeholder="$t('dict.dictLabel')" allow-clear style="width: 180px" />
+            <a-button type="primary" size="small" @click="loadData">{{ $t('common.search') }}</a-button>
           </div>
 
           <a-spin :loading="dataLoading">
             <a-table :data="dataTable" :pagination="false" :row-key="'id'">
               <template #columns>
-                <a-table-column title="ID" data-index="id" :width="60" />
-                <a-table-column title="标签" data-index="dictLabel" />
-                <a-table-column title="值" data-index="dictValue" />
-                <a-table-column title="排序" data-index="dictSort" :width="60" />
-                <a-table-column title="默认" :width="60">
+                <a-table-column :title="$t('common.operate')" data-index="id" :width="60" />
+                <a-table-column :title="$t('dict.dictLabel')" data-index="dictLabel" />
+                <a-table-column :title="$t('dict.dictValue')" data-index="dictValue" />
+                <a-table-column :title="$t('dept.orderNum')" data-index="dictSort" :width="60" />
+                <a-table-column :title="$t('dict.isDefault')" :width="60">
                   <template #cell="{ record }">
                     <a-tag :color="record.isDefault === 'Y' ? 'blue' : 'gray'" size="small">
-                      {{ record.isDefault === 'Y' ? '是' : '否' }}
+                      {{ record.isDefault === 'Y' ? $t('common.yes') : $t('common.no') }}
                     </a-tag>
                   </template>
                 </a-table-column>
-                <a-table-column title="状态" :width="80">
+                <a-table-column :title="$t('common.status')" :width="80">
                   <template #cell="{ record }">
                     <a-tag :color="record.status === '0' ? 'green' : 'red'" size="small">
-                      {{ record.status === '0' ? '正常' : '停用' }}
+                      {{ record.status === '0' ? $t('common.normal') : $t('common.disable') }}
                     </a-tag>
                   </template>
                 </a-table-column>
-                <a-table-column title="操作" :width="120" align="right">
+                <a-table-column :title="$t('common.operate')" :width="120" align="right">
                   <template #cell="{ record }">
                     <a-space>
-                      <a-button size="small" @click="handleEditData(record)">编辑</a-button>
-                      <a-popconfirm content="确认删除该字典数据？" @ok="handleDeleteData(record)">
-                        <a-button size="small" status="danger">删除</a-button>
+                      <a-button v-permission="'system:dict:edit'" size="small" @click="handleEditData(record)">{{ $t('common.edit') }}</a-button>
+                      <a-popconfirm v-permission="'system:dict:delete'" :content="$t('dict.deleteDataConfirm')" @ok="handleDeleteData(record)">
+                        <a-button size="small" status="danger">{{ $t('common.delete') }}</a-button>
                       </a-popconfirm>
                     </a-space>
                   </template>
@@ -114,30 +114,30 @@
             </div>
           </a-spin>
         </template>
-        <a-empty v-else description="请在左侧选择字典类型" />
+        <a-empty v-else :description="$t('dict.selectTypeHint')" />
       </a-card>
     </div>
 
     <!-- 字典类型 新增/编辑弹窗 -->
     <a-modal
       v-model:visible="typeFormVisible"
-      :title="typeFormType === 'add' ? '新增字典类型' : '编辑字典类型'"
+      :title="typeFormType === 'add' ? $t('dict.addType') : $t('dict.editType')"
       :width="480"
       :mask-closable="false"
       @ok="onTypeFormConfirm"
       @cancel="typeFormVisible = false"
     >
       <a-form :model="typeFormData" layout="vertical">
-        <a-form-item field="dictName" label="字典名称" :rules="[{ required: true, message: '请输入字典名称' }]">
-          <a-input v-model="typeFormData.dictName" placeholder="请输入字典名称" />
+        <a-form-item field="dictName" :label="$t('dict.dictName')" :rules="[{ required: true, message: $t('dict.dictName') }]">
+          <a-input v-model="typeFormData.dictName" :placeholder="$t('dict.dictName')" />
         </a-form-item>
-        <a-form-item field="dictType" label="字典类型" :rules="[{ required: true, message: '请输入字典类型' }]">
-          <a-input v-model="typeFormData.dictType" placeholder="请输入字典类型" :disabled="typeFormType === 'edit'" />
+        <a-form-item field="dictType" :label="$t('dict.dictType')" :rules="[{ required: true, message: $t('dict.dictType') }]">
+          <a-input v-model="typeFormData.dictType" :placeholder="$t('dict.dictType')" :disabled="typeFormType === 'edit'" />
         </a-form-item>
-        <a-form-item field="status" label="状态">
+        <a-form-item field="status" :label="$t('common.status')">
           <a-radio-group v-model="typeFormData.status">
-            <a-radio value="0">正常</a-radio>
-            <a-radio value="1">停用</a-radio>
+            <a-radio value="0">{{ $t('common.normal') }}</a-radio>
+            <a-radio value="1">{{ $t('common.disable') }}</a-radio>
           </a-radio-group>
         </a-form-item>
       </a-form>
@@ -146,44 +146,44 @@
     <!-- 字典数据 新增/编辑弹窗 -->
     <a-modal
       v-model:visible="dataFormVisible"
-      :title="dataFormType === 'add' ? '新增字典数据' : '编辑字典数据'"
+      :title="dataFormType === 'add' ? $t('dict.addData') : $t('dict.editData')"
       :width="560"
       :mask-closable="false"
       @ok="onDataFormConfirm"
       @cancel="dataFormVisible = false"
     >
       <a-form :model="dataFormData" layout="vertical">
-        <a-form-item label="字典类型">
+        <a-form-item :label="$t('dict.dictType')">
           <a-input :model-value="selectedType?.dictType" disabled />
         </a-form-item>
         <a-row :gutter="16">
           <a-col :span="12">
-            <a-form-item field="dictLabel" label="字典标签" :rules="[{ required: true, message: '请输入字典标签' }]">
-              <a-input v-model="dataFormData.dictLabel" placeholder="请输入字典标签" />
+            <a-form-item field="dictLabel" :label="$t('dict.dictLabel')" :rules="[{ required: true, message: $t('dict.dictLabel') }]">
+              <a-input v-model="dataFormData.dictLabel" :placeholder="$t('dict.dictLabel')" />
             </a-form-item>
           </a-col>
           <a-col :span="12">
-            <a-form-item field="dictValue" label="字典值" :rules="[{ required: true, message: '请输入字典值' }]">
-              <a-input v-model="dataFormData.dictValue" placeholder="请输入字典值" />
+            <a-form-item field="dictValue" :label="$t('dict.dictValue')" :rules="[{ required: true, message: $t('dict.dictValue') }]">
+              <a-input v-model="dataFormData.dictValue" :placeholder="$t('dict.dictValue')" />
             </a-form-item>
           </a-col>
         </a-row>
         <a-row :gutter="16">
           <a-col :span="12">
-            <a-form-item field="dictSort" label="显示排序">
+            <a-form-item field="dictSort" :label="$t('dept.orderNum')">
               <a-input-number v-model="dataFormData.dictSort" placeholder="0" :min="0" style="width: 100%" />
             </a-form-item>
           </a-col>
           <a-col :span="12">
-            <a-form-item field="cssClass" label="样式属性">
+            <a-form-item field="cssClass" :label="$t('dict.listClass')">
               <a-input v-model="dataFormData.cssClass" placeholder="css class" />
             </a-form-item>
           </a-col>
         </a-row>
         <a-row :gutter="16">
           <a-col :span="12">
-            <a-form-item field="listClass" label="标签样式">
-              <a-select v-model="dataFormData.listClass" placeholder="请选择" allow-clear>
+            <a-form-item field="listClass" :label="$t('dict.listClass')">
+              <a-select v-model="dataFormData.listClass" :placeholder="$t('common.selectPlaceholder')" allow-clear>
                 <a-option value="primary">主要（蓝色）</a-option>
                 <a-option value="success">成功（绿色）</a-option>
                 <a-option value="warning">警告（橙色）</a-option>
@@ -193,18 +193,18 @@
             </a-form-item>
           </a-col>
           <a-col :span="12">
-            <a-form-item field="isDefault" label="是否默认">
+            <a-form-item field="isDefault" :label="$t('dict.isDefault')">
               <a-radio-group v-model="dataFormData.isDefault">
-                <a-radio value="Y">是</a-radio>
-                <a-radio value="N">否</a-radio>
+                <a-radio value="Y">{{ $t('common.yes') }}</a-radio>
+                <a-radio value="N">{{ $t('common.no') }}</a-radio>
               </a-radio-group>
             </a-form-item>
           </a-col>
         </a-row>
-        <a-form-item field="status" label="状态">
+        <a-form-item field="status" :label="$t('common.status')">
           <a-radio-group v-model="dataFormData.status">
-            <a-radio value="0">正常</a-radio>
-            <a-radio value="1">停用</a-radio>
+            <a-radio value="0">{{ $t('common.normal') }}</a-radio>
+            <a-radio value="1">{{ $t('common.disable') }}</a-radio>
           </a-radio-group>
         </a-form-item>
       </a-form>
@@ -215,6 +215,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
 import { Message, Modal } from '@arco-design/web-vue'
+import { useI18n } from 'vue-i18n'
 import { IconPlus, IconMore } from '@arco-design/web-vue/es/icon'
 import {
   getDictTypePageApi,
@@ -228,6 +229,8 @@ import {
   type SysDictType,
   type SysDictData,
 } from '@/api/dict'
+
+const { t } = useI18n()
 
 // ============ 字典类型 ============
 const typeSearch = ref('')
@@ -250,7 +253,7 @@ async function loadTypes() {
       pageNum: typePagination.current,
       pageSize: typePagination.pageSize,
     })
-    dictTypes.value = res.data?.records || []
+    dictTypes.value = res.data?.list || []
     typePagination.total = res.data?.total || 0
   } catch {
     // ignore
@@ -292,10 +295,10 @@ async function onTypeFormConfirm() {
   try {
     if (typeFormType.value === 'add') {
       await addDictTypeApi({ ...typeFormData })
-      Message.success('新增成功')
+      Message.success(t('dict.addSuccess'))
     } else {
       await updateDictTypeApi({ ...typeFormData })
-      Message.success('修改成功')
+      Message.success(t('dict.editSuccess'))
     }
     typeFormVisible.value = false
     loadTypes()
@@ -306,12 +309,12 @@ async function onTypeFormConfirm() {
 
 async function handleDeleteType(item: SysDictType) {
   Modal.confirm({
-    title: '确认删除',
-    content: '确认删除该字典类型吗？',
+    title: t('common.confirmDelete'),
+    content: t('dict.deleteTypeConfirm'),
     onOk: async () => {
       try {
         await deleteDictTypeApi(item.id)
-        Message.success('删除成功')
+        Message.success(t('dict.deleteSuccess'))
         if (selectedType.value?.id === item.id) selectedType.value = null
         loadTypes()
       } catch {
@@ -342,7 +345,7 @@ async function loadData() {
       dictType: selectedType.value.dictType,
       dictLabel: dataSearchForm.dictLabel || undefined,
     })
-    dataTable.value = res.data?.records || []
+    dataTable.value = res.data?.list || []
     dataPagination.total = res.data?.total || 0
   } catch {
     // ignore
@@ -360,7 +363,7 @@ const defaultDataFormData = {
   dictType: '',
   dictLabel: '',
   dictValue: '',
-  dictSort: 0 as number | string,
+  dictSort: 0 as number,
   cssClass: '',
   listClass: '' as string,
   isDefault: 'N',
@@ -395,10 +398,10 @@ async function onDataFormConfirm() {
     const payload = { ...dataFormData, dictSort: Number(dataFormData.dictSort) || 0 }
     if (dataFormType.value === 'add') {
       await addDictDataApi(payload)
-      Message.success('新增成功')
+      Message.success(t('dict.addSuccess'))
     } else {
       await updateDictDataApi(payload)
-      Message.success('修改成功')
+      Message.success(t('dict.editSuccess'))
     }
     dataFormVisible.value = false
     loadData()
@@ -410,7 +413,7 @@ async function onDataFormConfirm() {
 async function handleDeleteData(row: SysDictData) {
   try {
     await deleteDictDataApi(row.id)
-    Message.success('删除成功')
+    Message.success(t('dict.deleteSuccess'))
     loadData()
   } catch {
     // ignore

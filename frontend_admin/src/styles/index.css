@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 /* ============================================================
-   BareZen Admin — 火山引擎 Arco Design 风格
+   BareZen Admin — shadcn/ui 风格设计系统
    约定：无渐变 / 无悬浮发光 / 无霓虹 / 无 emoji
    层次通过边框 + 背景明度表达
    ============================================================ */
@@ -15,67 +15,36 @@
   --bz-brand-hover: #2860E1;
   --bz-brand-active: #1D4FC4;
   --bz-brand-light: #E8F3FF;
-  --bz-brand-bg: #F0F5FF;
 
   /* ── 功能色 ── */
-  --bz-success: #00B42A;
-  --bz-success-light: #E8FFEA;
-  --bz-warning: #FF7D00;
-  --bz-warning-light: #FFF7E8;
-  --bz-danger: #F53F3F;
-  --bz-danger-light: #FFECE8;
-  --bz-info: #3370FF;
-
-  /* ── 文字色 ── */
-  --bz-text-1: #1D2129;
-  --bz-text-2: #4E5969;
-  --bz-text-3: #86909C;
-  --bz-text-4: #C9CDD4;
-
-  /* ── 背景色 ── */
-  --bz-bg-1: #FFFFFF;
-  --bz-bg-2: #F7F8FA;
-  --bz-bg-3: #F2F3F5;
-  --bz-bg-4: #E5E6EB;
-
-  /* ── 边框色 ── */
-  --bz-border: #E5E6EB;
-  --bz-border-light: #F2F3F5;
-
-  /* ── 圆角 ── */
-  --bz-radius-sm: 4px;
-  --bz-radius: 6px;
-  --bz-radius-lg: 8px;
-  --bz-radius-xl: 12px;
-
-  /* ── 阴影 ── */
-  --bz-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.04);
-  --bz-shadow-2: 0 2px 8px rgba(0, 0, 0, 0.06);
+  --bz-success: #16a34a;
+  --bz-warning: #ea580c;
+  --bz-danger: #dc2626;
 
   /* ── 布局 ── */
   --bz-header-height: 56px;
-  --bz-sidebar-width: 210px;
-  --bz-content-padding: 24px;
 
-  /* ── shadcn 兼容令牌 ── */
-  --background: #F7F8FA;
-  --foreground: #1D2129;
-  --card: #FFFFFF;
-  --card-foreground: #1D2129;
-  --muted: #F2F3F5;
-  --muted-foreground: #86909C;
+  /* ── shadcn 标准令牌 ── */
+  --background: #fafafa;
+  --foreground: #0a0a0a;
+  --card: #ffffff;
+  --card-foreground: #0a0a0a;
+  --popover: #ffffff;
+  --popover-foreground: #0a0a0a;
   --primary: #3370FF;
-  --primary-foreground: #FFFFFF;
-  --secondary: #F2F3F5;
-  --secondary-foreground: #1D2129;
-  --accent: #F2F3F5;
-  --accent-foreground: #1D2129;
-  --destructive: #F53F3F;
-  --destructive-foreground: #FFFFFF;
-  --border: #E5E6EB;
-  --input: #C9CDD4;
+  --primary-foreground: #ffffff;
+  --secondary: #f5f5f5;
+  --secondary-foreground: #171717;
+  --muted: #f5f5f5;
+  --muted-foreground: #737373;
+  --accent: #f5f5f5;
+  --accent-foreground: #171717;
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+  --border: #e5e5e5;
+  --input: #e5e5e5;
   --ring: #3370FF;
-  --radius: 6px;
+  --radius: 0.5rem;
 }
 
 /* ===== 2. 全局重置 ===== */
@@ -87,7 +56,6 @@
   box-sizing: border-box;
 }
 
-/* 浏览器默认按钮/表单元素样式清除 */
 button, input, select, textarea {
   border: none;
   outline: none;
@@ -103,23 +71,39 @@ button {
   appearance: none;
 }
 
-html, body, #app {
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+html {
   width: 100%;
-  height: 100%;
-  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', 'Helvetica Neue', Arial, sans-serif;
-  font-size: 14px;
-  line-height: 1.5715;
-  color: var(--bz-text-1);
-  background: var(--bz-bg-2);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  width: 100%;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'PingFang SC', 'Microsoft YaHei', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--foreground);
+  background: var(--background);
+}
+
+#app {
+  min-height: 100vh;
 }
 
 /* ===== 3. 焦点样式（无障碍） ===== */
 :focus-visible {
-  outline: 2px solid var(--bz-brand);
+  outline: 2px solid var(--ring);
   outline-offset: 2px;
-  border-radius: var(--bz-radius-sm);
+  border-radius: var(--radius);
 }
 
 /* ===== 4. 减少动效 ===== */
@@ -143,36 +127,25 @@ html, body, #app {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #C9CDD4;
+  background: #d4d4d8;
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #86909C;
+  background: #a1a1aa;
 }
 
 /* ===== 6. 布局工具 ===== */
 .page-container {
-  padding: var(--bz-content-padding);
+  padding: 1.5rem;
 }
 
-/* ===== 7. 统计卡片图标 ===== */
-.stat-card__icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 48px;
-  height: 48px;
-  border-radius: var(--bz-radius-lg);
-  flex-shrink: 0;
-}
-
-/* ===== 8. NProgress ===== */
+/* ===== 7. NProgress ===== */
 #nprogress .bar {
-  background: var(--bz-brand) !important;
+  background: var(--primary) !important;
   height: 2px !important;
 }
 
-/* ===== 9. 路由切换 ===== */
+/* ===== 8. 路由切换 ===== */
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.15s ease;
@@ -182,7 +155,7 @@ html, body, #app {
   opacity: 0;
 }
 
-/* ===== 10. 选中文字颜色 ===== */
+/* ===== 9. 选中文字颜色 ===== */
 ::selection {
   background: rgba(51, 112, 255, 0.15);
 }

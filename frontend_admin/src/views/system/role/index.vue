@@ -3,22 +3,22 @@
     <!-- 搜索区域 -->
     <a-card class="mb-4" :bordered="true">
       <a-form :model="searchForm" layout="inline" @submit-success="handleSearch">
-        <a-form-item field="roleName" label="角色名称">
-          <a-input v-model="searchForm.roleName" placeholder="请输入角色名称" allow-clear style="width: 200px" />
+        <a-form-item field="roleName" :label="$t('role.roleName')">
+          <a-input v-model="searchForm.roleName" :placeholder="$t('role.roleName')" allow-clear style="width: 200px" />
         </a-form-item>
-        <a-form-item field="roleKey" label="权限字符">
-          <a-input v-model="searchForm.roleKey" placeholder="请输入权限字符" allow-clear style="width: 200px" />
+        <a-form-item field="roleKey" :label="$t('role.roleKey')">
+          <a-input v-model="searchForm.roleKey" :placeholder="$t('role.roleKey')" allow-clear style="width: 200px" />
         </a-form-item>
-        <a-form-item field="status" label="状态">
-          <a-select v-model="searchForm.status" placeholder="请选择" allow-clear style="width: 120px">
-            <a-option value="0">正常</a-option>
-            <a-option value="1">停用</a-option>
+        <a-form-item field="status" :label="$t('common.status')">
+          <a-select v-model="searchForm.status" :placeholder="$t('common.selectPlaceholder')" allow-clear style="width: 120px">
+            <a-option value="0">{{ $t('common.normal') }}</a-option>
+            <a-option value="1">{{ $t('common.disable') }}</a-option>
           </a-select>
         </a-form-item>
         <a-form-item>
           <a-space>
-            <a-button type="primary" html-type="submit">搜索</a-button>
-            <a-button @click="handleReset">重置</a-button>
+            <a-button type="primary" html-type="submit">{{ $t('common.search') }}</a-button>
+            <a-button @click="handleReset">{{ $t('common.reset') }}</a-button>
           </a-space>
         </a-form-item>
       </a-form>
@@ -28,15 +28,15 @@
     <a-card :bordered="true">
       <template #title>
         <div class="flex items-center justify-between w-full">
-          <span>角色列表</span>
+          <span>{{ $t('role.title') }}</span>
           <a-space>
-            <a-button type="primary" @click="handleAdd">
+            <a-button v-permission="'system:role:add'" type="primary" @click="handleAdd">
               <template #icon><icon-plus /></template>
-              新增
+              {{ $t('common.add') }}
             </a-button>
-            <a-button status="danger" :disabled="!selectedIds.length" @click="handleBatchDelete">
+            <a-button v-permission="'system:role:delete'" status="danger" :disabled="!selectedIds.length" @click="handleBatchDelete">
               <template #icon><icon-delete /></template>
-              批量删除
+              {{ $t('common.batchDelete') }}
             </a-button>
           </a-space>
         </div>
@@ -46,36 +46,37 @@
         <a-table
           :data="tableData"
           :pagination="false"
-          :row-selection="{ selectedRowKeys: selectedIds, onSelect: (keys: string[]) => selectedIds = keys }"
+          :row-selection="{ type: 'checkbox', selectedRowKeys: selectedIds }"
           :row-key="'id'"
+          @selection-change="onSelectionChange"
         >
           <template #columns>
-            <a-table-column title="ID" data-index="id" :width="80" />
-            <a-table-column title="角色名称" data-index="roleName" />
-            <a-table-column title="权限字符" data-index="roleKey" />
-            <a-table-column title="排序" data-index="roleSort" :width="80" />
-            <a-table-column title="状态" :width="100">
+            <a-table-column :title="$t('common.operate')" data-index="id" :width="80" />
+            <a-table-column :title="$t('role.roleName')" data-index="roleName" />
+            <a-table-column :title="$t('role.roleKey')" data-index="roleKey" />
+            <a-table-column :title="$t('role.roleSort')" data-index="roleSort" :width="80" />
+            <a-table-column :title="$t('common.status')" :width="100">
               <template #cell="{ record }">
                 <a-switch
                   :model-value="record.status === '0'"
                   :loading="record._statusLoading"
-                  @change="(val: boolean) => handleStatusChange(record, val)"
+                  @change="(val: string | number | boolean) => handleStatusChange(record, Boolean(val))"
                 />
               </template>
             </a-table-column>
-            <a-table-column title="备注" data-index="remark" />
-            <a-table-column title="创建时间" :width="160">
+            <a-table-column :title="$t('common.remark')" data-index="remark" />
+            <a-table-column :title="$t('common.createTime')" :width="160">
               <template #cell="{ record }">
                 {{ formatTime(record.createTime) }}
               </template>
             </a-table-column>
-            <a-table-column title="操作" :width="200" align="right">
+            <a-table-column :title="$t('common.operate')" :width="200" align="right">
               <template #cell="{ record }">
                 <a-space>
-                  <a-button size="small" @click="handleEdit(record)">编辑</a-button>
-                  <a-button size="small" @click="handleAssignMenu(record)">分配权限</a-button>
-                  <a-popconfirm content="确认删除该角色？" @ok="handleDelete(record)">
-                    <a-button size="small" status="danger">删除</a-button>
+                  <a-button v-permission="'system:role:edit'" size="small" @click="handleEdit(record)">{{ $t('common.edit') }}</a-button>
+                  <a-button v-permission="'system:role:edit'" size="small" @click="handleAssignMenu(record)">{{ $t('role.assignMenu') }}</a-button>
+                  <a-popconfirm v-permission="'system:role:delete'" :content="$t('role.deleteConfirm')" @ok="handleDelete(record)">
+                    <a-button size="small" status="danger">{{ $t('common.delete') }}</a-button>
                   </a-popconfirm>
                 </a-space>
               </template>
@@ -99,36 +100,36 @@
     <!-- 新增/编辑弹窗 -->
     <a-modal
       v-model:visible="formDialogVisible"
-      :title="formType === 'add' ? '新增角色' : '编辑角色'"
+      :title="formType === 'add' ? $t('role.addRole') : $t('role.editRole')"
       :width="520"
       :mask-closable="false"
       @ok="onFormConfirm"
       @cancel="formDialogVisible = false"
     >
       <a-form :model="formData" layout="vertical">
-        <a-form-item field="roleName" label="角色名称" :rules="[{ required: true, message: '请输入角色名称' }]">
-          <a-input v-model="formData.roleName" placeholder="请输入角色名称" />
+        <a-form-item field="roleName" :label="$t('role.roleName')" :rules="[{ required: true, message: $t('role.roleName') }]">
+          <a-input v-model="formData.roleName" :placeholder="$t('role.roleName')" />
         </a-form-item>
-        <a-form-item field="roleKey" label="权限字符" :rules="[{ required: true, message: '请输入权限字符' }]">
-          <a-input v-model="formData.roleKey" placeholder="请输入权限字符，如 admin" />
+        <a-form-item field="roleKey" :label="$t('role.roleKey')" :rules="[{ required: true, message: $t('role.roleKey') }]">
+          <a-input v-model="formData.roleKey" :placeholder="$t('role.roleKey') + ', ' + $t('common.inputPlaceholder')" />
         </a-form-item>
         <a-row :gutter="16">
           <a-col :span="12">
-            <a-form-item field="roleSort" label="角色排序">
+            <a-form-item field="roleSort" :label="$t('role.roleSort')">
               <a-input-number v-model="formData.roleSort" placeholder="0" :min="0" style="width: 100%" />
             </a-form-item>
           </a-col>
           <a-col :span="12">
-            <a-form-item field="status" label="状态">
+            <a-form-item field="status" :label="$t('common.status')">
               <a-radio-group v-model="formData.status">
-                <a-radio value="0">正常</a-radio>
-                <a-radio value="1">停用</a-radio>
+                <a-radio value="0">{{ $t('common.normal') }}</a-radio>
+                <a-radio value="1">{{ $t('common.disable') }}</a-radio>
               </a-radio-group>
             </a-form-item>
           </a-col>
         </a-row>
-        <a-form-item field="remark" label="备注">
-          <a-textarea v-model="formData.remark" placeholder="请输入备注" :max-length="200" show-word-limit />
+        <a-form-item field="remark" :label="$t('common.remark')">
+          <a-textarea v-model="formData.remark" :placeholder="$t('common.remark')" :max-length="200" show-word-limit />
         </a-form-item>
       </a-form>
     </a-modal>
@@ -136,7 +137,7 @@
     <!-- 分配菜单权限弹窗 -->
     <a-modal
       v-model:visible="menuDialogVisible"
-      title="分配菜单权限"
+      :title="$t('role.assignMenuTitle')"
       :width="560"
       :mask-closable="false"
       @ok="onMenuConfirm"
@@ -144,13 +145,13 @@
     >
       <div v-if="currentRole" class="mb-3">
         <a-space>
-          <span style="color: #86909C">当前角色：</span>
+          <span style="color: #86909C">{{ $t('common.currentRole') }}</span>
           <span style="font-weight: 500">{{ currentRole.roleName }}（{{ currentRole.roleKey }}）</span>
         </a-space>
       </div>
       <a-space class="mb-3">
-        <a-button size="small" @click="handleExpandAll">展开/折叠</a-button>
-        <a-button size="small" @click="handleCheckAll">全选/取消</a-button>
+        <a-button size="small" @click="handleExpandAll">{{ $t('role.expandCollapse') }}</a-button>
+        <a-button size="small" @click="handleCheckAll">{{ $t('role.checkAll') }}</a-button>
       </a-space>
       <div class="max-h-[360px] overflow-y-auto border rounded p-2" style="border-color: #E5E6EB">
         <div v-for="item in menuFlatRows" :key="item.node.id" class="flex items-center py-1.5" :style="{ paddingLeft: item.depth * 16 + 'px' }">
@@ -161,7 +162,7 @@
             {{ item.node.menuName }}
           </a-checkbox>
           <a-tag size="small" class="ml-2" :color="item.node.menuType === 'M' ? 'blue' : item.node.menuType === 'C' ? 'green' : 'orange'">
-            {{ menuTypeLabel(item.node.menuType) }}
+            {{ $t(menuTypeKey(item.node.menuType)) }}
           </a-tag>
         </div>
       </div>
@@ -172,6 +173,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
 import { Message, Modal } from '@arco-design/web-vue'
+import { useI18n } from 'vue-i18n'
 import {
   IconPlus,
   IconDelete,
@@ -192,6 +194,13 @@ import {
 } from '@/api/role'
 import { getMenuTreeSelectApi } from '@/api/menu'
 import type { SysMenu } from '@/types/menu'
+
+const { t } = useI18n()
+
+function menuTypeKey(type: string): string {
+  const map: Record<string, string> = { M: 'role.directory', C: 'role.menu', F: 'role.button' }
+  return map[type] || type
+}
 
 // ============ 搜索 ============
 const searchForm = reactive<RoleListParams>({
@@ -218,6 +227,10 @@ const loading = ref(false)
 const tableData = ref<(SysRole & { _statusLoading?: boolean })[]>([])
 const selectedIds = ref<string[]>([])
 
+function onSelectionChange(keys: (string | number)[]) {
+  selectedIds.value = keys.map(String)
+}
+
 const pagination = reactive({ current: 1, pageSize: 10, total: 0 })
 
 function onPageChange(page: number) {
@@ -235,7 +248,7 @@ async function loadTable() {
       roleKey: searchForm.roleKey || undefined,
       status: searchForm.status || undefined,
     })
-    tableData.value = res.data?.records || []
+    tableData.value = res.data?.list || []
     pagination.total = res.data?.total || 0
   } catch {
     /* interceptor handles */
@@ -256,7 +269,7 @@ async function handleStatusChange(row: SysRole & { _statusLoading?: boolean }, v
   try {
     await changeRoleStatusApi(row.id, newStatus)
     row.status = newStatus
-    Message.success('状态修改成功')
+    Message.success(t('role.statusSuccess'))
   } catch {
     /* interceptor handles */
   } finally {
@@ -268,7 +281,7 @@ async function handleStatusChange(row: SysRole & { _statusLoading?: boolean }, v
 async function handleDelete(row: SysRole) {
   try {
     await deleteRoleApi(row.id)
-    Message.success('删除成功')
+    Message.success(t('role.deleteSuccess'))
     loadTable()
   } catch {
     /* interceptor handles */
@@ -277,12 +290,12 @@ async function handleDelete(row: SysRole) {
 
 async function handleBatchDelete() {
   Modal.confirm({
-    title: '确认删除',
-    content: `确认删除选中的 ${selectedIds.value.length} 个角色吗？`,
+    title: t('common.confirmDelete'),
+    content: t('role.batchDeleteConfirm', { count: selectedIds.value.length }),
     onOk: async () => {
       try {
         await batchDeleteRoleApi(selectedIds.value)
-        Message.success('批量删除成功')
+        Message.success(t('role.batchDeleteSuccess'))
         selectedIds.value = []
         loadTable()
       } catch {
@@ -300,7 +313,7 @@ const defaultFormData = {
   id: undefined as string | undefined,
   roleName: '',
   roleKey: '',
-  roleSort: 0 as number | string,
+  roleSort: 0 as number,
   status: '0',
   remark: '',
 }
@@ -331,10 +344,10 @@ async function onFormConfirm() {
     const payload = { ...formData, roleSort: Number(formData.roleSort) || 0 }
     if (formType.value === 'add') {
       await addRoleApi(payload)
-      Message.success('新增成功')
+      Message.success(t('role.addSuccess'))
     } else {
       await updateRoleApi(payload)
-      Message.success('修改成功')
+      Message.success(t('role.editSuccess'))
     }
     formDialogVisible.value = false
     loadTable()
@@ -370,11 +383,6 @@ const menuFlatRows = computed<MenuFlatRow[]>(() => {
   walk(menuTreeData.value, 0)
   return result
 })
-
-function menuTypeLabel(type: string) {
-  const map: Record<string, string> = { M: '目录', C: '菜单', F: '按钮' }
-  return map[type] || type
-}
 
 function toggleMenuExpand(id: string) {
   const idx = menuExpandedIds.value.indexOf(id)
@@ -442,7 +450,7 @@ async function onMenuConfirm() {
   if (!currentRole.value) return
   try {
     await assignRoleMenusApi(currentRole.value.id, checkedMenuIds.value)
-    Message.success('权限分配成功')
+    Message.success(t('role.menuAssignSuccess'))
     menuDialogVisible.value = false
   } catch {
     /* interceptor handles */

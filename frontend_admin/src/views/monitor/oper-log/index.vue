@@ -1,219 +1,213 @@
 <template>
   <div class="page-container">
     <!-- 搜索区域 -->
-    <Card class="mb-4">
-      <CardContent class="pt-6">
+    <a-card class="mb-4">
+      <a-card-content class="pt-6">
         <div class="flex flex-wrap items-end gap-4">
-          <div class="space-y-1.5">
-            <Label>操作模块</Label>
-            <Input v-model="searchForm.title" placeholder="请输入操作模块" class="w-44" />
-          </div>
-          <div class="space-y-1.5">
-            <Label>操作人</Label>
-            <Input v-model="searchForm.operUser" placeholder="请输入操作人" class="w-36" />
-          </div>
-          <div class="space-y-1.5">
-            <Label>操作类型</Label>
-            <Select
-              :model-value="searchForm.businessType ?? ''"
+          <a-form-item :label="$t('monitor.operLog.title')">
+            <a-input v-model="searchForm.title" :placeholder="$t('monitor.operLog.title')" style="width: 176px" />
+          </a-form-item>
+          <a-form-item :label="$t('monitor.operLog.operName')">
+            <a-input v-model="searchForm.operUser" :placeholder="$t('monitor.operLog.operName')" style="width: 144px" />
+          </a-form-item>
+          <a-form-item :label="$t('monitor.operLog.businessType')">
+            <a-select
+              v-model="searchForm.businessType"
               :options="bizOptions"
-              placeholder="请选择"
-              class="w-32"
-              @change="(v) => (searchForm.businessType = v === '' ? undefined : (v as number))"
+              :placeholder="$t('common.selectPlaceholder')"
+              style="width: 128px"
+              allow-clear
             />
-          </div>
-          <div class="space-y-1.5">
-            <Label>状态</Label>
-            <Select
-              :model-value="searchForm.status ?? ''"
+          </a-form-item>
+          <a-form-item :label="$t('common.status')">
+            <a-select
+              v-model="searchForm.status"
               :options="statusOptions"
-              placeholder="请选择"
-              class="w-32"
-              @change="(v) => (searchForm.status = v === '' ? undefined : (v as number))"
+              :placeholder="$t('common.selectPlaceholder')"
+              style="width: 128px"
+              allow-clear
             />
-          </div>
+          </a-form-item>
           <div class="flex gap-2">
-            <Button @click="handleSearch">搜索</Button>
-            <Button variant="outline" @click="handleReset">重置</Button>
+            <a-button @click="handleSearch">{{ $t('common.search') }}</a-button>
+            <a-button @click="handleReset">{{ $t('common.reset') }}</a-button>
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </a-card-content>
+    </a-card>
 
     <!-- 表格区域 -->
-    <Card>
-      <CardHeader class="flex items-center justify-between">
-        <CardTitle>操作日志</CardTitle>
-        <Button variant="outline" @click="loadTable">
-          <RefreshCw :size="16" class="mr-1.5" />
-          刷新
-        </Button>
-      </CardHeader>
-      <CardContent>
-        <Empty v-if="loading" description="加载中" />
+    <a-card>
+      <template #title>
+        <div class="flex items-center justify-between w-full">
+          <span>{{ $t('monitor.operLog.title') }}</span>
+          <a-button @click="loadTable">
+            <template #icon><icon-refresh /></template>
+            {{ $t('monitor.operLog.refresh') }}
+          </a-button>
+        </div>
+      </template>
+      <a-card-content>
+        <div v-if="loading" class="flex items-center justify-center h-64">
+          <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--primary)]"></div>
+          <span class="ml-2 text-[var(--muted-foreground)]">{{ $t('common.loading') }}</span>
+        </div>
         <template v-else-if="tableData.length">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>ID</TableHead>
-                <TableHead>操作模块</TableHead>
-                <TableHead>类型</TableHead>
-                <TableHead>请求方式</TableHead>
-                <TableHead>操作人</TableHead>
-                <TableHead>操作IP</TableHead>
-                <TableHead>状态</TableHead>
-                <TableHead>耗时</TableHead>
-                <TableHead>操作时间</TableHead>
-                <TableHead class="text-right">操作</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              <TableRow v-for="row in tableData" :key="row.id">
-                <TableCell>{{ row.id }}</TableCell>
-                <TableCell>{{ row.title }}</TableCell>
-                <TableCell><Badge :variant="bizTypeVariant(row.businessType)">{{ bizTypeText(row.businessType) }}</Badge></TableCell>
-                <TableCell><Badge :variant="methodVariant(row.requestMethod)">{{ row.requestMethod }}</Badge></TableCell>
-                <TableCell>{{ row.operUser }}</TableCell>
-                <TableCell><span class="mono-text">{{ row.operIp }}</span></TableCell>
-                <TableCell><Badge :variant="row.status === 0 ? 'default' : 'destructive'">{{ row.status === 0 ? '成功' : '失败' }}</Badge></TableCell>
-                <TableCell>
-                  <span :class="row.costTime > 1000 ? 'text-orange-500' : 'text-green-600'">{{ row.costTime }}ms</span>
-                </TableCell>
-                <TableCell>{{ formatTime(row.operTime) }}</TableCell>
-                <TableCell>
-                  <div class="flex justify-end">
-                    <Button variant="ghost" size="sm" @click="handleDetail(row)">详情</Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            </TableBody>
-          </Table>
+          <a-table :data="tableData" :pagination="false" row-key="id">
+            <template #columns>
+              <a-table-column :title="$t('common.operate')" data-index="id" />
+              <a-table-column :title="$t('monitor.operLog.title')" data-index="title" />
+              <a-table-column :title="$t('monitor.operLog.businessType')">
+                <template #cell="{ record }">
+                  <a-tag :color="tagColor(businessTypeVariant(record.businessType))" :bordered="tagBordered(businessTypeVariant(record.businessType))">{{ businessTypeText(record.businessType) }}</a-tag>
+                </template>
+              </a-table-column>
+              <a-table-column :title="$t('monitor.operLog.requestMethod')">
+                <template #cell="{ record }">
+                  <a-tag :color="tagColor(methodVariant(record.requestMethod))" :bordered="tagBordered(methodVariant(record.requestMethod))">{{ record.requestMethod }}</a-tag>
+                </template>
+              </a-table-column>
+              <a-table-column :title="$t('monitor.operLog.operName')" data-index="operUser" />
+              <a-table-column :title="$t('monitor.operLog.url')" data-index="operIp" />
+              <a-table-column :title="$t('common.status')">
+                <template #cell="{ record }">
+                  <a-tag :color="tagColor(operStatusVariant(record.status))" :bordered="tagBordered(operStatusVariant(record.status))">{{ operStatusText(record.status) }}</a-tag>
+                </template>
+              </a-table-column>
+              <a-table-column :title="$t('monitor.operLog.costTime')">
+                <template #cell="{ record }">
+                  <span :class="record.costTime > 1000 ? 'text-orange-500' : 'text-green-600'">{{ record.costTime }}ms</span>
+                </template>
+              </a-table-column>
+              <a-table-column :title="$t('monitor.operLog.operTime')" data-index="operTime" />
+              <a-table-column :title="$t('common.operate')" align="right">
+                <template #cell="{ record }">
+                  <a-button v-permission="'monitor:oper-log:list'" type="text" size="small" @click="handleDetail(record)">{{ $t('monitor.operLog.detail') }}</a-button>
+                </template>
+              </a-table-column>
+            </template>
+          </a-table>
 
           <div class="mt-4 flex justify-end">
-            <Pagination
-              v-model="pagination.current"
+            <a-pagination
+              v-model:current="pagination.current"
               :total="pagination.total"
               :page-size="pagination.pageSize"
               @change="onPageChange"
             />
           </div>
         </template>
-        <Empty v-else description="暂无日志" />
-      </CardContent>
-    </Card>
+        <a-empty v-else :description="$t('monitor.operLog.noLogs')" />
+      </a-card-content>
+    </a-card>
 
     <!-- 详情弹窗 -->
-    <Dialog :open="detailVisible" title="操作日志详情" @update:open="detailVisible = $event">
+    <a-modal v-model:visible="detailVisible" :title="$t('monitor.operLog.detailTitle')" @cancel="detailVisible = false">
       <div v-if="detailData" class="log-detail">
         <dl class="grid grid-cols-2 gap-x-8 gap-y-4">
           <div>
-            <dt class="text-xs text-[var(--muted-foreground)]">操作模块</dt>
+            <dt class="text-xs text-[var(--muted-foreground)]">{{ $t('monitor.operLog.title') }}</dt>
             <dd class="mt-1 text-sm text-[var(--foreground)]">{{ detailData.title }}</dd>
           </div>
           <div>
-            <dt class="text-xs text-[var(--muted-foreground)]">操作类型</dt>
-            <dd class="mt-1"><Badge :variant="bizTypeVariant(detailData.businessType)">{{ bizTypeText(detailData.businessType) }}</Badge></dd>
+            <dt class="text-xs text-[var(--muted-foreground)]">{{ $t('monitor.operLog.businessType') }}</dt>
+            <dd class="mt-1"><a-tag :color="tagColor(businessTypeVariant(detailData.businessType))" :bordered="tagBordered(businessTypeVariant(detailData.businessType))">{{ businessTypeText(detailData.businessType) }}</a-tag></dd>
           </div>
           <div>
-            <dt class="text-xs text-[var(--muted-foreground)]">操作人</dt>
+            <dt class="text-xs text-[var(--muted-foreground)]">{{ $t('monitor.operLog.operName') }}</dt>
             <dd class="mt-1 text-sm text-[var(--foreground)]">{{ detailData.operUser }}</dd>
           </div>
           <div>
-            <dt class="text-xs text-[var(--muted-foreground)]">操作IP</dt>
+            <dt class="text-xs text-[var(--muted-foreground)]">{{ $t('monitor.operLog.url') }}</dt>
             <dd class="mt-1"><span class="mono-text">{{ detailData.operIp }}</span></dd>
           </div>
           <div>
-            <dt class="text-xs text-[var(--muted-foreground)]">请求方式</dt>
-            <dd class="mt-1"><Badge :variant="methodVariant(detailData.requestMethod)">{{ detailData.requestMethod }}</Badge></dd>
+            <dt class="text-xs text-[var(--muted-foreground)]">{{ $t('monitor.operLog.requestMethod') }}</dt>
+            <dd class="mt-1"><a-tag :color="tagColor(methodVariant(detailData.requestMethod))" :bordered="tagBordered(methodVariant(detailData.requestMethod))">{{ detailData.requestMethod }}</a-tag></dd>
           </div>
           <div>
-            <dt class="text-xs text-[var(--muted-foreground)]">耗时</dt>
+            <dt class="text-xs text-[var(--muted-foreground)]">{{ $t('monitor.operLog.costTime') }}</dt>
             <dd class="mt-1">
               <span :class="detailData.costTime > 1000 ? 'text-orange-500' : 'text-green-600'">{{ detailData.costTime }}ms</span>
             </dd>
           </div>
           <div>
-            <dt class="text-xs text-[var(--muted-foreground)]">操作状态</dt>
-            <dd class="mt-1"><Badge :variant="detailData.status === 0 ? 'default' : 'destructive'">{{ detailData.status === 0 ? '成功' : '失败' }}</Badge></dd>
+            <dt class="text-xs text-[var(--muted-foreground)]">{{ $t('common.status') }}</dt>
+            <dd class="mt-1"><a-tag :color="tagColor(operStatusVariant(detailData.status))" :bordered="tagBordered(operStatusVariant(detailData.status))">{{ operStatusText(detailData.status) }}</a-tag></dd>
           </div>
           <div>
-            <dt class="text-xs text-[var(--muted-foreground)]">操作时间</dt>
-            <dd class="mt-1 text-sm text-[var(--foreground)]">{{ formatTime(detailData.operTime) }}</dd>
+            <dt class="text-xs text-[var(--muted-foreground)]">{{ $t('monitor.operLog.operTime') }}</dt>
+            <dd class="mt-1 text-sm text-[var(--foreground)]">{{ formatDateTime(detailData.operTime) }}</dd>
           </div>
         </dl>
 
         <div class="log-detail-section">
-          <h4 class="log-detail-section__title">请求信息</h4>
+          <h4 class="log-detail-section__title">{{ $t('monitor.operLog.requestInfo') }}</h4>
           <dl class="grid grid-cols-1 gap-4">
             <div>
-              <dt class="text-xs text-[var(--muted-foreground)]">请求URL</dt>
+              <dt class="text-xs text-[var(--muted-foreground)]">{{ $t('monitor.operLog.operUrl') }}</dt>
               <dd class="mt-1"><span class="mono-text">{{ detailData.operUrl }}</span></dd>
             </div>
             <div>
-              <dt class="text-xs text-[var(--muted-foreground)]">类名方法</dt>
+              <dt class="text-xs text-[var(--muted-foreground)]">{{ $t('monitor.operLog.className') }}</dt>
               <dd class="mt-1"><span class="mono-text">{{ detailData.className }}.{{ detailData.methodName }}</span></dd>
             </div>
           </dl>
         </div>
 
         <div v-if="detailData.operParam" class="log-detail-section">
-          <h4 class="log-detail-section__title">请求参数</h4>
+          <h4 class="log-detail-section__title">{{ $t('monitor.operLog.operParam') }}</h4>
           <div class="log-detail-code">{{ formatJson(detailData.operParam) }}</div>
         </div>
 
         <div v-if="detailData.jsonResult" class="log-detail-section">
-          <h4 class="log-detail-section__title">返回结果</h4>
+          <h4 class="log-detail-section__title">{{ $t('monitor.operLog.jsonResult') }}</h4>
           <div class="log-detail-code">{{ formatJson(detailData.jsonResult) }}</div>
         </div>
 
         <div v-if="detailData.errorMsg" class="log-detail-section">
-          <h4 class="log-detail-section__title log-detail-section__title--error">错误信息</h4>
+          <h4 class="log-detail-section__title log-detail-section__title--error">{{ $t('monitor.operLog.errorMsg') }}</h4>
           <div class="log-detail-code log-detail-code--error">{{ detailData.errorMsg }}</div>
         </div>
       </div>
-    </Dialog>
+    </a-modal>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
-import { RefreshCw } from 'lucide-vue-next'
+import { useI18n } from 'vue-i18n'
+import { IconRefresh } from '@arco-design/web-vue/es/icon'
+import { formatDateTime, businessTypeText, operStatusText, operStatusVariant, businessTypeVariant, methodVariant } from '@/utils/format'
 import {
   getOperLogPageApi,
   getOperLogApi,
   type SysOperLog,
   type OperLogListParams,
 } from '@/api/operLog'
-import Card from '@/components/ui/card/Card.vue'
-import CardHeader from '@/components/ui/card/CardHeader.vue'
-import CardTitle from '@/components/ui/card/CardTitle.vue'
-import CardContent from '@/components/ui/card/CardContent.vue'
-import Label from '@/components/ui/label/Label.vue'
-import Input from '@/components/ui/input/Input.vue'
-import Select from '@/components/ui/select/Select.vue'
-import Button from '@/components/ui/button/Button.vue'
-import Badge from '@/components/ui/badge/Badge.vue'
-import Table from '@/components/ui/table/Table.vue'
-import TableHeader from '@/components/ui/table/TableHeader.vue'
-import TableBody from '@/components/ui/table/TableBody.vue'
-import TableRow from '@/components/ui/table/TableRow.vue'
-import TableHead from '@/components/ui/table/TableHead.vue'
-import TableCell from '@/components/ui/table/TableCell.vue'
-import Pagination from '@/components/ui/pagination/Pagination.vue'
-import Empty from '@/components/ui/empty/Empty.vue'
-import Dialog from '@/components/ui/dialog/Dialog.vue'
 
-type BadgeVariant = 'default' | 'secondary' | 'destructive' | 'outline'
+const { t } = useI18n()
+
+function tagColor(v: string): string | undefined {
+  if (v === 'default') return 'arcoblue'
+  if (v === 'destructive') return 'red'
+  if (v === 'secondary') return 'purple'
+  return undefined
+}
+
+function tagBordered(v: string): boolean {
+  return v === 'outline'
+}
 
 const bizOptions = [
-  { label: '其它', value: 0 },
-  { label: '新增', value: 1 },
-  { label: '修改', value: 2 },
-  { label: '删除', value: 3 },
+  { label: t('common.other'), value: 0 },
+  { label: t('common.add'), value: 1 },
+  { label: t('common.edit'), value: 2 },
+  { label: t('common.delete'), value: 3 },
 ]
 const statusOptions = [
-  { label: '成功', value: 0 },
-  { label: '失败', value: 1 },
+  { label: t('monitor.operLog.statusSuccess'), value: 0 },
+  { label: t('monitor.operLog.statusFail'), value: 1 },
 ]
 
 // ============ 搜索 ============
@@ -249,32 +243,6 @@ function onPageChange(page: number) {
   loadTable()
 }
 
-function bizTypeText(type: number) {
-  const map: Record<number, string> = { 0: '其它', 1: '新增', 2: '修改', 3: '删除' }
-  return map[type] ?? '其它'
-}
-
-function bizTypeVariant(type: number): BadgeVariant {
-  const map: Record<number, BadgeVariant> = { 0: 'outline', 1: 'default', 2: 'secondary', 3: 'destructive' }
-  return map[type] ?? 'outline'
-}
-
-function methodVariant(method: string): BadgeVariant {
-  const map: Record<string, BadgeVariant> = {
-    GET: 'outline',
-    POST: 'default',
-    PUT: 'secondary',
-    DELETE: 'destructive',
-    PATCH: 'outline',
-  }
-  return map[method?.toUpperCase()] ?? 'outline'
-}
-
-function formatTime(time: string) {
-  if (!time) return '-'
-  return time.replace('T', ' ').substring(0, 16)
-}
-
 function formatJson(str: string) {
   try {
     return JSON.stringify(JSON.parse(str), null, 2)
@@ -294,10 +262,10 @@ async function loadTable() {
       businessType: searchForm.businessType,
       status: searchForm.status,
     })
-    tableData.value = res.data?.records || []
+    tableData.value = res.data?.list || []
     pagination.total = res.data?.total || 0
-  } catch {
-    // ignore
+  } catch (err) {
+    console.error('oper-log load error:', err)
   } finally {
     loading.value = false
   }
@@ -311,7 +279,8 @@ async function handleDetail(row: SysOperLog) {
   try {
     const res = await getOperLogApi(row.id)
     detailData.value = res.data
-  } catch {
+  } catch (err) {
+    console.error('oper-log detail error:', err)
     detailData.value = row
   }
   detailVisible.value = true

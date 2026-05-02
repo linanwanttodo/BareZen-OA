@@ -7,7 +7,7 @@
       :class="{ 'tags-view__item--active': tag.path === appStore.activeTag }"
       @click="router.push(tag.path)"
     >
-      <span>{{ tag.title }}</span>
+      <span>{{ $t(getTagTitleKey(tag)) }}</span>
       <span
         v-if="!tag.affix"
         class="tags-view__close"
@@ -20,11 +20,51 @@
 <script setup lang="ts">
 import { watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
+import type { TagItem } from '@/stores/app'
 
+const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const appStore = useAppStore()
+
+/**
+ * 根据 tag 信息获取 i18n 翻译 key
+ * 优先使用 route 表中的 key 映射
+ */
+function getTagTitleKey(tag: TagItem): string {
+  const routeKeyMap: Record<string, string> = {
+    'Dashboard': 'route.dashboard',
+    'User': 'route.user',
+    'Role': 'route.role',
+    'Menu': 'route.menu',
+    'Dept': 'route.dept',
+    'Dict': 'route.dict',
+    'Notice': 'route.notice',
+    'Config': 'route.config',
+    'Online': 'route.online',
+    'OperLog': 'route.operLog',
+    'Logininfor': 'route.logininfor',
+    'Jobs': 'route.jobs',
+    'JobLog': 'route.jobLog',
+    'Gen': 'route.gen',
+    'Profile': 'route.profile',
+    'Backup': 'route.backup',
+    'RoleDept': 'route.roleDept',
+  }
+  const key = routeKeyMap[tag.name]
+  if (key) return key
+  // 如果 tag.title 直接匹配某个 i18n key，使用它
+  const knownKeys = ['route.dashboard', 'route.user', 'route.role', 'route.menu',
+    'route.dept', 'route.dict', 'route.notice', 'route.config',
+    'route.online', 'route.operLog', 'route.logininfor', 'route.jobs',
+    'route.gen', 'route.profile', 'route.backup', 'route.roleDept']
+  for (const k of knownKeys) {
+    if (t(k) === tag.title) return k
+  }
+  return tag.title
+}
 
 watch(
   () => route.path,

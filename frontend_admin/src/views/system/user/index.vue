@@ -3,22 +3,22 @@
     <!-- 搜索区域 -->
     <a-card class="mb-4" :bordered="true">
       <a-form :model="searchForm" layout="inline" @submit-success="handleSearch">
-        <a-form-item field="userName" label="用户名">
-          <a-input v-model="searchForm.userName" placeholder="请输入用户名" allow-clear style="width: 180px" />
+        <a-form-item field="userName" :label="$t('user.userName')">
+          <a-input v-model="searchForm.userName" :placeholder="$t('user.userName')" allow-clear style="width: 180px" />
         </a-form-item>
-        <a-form-item field="phone" label="手机号">
-          <a-input v-model="searchForm.phone" placeholder="请输入手机号" allow-clear style="width: 180px" />
+        <a-form-item field="phone" :label="$t('user.phone')">
+          <a-input v-model="searchForm.phone" :placeholder="$t('user.phone')" allow-clear style="width: 180px" />
         </a-form-item>
-        <a-form-item field="status" label="状态">
-          <a-select v-model="searchForm.status" placeholder="请选择" allow-clear style="width: 120px">
-            <a-option value="0">正常</a-option>
-            <a-option value="1">停用</a-option>
+        <a-form-item field="status" :label="$t('common.status')">
+          <a-select v-model="searchForm.status" :placeholder="$t('common.selectPlaceholder')" allow-clear style="width: 120px">
+            <a-option value="0">{{ $t('common.normal') }}</a-option>
+            <a-option value="1">{{ $t('common.disable') }}</a-option>
           </a-select>
         </a-form-item>
         <a-form-item>
           <a-space>
-            <a-button type="primary" html-type="submit">搜索</a-button>
-            <a-button @click="handleReset">重置</a-button>
+            <a-button type="primary" html-type="submit">{{ $t('common.search') }}</a-button>
+            <a-button @click="handleReset">{{ $t('common.reset') }}</a-button>
           </a-space>
         </a-form-item>
       </a-form>
@@ -28,15 +28,15 @@
     <a-card :bordered="true">
       <template #title>
         <div class="flex items-center justify-between w-full">
-          <span>用户管理</span>
+          <span>{{ $t('user.userManagement') }}</span>
           <a-space>
-            <a-button type="primary" @click="handleAdd">
+            <a-button v-permission="'system:user:add'" type="primary" @click="handleAdd">
               <template #icon><icon-plus /></template>
-              新增用户
+              {{ $t('user.addUser') }}
             </a-button>
-            <a-button status="danger" :disabled="!selectedIds.length" @click="handleBatchDelete">
+            <a-button v-permission="'system:user:delete'" status="danger" :disabled="!selectedIds.length" @click="handleBatchDelete">
               <template #icon><icon-delete /></template>
-              批量删除
+              {{ $t('user.batchDelete') }}
             </a-button>
           </a-space>
         </div>
@@ -46,44 +46,44 @@
         <a-table
           :data="tableData"
           :pagination="false"
-          :row-selection="{ selectedRowKeys: selectedIds, onSelect: (keys: string[]) => selectedIds = keys }"
+          :row-selection="{ type: 'checkbox', selectedRowKeys: selectedIds }"
           :row-key="'id'"
           @selection-change="onSelectionChange"
         >
           <template #columns>
-            <a-table-column title="ID" data-index="id" :width="80" />
-            <a-table-column title="用户名" data-index="userName" />
-            <a-table-column title="昵称" data-index="nickName" />
-            <a-table-column title="手机号" data-index="phone" />
-            <a-table-column title="邮箱" data-index="email" />
-            <a-table-column title="性别" :width="80">
+            <a-table-column :title="$t('common.operate')" data-index="id" :width="80" />
+            <a-table-column :title="$t('user.userName')" data-index="userName" />
+            <a-table-column :title="$t('user.nickName')" data-index="nickName" />
+            <a-table-column :title="$t('user.phone')" data-index="phone" />
+            <a-table-column :title="$t('user.email')" data-index="email" />
+            <a-table-column :title="$t('user.sex')" :width="80">
               <template #cell="{ record }">
-                {{ record.sex === '0' ? '男' : record.sex === '1' ? '女' : '未知' }}
+                {{ record.sex === '0' ? $t('user.male') : record.sex === '1' ? $t('user.female') : $t('user.unknown') }}
               </template>
             </a-table-column>
-            <a-table-column title="状态" :width="100">
+            <a-table-column :title="$t('common.status')" :width="100">
               <template #cell="{ record }">
                 <a-switch
                   :model-value="record.status === '0'"
                   :loading="record._statusLoading"
-                  @change="(val: boolean) => handleStatusChange(record, val)"
+                  @change="(val: string | number | boolean) => handleStatusChange(record, Boolean(val))"
                 />
               </template>
             </a-table-column>
-            <a-table-column title="创建时间" :width="160">
+            <a-table-column :title="$t('common.createTime')" :width="160">
               <template #cell="{ record }">
                 {{ formatTime(record.createTime) }}
               </template>
             </a-table-column>
-            <a-table-column title="操作" :width="280" align="right">
+            <a-table-column :title="$t('common.operate')" :width="280" align="right">
               <template #cell="{ record }">
                 <a-space>
-                  <a-button size="small" @click="handleEdit(record)">编辑</a-button>
-                  <a-button size="small" @click="handleAssignRole(record)">分配角色</a-button>
-                  <a-button size="small" @click="handleAssignDept(record)">分配部门</a-button>
-                  <a-button size="small" @click="handleResetPwd(record)">重置密码</a-button>
-                  <a-popconfirm content="确认删除该用户？" @ok="handleDelete(record)">
-                    <a-button size="small" status="danger">删除</a-button>
+                  <a-button v-permission="'system:user:edit'" size="small" @click="handleEdit(record)">{{ $t('common.edit') }}</a-button>
+                  <a-button v-permission="'system:user:edit'" size="small" @click="handleAssignRole(record)">{{ $t('user.assignRole') }}</a-button>
+                  <a-button size="small" @click="handleAssignDept(record)">{{ $t('user.assignDept') }}</a-button>
+                  <a-button size="small" @click="handleResetPwd(record)">{{ $t('user.resetPwd') }}</a-button>
+                  <a-popconfirm v-permission="'system:user:delete'" :content="$t('user.deleteConfirm')" @ok="handleDelete(record)">
+                    <a-button size="small" status="danger">{{ $t('common.delete') }}</a-button>
                   </a-popconfirm>
                 </a-space>
               </template>
@@ -107,7 +107,7 @@
     <!-- 新增/编辑弹窗 -->
     <a-modal
       v-model:visible="formDialogVisible"
-      :title="formType === 'add' ? '新增用户' : '编辑用户'"
+      :title="formType === 'add' ? $t('user.addUser') : $t('user.editUser')"
       :width="640"
       :mask-closable="false"
       @ok="onFormConfirm"
@@ -116,52 +116,52 @@
       <a-form :model="formData" layout="vertical">
         <a-row :gutter="16">
           <a-col :span="12">
-            <a-form-item field="userName" label="用户名" :rules="[{ required: true, message: '请输入用户名' }]">
-              <a-input v-model="formData.userName" placeholder="请输入用户名" :disabled="formType === 'edit'" />
+            <a-form-item field="userName" :label="$t('user.userName')" :rules="[{ required: true, message: $t('user.userName') + $t('validation.required', { field: '' }) }]">
+              <a-input v-model="formData.userName" :placeholder="$t('user.userName')" :disabled="formType === 'edit'" />
             </a-form-item>
           </a-col>
           <a-col :span="12">
-            <a-form-item field="nickName" label="用户昵称" :rules="[{ required: true, message: '请输入用户昵称' }]">
-              <a-input v-model="formData.nickName" placeholder="请输入用户昵称" />
+            <a-form-item field="nickName" :label="$t('user.nickName')" :rules="[{ required: true, message: $t('user.nickName') }]">
+              <a-input v-model="formData.nickName" :placeholder="$t('user.nickName')" />
             </a-form-item>
           </a-col>
         </a-row>
-        <a-form-item v-if="formType === 'add'" field="password" label="密码" :rules="[{ required: true, message: '请输入密码' }]">
-          <a-input-password v-model="formData.password" placeholder="请输入密码" />
+        <a-form-item v-if="formType === 'add'" field="password" :label="$t('login.password')" :rules="[{ required: true, message: $t('login.passwordRequired') }]">
+          <a-input-password v-model="formData.password" :placeholder="$t('login.passwordRequired')" />
         </a-form-item>
         <a-row :gutter="16">
           <a-col :span="12">
-            <a-form-item field="phone" label="手机号">
-              <a-input v-model="formData.phone" placeholder="请输入手机号" />
+            <a-form-item field="phone" :label="$t('user.phone')">
+              <a-input v-model="formData.phone" :placeholder="$t('user.phone')" />
             </a-form-item>
           </a-col>
           <a-col :span="12">
-            <a-form-item field="email" label="邮箱">
-              <a-input v-model="formData.email" placeholder="请输入邮箱" />
+            <a-form-item field="email" :label="$t('user.email')">
+              <a-input v-model="formData.email" :placeholder="$t('user.email')" />
             </a-form-item>
           </a-col>
         </a-row>
         <a-row :gutter="16">
           <a-col :span="12">
-            <a-form-item field="sex" label="性别">
+            <a-form-item field="sex" :label="$t('user.sex')">
               <a-radio-group v-model="formData.sex">
-                <a-radio value="0">男</a-radio>
-                <a-radio value="1">女</a-radio>
-                <a-radio value="2">未知</a-radio>
+                <a-radio value="0">{{ $t('user.male') }}</a-radio>
+                <a-radio value="1">{{ $t('user.female') }}</a-radio>
+                <a-radio value="2">{{ $t('user.unknown') }}</a-radio>
               </a-radio-group>
             </a-form-item>
           </a-col>
           <a-col :span="12">
-            <a-form-item field="status" label="状态">
+            <a-form-item field="status" :label="$t('common.status')">
               <a-radio-group v-model="formData.status">
-                <a-radio value="0">正常</a-radio>
-                <a-radio value="1">停用</a-radio>
+                <a-radio value="0">{{ $t('common.normal') }}</a-radio>
+                <a-radio value="1">{{ $t('common.disable') }}</a-radio>
               </a-radio-group>
             </a-form-item>
           </a-col>
         </a-row>
-        <a-form-item field="remark" label="备注">
-          <a-textarea v-model="formData.remark" placeholder="请输入备注" :max-length="200" show-word-limit />
+        <a-form-item field="remark" :label="$t('common.remark')">
+          <a-textarea v-model="formData.remark" :placeholder="$t('common.remark')" :max-length="200" show-word-limit />
         </a-form-item>
       </a-form>
     </a-modal>
@@ -169,7 +169,7 @@
     <!-- 分配角色弹窗 -->
     <a-modal
       v-model:visible="roleDialogVisible"
-      title="分配角色"
+      :title="$t('user.assignRole')"
       :width="480"
       :mask-closable="false"
       @ok="onRoleConfirm"
@@ -177,7 +177,7 @@
     >
       <div v-if="currentUser" class="mb-3">
         <a-space>
-          <span style="color: #86909C">当前用户：</span>
+          <span style="color: #86909C">{{ $t('common.currentUser') }}</span>
           <span style="font-weight: 500">{{ currentUser.nickName }}（{{ currentUser.userName }}）</span>
         </a-space>
       </div>
@@ -191,7 +191,7 @@
     <!-- 重置密码弹窗 -->
     <a-modal
       v-model:visible="resetPwdVisible"
-      title="重置密码"
+      :title="$t('user.resetPwd')"
       :width="400"
       :mask-closable="false"
       @ok="onResetPwdConfirm"
@@ -199,13 +199,13 @@
     >
       <div v-if="currentUser" class="mb-3">
         <a-space>
-          <span style="color: #86909C">当前用户：</span>
+          <span style="color: #86909C">{{ $t('common.currentUser') }}</span>
           <span style="font-weight: 500">{{ currentUser.nickName }}（{{ currentUser.userName }}）</span>
         </a-space>
       </div>
       <a-form :model="resetPwdData" layout="vertical">
-        <a-form-item field="password" label="新密码" :rules="[{ required: true, message: '请输入新密码' }]">
-          <a-input-password v-model="resetPwdData.password" placeholder="请输入新密码（至少6位）" />
+        <a-form-item field="password" :label="$t('user.newPassword')" :rules="[{ required: true, message: $t('user.newPassword') + $t('validation.required', { field: '' }) }]">
+          <a-input-password v-model="resetPwdData.password" :placeholder="$t('user.newPassword')" />
         </a-form-item>
       </a-form>
     </a-modal>
@@ -213,7 +213,7 @@
     <!-- 分配部门弹窗 -->
     <a-modal
       v-model:visible="deptDialogVisible"
-      title="分配部门"
+      :title="$t('user.assignDept')"
       :width="560"
       :mask-closable="false"
       @ok="onDeptConfirm"
@@ -221,11 +221,11 @@
     >
       <div v-if="currentUser" class="mb-3">
         <a-space>
-          <span style="color: #86909C">当前用户：</span>
+          <span style="color: #86909C">{{ $t('common.currentUser') }}</span>
           <span style="font-weight: 500">{{ currentUser.nickName }}（{{ currentUser.userName }}）</span>
         </a-space>
       </div>
-      <a-empty v-if="deptFlat.length === 0" description="暂无部门数据" />
+      <a-empty v-if="deptFlat.length === 0" :description="$t('common.noDeptData')" />
       <div v-else class="max-h-[360px] overflow-y-auto border rounded p-2" style="border-color: #E5E6EB">
         <div v-for="item in deptFlat" :key="item.node.id" class="flex items-center gap-2 py-1.5" :style="{ paddingLeft: item.depth * 16 + 'px' }">
           <a-checkbox :model-value="checkedDeptKeys.includes(item.node.id)" @change="() => toggleDeptCheck(item.node.id)">
@@ -236,10 +236,10 @@
             :model-value="deptRoleMap[item.node.id] || '0'"
             size="small"
             style="width: 120px"
-            @change="(v: string) => onDeptRoleChange(item.node.id, v)"
+            @change="(v: string | number | boolean | Record<string, any> | (string | number | boolean | Record<string, any>)[]) => onDeptRoleChange(item.node.id, String(v))"
           >
-            <a-option value="0">普通用户</a-option>
-            <a-option value="1">管理员</a-option>
+            <a-option value="0">{{ $t('user.normalUser') }}</a-option>
+            <a-option value="1">{{ $t('user.adminUser') }}</a-option>
           </a-select>
         </div>
       </div>
@@ -250,6 +250,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
 import { Message, Modal } from '@arco-design/web-vue'
+import { useI18n } from 'vue-i18n'
 import {
   IconPlus,
   IconDelete,
@@ -269,6 +270,8 @@ import {
 } from '@/api/user'
 import { getRoleListApi, type SysRole } from '@/api/role'
 import { getDeptTreeApi, getUserDeptsApi, assignUserDeptsApi, type SysDept, type SysUserDept } from '@/api/dept'
+
+const { t } = useI18n()
 
 // ============ 搜索 ============
 const searchForm = reactive<UserListParams>({
@@ -295,8 +298,8 @@ const loading = ref(false)
 const tableData = ref<(SysUser & { _statusLoading?: boolean })[]>([])
 const selectedIds = ref<string[]>([])
 
-function onSelectionChange(keys: string[]) {
-  selectedIds.value = keys
+function onSelectionChange(keys: (string | number)[]) {
+  selectedIds.value = keys.map(String)
 }
 
 const pagination = reactive({ current: 1, pageSize: 10, total: 0 })
@@ -316,7 +319,7 @@ async function loadTable() {
       phone: searchForm.phone || undefined,
       status: searchForm.status || undefined,
     })
-    tableData.value = res.data?.records || []
+    tableData.value = res.data?.list || []
     pagination.total = res.data?.total || 0
   } catch {
     /* interceptor handles */
@@ -337,7 +340,7 @@ async function handleStatusChange(row: SysUser & { _statusLoading?: boolean }, v
   try {
     await changeUserStatusApi(row.id, newStatus)
     row.status = newStatus
-    Message.success('状态修改成功')
+    Message.success(t('user.statusSuccess'))
   } catch {
     /* interceptor handles */
   } finally {
@@ -349,7 +352,7 @@ async function handleStatusChange(row: SysUser & { _statusLoading?: boolean }, v
 async function handleDelete(row: SysUser) {
   try {
     await deleteUserApi(row.id)
-    Message.success('删除成功')
+    Message.success(t('user.deleteSuccess'))
     loadTable()
   } catch {
     /* interceptor handles */
@@ -358,12 +361,12 @@ async function handleDelete(row: SysUser) {
 
 async function handleBatchDelete() {
   Modal.confirm({
-    title: '确认删除',
-    content: `确认删除选中的 ${selectedIds.value.length} 个用户吗？`,
+    title: t('common.confirmDelete'),
+    content: t('user.batchDeleteConfirm', { count: selectedIds.value.length }),
     onOk: async () => {
       try {
         await batchDeleteUserApi(selectedIds.value)
-        Message.success('批量删除成功')
+        Message.success(t('user.batchDeleteSuccess'))
         selectedIds.value = []
         loadTable()
       } catch {
@@ -417,12 +420,12 @@ async function onFormConfirm() {
   try {
     if (formType.value === 'add') {
       await addUserApi({ ...formData })
-      Message.success('新增成功')
+      Message.success(t('user.addSuccess'))
     } else {
       const updateData = { ...formData }
       if (!updateData.password) delete (updateData as Record<string, unknown>).password
       await updateUserApi(updateData)
-      Message.success('修改成功')
+      Message.success(t('user.editSuccess'))
     }
     formDialogVisible.value = false
     loadTable()
@@ -449,7 +452,7 @@ async function handleAssignRole(row: SysUser) {
     ])
 
     if (rolesRes.status === 'fulfilled') {
-      const allRoles: SysRole[] = rolesRes.value.data?.records || []
+      const allRoles: SysRole[] = rolesRes.value.data?.list || []
       roleOptions.value = allRoles.map((r) => ({ label: `${r.roleName}（${r.roleKey}）`, value: r.id }))
     }
     if (userRoleRes.status === 'fulfilled') {
@@ -464,7 +467,7 @@ async function onRoleConfirm() {
   if (!currentUser.value) return
   try {
     await assignUserRolesApi(currentUser.value.id, selectedRoleIds.value)
-    Message.success('角色分配成功')
+    Message.success(t('user.roleAssignSuccess'))
     roleDialogVisible.value = false
   } catch {
     /* interceptor handles */
@@ -485,7 +488,7 @@ async function onResetPwdConfirm() {
   if (!currentUser.value) return
   try {
     await resetUserPasswordApi(currentUser.value.id, resetPwdData.password)
-    Message.success('密码重置成功')
+    Message.success(t('user.resetPwdSuccess'))
     resetPwdVisible.value = false
   } catch {
     /* interceptor handles */
@@ -560,7 +563,7 @@ async function onDeptConfirm() {
       roleType: deptRoleMap.value[deptId] || '0',
     }))
     await assignUserDeptsApi(currentUser.value.id, deptList)
-    Message.success('部门分配成功')
+    Message.success(t('user.deptAssignSuccess'))
     deptDialogVisible.value = false
   } catch {
     /* interceptor handles */

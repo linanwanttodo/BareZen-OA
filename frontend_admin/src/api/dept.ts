@@ -29,7 +29,7 @@ export function getDeptTreeApi() {
 
 /** 获取部门详情 */
 export function getDeptApi(id: string) {
-  return request.get<SysDept>(`/system/v1/depts/${id}`)
+  return request.get<SysDept>(`/system/v1/depts/${encodeURIComponent(id)}`)
 }
 
 /** 新增部门 */
@@ -44,20 +44,20 @@ export function updateDeptApi(data: Partial<SysDept>) {
 
 /** 删除部门 */
 export function deleteDeptApi(id: string) {
-  return request.delete<void>(`/system/v1/depts/${id}`)
+  return request.delete<void>(`/system/v1/depts/${encodeURIComponent(id)}`)
 }
 
 /** 修改部门状态 */
 export function changeDeptStatusApi(id: string, status: string) {
-  return request.put<void>(`/system/v1/depts/${id}/status/${status}`)
+  return request.put<void>(`/system/v1/depts/${encodeURIComponent(id)}/status/${encodeURIComponent(status)}`)
 }
 
 /** 获取用户所属部门 */
 export function getUserDeptsApi(userId: string) {
-  return request.get<SysUserDept[]>(`/system/v1/users/${userId}/depts`)
+  return request.get<SysUserDept[]>(`/system/v1/users/${encodeURIComponent(userId)}/depts`)
 }
 
 /** 分配用户部门 */
 export function assignUserDeptsApi(userId: string, deptList: SysUserDept[]) {
-  return request.put<void>(`/system/v1/users/${userId}/depts`, deptList)
+  return request.put<void>(`/system/v1/users/${encodeURIComponent(userId)}/depts`, deptList)
 }

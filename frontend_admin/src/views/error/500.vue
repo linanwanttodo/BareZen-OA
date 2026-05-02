@@ -1,5 +1,5 @@
 <template>
-  <ErrorPage code="500" message="服务器内部错误" />
+  <ErrorPage code="500" :message="$t('error.500')" />
 </template>
 
 <script setup lang="ts">

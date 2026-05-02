@@ -1,141 +1,109 @@
 <template>
-  <div class="dashboard-container">
+  <div v-if="loading" class="flex items-center justify-center h-64">
+    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--primary)]"></div>
+    <span class="ml-2 text-[var(--muted-foreground)]">{{ $t('common.loading') }}</span>
+  </div>
+  <div v-else class="dashboard-container">
     <!-- 统计卡片 -->
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      <Card v-for="card in statCards" :key="card.title" class="p-5">
-        <div class="stat-card__inner">
-          <div class="stat-card__info">
-            <p class="stat-card__title">{{ card.title }}</p>
-            <p class="stat-card__value">{{ card.value }}</p>
+      <a-card v-for="card in statCards" :key="card.title" class="p-5" :style="{ borderLeft: `3px solid ${card.color}` }">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-[var(--muted-foreground)]">{{ $t(card.titleKey) }}</p>
+            <p class="mt-1 text-2xl font-semibold tracking-tight text-[var(--foreground)]">{{ card.value }}</p>
           </div>
-          <div class="stat-card__icon" :style="{ backgroundColor: card.bgColor }">
-            <component :is="card.icon" :size="24" :style="{ color: card.iconColor }" />
-          </div>
+          <component :is="card.icon" :size="20" :style="{ color: card.color }" />
         </div>
-      </Card>
+      </a-card>
     </div>
 
     <!-- 图表区域 -->
     <div class="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-12">
-      <Card class="p-5 lg:col-span-8">
+      <a-card class="p-5 lg:col-span-8">
         <div class="mb-2 flex items-baseline justify-between">
-          <h3 class="text-base font-semibold text-[var(--foreground)]">访问趋势</h3>
-          <span class="text-xs text-[var(--muted-foreground)]">近7天</span>
+          <h3 class="text-base font-semibold text-[var(--foreground)]">{{ $t('dashboard.visitTrend') }}</h3>
+          <span class="text-xs text-[var(--muted-foreground)]">{{ $t('dashboard.last7Days') }}</span>
         </div>
         <div ref="lineChartRef" class="chart-container"></div>
-      </Card>
-      <Card class="p-5 lg:col-span-4">
+      </a-card>
+      <a-card class="p-5 lg:col-span-4">
         <div class="mb-2 flex items-baseline justify-between">
-          <h3 class="text-base font-semibold text-[var(--foreground)]">用户分布</h3>
-          <span class="text-xs text-[var(--muted-foreground)]">按角色</span>
+          <h3 class="text-base font-semibold text-[var(--foreground)]">{{ $t('dashboard.userDistribution') }}</h3>
+          <span class="text-xs text-[var(--muted-foreground)]">{{ $t('dashboard.byRole') }}</span>
         </div>
         <div ref="pieChartRef" class="chart-container"></div>
-      </Card>
+      </a-card>
     </div>
 
     <!-- 公告 + 最近操作 -->
     <div class="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
-      <Card class="p-5">
+      <a-card class="p-5">
         <div class="mb-3 flex items-center justify-between">
-          <h3 class="text-base font-semibold text-[var(--foreground)]">最新公告</h3>
-          <Button variant="ghost" size="sm" @click="router.push('/notice')">查看更多</Button>
+          <h3 class="text-sm font-medium text-[var(--foreground)]">{{ $t('dashboard.latestNotices') }}</h3>
+          <button class="text-xs text-[var(--muted-foreground)] hover:text-[var(--foreground)]" @click="router.push('/notice')">{{ $t('common.viewAll') }}</button>
         </div>
-        <ul v-if="notices.length" class="divide-y divide-[var(--border)]">
-          <li v-for="item in notices" :key="item.id" class="py-3">
-            <div class="notice-title-row">
-              <Badge :variant="item.noticeType === '1' ? 'default' : 'secondary'">
-                {{ item.noticeType === '1' ? '通知' : '公告' }}
-              </Badge>
-              <span class="notice-title-text" @click="handleNoticeClick(item)">{{ item.noticeTitle }}</span>
+        <div v-if="notices.length" class="divide-y divide-[var(--border)]">
+          <div v-for="item in notices" :key="item.id" class="flex items-center justify-between py-3">
+            <div class="flex items-center gap-2 min-w-0">
+              <a-tag :color="item.noticeType === '1' ? 'arcoblue' : 'purple'" class="shrink-0 text-xs">
+                {{ item.noticeType === '1' ? $t('notice.typeNotice') : $t('notice.typeAnnouncement') }}
+              </a-tag>
+              <span class="truncate text-sm text-[var(--foreground)]" @click="handleNoticeClick(item)">{{ item.noticeTitle }}</span>
             </div>
-            <span class="mt-1 block text-xs text-[var(--muted-foreground)]">{{ formatTime(item.createTime) }}</span>
-          </li>
-        </ul>
-        <Empty v-else description="暂无公告" />
-      </Card>
+            <span class="shrink-0 text-xs text-[var(--muted-foreground)]">{{ formatDateTime(item.createTime) }}</span>
+          </div>
+        </div>
+        <p v-else class="py-8 text-center text-sm text-[var(--muted-foreground)]">{{ $t('dashboard.noNotices') }}</p>
+      </a-card>
 
-      <Card class="p-5">
+      <a-card class="p-5">
         <div class="mb-3 flex items-center justify-between">
-          <h3 class="text-base font-semibold text-[var(--foreground)]">最近操作</h3>
-          <Button variant="ghost" size="sm" @click="router.push('/monitor/oper-log')">查看更多</Button>
+          <h3 class="text-sm font-medium text-[var(--foreground)]">{{ $t('dashboard.recentLogs') }}</h3>
+          <button class="text-xs text-[var(--muted-foreground)] hover:text-[var(--foreground)]" @click="router.push('/monitor/oper-log')">{{ $t('common.viewAll') }}</button>
         </div>
-        <ul v-if="operLogs.length" class="divide-y divide-[var(--border)]">
-          <li v-for="item in operLogs" :key="item.id" class="py-3">
-            <div class="operlog-title-row">
-              <Badge :variant="businessTypeVariant(item.businessType)">{{ businessTypeText(item.businessType) }}</Badge>
-              <span class="operlog-title-text">{{ item.title }}</span>
+        <div v-if="operLogs.length" class="divide-y divide-[var(--border)]">
+          <div v-for="item in operLogs" :key="item.id" class="py-3">
+            <div class="flex items-center gap-2">
+              <a-tag :color="businessTypeVariant(item.businessType) === 'default' ? 'arcoblue' : businessTypeVariant(item.businessType) === 'destructive' ? 'red' : 'arcoblue'" class="text-xs">{{ businessTypeText(item.businessType) }}</a-tag>
+              <span class="text-sm text-[var(--foreground)]">{{ item.title }}</span>
             </div>
-            <div class="operlog-desc">
-              <span>{{ item.operUser }}</span>
-              <span class="operlog-dot">·</span>
-              <span>{{ item.requestMethod }}</span>
-              <span class="operlog-dot">·</span>
-              <span :class="item.status === 0 ? 'text-green-600' : 'text-red-500'">{{ item.status === 0 ? '成功' : '失败' }}</span>
-              <span class="operlog-dot">·</span>
-              <span>{{ item.costTime }}ms</span>
-            </div>
-          </li>
-        </ul>
-        <Empty v-else description="暂无操作记录" />
-      </Card>
+            <p class="mt-1 text-xs text-[var(--muted-foreground)]">
+              {{ item.operUser }} · {{ item.requestMethod }} ·
+              <span :class="item.status === 0 ? 'text-green-600' : 'text-red-500'">{{ operStatusText(item.status) }}</span>
+              · {{ item.costTime }}ms
+            </p>
+          </div>
+        </div>
+        <p v-else class="py-8 text-center text-sm text-[var(--muted-foreground)]">{{ $t('dashboard.noLogs') }}</p>
+      </a-card>
     </div>
 
-    <!-- 系统信息 -->
-    <div class="mt-4">
-      <Card class="p-5">
-        <h3 class="mb-3 text-base font-semibold text-[var(--foreground)]">系统信息</h3>
-        <dl class="grid grid-cols-2 gap-4 sm:grid-cols-3">
-          <div>
-            <dt class="text-xs text-[var(--muted-foreground)]">框架版本</dt>
-            <dd class="mt-1"><Badge variant="default">1.0.0</Badge></dd>
-          </div>
-          <div>
-            <dt class="text-xs text-[var(--muted-foreground)]">后端框架</dt>
-            <dd class="mt-1 text-sm text-[var(--foreground)]">Spring Boot 3.2+</dd>
-          </div>
-          <div>
-            <dt class="text-xs text-[var(--muted-foreground)]">前端框架</dt>
-            <dd class="mt-1 text-sm text-[var(--foreground)]">Vue 3 + shadcn</dd>
-          </div>
-          <div>
-            <dt class="text-xs text-[var(--muted-foreground)]">Java 版本</dt>
-            <dd class="mt-1 text-sm text-[var(--foreground)]">Java 21</dd>
-          </div>
-          <div>
-            <dt class="text-xs text-[var(--muted-foreground)]">数据库</dt>
-            <dd class="mt-1 text-sm text-[var(--foreground)]">MySQL 8.0</dd>
-          </div>
-          <div>
-            <dt class="text-xs text-[var(--muted-foreground)]">鉴权机制</dt>
-            <dd class="mt-1"><Badge variant="default">JWT</Badge></dd>
-          </div>
-        </dl>
-      </Card>
-    </div>
 
     <!-- 公告详情弹窗 -->
-    <Dialog :open="noticeDialogVisible" :title="currentNotice?.noticeTitle || '公告详情'" @update:open="noticeDialogVisible = $event">
+    <a-modal v-model:visible="noticeDialogVisible" :title="currentNotice?.noticeTitle || $t('dashboard.noticeDetail')" @cancel="noticeDialogVisible = false">
       <div v-if="currentNotice" class="notice-detail">
         <div class="notice-detail-meta">
-          <Badge :variant="currentNotice.noticeType === '1' ? 'default' : 'secondary'">
-            {{ currentNotice.noticeType === '1' ? '通知' : '公告' }}
-          </Badge>
-          <Badge :variant="currentNotice.status === '1' ? 'default' : currentNotice.status === '0' ? 'outline' : 'destructive'">
-            {{ currentNotice.status === '1' ? '已发布' : currentNotice.status === '0' ? '草稿' : '已下架' }}
-          </Badge>
-          <span class="notice-detail-time">{{ formatTime(currentNotice.createTime) }}</span>
+          <a-tag :color="currentNotice.noticeType === '1' ? 'arcoblue' : 'purple'">
+            {{ currentNotice.noticeType === '1' ? $t('notice.typeNotice') : $t('notice.typeAnnouncement') }}
+          </a-tag>
+          <a-tag v-if="currentNotice.status === '1'" color="arcoblue">{{ $t('notice.noticeStatusPublished') }}</a-tag>
+          <a-tag v-else-if="currentNotice.status === '0'" bordered>{{ $t('notice.noticeStatusDraft') }}</a-tag>
+          <a-tag v-else color="red">{{ $t('notice.noticeStatusRevoked') }}</a-tag>
+          <span class="notice-detail-time">{{ formatDateTime(currentNotice.createTime) }}</span>
         </div>
-        <Separator class="my-4" />
-        <div class="notice-detail-content" v-html="currentNotice.noticeContent"></div>
+        <a-divider class="my-4" />
+        <div class="notice-detail-content" v-html="sanitizeHtml(currentNotice.noticeContent)"></div>
       </div>
-    </Dialog>
+    </a-modal>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import * as echarts from 'echarts'
+import { formatDateTime, businessTypeText, operStatusText, businessTypeVariant } from '@/utils/format'
 import {
   IconUser,
   IconUserGroup,
@@ -151,26 +119,26 @@ import { getOnlineUserCountApi } from '@/api/online'
 import { getPublishedNoticesApi, getNoticePageApi, type SysNotice } from '@/api/notice'
 import { getOperLogPageApi, type SysOperLog } from '@/api/operLog'
 import { getDashboardChartsApi } from '@/api/dashboard'
-import Card from '@/components/ui/card/Card.vue'
-import Badge from '@/components/ui/badge/Badge.vue'
-import Button from '@/components/ui/button/Button.vue'
-import Empty from '@/components/ui/empty/Empty.vue'
-import Separator from '@/components/ui/separator/Separator.vue'
-import Dialog from '@/components/ui/dialog/Dialog.vue'
+import { sanitizeHtml } from '@/utils/dom'
 
+const { t } = useI18n()
 const router = useRouter()
-
-type BadgeVariant = 'default' | 'secondary' | 'destructive' | 'outline'
+const loading = ref(true)
 
 // ============ 统计卡片 ============
 const statCards = ref([
-  { title: '用户总数', value: '-', icon: IconUser, bgColor: '#E8F3FF', iconColor: '#3370FF' },
-  { title: '角色数量', value: '-', icon: IconUserGroup, bgColor: '#E8FFEA', iconColor: '#00B42A' },
-  { title: '菜单数量', value: '-', icon: IconApps, bgColor: '#FFF7E8', iconColor: '#FF7D00' },
-  { title: '在线用户', value: '-', icon: IconEye, bgColor: '#F0E5FF', iconColor: '#722ED1' },
-  { title: '文章总数', value: '-', icon: IconFile, bgColor: '#FFF7E8', iconColor: '#FF7D00' },
-  { title: '公告数量', value: '-', icon: IconNotification, bgColor: '#E8F3FF', iconColor: '#3370FF' },
+  { title: t('dashboard.userCount'), titleKey: 'dashboard.userCount', key: 'userCount', value: '-', icon: IconUser, color: '#3370FF' },
+  { title: t('dashboard.roleCount'), titleKey: 'dashboard.roleCount', key: 'roleCount', value: '-', icon: IconUserGroup, color: '#00B42A' },
+  { title: t('dashboard.menuCount'), titleKey: 'dashboard.menuCount', key: 'menuCount', value: '-', icon: IconApps, color: '#FF7D00' },
+  { title: t('dashboard.onlineCount'), titleKey: 'dashboard.onlineCount', key: 'onlineCount', value: '-', icon: IconEye, color: '#722ED1' },
+  { title: t('dashboard.articleCount'), titleKey: 'dashboard.articleCount', key: 'articleCount', value: '-', icon: IconFile, color: '#F53F3F' },
+  { title: t('dashboard.noticeCount'), titleKey: 'dashboard.noticeCount', key: 'noticeCount', value: '-', icon: IconNotification, color: '#F7BA1E' },
 ])
+
+function setStat(key: string, val: string) {
+  const card = statCards.value.find((c) => c.key === key)
+  if (card) card.value = val
+}
 
 // ============ 公告 ============
 const notices = ref<SysNotice[]>([])
@@ -185,16 +153,6 @@ function handleNoticeClick(item: SysNotice) {
 // ============ 操作日志 ============
 const operLogs = ref<SysOperLog[]>([])
 
-function businessTypeText(type: number) {
-  const map: Record<number, string> = { 0: '其它', 1: '新增', 2: '修改', 3: '删除' }
-  return map[type] || '其它'
-}
-
-function businessTypeVariant(type: number): BadgeVariant {
-  const map: Record<number, BadgeVariant> = { 0: 'outline', 1: 'default', 2: 'secondary', 3: 'destructive' }
-  return map[type] || 'outline'
-}
-
 // ============ 图表 ============
 const lineChartRef = ref<HTMLElement>()
 const pieChartRef = ref<HTMLElement>()
@@ -208,13 +166,13 @@ function initLineChart(visitTrend: { date: string; count: number }[]) {
   const counts = visitTrend.map((d) => d.count)
   lineChart.setOption({
     tooltip: { trigger: 'axis', backgroundColor: '#FFFFFF', borderColor: '#E5E6EB', textStyle: { color: '#1D2129' } },
-    legend: { data: ['操作次数'], top: 0, right: 0, textStyle: { fontSize: 12, color: '#86909C' } },
+    legend: { data: [t('dashboard.visitTrend')], top: 0, right: 0, textStyle: { fontSize: 12, color: '#86909C' } },
     grid: { left: 40, right: 20, bottom: 30, top: 40 },
     xAxis: { type: 'category', data: days, axisLine: { lineStyle: { color: '#E5E6EB' } }, axisLabel: { color: '#86909C' } },
     yAxis: { type: 'value', splitLine: { lineStyle: { color: '#F2F3F5' } }, axisLabel: { color: '#86909C' } },
     series: [
       {
-        name: '操作次数',
+        name: t('dashboard.visitTrend'),
         type: 'line',
         smooth: true,
         data: counts,
@@ -257,33 +215,24 @@ function initPieChart(roleDistribution: { name: string; value: number }[]) {
 }
 
 // ============ 数据加载 ============
-function formatTime(time: string) {
-  if (!time) return ''
-  return time.replace('T', ' ').substring(0, 16)
-}
 
 async function loadStats() {
   try {
-    const [usersRes, rolesRes, menusRes, onlineRes, chartsRes, noticesRes] = await Promise.allSettled([
+    const [usersRes, rolesRes, menusRes, onlineRes, noticesRes] = await Promise.allSettled([
       getUserListApi({ pageNum: 1, pageSize: 1 }),
       getRoleListApi({ pageNum: 1, pageSize: 1 }),
       getMenuListApi(),
       getOnlineUserCountApi(),
-      getDashboardChartsApi(),
       getNoticePageApi({ pageNum: 1, pageSize: 1 }),
     ])
 
-    if (usersRes.status === 'fulfilled') statCards.value[0].value = String(usersRes.value.data.total ?? '-')
-    if (rolesRes.status === 'fulfilled') statCards.value[1].value = String(rolesRes.value.data.total ?? '-')
-    if (menusRes.status === 'fulfilled') statCards.value[2].value = String((menusRes.value.data as any)?.length ?? '-')
-    if (onlineRes.status === 'fulfilled') statCards.value[3].value = String(onlineRes.value.data ?? '-')
-    if (chartsRes.status === 'fulfilled') {
-      const chartData = chartsRes.value.data
-      statCards.value[4].value = String(chartData?.articleCount ?? '-')
-    }
-    if (noticesRes.status === 'fulfilled') statCards.value[5].value = String(noticesRes.value.data?.total ?? '-')
-  } catch {
-    /* ignore */
+    if (usersRes.status === 'fulfilled') setStat('userCount', String(usersRes.value.data.total ?? '-'))
+    if (rolesRes.status === 'fulfilled') setStat('roleCount', String(rolesRes.value.data.total ?? '-'))
+    if (menusRes.status === 'fulfilled') setStat('menuCount', String(Array.isArray(menusRes.value.data) ? menusRes.value.data.length : '-'))
+    if (onlineRes.status === 'fulfilled') setStat('onlineCount', String(onlineRes.value.data ?? '-'))
+    if (noticesRes.status === 'fulfilled') setStat('noticeCount', String(noticesRes.value.data?.total ?? '-'))
+  } catch (err) {
+    console.error('dashboard load error:', err)
   }
 }
 
@@ -291,17 +240,17 @@ async function loadNotices() {
   try {
     const res = await getPublishedNoticesApi()
     notices.value = (res.data || []).slice(0, 6)
-  } catch {
-    /* ignore */
+  } catch (err) {
+    console.error('dashboard load error:', err)
   }
 }
 
 async function loadOperLogs() {
   try {
     const res = await getOperLogPageApi({ pageNum: 1, pageSize: 6 })
-    operLogs.value = res.data?.records || []
-  } catch {
-    /* ignore */
+    operLogs.value = res.data?.list || []
+  } catch (err) {
+    console.error('dashboard load error:', err)
   }
 }
 
@@ -310,12 +259,13 @@ async function loadCharts() {
     const res = await getDashboardChartsApi()
     const data = res.data
     if (data) {
+      setStat('articleCount', String(data.articleCount ?? '-'))
       await nextTick()
       initLineChart(data.visitTrend)
       initPieChart(data.roleDistribution)
     }
-  } catch {
-    /* ignore */
+  } catch (err) {
+    console.error('dashboard load error:', err)
   }
 }
 
@@ -323,10 +273,19 @@ async function loadCharts() {
 let resizeHandler: (() => void) | null = null
 
 onMounted(async () => {
-  loadStats()
-  loadNotices()
-  loadOperLogs()
-  loadCharts()
+  loading.value = true
+  try {
+    await Promise.all([
+      loadStats(),
+      loadNotices(),
+      loadOperLogs(),
+      loadCharts(),
+    ])
+  } catch (err) {
+    console.error('dashboard load error:', err)
+  } finally {
+    loading.value = false
+  }
 
   resizeHandler = () => {
     lineChart?.resize()
@@ -346,36 +305,6 @@ onUnmounted(() => {
 .dashboard-container {
   padding: 0;
   min-height: 100%;
-}
-
-/* ---- 统计卡片 ---- */
-.stat-card__inner {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-}
-.stat-card__title {
-  font-size: 13px;
-  color: var(--muted-foreground);
-  margin-bottom: 8px;
-  font-weight: 500;
-}
-.stat-card__value {
-  font-size: 28px;
-  font-weight: 700;
-  color: var(--foreground);
-  line-height: 1.2;
-  margin-bottom: 8px;
-  letter-spacing: -0.5px;
-}
-.stat-card__icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
 }
 
 /* ---- 图表 ---- */

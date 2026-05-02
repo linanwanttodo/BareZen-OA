@@ -27,7 +27,7 @@ export function getNoticePageApi(params: NoticeListParams) {
 
 /** 公告详情 */
 export function getNoticeApi(id: string) {
-  return request.get<SysNotice>(`/system/v1/notices/${id}`)
+  return request.get<SysNotice>(`/system/v1/notices/${encodeURIComponent(id)}`)
 }
 
 /** 新增公告 */
@@ -42,7 +42,7 @@ export function updateNoticeApi(data: Partial<SysNotice>) {
 
 /** 删除公告 */
 export function deleteNoticeApi(id: string) {
-  return request.delete<void>(`/system/v1/notices/${id}`)
+  return request.delete<void>(`/system/v1/notices/${encodeURIComponent(id)}`)
 }
 
 /** 最新公告 */
@@ -57,10 +57,10 @@ export function getPublishedNoticesApi() {
 
 /** 发布公告 */
 export function publishNoticeApi(id: string) {
-  return request.put<void>(`/system/v1/notices/publish/${id}`)
+  return request.put<void>(`/system/v1/notices/publish/${encodeURIComponent(id)}`)
 }
 
 /** 下架公告 */
 export function revokeNoticeApi(id: string) {
-  return request.put<void>(`/system/v1/notices/revoke/${id}`)
+  return request.put<void>(`/system/v1/notices/revoke/${encodeURIComponent(id)}`)
 }

@@ -7,7 +7,7 @@
           {{ userInitial }}
         </a-avatar>
         <div class="flex-1 min-w-0">
-          <h2 class="text-xl font-bold" style="color: #1D2129">{{ userStore.userInfo?.nickName || '管理员' }}</h2>
+          <h2 class="text-xl font-bold" style="color: #1D2129">{{ userStore.userInfo?.nickName || $t('user.adminUser') }}</h2>
           <p class="text-sm mt-1" style="color: #86909C">@{{ userStore.userInfo?.userName || '-' }}</p>
           <div class="flex items-center gap-2 mt-2">
             <a-tag v-for="role in userStore.roles" :key="role" color="blue">{{ role }}</a-tag>
@@ -15,7 +15,7 @@
         </div>
         <a-button @click="showEditDialog = true">
           <template #icon><icon-edit /></template>
-          编辑资料
+          {{ $t('profile.editProfile') }}
         </a-button>
       </div>
     </a-card>
@@ -25,7 +25,7 @@
       <template #title>
         <div class="flex items-center gap-2">
           <icon-user style="color: #3370FF" />
-          <span>基本信息</span>
+          <span>{{ $t('profile.basicInfo') }}</span>
         </div>
       </template>
       <a-descriptions :column="2" :data="profileData" layout="inline-vertical" />
@@ -34,21 +34,21 @@
     <!-- 编辑资料弹窗 -->
     <a-modal
       v-model:visible="showEditDialog"
-      title="编辑个人资料"
+      :title="$t('profile.editProfileTitle')"
       :width="480"
       :mask-closable="false"
       @ok="onEditSubmit"
       @cancel="showEditDialog = false"
     >
       <a-form :model="editForm" layout="vertical">
-        <a-form-item field="nickName" label="昵称" :rules="[{ required: true, message: '请输入昵称' }]">
-          <a-input v-model="editForm.nickName" placeholder="请输入昵称" />
+        <a-form-item field="nickName" :label="$t('profile.nickName')" :rules="formRules.nickName">
+          <a-input v-model="editForm.nickName" :placeholder="$t('profile.nickNamePlaceholder')" />
         </a-form-item>
-        <a-form-item field="email" label="邮箱">
-          <a-input v-model="editForm.email" placeholder="请输入邮箱" />
+        <a-form-item field="email" :label="$t('profile.email')">
+          <a-input v-model="editForm.email" :placeholder="$t('profile.emailPlaceholder')" />
         </a-form-item>
-        <a-form-item field="phone" label="手机号">
-          <a-input v-model="editForm.phone" placeholder="请输入手机号" />
+        <a-form-item field="phone" :label="$t('profile.phone')">
+          <a-input v-model="editForm.phone" :placeholder="$t('profile.phonePlaceholder')" />
         </a-form-item>
       </a-form>
     </a-modal>
@@ -57,21 +57,24 @@
 
 <script setup lang="ts">
 import { computed, ref, reactive, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Message } from '@arco-design/web-vue'
 import { IconEdit, IconUser } from '@arco-design/web-vue/es/icon'
 import { useUserStore } from '@/stores/user'
 import { updateUserApi } from '@/api/user'
 
+const { t } = useI18n()
+
 const userStore = useUserStore()
-const userInitial = computed(() => (userStore.userInfo?.nickName || '管').charAt(0).toUpperCase())
+const userInitial = computed(() => (userStore.userInfo?.nickName || t('user.adminUser')).charAt(0).toUpperCase())
 
 const profileData = computed(() => [
-  { label: '用户名', value: userStore.userInfo?.userName || '-' },
-  { label: '昵称', value: userStore.userInfo?.nickName || '-' },
-  { label: '邮箱', value: userStore.userInfo?.email || '-' },
-  { label: '手机号', value: userStore.userInfo?.phone || '-' },
-  { label: '头像', value: userStore.userInfo?.avatar ? '已设置' : '未设置' },
-  { label: '权限标识', value: userStore.permissions.slice(0, 5).join(', ') + (userStore.permissions.length > 5 ? ` +${userStore.permissions.length - 5}` : '') },
+  { label: t('user.userName'), value: userStore.userInfo?.userName || '-' },
+  { label: t('user.nickName'), value: userStore.userInfo?.nickName || '-' },
+  { label: t('profile.email'), value: userStore.userInfo?.email || '-' },
+  { label: t('profile.phone'), value: userStore.userInfo?.phone || '-' },
+  { label: t('profile.avatar'), value: userStore.userInfo?.avatar ? t('profile.avatarSet') : t('profile.avatarNotSet') },
+  { label: t('profile.permissions'), value: userStore.permissions.slice(0, 5).join(', ') + (userStore.permissions.length > 5 ? ` +${userStore.permissions.length - 5}` : '') },
 ])
 
 // ---- 编辑资料 ----
@@ -82,6 +85,10 @@ const editForm = reactive({
   email: '',
   phone: '',
 })
+
+const formRules = computed(() => ({
+  nickName: [{ required: true, message: t('validation.required', { field: t('profile.nickName') }) }],
+}))
 
 // 弹窗打开时回填数据
 watch(showEditDialog, (val) => {
@@ -103,7 +110,7 @@ async function onEditSubmit() {
       email: editForm.email,
       phone: editForm.phone,
     })
-    Message.success('资料更新成功')
+    Message.success(t('profile.updateSuccess'))
     showEditDialog.value = false
     await userStore.fetchUserInfo()
   } catch {

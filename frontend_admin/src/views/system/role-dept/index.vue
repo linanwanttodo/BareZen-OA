@@ -1,171 +1,168 @@
 <template>
   <div class="role-dept-layout">
     <!-- 左侧筛选侧边栏 -->
-    <Card class="filter-sidebar" :style="{ width: '280px', minWidth: '280px' }">
-      <CardHeader class="flex items-center justify-between">
-        <CardTitle>筛选条件</CardTitle>
-        <Button variant="ghost" size="sm" @click="resetFilters">重置</Button>
-      </CardHeader>
-      <CardContent>
+    <a-card class="filter-sidebar" :style="{ width: '280px', minWidth: '280px' }">
+      <template #title>
+        <div class="flex items-center justify-between w-full">
+          <span>{{ $t('roleDept.filterTitle') }}</span>
+          <a-button type="text" size="small" @click="resetFilters">{{ $t('common.reset') }}</a-button>
+        </div>
+      </template>
+      <a-card-content>
         <!-- 角色筛选 -->
         <div class="filter-section">
           <div class="filter-title">
-            <Users :size="16" />
-            <span>角色筛选</span>
-            <Badge v-if="selectedRoleIds.length" variant="default">{{ selectedRoleIds.length }}</Badge>
+            <icon-user-group :size="16" />
+            <span>{{ $t('roleDept.roleFilter') }}</span>
+            <a-tag v-if="selectedRoleIds.length" color="arcoblue">{{ selectedRoleIds.length }}</a-tag>
           </div>
           <div class="filter-list">
             <label v-for="role in roleList" :key="role.id" class="filter-item flex items-center gap-2">
-              <Checkbox :model-value="selectedRoleIds.includes(String(role.id))" @change="() => toggleRole(String(role.id))" />
+              <a-checkbox :model-value="selectedRoleIds.includes(String(role.id))" @change="() => toggleRole(String(role.id))" />
               <span class="filter-label">{{ role.roleName }}</span>
-              <Badge :variant="role.status === '0' ? 'default' : 'destructive'">{{ role.status === '0' ? '启用' : '停用' }}</Badge>
+              <a-tag :color="role.status === '0' ? 'arcoblue' : 'red'">{{ role.status === '0' ? $t('common.enable') : $t('common.disable') }}</a-tag>
             </label>
-            <div v-if="!roleLoading && roleList.length === 0" class="empty-tip">暂无角色数据</div>
+            <div v-if="!roleLoading && roleList.length === 0" class="empty-tip">{{ $t('roleDept.noRoleData') }}</div>
           </div>
         </div>
 
-        <Separator class="my-4" />
+        <a-divider class="my-4" />
 
         <!-- 部门筛选 -->
         <div class="filter-section">
           <div class="filter-title">
-            <Network :size="16" />
-            <span>部门筛选</span>
-            <Badge v-if="selectedDeptIds.length" variant="secondary">{{ selectedDeptIds.length }}</Badge>
+            <icon-branch :size="16" />
+            <span>{{ $t('roleDept.deptFilter') }}</span>
+            <a-tag v-if="selectedDeptIds.length" color="purple">{{ selectedDeptIds.length }}</a-tag>
           </div>
           <div class="filter-list">
             <div v-for="item in deptFlat" :key="item.node.id" class="flex items-center gap-2 py-1" :style="{ paddingLeft: item.depth * 16 + 'px' }">
-              <Checkbox :model-value="selectedDeptIds.includes(item.node.id)" @change="() => toggleDept(item.node.id)" />
+              <a-checkbox :model-value="selectedDeptIds.includes(item.node.id)" @change="() => toggleDept(item.node.id)" />
               <span class="text-sm text-[var(--foreground)]">{{ item.node.deptName }}</span>
             </div>
-            <div v-if="!deptLoading && deptTree.length === 0" class="empty-tip">暂无部门数据</div>
+            <div v-if="!deptLoading && deptTree.length === 0" class="empty-tip">{{ $t('common.noDeptData') }}</div>
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </a-card-content>
+    </a-card>
 
     <!-- 右侧用户列表 -->
-    <Card class="user-content">
-      <CardHeader class="flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <CardTitle>用户列表</CardTitle>
-          <span class="stat-badge">
-            共 <b>{{ total }}</b> 位用户
-            <template v-if="selectedRoleIds.length || selectedDeptIds.length">（已筛选）</template>
-          </span>
+    <a-card class="user-content">
+      <template #title>
+        <div class="flex items-center justify-between w-full">
+          <div class="flex items-center gap-3">
+            <span>{{ $t('user.title') }}</span>
+            <span class="stat-badge">
+              {{ $t('roleDept.totalUserCount', { count: total }) }}
+              <template v-if="selectedRoleIds.length || selectedDeptIds.length">{{ $t('roleDept.filtered') }}</template>
+            </span>
+          </div>
+          <a-input
+            v-model="searchKeyword"
+            :placeholder="$t('roleDept.searchPlaceholder')"
+            style="width: 224px"
+            @input="onSearchInput"
+          />
         </div>
-        <Input
-          :model-value="searchKeyword"
-          placeholder="搜索用户名..."
-          class="w-56"
-          @update:model-value="(v) => { searchKeyword = v; onSearchInput() }"
-        />
-      </CardHeader>
-      <CardContent>
-        <Empty v-if="tableLoading" description="加载中" />
+      </template>
+      <a-card-content>
+        <a-empty v-if="tableLoading" :description="$t('common.loading')" />
         <template v-else-if="userList.length">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>用户名</TableHead>
-                <TableHead>昵称</TableHead>
-                <TableHead>邮箱</TableHead>
-                <TableHead>手机号</TableHead>
-                <TableHead class="text-center">在线</TableHead>
-                <TableHead class="text-right">操作</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              <TableRow v-for="row in userList" :key="row.id">
-                <TableCell>{{ row.userName }}</TableCell>
-                <TableCell>{{ row.nickName }}</TableCell>
-                <TableCell>{{ row.email }}</TableCell>
-                <TableCell>{{ row.phone }}</TableCell>
-                <TableCell>
-                  <span class="online-indicator" :class="isOnline(row.loginDate) ? 'online' : 'offline'">
+          <a-table :data="userList" :pagination="false" row-key="id">
+            <template #columns>
+              <a-table-column :title="$t('user.userName')" data-index="userName" />
+              <a-table-column :title="$t('user.nickName')" data-index="nickName" />
+              <a-table-column :title="$t('user.email')" data-index="email" />
+              <a-table-column :title="$t('user.phone')" data-index="phone" />
+              <a-table-column :title="$t('common.status')" align="center">
+                <template #cell="{ record }">
+                  <span class="online-indicator" :class="isOnline(record.loginDate) ? 'online' : 'offline'">
                     <span class="dot"></span>
-                    {{ isOnline(row.loginDate) ? '在线' : '离线' }}
+                    {{ isOnline(record.loginDate) ? $t('common.online') : $t('common.offline') }}
                   </span>
-                </TableCell>
-                <TableCell>
-                  <div class="flex justify-end gap-1">
-                    <Button variant="ghost" size="sm" @click="openRoleDialog(row)">修改角色</Button>
-                    <Button variant="ghost" size="sm" @click="openDeptDialog(row)">修改部门</Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            </TableBody>
-          </Table>
+                </template>
+              </a-table-column>
+              <a-table-column :title="$t('common.operate')" align="right">
+                <template #cell="{ record }">
+                  <a-space>
+                    <a-button type="text" size="small" @click="openRoleDialog(record)">{{ $t('roleDept.modifyRoleAction') }}</a-button>
+                    <a-button type="text" size="small" @click="openDeptDialog(record)">{{ $t('roleDept.modifyDeptAction') }}</a-button>
+                  </a-space>
+                </template>
+              </a-table-column>
+            </template>
+          </a-table>
         </template>
-        <Empty v-else description="暂无匹配的用户" />
+        <a-empty v-else :description="$t('roleDept.noUserData')" />
 
         <div v-if="total > 0" class="pagination-bar">
-          <Pagination v-model="pageNum" :total="total" :page-size="pageSize" @change="onPaginationChange" />
+          <a-pagination v-model:current="pageNum" :total="total" :page-size="pageSize" @change="onPaginationChange" />
         </div>
-      </CardContent>
-    </Card>
+      </a-card-content>
+    </a-card>
 
     <!-- 分配角色对话框 -->
-    <Dialog :open="roleDialogVisible" title="修改角色权限" @update:open="roleDialogVisible = $event">
+    <a-modal v-model:visible="roleDialogVisible" :title="$t('roleDept.modifyRole')" @cancel="roleDialogVisible = false">
       <div class="dialog-body">
         <dl class="mb-3 grid grid-cols-2 gap-4">
           <div>
-            <dt class="text-xs text-[var(--muted-foreground)]">用户名</dt>
+            <dt class="text-xs text-[var(--muted-foreground)]">{{ $t('user.userName') }}</dt>
             <dd class="mt-1 text-sm text-[var(--foreground)]">{{ currentUser?.userName }}</dd>
           </div>
           <div>
-            <dt class="text-xs text-[var(--muted-foreground)]">昵称</dt>
+            <dt class="text-xs text-[var(--muted-foreground)]">{{ $t('user.nickName') }}</dt>
             <dd class="mt-1 text-sm text-[var(--foreground)]">{{ currentUser?.nickName }}</dd>
           </div>
         </dl>
-        <Separator class="mb-3" />
+        <a-divider class="mb-3" />
         <div class="role-checkbox-area">
           <label v-for="role in roleList" :key="role.id" class="role-checkbox-item flex items-center gap-2">
-            <Checkbox :model-value="dialogRoleIds.includes(String(role.id))" @change="() => toggleDialogRole(String(role.id))" />
+            <a-checkbox :model-value="dialogRoleIds.includes(String(role.id))" @change="() => toggleDialogRole(String(role.id))" />
             <span>{{ role.roleName }}</span>
-            <Badge variant="outline" class="role-key-tag">{{ role.roleKey }}</Badge>
+            <a-tag bordered class="role-key-tag">{{ role.roleKey }}</a-tag>
           </label>
         </div>
       </div>
       <template #footer>
-        <Button variant="outline" @click="roleDialogVisible = false">取消</Button>
-        <Button :disabled="saving" @click="saveUserRoles">保存</Button>
+        <a-button @click="roleDialogVisible = false">{{ $t('common.cancel') }}</a-button>
+        <a-button type="primary" :disabled="saving" @click="saveUserRoles">{{ $t('common.save') }}</a-button>
       </template>
-    </Dialog>
+    </a-modal>
 
     <!-- 分配部门对话框 -->
-    <Dialog :open="deptDialogVisible" title="修改部门分配" @update:open="deptDialogVisible = $event">
+    <a-modal v-model:visible="deptDialogVisible" :title="$t('roleDept.modifyDept')" @cancel="deptDialogVisible = false">
       <div class="dialog-body">
         <dl class="mb-3 grid grid-cols-2 gap-4">
           <div>
-            <dt class="text-xs text-[var(--muted-foreground)]">用户名</dt>
+            <dt class="text-xs text-[var(--muted-foreground)]">{{ $t('user.userName') }}</dt>
             <dd class="mt-1 text-sm text-[var(--foreground)]">{{ currentUser?.userName }}</dd>
           </div>
           <div>
-            <dt class="text-xs text-[var(--muted-foreground)]">昵称</dt>
+            <dt class="text-xs text-[var(--muted-foreground)]">{{ $t('user.nickName') }}</dt>
             <dd class="mt-1 text-sm text-[var(--foreground)]">{{ currentUser?.nickName }}</dd>
           </div>
         </dl>
-        <Separator class="mb-3" />
-        <Alert variant="info" class="mb-3">勾选部门即分配</Alert>
+        <a-divider class="mb-3" />
+        <a-alert type="info" class="mb-3">{{ $t('roleDept.checkDeptAssign') }}</a-alert>
         <div class="dept-tree-area">
           <div v-for="item in deptFlat" :key="item.node.id" class="flex items-center gap-2 py-1" :style="{ paddingLeft: item.depth * 16 + 'px' }">
-            <Checkbox :model-value="dialogDeptIds.includes(item.node.id)" @change="() => toggleDialogDept(item.node.id)" />
+            <a-checkbox :model-value="dialogDeptIds.includes(item.node.id)" @change="() => toggleDialogDept(item.node.id)" />
             <span class="text-sm text-[var(--foreground)]">{{ item.node.deptName }}</span>
           </div>
         </div>
       </div>
       <template #footer>
-        <Button variant="outline" @click="deptDialogVisible = false">取消</Button>
-        <Button :disabled="saving" @click="saveUserDepts">保存</Button>
+        <a-button @click="deptDialogVisible = false">{{ $t('common.cancel') }}</a-button>
+        <a-button type="primary" :disabled="saving" @click="saveUserDepts">{{ $t('common.save') }}</a-button>
       </template>
-    </Dialog>
+    </a-modal>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { Users, Network } from 'lucide-vue-next'
+import { useI18n } from 'vue-i18n'
+import { IconUserGroup, IconBranch } from '@arco-design/web-vue/es/icon'
 import { filterUsersApi, getUserRoleIdsApi, assignUserRolesApi } from '@/api/user'
 import { getAllRolesListApi } from '@/api/role'
 import { getDeptTreeApi, getUserDeptsApi, assignUserDeptsApi } from '@/api/dept'
@@ -173,25 +170,8 @@ import type { SysUser } from '@/api/user'
 import type { SysRole } from '@/api/role'
 import type { SysDept, SysUserDept } from '@/api/dept'
 import { Toast } from '@/utils/toast'
-import Card from '@/components/ui/card/Card.vue'
-import CardHeader from '@/components/ui/card/CardHeader.vue'
-import CardTitle from '@/components/ui/card/CardTitle.vue'
-import CardContent from '@/components/ui/card/CardContent.vue'
-import Input from '@/components/ui/input/Input.vue'
-import Button from '@/components/ui/button/Button.vue'
-import Checkbox from '@/components/ui/checkbox/Checkbox.vue'
-import Badge from '@/components/ui/badge/Badge.vue'
-import Table from '@/components/ui/table/Table.vue'
-import TableHeader from '@/components/ui/table/TableHeader.vue'
-import TableBody from '@/components/ui/table/TableBody.vue'
-import TableRow from '@/components/ui/table/TableRow.vue'
-import TableHead from '@/components/ui/table/TableHead.vue'
-import TableCell from '@/components/ui/table/TableCell.vue'
-import Pagination from '@/components/ui/pagination/Pagination.vue'
-import Empty from '@/components/ui/empty/Empty.vue'
-import Separator from '@/components/ui/separator/Separator.vue'
-import Alert from '@/components/ui/alert/Alert.vue'
-import Dialog from '@/components/ui/dialog/Dialog.vue'
+
+const { t } = useI18n()
 
 // ========== 筛选状态 ==========
 const roleList = ref<SysRole[]>([])
@@ -264,9 +244,9 @@ async function loadRoles() {
   roleLoading.value = true
   try {
     const res: any = await getAllRolesListApi()
-    roleList.value = Array.isArray(res.data) ? res.data : res.data?.records || []
+    roleList.value = Array.isArray(res.data) ? res.data : res.data?.list || []
   } catch {
-    Toast.error('加载角色列表失败')
+    Toast.error(t('roleDept.loadRoleFailed'))
   } finally {
     roleLoading.value = false
   }
@@ -278,7 +258,7 @@ async function loadDepts() {
     const res = await getDeptTreeApi()
     deptTree.value = res.data || []
   } catch {
-    Toast.error('加载部门列表失败')
+    Toast.error(t('roleDept.loadDeptFailed'))
   } finally {
     deptLoading.value = false
   }
@@ -295,10 +275,10 @@ async function fetchUsers() {
     if (selectedDeptIds.value.length) params.deptIds = selectedDeptIds.value.join(',')
     if (searchKeyword.value) params.userName = searchKeyword.value
     const res = await filterUsersApi(params)
-    userList.value = res.data?.records || []
+    userList.value = res.data?.list || []
     total.value = res.data?.total || 0
   } catch {
-    Toast.error('加载用户列表失败')
+    Toast.error(t('roleDept.loadUserFailed'))
   } finally {
     tableLoading.value = false
   }
@@ -340,7 +320,7 @@ async function openRoleDialog(user: SysUser) {
     const res = await getUserRoleIdsApi(user.id)
     dialogRoleIds.value = (res.data || []).map(String)
   } catch {
-    Toast.error('获取用户角色失败')
+    Toast.error(t('roleDept.getUserRoleFailed'))
   }
 }
 
@@ -355,11 +335,11 @@ async function saveUserRoles() {
   saving.value = true
   try {
     await assignUserRolesApi(currentUser.value.id, dialogRoleIds.value)
-    Toast.success('角色分配成功')
+    Toast.success(t('roleDept.assignRoleSuccess'))
     roleDialogVisible.value = false
     fetchUsers()
   } catch {
-    Toast.error('角色分配失败')
+    Toast.error(t('roleDept.assignRoleFailed'))
   } finally {
     saving.value = false
   }
@@ -374,7 +354,7 @@ async function openDeptDialog(user: SysUser) {
     const res = await getUserDeptsApi(user.id)
     dialogDeptIds.value = (res.data || []).map((d: any) => String(d.deptId))
   } catch {
-    Toast.error('获取用户部门失败')
+    Toast.error(t('roleDept.getUserDeptFailed'))
   }
 }
 
@@ -394,11 +374,11 @@ async function saveUserDepts() {
       roleType: '0',
     }))
     await assignUserDeptsApi(currentUser.value.id, deptList)
-    Toast.success('部门分配成功')
+    Toast.success(t('roleDept.assignDeptSuccess'))
     deptDialogVisible.value = false
     fetchUsers()
   } catch {
-    Toast.error('部门分配失败')
+    Toast.error(t('roleDept.assignDeptFailed'))
   } finally {
     saving.value = false
   }

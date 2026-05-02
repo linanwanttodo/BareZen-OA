@@ -27,12 +27,12 @@ export interface UserListParams {
 
 /** 用户分页列表 */
 export function getUserListApi(params: UserListParams) {
-  return request.get<PageData<SysUser>>('/system/v1/users/list', { params })
+  return request.get<PageData<SysUser>>('/system/v1/users/page', { params })
 }
 
 /** 用户详情 */
 export function getUserApi(id: string) {
-  return request.get<SysUser>(`/system/v1/users/${id}`)
+  return request.get<SysUser>(`/system/v1/users/${encodeURIComponent(id)}`)
 }
 
 /** 新增用户 */
@@ -47,7 +47,7 @@ export function updateUserApi(data: Partial<SysUser>) {
 
 /** 删除用户 */
 export function deleteUserApi(id: string) {
-  return request.delete<void>(`/system/v1/users/${id}`)
+  return request.delete<void>(`/system/v1/users/${encodeURIComponent(id)}`)
 }
 
 /** 批量删除用户 */
@@ -57,22 +57,22 @@ export function batchDeleteUserApi(ids: string[]) {
 
 /** 修改用户状态 */
 export function changeUserStatusApi(id: string, status: string) {
-  return request.put<void>(`/system/v1/users/${id}/status/${status}`)
+  return request.put<void>(`/system/v1/users/${encodeURIComponent(id)}/status/${encodeURIComponent(status)}`)
 }
 
 /** 获取用户角色ID列表 */
 export function getUserRoleIdsApi(userId: string) {
-  return request.get<string[]>(`/system/v1/users/${userId}/roles`)
+  return request.get<string[]>(`/system/v1/users/${encodeURIComponent(userId)}/roles`)
 }
 
 /** 分配用户角色 */
 export function assignUserRolesApi(userId: string, roleIds: string[]) {
-  return request.put<void>(`/system/v1/users/${userId}/roles`, roleIds)
+  return request.put<void>(`/system/v1/users/${encodeURIComponent(userId)}/roles`, roleIds)
 }
 
 /** 重置密码 */
 export function resetUserPasswordApi(userId: string, password: string) {
-  return request.put<void>(`/system/v1/users/${userId}/password`, { password })
+  return request.put<void>(`/system/v1/users/${encodeURIComponent(userId)}/password`, { password })
 }
 
 /** === 角色/部门联合筛选 === */

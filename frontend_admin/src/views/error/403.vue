@@ -1,5 +1,5 @@
 <template>
-  <ErrorPage code="403" message="禁止访问，没有权限" />
+  <ErrorPage code="403" :message="$t('error.403')" />
 </template>
 
 <script setup lang="ts">

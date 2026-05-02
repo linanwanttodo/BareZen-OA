@@ -40,7 +40,7 @@ export function getDictTypePageApi(params: DictTypeListParams) {
 
 /** 字典类型详情 */
 export function getDictTypeApi(id: string) {
-  return request.get<SysDictType>(`/system/v1/dict/types/${id}`)
+  return request.get<SysDictType>(`/system/v1/dict/types/${encodeURIComponent(id)}`)
 }
 
 /** 新增字典类型 */
@@ -55,12 +55,12 @@ export function updateDictTypeApi(data: Partial<SysDictType>) {
 
 /** 删除字典类型 */
 export function deleteDictTypeApi(id: string) {
-  return request.delete<void>(`/system/v1/dict/types/${id}`)
+  return request.delete<void>(`/system/v1/dict/types/${encodeURIComponent(id)}`)
 }
 
 /** 根据类型获取字典数据 */
 export function getDictDataByTypeApi(dictType: string) {
-  return request.get<SysDictData[]>(`/system/v1/dict/data/type/${dictType}`)
+  return request.get<SysDictData[]>(`/system/v1/dict/data/type/${encodeURIComponent(dictType)}`)
 }
 
 /** 字典数据分页 */
@@ -80,10 +80,10 @@ export function updateDictDataApi(data: Partial<SysDictData>) {
 
 /** 删除字典数据 */
 export function deleteDictDataApi(id: string) {
-  return request.delete<void>(`/system/v1/dict/data/${id}`)
+  return request.delete<void>(`/system/v1/dict/data/${encodeURIComponent(id)}`)
 }
 
 /** 获取角色菜单树（含已选中菜单ID） */
 export function getRoleMenuTreeApi(roleId: string) {
-  return request.get<{ menus: import('@/types/menu').SysMenu[]; checkedKeys: string[] }>(`/system/v1/roles/${roleId}/menu-tree`)
+  return request.get<{ menus: import('@/types/menu').SysMenu[]; checkedKeys: string[] }>(`/system/v1/roles/${encodeURIComponent(roleId)}/menu-tree`)
 }

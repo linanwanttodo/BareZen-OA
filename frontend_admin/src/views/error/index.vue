@@ -4,16 +4,16 @@
       <span class="error-code">{{ code }}</span>
     </div>
     <p class="text-lg text-[var(--muted-foreground)] mb-2 font-medium">{{ message }}</p>
-    <p class="text-sm text-[var(--muted-foreground)] mb-8">请检查地址是否正确，或返回首页</p>
+    <p class="text-sm text-[var(--muted-foreground)] mb-8">{{ $t('error.checkUrl') }}</p>
     <div class="flex items-center gap-3">
-      <Button variant="primary" @click="router.push('/')">
+      <a-button type="primary" @click="router.push('/')">
         <Home :size="16" class="mr-1.5" />
-        返回首页
-      </Button>
-      <Button variant="outline" @click="router.back()">
+        {{ $t('error.backHome') }}
+      </a-button>
+      <a-button @click="router.back()">
         <ArrowLeft :size="16" class="mr-1.5" />
-        返回上页
-      </Button>
+        {{ $t('error.backPrev') }}
+      </a-button>
     </div>
   </div>
 </template>
@@ -21,7 +21,6 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 import { Home, ArrowLeft } from 'lucide-vue-next'
-import Button from '@/components/ui/button/Button.vue'
 
 defineProps<{
   code: number | string

@@ -37,5 +37,20 @@ export function getOperLogPageApi(params: OperLogListParams) {
 
 /** 操作日志详情 */
 export function getOperLogApi(id: string) {
-  return request.get<SysOperLog>(`/system/v1/operlogs/${id}`)
+  return request.get<SysOperLog>(`/system/v1/operlogs/${encodeURIComponent(id)}`)
+}
+
+/** 删除操作日志 */
+export function deleteOperLogApi(id: string) {
+  return request.delete<void>(`/system/v1/operlogs/${encodeURIComponent(id)}`)
+}
+
+/** 批量删除操作日志 */
+export function batchDeleteOperLogApi(ids: string[]) {
+  return request.delete<void>('/system/v1/operlogs/batch', { data: ids })
+}
+
+/** 清空指定天数前的日志 */
+export function cleanOperLogApi(beforeDays = 30) {
+  return request.delete<void>(`/system/v1/operlogs/clean?beforeDays=${beforeDays}`)
 }

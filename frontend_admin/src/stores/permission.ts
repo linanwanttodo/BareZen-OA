@@ -66,8 +66,19 @@ function transformMenusToRoutes(menus: SysMenu[]): RouteRecordRaw[] {
   return routes
 }
 
+/** 预扫描所有视图组件（懒加载）；
+ * 动态 import(`@/views/${x}.vue`) 的别名写法在生产构建中不被 Rollup 支持，
+ * 必须用 import.meta.glob 让 Vite 在构建期确定所有可能的模块 */
+const viewModules = import.meta.glob('@/views/**/*.vue')
+
 /** 动态加载视图组件 */
 function loadView(component: string) {
   // component 格式如 "system/user/index"
-  return () => import(`@/views/${component}.vue`)
+  const path = `/src/views/${component}.vue`
+  const loader = viewModules[path]
+  if (!loader) {
+    console.warn(`[router] 视图组件不存在: ${path}`)
+    return () => import('@/views/error/404.vue')
+  }
+  return loader
 }

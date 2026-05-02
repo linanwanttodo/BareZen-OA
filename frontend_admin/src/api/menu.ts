@@ -28,5 +28,5 @@ export function updateMenuApi(data: Partial<SysMenu>) {
 
 /** 删除菜单 */
 export function deleteMenuApi(id: string) {
-  return request.delete<void>(`/system/v1/menus/${id}`)
+  return request.delete<void>(`/system/v1/menus/${encodeURIComponent(id)}`)
 }

@@ -1,170 +1,161 @@
 <template>
   <div class="page-container">
-    <!-- 搜索区域 -->
-    <a-card class="mb-4" :bordered="true">
-      <a-form :model="searchForm" layout="inline" @submit-success="handleSearch">
-        <a-form-item field="noticeTitle" label="公告标题">
-          <a-input v-model="searchForm.noticeTitle" placeholder="请输入公告标题" allow-clear style="width: 200px" />
-        </a-form-item>
-        <a-form-item field="noticeType" label="公告类型">
-          <a-select v-model="searchForm.noticeType" placeholder="请选择" allow-clear style="width: 120px">
-            <a-option value="1">通知</a-option>
-            <a-option value="2">公告</a-option>
-          </a-select>
-        </a-form-item>
-        <a-form-item field="status" label="状态">
-          <a-select v-model="searchForm.status" placeholder="请选择" allow-clear style="width: 120px">
-            <a-option value="0">草稿</a-option>
-            <a-option value="1">已发布</a-option>
-            <a-option value="2">已下架</a-option>
-          </a-select>
-        </a-form-item>
-        <a-form-item>
-          <a-space>
-            <a-button type="primary" html-type="submit">搜索</a-button>
-            <a-button @click="handleReset">重置</a-button>
-          </a-space>
-        </a-form-item>
-      </a-form>
+    <a-card>
+      <a-card-content>
+        <div class="flex flex-wrap items-end gap-3">
+          <a-form-item :label="$t('notice.noticeTitle')">
+            <a-input v-model="searchForm.noticeTitle" :placeholder="$t('notice.noticePlaceholder')" style="width: 200px" />
+          </a-form-item>
+          <a-form-item :label="$t('notice.noticeType')">
+            <a-select v-model="searchForm.noticeType" :placeholder="$t('common.selectPlaceholder')" style="width: 120px" :options="noticeTypeOptions" />
+          </a-form-item>
+          <a-form-item :label="$t('common.status')">
+            <a-select v-model="searchForm.status" :placeholder="$t('common.selectPlaceholder')" style="width: 120px" :options="noticeStatusOptions" />
+          </a-form-item>
+          <div class="flex gap-2">
+            <a-button @click="handleSearch">{{ $t('common.search') }}</a-button>
+            <a-button @click="handleReset">{{ $t('common.reset') }}</a-button>
+          </div>
+        </div>
+      </a-card-content>
     </a-card>
 
-    <!-- 表格区域 -->
-    <a-card :bordered="true">
+    <a-card class="mt-4">
       <template #title>
         <div class="flex items-center justify-between w-full">
-          <span>通知公告</span>
-          <a-button type="primary" @click="handleAdd">
+          <span>{{ $t('notice.title') }}</span>
+          <a-button v-permission="'system:notice:add'" type="primary" @click="handleAdd">
             <template #icon><icon-plus /></template>
-            新增
+            {{ $t('common.add') }}
           </a-button>
         </div>
       </template>
-
-      <a-spin :loading="loading">
-        <a-table :data="tableData" :pagination="false" :row-key="'id'">
-          <template #columns>
-            <a-table-column title="ID" data-index="id" :width="80" />
-            <a-table-column title="公告标题" :width="200">
-              <template #cell="{ record }">
-                <a-link @click="handleView(record)">{{ record.noticeTitle }}</a-link>
-              </template>
-            </a-table-column>
-            <a-table-column title="类型" :width="100">
-              <template #cell="{ record }">
-                <a-tag :color="record.noticeType === '1' ? 'blue' : 'green'">
-                  {{ record.noticeType === '1' ? '通知' : '公告' }}
-                </a-tag>
-              </template>
-            </a-table-column>
-            <a-table-column title="可见范围" :width="120">
-              <template #cell="{ record }">
-                <a-tag color="gray">{{ record.scope === 'public' ? '全部用户' : '仅站内用户' }}</a-tag>
-              </template>
-            </a-table-column>
-            <a-table-column title="状态" :width="100">
-              <template #cell="{ record }">
-                <a-tag :color="record.status === '1' ? 'green' : record.status === '2' ? 'red' : 'gray'">
-                  {{ statusText(record.status) }}
-                </a-tag>
-              </template>
-            </a-table-column>
-            <a-table-column title="创建时间" :width="160">
-              <template #cell="{ record }">{{ formatTime(record.createTime) }}</template>
-            </a-table-column>
-            <a-table-column title="操作" :width="240" align="right">
-              <template #cell="{ record }">
-                <a-space>
-                  <a-button size="small" @click="handleView(record)">查看</a-button>
-                  <a-button size="small" @click="handleEdit(record)">编辑</a-button>
-                  <a-button v-if="record.status === '0'" size="small" status="success" @click="handlePublish(record)">发布</a-button>
-                  <a-button v-if="record.status === '1'" size="small" status="warning" @click="handleRevoke(record)">下架</a-button>
-                  <a-popconfirm content="确认删除该公告？" @ok="handleDelete(record)">
-                    <a-button size="small" status="danger">删除</a-button>
-                  </a-popconfirm>
-                </a-space>
-              </template>
-            </a-table-column>
-          </template>
-        </a-table>
-
-        <div v-if="tableData.length" class="mt-4 flex justify-end">
-          <a-pagination
-            v-model:current="pagination.current"
-            :total="pagination.total"
-            :page-size="pagination.pageSize"
-            show-total
-            @change="onPageChange"
-          />
+      <a-card-content>
+        <div v-if="loading" class="flex items-center justify-center h-64">
+          <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--primary)]"></div>
+          <span class="ml-2 text-[var(--muted-foreground)]">{{ $t('common.loading') }}</span>
         </div>
-      </a-spin>
+        <template v-else>
+          <a-table :data="tableData" :pagination="false" row-key="id">
+            <template #columns>
+              <a-table-column :title="$t('common.operate')" data-index="id" :width="80" />
+              <a-table-column :title="$t('notice.noticeTitle')">
+                <template #cell="{ record }">
+                  <span class="cursor-pointer text-[var(--primary)] hover:underline" @click="handleView(record)">{{ record.noticeTitle }}</span>
+                </template>
+              </a-table-column>
+              <a-table-column :title="$t('notice.noticeType')" :width="100">
+                <template #cell="{ record }">
+                  <a-tag :color="record.noticeType === '1' ? 'arcoblue' : 'purple'">{{ record.noticeType === '1' ? $t('notice.typeNotice') : $t('notice.typeAnnouncement') }}</a-tag>
+                </template>
+              </a-table-column>
+              <a-table-column :title="$t('notice.scope')" :width="120">
+                <template #cell="{ record }">
+                  <a-tag bordered>{{ record.scope === 'public' ? $t('notice.public') : record.scope === 'internal' ? $t('notice.internal') : $t('user.unknown') }}</a-tag>
+                </template>
+              </a-table-column>
+              <a-table-column :title="$t('common.status')" :width="100">
+                <template #cell="{ record }">
+                  <a-tag v-if="record.status === '1'" color="arcoblue">{{ noticeStatusText(record.status) }}</a-tag>
+                  <a-tag v-else-if="record.status === '2'" color="red">{{ noticeStatusText(record.status) }}</a-tag>
+                  <a-tag v-else bordered>{{ noticeStatusText(record.status) }}</a-tag>
+                </template>
+              </a-table-column>
+              <a-table-column :title="$t('common.createTime')" data-index="createTime" :width="160" />
+              <a-table-column :title="$t('common.operate')" :width="280" align="right">
+                <template #cell="{ record }">
+                  <a-space>
+                    <a-button type="text" size="small" @click="handleView(record)">{{ $t('common.detail') }}</a-button>
+                    <a-button v-permission="'system:notice:edit'" type="text" size="small" @click="handleEdit(record)">{{ $t('common.edit') }}</a-button>
+                    <a-button v-if="record.status === '0'" v-permission="'system:notice:edit'" type="text" size="small" @click="handlePublish(record)">{{ $t('notice.publish') }}</a-button>
+                    <a-button v-if="record.status === '1'" v-permission="'system:notice:edit'" type="text" size="small" @click="handleRevoke(record)">{{ $t('notice.revoke') }}</a-button>
+                    <a-button v-permission="'system:notice:delete'" type="text" size="small" @click="handleDelete(record)">{{ $t('common.delete') }}</a-button>
+                  </a-space>
+                </template>
+              </a-table-column>
+            </template>
+          </a-table>
+
+          <div v-if="pagination.total > pagination.pageSize" class="mt-4 flex justify-end">
+            <a-pagination
+              v-model:current="pagination.current"
+              :total="pagination.total"
+              :page-size="pagination.pageSize"
+              @change="onPageChange"
+            />
+          </div>
+        </template>
+      </a-card-content>
     </a-card>
 
-    <!-- 新增/编辑弹窗 -->
-    <a-modal
-      v-model:visible="formDialogVisible"
-      :title="formType === 'add' ? '新增公告' : '编辑公告'"
-      :width="640"
-      :mask-closable="false"
-      @ok="onFormConfirm"
-      @cancel="formDialogVisible = false"
-    >
-      <a-form :model="formData" layout="vertical">
-        <a-row :gutter="16">
-          <a-col :span="16">
-            <a-form-item field="noticeTitle" label="公告标题" :rules="[{ required: true, message: '请输入公告标题' }]">
-              <a-input v-model="formData.noticeTitle" placeholder="请输入公告标题" />
-            </a-form-item>
-          </a-col>
-          <a-col :span="8">
-            <a-form-item field="noticeType" label="公告类型">
-              <a-select v-model="formData.noticeType">
-                <a-option value="1">通知</a-option>
-                <a-option value="2">公告</a-option>
-              </a-select>
-            </a-form-item>
-          </a-col>
-        </a-row>
-        <a-form-item field="noticeContent" label="公告内容" :rules="[{ required: true, message: '请输入公告内容' }]">
-          <a-textarea v-model="formData.noticeContent" placeholder="请输入公告内容" :max-length="5000" show-word-limit />
-        </a-form-item>
-        <a-form-item field="scope" label="可见范围">
-          <a-radio-group v-model="formData.scope">
-            <a-radio value="public">全部用户（包括游客）</a-radio>
-            <a-radio value="internal">仅站内用户</a-radio>
-          </a-radio-group>
-        </a-form-item>
-      </a-form>
+    <a-modal v-model:visible="formDialogVisible" :title="formType === 'add' ? $t('notice.addNotice') : $t('notice.editNotice')" @cancel="formDialogVisible = false">
+      <div class="flex flex-col gap-4">
+        <div v-if="formError" class="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">{{ formError }}</div>
+        <div class="grid grid-cols-3 gap-4">
+          <div class="col-span-2 flex flex-col gap-1.5">
+            <span class="text-sm text-[var(--foreground)]">{{ $t('notice.noticeTitle') }} <span class="text-red-500">*</span></span>
+            <a-input v-model="formData.noticeTitle" :placeholder="$t('notice.noticePlaceholder')" />
+          </div>
+          <div class="flex flex-col gap-1.5">
+            <span class="text-sm text-[var(--foreground)]">{{ $t('notice.noticeType') }}</span>
+            <a-select v-model="formData.noticeType" :options="[
+              { label: $t('notice.typeNotice'), value: '1' },
+              { label: $t('notice.typeAnnouncement'), value: '2' },
+            ]" />
+          </div>
+        </div>
+        <div class="flex flex-col gap-1.5">
+          <span class="text-sm text-[var(--foreground)]">{{ $t('notice.noticeContent') }} <span class="text-red-500">*</span></span>
+          <a-textarea v-model="formData.noticeContent" :placeholder="$t('notice.noticeContent')" style="min-height: 120px" />
+        </div>
+        <div class="flex flex-col gap-1.5">
+          <span class="text-sm text-[var(--foreground)]">{{ $t('notice.scope') }}</span>
+          <a-radio-group v-model="formData.scope" :options="[
+            { label: $t('notice.scopeAll'), value: 'public' },
+            { label: $t('notice.scopeInternal'), value: 'internal' },
+          ]" />
+        </div>
+      </div>
+      <template #footer>
+        <div class="flex justify-end gap-2">
+          <a-button @click="formDialogVisible = false">{{ $t('common.cancel') }}</a-button>
+          <a-button type="primary" @click="onFormConfirm">{{ $t('common.confirm') }}</a-button>
+        </div>
+      </template>
     </a-modal>
 
-    <!-- 查看详情弹窗 -->
-    <a-modal
-      v-model:visible="detailVisible"
-      :title="detailData?.noticeTitle || '公告详情'"
-      :width="640"
-      :footer="false"
-    >
+    <a-modal v-model:visible="detailVisible" :title="detailData?.noticeTitle || $t('notice.title')" @cancel="detailVisible = false">
       <div v-if="detailData">
         <div class="mb-4 flex flex-wrap items-center gap-2">
-          <a-tag :color="detailData.noticeType === '1' ? 'blue' : 'green'">
-            {{ detailData.noticeType === '1' ? '通知' : '公告' }}
-          </a-tag>
-          <a-tag color="gray">{{ detailData.scope === 'public' ? '全部用户' : '仅站内用户' }}</a-tag>
-          <a-tag :color="detailData.status === '1' ? 'green' : 'gray'">
-            {{ statusText(detailData.status) }}
-          </a-tag>
-          <span class="ml-auto text-xs" style="color: #86909C">发布时间：{{ formatTime(detailData.createTime) }}</span>
+          <a-tag :color="detailData.noticeType === '1' ? 'arcoblue' : 'purple'">{{ detailData.noticeType === '1' ? $t('notice.typeNotice') : $t('notice.typeAnnouncement') }}</a-tag>
+          <a-tag bordered>{{ detailData.scope === 'public' ? $t('notice.public') : detailData.scope === 'internal' ? $t('notice.internal') : $t('user.unknown') }}</a-tag>
+          <a-tag v-if="detailData.status === '1'" color="arcoblue">{{ noticeStatusText(detailData.status) }}</a-tag>
+          <a-tag v-else bordered>{{ noticeStatusText(detailData.status) }}</a-tag>
+          <span class="ml-auto text-xs text-[var(--muted-foreground)]">{{ $t('notice.published') }}：{{ formatDateTime(detailData.createTime) }}</span>
         </div>
-        <a-divider />
-        <div class="notice-detail-content" v-html="detailData.noticeContent"></div>
+        <a-divider class="my-4" />
+        <div class="notice-detail-content" v-html="sanitizeHtml(detailData.noticeContent)"></div>
       </div>
+    </a-modal>
+
+    <a-modal v-model:visible="deleteConfirmVisible" :title="$t('common.confirmDelete')" @cancel="deleteConfirmVisible = false">
+      <p class="text-sm text-[var(--foreground)]">{{ $t('notice.deleteConfirm', { title: deleteTarget?.noticeTitle }) }}</p>
+      <template #footer>
+        <div class="flex justify-end gap-2">
+          <a-button @click="deleteConfirmVisible = false">{{ $t('common.cancel') }}</a-button>
+          <a-button type="primary" status="danger" @click="confirmDelete">{{ $t('common.confirm') }}</a-button>
+        </div>
+      </template>
     </a-modal>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
-import { Message, Modal } from '@arco-design/web-vue'
 import { IconPlus } from '@arco-design/web-vue/es/icon'
+import { useI18n } from 'vue-i18n'
+import { formatDateTime, noticeStatusText } from '@/utils/format'
+import { Toast } from '@/utils/toast'
 import {
   getNoticePageApi,
   addNoticeApi,
@@ -175,8 +166,23 @@ import {
   type SysNotice,
   type NoticeListParams,
 } from '@/api/notice'
+import { sanitizeHtml } from '@/utils/dom'
 
-// ============ 搜索 ============
+const { t } = useI18n()
+
+const noticeTypeOptions = [
+  { label: t('notice.allTypes'), value: '' },
+  { label: t('notice.typeNotice'), value: '1' },
+  { label: t('notice.typeAnnouncement'), value: '2' },
+]
+
+const noticeStatusOptions = [
+  { label: t('notice.allStatus'), value: '' },
+  { label: t('notice.noticeStatusDraft'), value: '0' },
+  { label: t('notice.noticeStatusPublished'), value: '1' },
+  { label: t('notice.noticeStatusRevoked'), value: '2' },
+]
+
 const searchForm = reactive<NoticeListParams>({
   noticeTitle: '',
   noticeType: '',
@@ -196,7 +202,6 @@ function handleReset() {
   loadTable()
 }
 
-// ============ 表格 ============
 const loading = ref(false)
 const tableData = ref<SysNotice[]>([])
 
@@ -205,16 +210,6 @@ const pagination = reactive({ current: 1, pageSize: 10, total: 0 })
 function onPageChange(page: number) {
   pagination.current = page
   loadTable()
-}
-
-function statusText(status: string) {
-  const map: Record<string, string> = { '0': '草稿', '1': '已发布', '2': '已下架' }
-  return map[status] || '未知'
-}
-
-function formatTime(time: string) {
-  if (!time) return '-'
-  return time.replace('T', ' ').substring(0, 16)
 }
 
 async function loadTable() {
@@ -227,48 +222,53 @@ async function loadTable() {
       noticeType: searchForm.noticeType || undefined,
       status: searchForm.status || undefined,
     })
-    tableData.value = res.data?.records || []
+    tableData.value = res.data?.list || []
     pagination.total = res.data?.total || 0
-  } catch {
-    // ignore
+  } catch (err) {
+    console.error('notice load error:', err)
   } finally {
     loading.value = false
   }
 }
 
-// ============ 发布/下架 ============
 async function handlePublish(row: SysNotice) {
   try {
     await publishNoticeApi(row.id)
-    Message.success('发布成功')
+    Toast.success(t('notice.publishSuccess'))
     loadTable()
-  } catch {
-    // ignore
+  } catch (err) {
+    console.error('notice handlePublish error:', err)
   }
 }
 
 async function handleRevoke(row: SysNotice) {
   try {
     await revokeNoticeApi(row.id)
-    Message.success('下架成功')
+    Toast.success(t('notice.revokeSuccess'))
     loadTable()
-  } catch {
-    // ignore
+  } catch (err) {
+    console.error('notice handleRevoke error:', err)
   }
 }
 
-// ============ 删除 ============
-async function handleDelete(row: SysNotice) {
+function handleDelete(row: SysNotice) {
+  deleteTarget.value = row
+  deleteConfirmVisible.value = true
+}
+
+async function confirmDelete() {
+  if (!deleteTarget.value) return
   try {
-    await deleteNoticeApi(row.id)
-    Message.success('删除成功')
+    await deleteNoticeApi(deleteTarget.value.id)
+    Toast.success(t('notice.deleteSuccess'))
+    deleteConfirmVisible.value = false
+    deleteTarget.value = null
     loadTable()
-  } catch {
-    // ignore
+  } catch (err) {
+    console.error('notice handleDelete error:', err)
   }
 }
 
-// ============ 查看详情 ============
 const detailVisible = ref(false)
 const detailData = ref<SysNotice | null>(null)
 
@@ -277,9 +277,11 @@ function handleView(row: SysNotice) {
   detailVisible.value = true
 }
 
-// ============ 新增/编辑 ============
 const formDialogVisible = ref(false)
 const formType = ref<'add' | 'edit'>('add')
+const formError = ref('')
+const deleteConfirmVisible = ref(false)
+const deleteTarget = ref<SysNotice | null>(null)
 
 const defaultFormData = {
   id: undefined as string | undefined,
@@ -312,22 +314,30 @@ function handleEdit(row: SysNotice) {
 }
 
 async function onFormConfirm() {
+  formError.value = ''
+  if (!formData.noticeTitle || !formData.noticeTitle.trim()) {
+    formError.value = t('notice.titleRequired')
+    return
+  }
+  if (!formData.noticeContent || !formData.noticeContent.trim()) {
+    formError.value = t('notice.contentRequired')
+    return
+  }
   try {
     if (formType.value === 'add') {
       await addNoticeApi(formData)
-      Message.success('新增成功')
+      Toast.success(t('notice.addSuccess'))
     } else {
       await updateNoticeApi(formData)
-      Message.success('修改成功')
+      Toast.success(t('notice.editSuccess'))
     }
     formDialogVisible.value = false
     loadTable()
-  } catch {
-    // ignore
+  } catch (err) {
+    console.error('notice onFormConfirm error:', err)
   }
 }
 
-// ============ 初始化 ============
 onMounted(() => {
   loadTable()
 })
@@ -336,7 +346,7 @@ onMounted(() => {
 <style scoped>
 .notice-detail-content {
   line-height: 1.8;
-  color: #1D2129;
+  color: var(--foreground);
   font-size: 14px;
   white-space: pre-wrap;
 }

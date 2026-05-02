@@ -3,19 +3,19 @@
     <!-- 搜索区域 -->
     <a-card class="mb-4" :bordered="true">
       <a-form :model="searchForm" layout="inline" @submit-success="handleSearch">
-        <a-form-item field="deptName" label="部门名称">
-          <a-input v-model="searchForm.deptName" placeholder="请输入部门名称" allow-clear style="width: 200px" />
+        <a-form-item field="deptName" :label="$t('dept.deptName')">
+          <a-input v-model="searchForm.deptName" :placeholder="$t('dept.deptName')" allow-clear style="width: 200px" />
         </a-form-item>
-        <a-form-item field="status" label="状态">
-          <a-select v-model="searchForm.status" placeholder="请选择" allow-clear style="width: 120px">
-            <a-option value="0">正常</a-option>
-            <a-option value="1">停用</a-option>
+        <a-form-item field="status" :label="$t('common.status')">
+          <a-select v-model="searchForm.status" :placeholder="$t('common.selectPlaceholder')" allow-clear style="width: 120px">
+            <a-option value="0">{{ $t('dept.statusNormal') }}</a-option>
+            <a-option value="1">{{ $t('dept.statusDisabled') }}</a-option>
           </a-select>
         </a-form-item>
         <a-form-item>
           <a-space>
-            <a-button type="primary" html-type="submit">搜索</a-button>
-            <a-button @click="handleReset">重置</a-button>
+            <a-button type="primary" html-type="submit">{{ $t('common.search') }}</a-button>
+            <a-button @click="handleReset">{{ $t('common.reset') }}</a-button>
           </a-space>
         </a-form-item>
       </a-form>
@@ -25,14 +25,14 @@
     <a-card :bordered="true">
       <template #title>
         <div class="flex items-center justify-between w-full">
-          <span>部门列表</span>
+          <span>{{ $t('dept.title') }}</span>
           <a-space>
             <a-button @click="toggleExpandAll">
-              {{ isAllExpanded ? '全部折叠' : '全部展开' }}
+              {{ isAllExpanded ? $t('common.collapseAll') : $t('common.expandAll') }}
             </a-button>
-            <a-button type="primary" @click="handleAdd()">
+            <a-button v-permission="'system:dept:add'" type="primary" @click="handleAdd()">
               <template #icon><icon-plus /></template>
-              新增
+              {{ $t('common.add') }}
             </a-button>
           </a-space>
         </div>
@@ -41,10 +41,10 @@
       <a-spin :loading="loading">
         <a-table :data="flatRows" :pagination="false" :row-key="'id'">
           <template #columns>
-            <a-table-column title="ID" :width="80">
+            <a-table-column :title="$t('common.operate')" :width="80">
               <template #cell="{ record }">{{ record.node.id }}</template>
             </a-table-column>
-            <a-table-column title="部门名称">
+            <a-table-column :title="$t('dept.deptName')">
               <template #cell="{ record }">
                 <div class="flex items-center" :style="{ paddingLeft: record.depth * 16 + 'px' }">
                   <icon-right v-if="record.hasChildren && !isExpanded(record.node.id)" class="cursor-pointer mr-1" @click="toggleExpand(record.node.id)" />
@@ -54,32 +54,32 @@
                 </div>
               </template>
             </a-table-column>
-            <a-table-column title="排序" :width="80">
+            <a-table-column :title="$t('dept.orderNum')" :width="80">
               <template #cell="{ record }">{{ record.node.sort }}</template>
             </a-table-column>
-            <a-table-column title="负责人">
+            <a-table-column :title="$t('dept.leader')">
               <template #cell="{ record }">{{ record.node.leader }}</template>
             </a-table-column>
-            <a-table-column title="联系电话">
+            <a-table-column :title="$t('user.phone')">
               <template #cell="{ record }">{{ record.node.phone }}</template>
             </a-table-column>
-            <a-table-column title="邮箱">
+            <a-table-column :title="$t('user.email')">
               <template #cell="{ record }">{{ record.node.email }}</template>
             </a-table-column>
-            <a-table-column title="状态" :width="100">
+            <a-table-column :title="$t('common.status')" :width="100">
               <template #cell="{ record }">
                 <a-tag :color="record.node.status === '0' ? 'green' : 'red'">
-                  {{ record.node.status === '0' ? '正常' : '停用' }}
+                  {{ record.node.status === '0' ? $t('dept.statusNormal') : $t('dept.statusDisabled') }}
                 </a-tag>
               </template>
             </a-table-column>
-            <a-table-column title="操作" :width="180" align="right">
+            <a-table-column :title="$t('common.operate')" :width="180" align="right">
               <template #cell="{ record }">
                 <a-space>
-                  <a-button size="small" @click="handleAdd(record.node)">新增</a-button>
-                  <a-button size="small" @click="handleEdit(record.node)">编辑</a-button>
-                  <a-popconfirm content="确定删除该部门？" @ok="handleDelete(record.node)">
-                    <a-button size="small" status="danger">删除</a-button>
+                  <a-button v-permission="'system:dept:add'" size="small" @click="handleAdd(record.node)">{{ $t('common.add') }}</a-button>
+                  <a-button v-permission="'system:dept:edit'" size="small" @click="handleEdit(record.node)">{{ $t('common.edit') }}</a-button>
+                  <a-popconfirm v-permission="'system:dept:delete'" :content="$t('dept.deleteConfirm')" @ok="handleDelete(record.node)">
+                    <a-button size="small" status="danger">{{ $t('common.delete') }}</a-button>
                   </a-popconfirm>
                 </a-space>
               </template>
@@ -99,41 +99,41 @@
       @cancel="formVisible = false"
     >
       <a-form :model="formData" layout="vertical">
-        <a-form-item field="parentId" label="上级部门">
+        <a-form-item field="parentId" :label="$t('dept.parentDept')">
           <a-tree-select
             v-model="formData.parentId"
             :data="parentTreeData"
-            placeholder="请选择上级部门"
+            :placeholder="$t('common.selectPlaceholder')"
             allow-clear
-            :field-names="{ value: 'id', title: 'deptName', children: 'children' }"
+            :field-names="{ key: 'id', title: 'deptName', children: 'children' }"
           />
         </a-form-item>
-        <a-form-item field="deptName" label="部门名称" :rules="[{ required: true, message: '请输入部门名称' }]">
-          <a-input v-model="formData.deptName" placeholder="请输入部门名称" />
+        <a-form-item field="deptName" :label="$t('dept.deptName')" :rules="[{ required: true, message: $t('dept.deptName') }]">
+          <a-input v-model="formData.deptName" :placeholder="$t('dept.deptName')" />
         </a-form-item>
         <a-row :gutter="16">
           <a-col :span="12">
-            <a-form-item field="sort" label="显示排序">
+            <a-form-item field="sort" :label="$t('dept.orderNum')">
               <a-input-number v-model="formData.sort" placeholder="0" :min="0" style="width: 100%" />
             </a-form-item>
           </a-col>
           <a-col :span="12">
-            <a-form-item field="status" label="状态">
+            <a-form-item field="status" :label="$t('common.status')">
               <a-radio-group v-model="formData.status">
-                <a-radio value="0">正常</a-radio>
-                <a-radio value="1">停用</a-radio>
+                <a-radio value="0">{{ $t('dept.statusNormal') }}</a-radio>
+                <a-radio value="1">{{ $t('dept.statusDisabled') }}</a-radio>
               </a-radio-group>
             </a-form-item>
           </a-col>
         </a-row>
-        <a-form-item field="leader" label="负责人">
-          <a-input v-model="formData.leader" placeholder="请输入负责人" />
+        <a-form-item field="leader" :label="$t('dept.leader')">
+          <a-input v-model="formData.leader" :placeholder="$t('dept.leader')" />
         </a-form-item>
-        <a-form-item field="phone" label="联系电话">
-          <a-input v-model="formData.phone" placeholder="请输入联系电话" />
+        <a-form-item field="phone" :label="$t('user.phone')">
+          <a-input v-model="formData.phone" :placeholder="$t('user.phone')" />
         </a-form-item>
-        <a-form-item field="email" label="邮箱">
-          <a-input v-model="formData.email" placeholder="请输入邮箱" />
+        <a-form-item field="email" :label="$t('user.email')">
+          <a-input v-model="formData.email" :placeholder="$t('user.email')" />
         </a-form-item>
       </a-form>
     </a-modal>
@@ -143,6 +143,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { Message, Modal } from '@arco-design/web-vue'
+import { useI18n } from 'vue-i18n'
 import {
   IconPlus,
   IconRight,
@@ -150,6 +151,8 @@ import {
 } from '@arco-design/web-vue/es/icon'
 import { getDeptTreeApi, addDeptApi, updateDeptApi, deleteDeptApi, getDeptApi } from '@/api/dept'
 import type { SysDept } from '@/api/dept'
+
+const { t } = useI18n()
 
 // ============ 搜索 ============
 const searchForm = ref({
@@ -294,13 +297,13 @@ const formTitle = ref('')
 const editingId = ref<string | null>(null)
 
 const parentTreeData = computed(() => {
-  return [{ id: '', deptName: '顶级部门', children: allData.value }]
+  return [{ id: '', deptName: t('dept.topLevel'), children: allData.value }]
 })
 
 const formData = ref({
   parentId: '' as string,
   deptName: '',
-  sort: 0 as number | string,
+  sort: 0 as number,
   leader: '',
   phone: '',
   email: '',
@@ -309,7 +312,7 @@ const formData = ref({
 
 function handleAdd(parent?: SysDept) {
   editingId.value = null
-  formTitle.value = '新增部门'
+  formTitle.value = t('dept.addDept')
   formData.value = {
     parentId: parent ? String(parent.id) : '',
     deptName: '',
@@ -324,7 +327,7 @@ function handleAdd(parent?: SysDept) {
 
 async function handleEdit(row: SysDept) {
   editingId.value = row.id
-  formTitle.value = '编辑部门'
+  formTitle.value = t('dept.editDept')
   try {
     const res = await getDeptApi(row.id)
     const data = res.data
@@ -351,10 +354,10 @@ async function onFormSubmit() {
     }
     if (editingId.value) {
       await updateDeptApi({ id: editingId.value, ...payload })
-      Message.success('更新成功')
+      Message.success(t('dept.editSuccess'))
     } else {
       await addDeptApi(payload)
-      Message.success('新增成功')
+      Message.success(t('dept.addSuccess'))
     }
     formVisible.value = false
     loadTable()
@@ -367,7 +370,7 @@ async function onFormSubmit() {
 async function handleDelete(row: SysDept) {
   try {
     await deleteDeptApi(row.id)
-    Message.success('删除成功')
+    Message.success(t('dept.deleteSuccess'))
     loadTable()
   } catch {
     /* interceptor handles */

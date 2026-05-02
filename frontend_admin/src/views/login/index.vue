@@ -1,98 +1,95 @@
 <template>
   <div class="login-container flex min-h-screen">
     <!-- 左侧品牌区域 -->
-    <div class="brand-panel hidden flex-col justify-between p-16 lg:flex w-[480px] flex-shrink-0">
+    <div class="brand-panel flex-col justify-between p-12 hidden md:flex w-[420px] flex-shrink-0">
       <div>
-        <div class="mb-20 flex items-center gap-3">
-          <div class="flex h-10 w-10 items-center justify-center rounded bg-white">
-            <span class="text-lg font-bold text-[#3370FF]">B</span>
-          </div>
-          <span class="text-xl font-semibold text-white">BareZen</span>
+        <div class="mb-16 flex items-center gap-3">
+          <img src="/logo.svg" alt="BareZen" class="h-8" />
+          <span class="text-lg font-semibold text-white">BareZen</span>
         </div>
-        <h2 class="mb-6 text-3xl font-bold leading-snug text-white">
-          极简模块化<br />全栈框架
+        <h2 class="mb-5 text-[28px] font-semibold leading-snug tracking-tight text-white">
+          {{ $t('login.enterprisePlatform') }}
         </h2>
-        <p class="text-base leading-relaxed text-white/70">
-          微内核 + 插件架构，按需组装。<br />
-          Java 21 虚拟线程 + Vue 3。
+        <p class="text-sm leading-relaxed text-white/60">
+          {{ $t('login.description') }}
         </p>
       </div>
-      <div class="flex items-center gap-6">
-        <div v-for="item in features" :key="item" class="flex items-center gap-2 text-sm text-white/60">
-          <icon-check-circle :size="16" />
+      <div class="flex flex-wrap items-center gap-4">
+        <div v-for="item in features" :key="item" class="flex items-center gap-1.5 text-xs text-white/50">
+          <div class="h-1 w-1 rounded-full bg-white/40"></div>
           <span>{{ item }}</span>
         </div>
       </div>
     </div>
 
     <!-- 右侧登录表单 -->
-    <div class="flex flex-1 items-center justify-center bg-white p-8">
-      <div class="w-full max-w-[360px]">
+    <div class="flex flex-1 items-center justify-center bg-[var(--background)] p-8">
+      <div class="w-full max-w-[340px]">
         <!-- 移动端 Logo -->
-        <div class="mb-10 text-center lg:hidden">
-          <div class="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded bg-[#3370FF]">
-            <span class="text-xl font-bold text-white">B</span>
-          </div>
-          <h1 class="text-xl font-semibold" style="color: #1D2129">BareZen Admin</h1>
+        <div class="mb-8 text-center md:hidden">
+          <img src="/logo.svg" alt="BareZen" class="mx-auto mb-3 h-8" />
+          <h1 class="text-lg font-semibold text-[var(--foreground)]">BareZen</h1>
         </div>
 
-        <div class="mb-10">
-          <h2 class="mb-2 text-2xl font-bold" style="color: #1D2129">登录</h2>
-          <p class="text-sm" style="color: #86909C">请输入您的账号信息登录管理后台</p>
+        <div class="mb-8">
+          <h2 class="mb-1.5 text-xl font-semibold tracking-tight text-[var(--foreground)]">{{ $t('login.login') }}</h2>
+          <p class="text-sm text-[var(--muted-foreground)]">{{ $t('login.loginInfo') }}</p>
         </div>
 
-        <a-form :model="formData" layout="vertical" @submit-success="onSubmit">
-          <a-form-item field="username" label="用户名" :rules="[{ required: true, message: '请输入用户名' }]">
+        <a-form :model="formData" layout="vertical" @submit-success="onSubmit" class="space-y-4">
+          <a-form-item field="username" :label="$t('login.username')" :rules="[{ required: true, message: $t('login.usernameRequired') }]">
             <a-input
               v-model="formData.username"
-              placeholder="请输入用户名"
+              :placeholder="$t('login.usernameRequired')"
               size="large"
               allow-clear
+              class="!rounded-lg"
             />
           </a-form-item>
 
-          <a-form-item field="password" label="密码" :rules="[{ required: true, message: '请输入密码' }]">
+          <a-form-item field="password" :label="$t('login.password')" :rules="[{ required: true, message: $t('login.passwordRequired') }]">
             <a-input-password
               v-model="formData.password"
-              placeholder="请输入密码"
+              :placeholder="$t('login.passwordRequired')"
               size="large"
+              class="!rounded-lg"
             />
           </a-form-item>
 
-          <a-form-item field="captchaCode" label="验证码" :rules="[{ required: true, message: '请输入验证码' }]">
+          <a-form-item field="captchaCode" :label="$t('login.captcha')" :rules="[{ required: true, message: $t('login.captchaRequired') }]">
             <div class="flex items-center gap-3 w-full">
               <a-input
                 v-model="formData.captchaCode"
-                placeholder="请输入验证码"
+                :placeholder="$t('login.captchaRequired')"
                 size="large"
-                class="flex-1"
+                class="flex-1 !rounded-lg"
                 @keyup.enter="onSubmit"
               />
               <div
-                class="flex h-10 min-w-[120px] shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded border"
-                style="border-color: #E5E6EB; background: #F7F8FA"
-                title="点击刷新"
+                class="flex h-10 min-w-[120px] shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--muted)]"
+                :title="$t('common.refresh')"
                 @click="refreshCaptcha"
               >
-                <img v-if="captchaImg" :src="captchaImg" alt="验证码" class="h-full w-[120px]" />
-                <span v-else class="text-xs" style="color: #86909C">加载中</span>
+                <img v-if="captchaImg" :src="captchaImg" :alt="$t('login.captcha')" class="h-full w-[120px]" />
+                <span v-else class="text-xs text-[var(--muted-foreground)]">{{ $t('common.loading') }}</span>
               </div>
             </div>
           </a-form-item>
 
-          <a-form-item>
-            <a-checkbox v-model="formData.remember">记住我</a-checkbox>
-          </a-form-item>
+          <div class="flex items-center justify-between">
+            <a-checkbox v-model="formData.remember" class="text-sm text-[var(--muted-foreground)]">{{ $t('login.rememberMe') }}</a-checkbox>
+          </div>
 
-          <a-form-item>
+          <a-form-item class="!mb-0">
             <a-button
               type="primary"
               html-type="submit"
               long
               size="large"
               :loading="loading"
+              class="!rounded-lg !h-10 text-sm font-medium"
             >
-              登录
+              {{ $t('login.login') }}
             </a-button>
           </a-form-item>
         </a-form>
@@ -107,8 +104,11 @@ import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { getCaptchaApi } from '@/api/auth'
 import { Message } from '@arco-design/web-vue'
+import { useI18n } from 'vue-i18n'
 import type { LoginParams } from '@/types/api'
+import { safeRedirect } from '@/utils/url'
 
+const { t } = useI18n()
 const router = useRouter()
 const route = useRoute()
 const userStore = useUserStore()
@@ -124,7 +124,7 @@ const formData = reactive({
   remember: false,
 })
 
-const features = ['开箱即用', '轻量可控', '双端前端']
+const features = [t('login.features.0'), t('login.features.1'), t('login.features.2')]
 
 async function refreshCaptcha() {
   try {
@@ -138,7 +138,7 @@ async function refreshCaptcha() {
 
 async function onSubmit() {
   if (!formData.username || !formData.password || !formData.captchaCode) {
-    Message.warning('请填写完整的登录信息')
+    Message.warning(t('login.fullLoginInfo'))
     return
   }
 
@@ -157,9 +157,9 @@ async function onSubmit() {
       localStorage.removeItem('bz_admin_remember')
     }
 
-    Message.success('登录成功')
+    Message.success(t('login.loginSuccess'))
     const redirect = (route.query.redirect as string) || '/'
-    router.push(redirect)
+    router.push(safeRedirect(redirect))
   } catch {
     refreshCaptcha()
   } finally {

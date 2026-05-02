@@ -1,5 +1,5 @@
 <template>
-  <ErrorPage code="401" message="未授权，请先登录" />
+  <ErrorPage code="401" :message="$t('error.401')" />
 </template>
 
 <script setup lang="ts">

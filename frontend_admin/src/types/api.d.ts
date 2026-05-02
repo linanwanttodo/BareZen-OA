@@ -13,10 +13,10 @@ export interface PageParams {
 
 /** 分页响应数据 */
 export interface PageData<T = any> {
-  records: T[]
+  list: T[]
   total: number
-  size: number
-  current: number
+  pageNum: number
+  pageSize: number
   pages: number
 }
 
