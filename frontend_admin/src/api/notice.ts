@@ -8,8 +8,17 @@ export interface SysNotice {
   noticeType: string
   status: string
   scope: string
+  requireRead: string
   createTime: string
   updateTime: string
+}
+
+export interface NoticeReadReceipt {
+  noticeId: string
+  requireRead: string
+  readCount: number
+  totalCount: number | null
+  reads: { userId: string; readTime: string }[]
 }
 
 export interface NoticeListParams {
@@ -63,4 +72,9 @@ export function publishNoticeApi(id: string) {
 /** 下架公告 */
 export function revokeNoticeApi(id: string) {
   return request.put<void>(`/system/v1/notices/revoke/${encodeURIComponent(id)}`)
+}
+
+/** 公告阅读回执统计 */
+export function getNoticeReadReceiptApi(id: string) {
+  return request.get<NoticeReadReceipt>(`/system/v1/notices/${encodeURIComponent(id)}/read-receipt`)
 }

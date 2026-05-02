@@ -54,6 +54,12 @@
                   <a-tag bordered>{{ record.scope === 'public' ? $t('notice.public') : record.scope === 'internal' ? $t('notice.internal') : $t('user.unknown') }}</a-tag>
                 </template>
               </a-table-column>
+              <a-table-column :title="$t('notice.requireRead')" :width="100">
+                <template #cell="{ record }">
+                  <a-tag v-if="record.requireRead === 'Y'" color="red">{{ $t('notice.requireReadYes') }}</a-tag>
+                  <a-tag v-else bordered>{{ $t('notice.requireReadNo') }}</a-tag>
+                </template>
+              </a-table-column>
               <a-table-column :title="$t('common.status')" :width="100">
                 <template #cell="{ record }">
                   <a-tag v-if="record.status === '1'" color="arcoblue">{{ noticeStatusText(record.status) }}</a-tag>
@@ -69,6 +75,7 @@
                     <a-button v-permission="'system:notice:edit'" type="text" size="small" @click="handleEdit(record)">{{ $t('common.edit') }}</a-button>
                     <a-button v-if="record.status === '0'" v-permission="'system:notice:edit'" type="text" size="small" @click="handlePublish(record)">{{ $t('notice.publish') }}</a-button>
                     <a-button v-if="record.status === '1'" v-permission="'system:notice:edit'" type="text" size="small" @click="handleRevoke(record)">{{ $t('notice.revoke') }}</a-button>
+                    <a-button v-permission="'system:notice:list'" type="text" size="small" @click="handleReadReceipt(record)">{{ $t('notice.readReceipt') }}</a-button>
                     <a-button v-permission="'system:notice:delete'" type="text" size="small" @click="handleDelete(record)">{{ $t('common.delete') }}</a-button>
                   </a-space>
                 </template>
@@ -115,6 +122,11 @@
             { label: $t('notice.scopeInternal'), value: 'internal' },
           ]" />
         </div>
+        <div class="flex flex-col gap-1.5">
+          <span class="text-sm text-[var(--foreground)]">{{ $t('notice.requireRead') }}</span>
+          <a-switch v-model="formData.requireRead" :checked-value="'Y'" :unchecked-value="'N'" />
+          <span class="text-xs text-[var(--muted-foreground)]">{{ $t('notice.requireReadTip') }}</span>
+        </div>
       </div>
       <template #footer>
         <div class="flex justify-end gap-2">
@@ -135,6 +147,23 @@
         </div>
         <a-divider class="my-4" />
         <div class="notice-detail-content" v-html="sanitizeHtml(detailData.noticeContent)"></div>
+      </div>
+    </a-modal>
+
+    <a-modal v-model:visible="receiptVisible" :title="receiptTitle" :width="560" @cancel="receiptVisible = false">
+      <div v-if="receiptData">
+        <div class="mb-4 flex items-center gap-4">
+          <a-statistic :title="$t('notice.readCount')" :value="receiptData.readCount" />
+          <a-tag v-if="receiptData.requireRead === 'Y'" color="red">{{ $t('notice.requireReadYes') }}</a-tag>
+        </div>
+        <a-divider class="my-3" />
+        <div v-if="receiptData.reads.length" class="max-h-72 space-y-2 overflow-y-auto">
+          <div v-for="(r, i) in receiptData.reads" :key="i" class="flex items-center justify-between rounded bg-[var(--muted)] px-3 py-2 text-sm">
+            <span>{{ $t('notice.userIdLabel') }}：{{ r.userId }}</span>
+            <span class="text-xs text-[var(--muted-foreground)]">{{ formatDateTime(r.readTime) }}</span>
+          </div>
+        </div>
+        <a-empty v-else :description="$t('notice.noReadYet')" />
       </div>
     </a-modal>
 
@@ -163,8 +192,10 @@ import {
   deleteNoticeApi,
   publishNoticeApi,
   revokeNoticeApi,
+  getNoticeReadReceiptApi,
   type SysNotice,
   type NoticeListParams,
+  type NoticeReadReceipt,
 } from '@/api/notice'
 import { sanitizeHtml } from '@/utils/dom'
 
@@ -289,6 +320,7 @@ const defaultFormData = {
   noticeType: '1',
   noticeContent: '',
   scope: 'public',
+  requireRead: 'N',
   status: '0',
 }
 
@@ -308,9 +340,25 @@ function handleEdit(row: SysNotice) {
     noticeType: row.noticeType,
     noticeContent: row.noticeContent,
     scope: row.scope,
+    requireRead: row.requireRead || 'N',
     status: row.status,
   })
   formDialogVisible.value = true
+}
+
+const receiptVisible = ref(false)
+const receiptData = ref<NoticeReadReceipt | null>(null)
+const receiptTitle = ref('')
+
+async function handleReadReceipt(row: SysNotice) {
+  try {
+    const res = await getNoticeReadReceiptApi(row.id)
+    receiptData.value = res.data
+    receiptTitle.value = row.noticeTitle
+    receiptVisible.value = true
+  } catch (err) {
+    console.error('notice read receipt error:', err)
+  }
 }
 
 async function onFormConfirm() {
