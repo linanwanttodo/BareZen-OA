@@ -1,33 +1,58 @@
 <template>
-  <div class="login-container flex min-h-screen">
+  <div class="login-page flex min-h-screen">
     <!-- 左侧品牌区域 -->
-    <div class="brand-panel flex-col justify-between p-12 hidden md:flex w-[420px] flex-shrink-0">
-      <div>
-        <div class="mb-16 flex items-center gap-3">
-          <img src="/logo.svg" alt="BareZen" class="h-8" />
-          <span class="text-lg font-semibold text-white">BareZen</span>
-        </div>
-        <h2 class="mb-5 text-[28px] font-semibold leading-snug tracking-tight text-white">
+    <div class="brand-panel relative hidden flex-col justify-between overflow-hidden p-14 lg:flex lg:w-[520px] lg:flex-shrink-0">
+      <!-- 几何装饰层 -->
+      <div class="pointer-events-none absolute inset-0">
+        <!-- 右上圆环 -->
+        <div class="absolute -right-24 -top-24 h-80 w-80 rounded-full border border-white/10"></div>
+        <div class="absolute -right-10 -top-10 h-48 w-48 rounded-full border border-white/5"></div>
+        <!-- 左下光晕 -->
+        <div class="absolute -bottom-32 -left-24 h-96 w-96 rounded-full bg-[var(--primary)]/20 blur-3xl"></div>
+        <!-- 网格点阵 -->
+        <div class="absolute inset-0 opacity-[0.06]" style="background-image: radial-gradient(circle, #fff 1px, transparent 1px); background-size: 28px 28px"></div>
+      </div>
+
+      <!-- Logo 与品牌名 -->
+      <div class="relative z-10 flex items-center gap-3">
+        <img src="/logo.svg" alt="BareZen" class="h-9 w-9" />
+        <span class="text-xl font-semibold tracking-wide text-white">BareZen</span>
+      </div>
+
+      <!-- 主标语区 -->
+      <div class="relative z-10">
+        <h2 class="mb-4 text-[32px] font-semibold leading-snug tracking-tight text-white">
           {{ $t('login.enterprisePlatform') }}
         </h2>
-        <p class="text-sm leading-relaxed text-white/60">
+        <p class="max-w-[380px] text-sm leading-relaxed text-white/70">
           {{ $t('login.description') }}
         </p>
-      </div>
-      <div class="flex flex-wrap items-center gap-4">
-        <div v-for="item in features" :key="item" class="flex items-center gap-1.5 text-xs text-white/50">
-          <div class="h-1 w-1 rounded-full bg-white/40"></div>
-          <span>{{ item }}</span>
+
+        <!-- 特性标签 -->
+        <div class="mt-12 flex flex-wrap gap-3">
+          <div
+            v-for="item in features"
+            :key="item"
+            class="flex items-center gap-2 rounded-md border border-white/15 bg-white/5 px-4 py-2 text-sm text-white/85 backdrop-blur-sm"
+          >
+            <icon-check-circle class="text-[var(--primary-foreground)]" />
+            <span>{{ item }}</span>
+          </div>
         </div>
+      </div>
+
+      <!-- 底部版权 -->
+      <div class="relative z-10 border-t border-white/10 pt-6 text-xs text-white/50">
+        © {{ new Date().getFullYear() }} BareZen · {{ $t('login.internalSystem') }}
       </div>
     </div>
 
     <!-- 右侧登录表单 -->
-    <div class="flex flex-1 items-center justify-center bg-[var(--background)] p-8">
-      <div class="w-full max-w-[340px]">
+    <div class="flex flex-1 items-center justify-center bg-[var(--muted)] p-6">
+      <div class="w-full max-w-[400px] rounded-xl bg-[var(--card)] p-10 shadow-sm ring-1 ring-[var(--border)]">
         <!-- 移动端 Logo -->
-        <div class="mb-8 text-center md:hidden">
-          <img src="/logo.svg" alt="BareZen" class="mx-auto mb-3 h-8" />
+        <div class="mb-8 text-center lg:hidden">
+          <img src="/logo.svg" alt="BareZen" class="mx-auto mb-3 h-9 w-9" />
           <h1 class="text-lg font-semibold text-[var(--foreground)]">BareZen</h1>
         </div>
 
@@ -43,7 +68,6 @@
               :placeholder="$t('login.usernameRequired')"
               size="large"
               allow-clear
-              class="!rounded-lg"
             />
           </a-form-item>
 
@@ -52,21 +76,20 @@
               v-model="formData.password"
               :placeholder="$t('login.passwordRequired')"
               size="large"
-              class="!rounded-lg"
             />
           </a-form-item>
 
           <a-form-item field="captchaCode" :label="$t('login.captcha')" :rules="[{ required: true, message: $t('login.captchaRequired') }]">
-            <div class="flex items-center gap-3 w-full">
+            <div class="flex w-full items-center gap-3">
               <a-input
                 v-model="formData.captchaCode"
                 :placeholder="$t('login.captchaRequired')"
                 size="large"
-                class="flex-1 !rounded-lg"
+                class="flex-1"
                 @keyup.enter="onSubmit"
               />
               <div
-                class="flex h-10 min-w-[120px] shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--muted)]"
+                class="flex h-10 min-w-[120px] shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded border border-[var(--border)] bg-[var(--muted)]"
                 :title="$t('common.refresh')"
                 @click="refreshCaptcha"
               >
@@ -87,7 +110,6 @@
               long
               size="large"
               :loading="loading"
-              class="!rounded-lg !h-10 text-sm font-medium"
             >
               {{ $t('login.login') }}
             </a-button>
@@ -184,6 +206,7 @@ onMounted(() => {
 
 <style scoped>
 .brand-panel {
-  background-color: var(--primary);
+  /* 深色渐变品牌区：避免大面积纯色块，符合企业级信息层级 */
+  background: linear-gradient(160deg, #1d2b4d 0%, #17223c 55%, #101a30 100%);
 }
 </style>

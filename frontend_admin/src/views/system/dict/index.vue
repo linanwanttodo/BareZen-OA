@@ -443,7 +443,7 @@ onMounted(() => {
   background: #F2F3F5;
 }
 .dict-type-item--active {
-  background: #E8F3FF;
+  background: var(--color-primary-light-1);
 }
 .dict-type-item__info {
   flex: 1;

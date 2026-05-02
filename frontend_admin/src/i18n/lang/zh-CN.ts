@@ -91,6 +91,7 @@ export default {
     loginFailed: '登录失败',
     logoutSuccess: '已退出登录',
     loginInfo: '输入账号信息登录管理后台',
+    internalSystem: '内部管理系统',
     enterprisePlatform: '企业管理平台',
     description: '轻量、安全、可扩展的\n数字化管理解决方案。',
     features: ['开箱即用', '轻量可控', '双端前端'],

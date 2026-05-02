@@ -347,7 +347,7 @@ async function onPwdSubmit() {
 }
 .top-navbar__nav-item--active,
 .top-navbar__nav-item--active:hover {
-  background: #E8F3FF;
+  background: var(--color-primary-light-1);
   color: var(--primary);
   font-weight: 500;
 }
@@ -389,7 +389,7 @@ async function onPwdSubmit() {
 }
 .top-navbar__dropdown-item--active {
   color: var(--primary);
-  background: #E8F3FF;
+  background: var(--color-primary-light-1);
 }
 .top-navbar__right {
   display: flex;

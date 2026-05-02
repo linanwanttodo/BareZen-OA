@@ -91,6 +91,7 @@ export default {
     loginFailed: 'Login Failed',
     logoutSuccess: 'Logged Out',
     loginInfo: 'Enter your credentials to access the admin panel',
+    internalSystem: 'Internal Management System',
     enterprisePlatform: 'Enterprise Management Platform',
     description: 'Lightweight, secure, and scalable\ndigital management solution.',
     features: ['Ready-to-use', 'Lightweight', 'Dual Frontend'],

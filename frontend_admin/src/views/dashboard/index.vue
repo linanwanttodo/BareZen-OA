@@ -188,7 +188,7 @@ function initLineChart(visitTrend: { date: string; count: number }[]) {
 function initPieChart(roleDistribution: { name: string; value: number }[]) {
   if (!pieChartRef.value) return
   pieChart = echarts.init(pieChartRef.value)
-  const colors = ['var(--primary)', '#00B42A', '#FF7D00', '#722ED1', '#F53F3F', '#F7BA1E', '#0FC6C2']
+  const colors = ['var(--primary)', '#00B42A', '#FF7D00', '#722ED1', '#F53F3F', '#F7BA1E', 'var(--color-cyan-6)']
   const data = roleDistribution.map((item, i) => ({
     value: item.value,
     name: item.name,
