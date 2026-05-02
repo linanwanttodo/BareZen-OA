@@ -38,6 +38,9 @@ Thumbs.db
 # --- 工具 / 临时目录 ---
 .antigravitycli/
 .sisyphus/
+.feisuan/
+.trae/
+.cursor/
 
 # --- 环境配置（含敏感信息） ---
 .env.local
