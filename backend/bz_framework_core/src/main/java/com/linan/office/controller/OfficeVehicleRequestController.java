@@ -6,12 +6,14 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.linan.core.common.annotation.OperLog;
 import com.linan.core.common.api.PageResult;
 import com.linan.core.common.api.Result;
+import com.linan.core.common.event.ApprovalCompletedEvent;
 import com.linan.core.security.RequirePermission;
 import com.linan.core.security.interceptor.AuthInterceptor;
 import com.linan.office.entity.OfficeVehicleRequest;
 import com.linan.office.service.IOfficeVehicleRequestService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.web.bind.annotation.*;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -37,6 +39,9 @@ public class OfficeVehicleRequestController {
 
     @Autowired
     private IOfficeVehicleRequestService vehicleService;
+
+    @Autowired
+    private ApplicationEventPublisher eventPublisher;
 
     /**
      * 分页查询用车申请
@@ -127,6 +132,14 @@ public class OfficeVehicleRequestController {
         request.setApproveTime(LocalDateTime.now().format(FMT));
         request.setApproveRemark(remark);
         boolean ok = vehicleService.updateById(request);
+        if (ok) {
+            String result = "pass".equals(action) ? "已通过" : "已驳回";
+            eventPublisher.publishEvent(new ApprovalCompletedEvent(
+                    request.getApplicantId(),
+                    "用车审批" + result,
+                    "您的用车申请（" + request.getPurpose() + "，" + request.getStartTime() + " ~ " + request.getEndTime() + "）" + result
+                            + (remark != null && !remark.isEmpty() ? "，审批意见：" + remark : "")));
+        }
         return ok ? Result.success(null) : Result.error("审批失败");
     }
 

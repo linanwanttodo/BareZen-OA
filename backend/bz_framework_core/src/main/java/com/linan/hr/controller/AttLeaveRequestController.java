@@ -6,12 +6,14 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.linan.core.common.annotation.OperLog;
 import com.linan.core.common.api.PageResult;
 import com.linan.core.common.api.Result;
+import com.linan.core.common.event.ApprovalCompletedEvent;
 import com.linan.core.security.RequirePermission;
 import com.linan.core.security.interceptor.AuthInterceptor;
 import com.linan.hr.entity.AttLeaveRequest;
 import com.linan.hr.service.IAttLeaveRequestService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.web.bind.annotation.*;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -37,6 +39,9 @@ public class AttLeaveRequestController {
 
     @Autowired
     private IAttLeaveRequestService leaveService;
+
+    @Autowired
+    private ApplicationEventPublisher eventPublisher;
 
     /**
      * 分页查询请假记录
@@ -137,6 +142,15 @@ public class AttLeaveRequestController {
         leave.setApproveRemark(remark);
 
         boolean ok = leaveService.updateById(leave);
+        if (ok) {
+            // 审批结果通知申请人（通过/驳回均推送）
+            String result = "pass".equals(action) ? "已通过" : "已驳回";
+            eventPublisher.publishEvent(new ApprovalCompletedEvent(
+                    leave.getUserId(),
+                    "请假审批" + result,
+                    "您的请假申请（" + leave.getStartTime() + " ~ " + leave.getEndTime() + "）" + result
+                            + (remark != null && !remark.isEmpty() ? "，审批意见：" + remark : "")));
+        }
         return ok ? Result.success(null) : Result.error("审批失败");
     }
 

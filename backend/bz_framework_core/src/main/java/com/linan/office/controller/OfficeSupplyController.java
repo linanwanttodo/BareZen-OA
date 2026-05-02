@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.linan.core.common.annotation.OperLog;
 import com.linan.core.common.api.PageResult;
 import com.linan.core.common.api.Result;
+import com.linan.core.common.event.ApprovalCompletedEvent;
 import com.linan.core.security.RequirePermission;
 import com.linan.core.security.interceptor.AuthInterceptor;
 import com.linan.office.entity.OfficeSupply;
@@ -14,6 +15,7 @@ import com.linan.office.service.IOfficeSupplyRequestService;
 import com.linan.office.service.IOfficeSupplyService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.web.bind.annotation.*;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -42,6 +44,9 @@ public class OfficeSupplyController {
 
     @Autowired
     private IOfficeSupplyRequestService requestService;
+
+    @Autowired
+    private ApplicationEventPublisher eventPublisher;
 
     // ============ 用品管理 ============
 
@@ -182,6 +187,14 @@ public class OfficeSupplyController {
         request.setApproveTime(LocalDateTime.now().format(FMT));
         request.setApproveRemark(remark);
         boolean ok = requestService.updateById(request);
+        if (ok) {
+            String result = "pass".equals(action) ? "已通过" : "已驳回";
+            eventPublisher.publishEvent(new ApprovalCompletedEvent(
+                    request.getUserId(),
+                    "用品申领审批" + result,
+                    "您的用品申领（" + request.getSupplyName() + " × " + request.getQuantity() + "）" + result
+                            + (remark != null && !remark.isEmpty() ? "，审批意见：" + remark : "")));
+        }
         return ok ? Result.success(null) : Result.error("审批失败");
     }
 

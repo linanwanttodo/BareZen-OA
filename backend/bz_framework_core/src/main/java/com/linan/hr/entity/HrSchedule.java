@@ -45,4 +45,7 @@ public class HrSchedule extends BaseEntity {
 
     /** 地点 */
     private String location;
+
+    /** 是否已提醒（Y=是 N=否，供定时任务标记避免重复推送） */
+    private String remindSent;
 }

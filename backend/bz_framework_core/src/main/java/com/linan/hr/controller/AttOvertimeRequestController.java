@@ -6,12 +6,14 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.linan.core.common.annotation.OperLog;
 import com.linan.core.common.api.PageResult;
 import com.linan.core.common.api.Result;
+import com.linan.core.common.event.ApprovalCompletedEvent;
 import com.linan.core.security.RequirePermission;
 import com.linan.core.security.interceptor.AuthInterceptor;
 import com.linan.hr.entity.AttOvertimeRequest;
 import com.linan.hr.service.IAttOvertimeRequestService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.web.bind.annotation.*;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -37,6 +39,9 @@ public class AttOvertimeRequestController {
 
     @Autowired
     private IAttOvertimeRequestService overtimeService;
+
+    @Autowired
+    private ApplicationEventPublisher eventPublisher;
 
     /**
      * 分页查询加班记录
@@ -124,6 +129,14 @@ public class AttOvertimeRequestController {
         request.setApproveTime(LocalDateTime.now().format(FMT));
         request.setApproveRemark(remark);
         boolean ok = overtimeService.updateById(request);
+        if (ok) {
+            String result = "pass".equals(action) ? "已通过" : "已驳回";
+            eventPublisher.publishEvent(new ApprovalCompletedEvent(
+                    request.getUserId(),
+                    "加班审批" + result,
+                    "您的加班申请（" + request.getStartTime() + " ~ " + request.getEndTime() + "）" + result
+                            + (remark != null && !remark.isEmpty() ? "，审批意见：" + remark : "")));
+        }
         return ok ? Result.success(null) : Result.error("审批失败");
     }
 

@@ -101,7 +101,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { Bell, CheckSquare, Users, FileText } from 'lucide-vue-next'
+import { Bell, CheckSquare, Users, FileText, Clock, NotebookPen, Calendar, Package } from 'lucide-vue-next'
 import { useUserStore } from '@/stores/user'
 import { formatShortDate } from '@/utils/format'
 import { getDashboardApi } from '@/api/enterprise'
@@ -127,6 +127,10 @@ const quickEntries = computed(() => [
   { title: t('dashboard.contact'), path: '/contacts', icon: Users },
   { title: t('dashboard.todayTask'), path: '/todos', icon: CheckSquare },
   { title: t('dashboard.myProfile'), path: '/user/profile', icon: FileText },
+  { title: t('dashboard.attendance'), path: '/attendance', icon: Clock },
+  { title: t('dashboard.worklog'), path: '/worklogs', icon: NotebookPen },
+  { title: t('dashboard.schedule'), path: '/schedules', icon: Calendar },
+  { title: t('dashboard.supply'), path: '/supplies', icon: Package },
 ])
 
 async function loadDashboard() {

@@ -30,6 +30,9 @@ class AttLeaveRequestControllerTest {
     @Mock
     private IAttLeaveRequestService leaveService;
 
+    @Mock
+    private org.springframework.context.ApplicationEventPublisher eventPublisher;
+
     @InjectMocks
     private AttLeaveRequestController controller;
 

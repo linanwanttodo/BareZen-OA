@@ -30,6 +30,9 @@ class OfficeVehicleRequestControllerTest {
     @Mock
     private IOfficeVehicleRequestService vehicleService;
 
+    @Mock
+    private org.springframework.context.ApplicationEventPublisher eventPublisher;
+
     @InjectMocks
     private OfficeVehicleRequestController controller;
 
