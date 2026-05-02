@@ -49,3 +49,6 @@ Thumbs.db
 
 # --- AtomCode 本地配置 ---
 .atomcode/
+
+# --- Playwright 调试临时文件 ---
+.playwright-cli/
