@@ -37,6 +37,7 @@ import org.springframework.scheduling.annotation.EnableAsync;
         "com.linan.hr",
         "com.linan.asset",
         "com.linan.office",
+        "com.linan.kb",
         "com.linan.web"
 })
 @EnableAsync
