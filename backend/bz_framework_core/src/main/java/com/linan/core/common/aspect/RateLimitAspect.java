@@ -8,7 +8,7 @@ import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Pointcut;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
@@ -22,17 +22,29 @@ import java.util.List;
 public class RateLimitAspect {
 
     @Autowired
-    private RedisTemplate<String, Object> redisTemplate;
+    private StringRedisTemplate stringRedisTemplate;
 
     private static final String RATE_LIMIT_PREFIX = "rate_limit:";
 
-    private static final String LUA_SCRIPT =
+    /**
+     * Lua 脚本：滑动窗口计数器，每次调用都重新设置 TTL 防止 key 永久存在。
+     *
+     * KEYS[1] = 限流 key
+     * ARGV[1] = 窗口内最大请求数
+     * ARGV[2] = 窗口大小（秒）
+     * 返回值：1=允许 0=拒绝
+     */
+    private static final DefaultRedisScript<Long> RATE_LIMIT_SCRIPT = new DefaultRedisScript<>(
             "local key = KEYS[1] " +
             "local limit = tonumber(ARGV[1]) " +
             "local window = tonumber(ARGV[2]) " +
             "local current = redis.call('INCR', key) " +
-            "if current == 1 then redis.call('EXPIRE', key, window) end " +
-            "if current > limit then return 0 else return 1 end";
+            "if current == 1 then " +
+            "    redis.call('EXPIRE', key, window) " +
+            "end " +
+            "if current > limit then return 0 else return 1 end",
+            Long.class
+    );
 
     @Pointcut("@annotation(com.linan.core.common.annotation.RateLimit)")
     public void pointcut() {}
@@ -45,9 +57,8 @@ public class RateLimitAspect {
         String key = buildKey(rateLimit);
         String fullKey = RATE_LIMIT_PREFIX + key;
 
-        DefaultRedisScript<Long> script = new DefaultRedisScript<>(LUA_SCRIPT, Long.class);
-        Long result = redisTemplate.execute(
-                script,
+        Long result = stringRedisTemplate.execute(
+                RATE_LIMIT_SCRIPT,
                 List.of(fullKey),
                 String.valueOf(rateLimit.limit()),
                 String.valueOf(rateLimit.window())

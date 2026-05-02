@@ -3,64 +3,58 @@ package com.linan.core.common.controller;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.linan.core.common.api.PageResult;
 import com.linan.core.common.api.Result;
 import org.springframework.web.bind.annotation.*;
 
 /**
- * Controller 通用基类
+ * Controller 通用基类（受保护 CRUD）
  *
- * 提供通用的 CRUD 接口实现。子类 Controller 继承此基类后，
- * 自动获得以下接口，无需重复编写：
- * - GET    /list       分页查询
- * - GET    /{id}       根据ID查询
- * - POST   /           新增
- * - PUT    /           更新
- * - DELETE /{id}       删除
+ * <p>提供通用 CRUD 实现，但默认不暴露 HTTP 路由。
+ * 子类必须显式 {@code @Override} 并加 {@code @RequirePermission} 后才能对外开放，
+ * 避免继承即匿名开放接口的安全风险。</p>
  *
- * 使用方式：
+ * <p>使用方式：</p>
  * <pre>
+ * {@code
  * @RestController
- * @RequestMapping("/api/system/v1/users")
- * public class UserController extends BaseController< User, UserService> {
- *     // 自动继承增删改查接口，只需添加自定义业务接口
+ * @RequestMapping("/api/system/v1/notices")
+ * public class SysNoticeController extends BaseController&lt;SysNotice, ISysNoticeService&gt; {
+ *     @Override
+ *     @RequirePermission("system:notice:list")
+ *     @GetMapping("/page")
+ *     public Result&lt;IPage&lt;SysNotice&gt;&gt; list(Integer pageNum, Integer pageSize) {
+ *         return super.list(pageNum, pageSize);
+ *     }
+ * }
  * }
  * </pre>
  *
- * @param <T> 实体类型（如 User）
- * @param <S> Service 类型（如 UserService，需继承 IService<T>）
+ * @param <T> 实体类型
+ * @param <S> Service 类型（需继承 IService&lt;T&gt;）
  */
 public abstract class BaseController<T, S extends IService<T>> {
 
     /**
      * 子类通过此方法提供自己的 Service 实例。
-     *
-     * @return Service 实例
      */
     protected abstract S getService();
 
     /**
-     * 分页查询
-     *
-     * 请求：GET /{controller-path}/page?pageNum=1&pageSize=10
-     * 响应：{"code":200,"msg":"操作成功","data":{"total":100,"records":[...]}}
+     * 分页查询（子类需显式映射并加权限注解）
      */
-    @GetMapping("/page")
-    public Result<IPage<T>> list(
+    public Result<PageResult<T>> list(
             @RequestParam(defaultValue = "1") Integer pageNum,
             @RequestParam(defaultValue = "10") Integer pageSize) {
 
         Page<T> page = new Page<>(pageNum, pageSize);
         IPage<T> result = getService().page(page);
-        return Result.success(result);
+        return Result.page(result);
     }
 
     /**
-     * 根据ID查询
-     *
-     * 请求：GET /{controller-path}/{id}
-     * 响应：{"code":200,"msg":"操作成功","data":{...}}
+     * 根据 ID 查询（子类需显式映射并加权限注解）
      */
-    @GetMapping("/{id}")
     public Result<T> getById(@PathVariable Long id) {
         T entity = getService().getById(id);
         if (entity == null) {
@@ -70,27 +64,22 @@ public abstract class BaseController<T, S extends IService<T>> {
     }
 
     /**
-     * 新增前钩子 —— 子类可重写此方法在保存前执行额外处理（如参数补充、权限校验）。
-     * 返回非 null 的 Result 将中断保存流程并直接返回该结果。
+     * 新增前钩子 —— 返回非 null 的 Result 将中断保存。
      */
     protected Result<Void> preSave(T entity) {
-        return null; // 默认不做额外处理
+        return null;
     }
 
     /**
-     * 新增后钩子 —— 子类可重写此方法在保存成功后执行额外处理（如关联数据写入）。
+     * 新增后钩子
      */
     protected void postSave(T entity) {
-        // 默认不做额外处理
+        // no-op
     }
 
     /**
-     * 新增
-     *
-     * 请求：POST /{controller-path}  Body: {...}
-     * 响应：{"code":200,"msg":"操作成功","data":null}
+     * 新增（子类需显式映射并加权限注解）
      */
-    @PostMapping
     public Result<Void> save(@jakarta.validation.Valid @RequestBody T entity) {
         Result<Void> preResult = preSave(entity);
         if (preResult != null) {
@@ -105,24 +94,16 @@ public abstract class BaseController<T, S extends IService<T>> {
     }
 
     /**
-     * 更新
-     *
-     * 请求：PUT /{controller-path}  Body: {...}
-     * 响应：{"code":200,"msg":"操作成功","data":null}
+     * 更新（子类需显式映射并加权限注解）
      */
-    @PutMapping
     public Result<Void> update(@jakarta.validation.Valid @RequestBody T entity) {
         boolean ok = getService().updateById(entity);
         return ok ? Result.success(null) : Result.error("更新失败");
     }
 
     /**
-     * 删除
-     *
-     * 请求：DELETE /{controller-path}/{id}
-     * 响应：{"code":200,"msg":"操作成功","data":null}
+     * 删除（子类需显式映射并加权限注解）
      */
-    @DeleteMapping("/{id}")
     public Result<Void> delete(@PathVariable Long id) {
         boolean ok = getService().removeById(id);
         return ok ? Result.success(null) : Result.error("删除失败");

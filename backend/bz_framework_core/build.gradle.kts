@@ -32,9 +32,20 @@ dependencies {
     // Bean Validation API（@Valid、@NotBlank 等参数校验注解）
     implementation("org.springframework.boot:spring-boot-starter-validation")
 
+    // Commons IO（文件上传工具类）
+    implementation("commons-io:commons-io:2.15.1")
+
     // MyBatis-Plus 持久层框架（版本由根构建脚本的 BOM 管理）
     implementation("com.baomidou:mybatis-plus-spring-boot3-starter:3.5.7")
 
     // MySQL 数据库驱动
     runtimeOnly("com.mysql:mysql-connector-j")
+
+    // Quartz 定时任务调度框架
+    implementation("org.springframework.boot:spring-boot-starter-quartz")
+
+    // 测试依赖
+    testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("org.mockito:mockito-core")
+    testImplementation("org.mockito:mockito-junit-jupiter")
 }

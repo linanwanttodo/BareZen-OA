@@ -1,5 +1,6 @@
 package com.linan.core.common.api;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import lombok.Data;
 
 /**
@@ -52,6 +53,17 @@ public class Result<T> {
      */
     public static <T> Result<T> success(T data) {
         return new Result<>(ResultCodeEnum.SUCCESS.getCode(), ResultCodeEnum.SUCCESS.getMsg(), data);
+    }
+
+    /**
+     * 成功响应 — 分页查询结果
+     *
+     * 将 MyBatis-Plus 的 IPage 自动包装为 PageResult，
+     * 避免直接暴露 IPage 的内部字段给前端。
+     */
+    public static <T> Result<PageResult<T>> page(IPage<T> page) {
+        return new Result<>(ResultCodeEnum.SUCCESS.getCode(), ResultCodeEnum.SUCCESS.getMsg(),
+                PageResult.from(page));
     }
 
     /**

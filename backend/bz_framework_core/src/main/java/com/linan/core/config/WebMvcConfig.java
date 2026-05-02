@@ -2,22 +2,26 @@ package com.linan.core.config;
 
 import com.linan.core.security.JwtUtil;
 import com.linan.core.security.interceptor.AuthInterceptor;
+import jakarta.servlet.*;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.lang.NonNull;
+import org.springframework.util.StringUtils;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+import java.io.IOException;
+
 /**
  * Spring MVC 全局配置类
  *
- * 负责注册拦截器、配置跨域、消息转换器等 Web 层基础设施。
- * 实现 WebMvcConfigurer 接口，覆盖需要自定义的方法。
- *
- * 注意：不要在此类中添加 @EnableWebMvc 注解，
- * 它会导致 Spring Boot 的自动配置失效（如静态资源映射、JSON 序列化配置等）。
+ * 负责注册拦截器、配置跨域、安全响应头等 Web 层基础设施。
  */
 @Configuration
 public class WebMvcConfig implements WebMvcConfigurer {
@@ -29,12 +33,21 @@ public class WebMvcConfig implements WebMvcConfigurer {
      */
     private final AuthInterceptor authInterceptor;
 
+    /** 逗号分隔的允许来源，如 https://admin.example.com,https://app.example.com；空则开发模式放行 */
+    @Value("${cors.allowed-origins:}")
+    private String allowedOrigins;
+
+    /** JWT 过期时间（毫秒） */
+    @Value("${jwt.expiration:86400000}")
+    private long jwtExpiration;
+
     /**
-     * 通过构造函数注入 RedisTemplate 和 JwtUtil
+     * 通过构造函数注入 RedisTemplate、JwtUtil 和 JWT 过期时间
      */
-    public WebMvcConfig(RedisTemplate<String, Object> redisTemplate, JwtUtil jwtUtil) {
+    public WebMvcConfig(RedisTemplate<String, Object> redisTemplate, JwtUtil jwtUtil,
+                        @Value("${jwt.expiration:86400000}") long jwtExpiration) {
         this.redisTemplate = redisTemplate;
-        this.authInterceptor = new AuthInterceptor(redisTemplate, jwtUtil);
+        this.authInterceptor = new AuthInterceptor(redisTemplate, jwtUtil, jwtExpiration);
     }
 
     /**
@@ -64,10 +77,10 @@ public class WebMvcConfig implements WebMvcConfigurer {
                 .addPathPatterns("/api/**")                    // 拦截所有 /api/ 路径
                 .excludePathPatterns(                          // 排除以下路径
                         "/api/auth/v1/login",                  // 登录接口（获取 Token）
-                        "/api/auth/v1/register",               // 注册接口（如果存在）
+                        "/api/auth/v1/register",               // 注册接口
                         "/api/auth/v1/captcha",                // 验证码接口
-                        "/api/common/v1/health",               // 健康检查接口
-                        "/api/system/v1/files/download/**"     // 文件下载（公开链接）
+                        "/api/common/v1/health"                // 健康检查接口
+                        // 文件下载需登录；公开文件在 Controller 内校验 scope
                 );
         // 如果需要排除多个模式，可以链式调用多次 excludePathPatterns，或一次传入多个 pattern
     }
@@ -78,27 +91,33 @@ public class WebMvcConfig implements WebMvcConfigurer {
      * 当前端应用运行在不同的域名/端口时（如 Vue 开发服务器 localhost:5173），
      * 浏览器会发送跨域请求。CORS 配置告诉浏览器哪些来源是被允许的。
      *
-     * 当前配置允许所有来源（开发阶段），生产环境应限制具体的域名。
-     *
-     * CORS 相关 HTTP 响应头说明：
-     * - Access-Control-Allow-Origin：允许的请求来源
-     * - Access-Control-Allow-Methods：允许的 HTTP 方法
-     * - Access-Control-Allow-Headers：允许的请求头
-     * - Access-Control-Allow-Credentials：是否允许携带 Cookie
-     * - Access-Control-Max-Age：预检请求缓存时间（秒）
+     * 安全要求：
+     * - 开发环境：允许 localhost:5173（管理端）和 localhost:5174（用户端）
+     * - 生产环境：通过 cors.allowed-origins 配置具体域名
+     * - 禁止 allowCredentials(true) 与通配符 * 同时使用（安全风险）
      *
      * @param registry CORS 注册表
      */
     @Override
     public void addCorsMappings(@NonNull CorsRegistry registry) {
-        registry.addMapping("/api/**")                         // 允许跨域的路径
-                .allowedOriginPatterns("*")                    // 允许所有来源（开发环境）
-                // 生产环境建议：
-                // .allowedOrigins("https://your-admin-domain.com", "https://your-app-domain.com")
-                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")  // 允许的 HTTP 方法
-                .allowedHeaders("*")                           // 允许所有请求头
-                .allowCredentials(true)                        // 允许携带 Cookie（如需要）
-                .maxAge(3600);                                 // 预检请求缓存 1 小时
+        var cors = registry.addMapping("/api/**")
+                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                .allowedHeaders("*")
+                .maxAge(3600);
+
+        if (StringUtils.hasText(allowedOrigins)) {
+            // 生产环境：使用配置的具体域名
+            String[] origins = allowedOrigins.split(",");
+            for (int i = 0; i < origins.length; i++) {
+                origins[i] = origins[i].trim();
+            }
+            cors.allowedOrigins(origins)
+                .allowCredentials(true);
+        } else {
+            // 开发环境：明确指定前端来源，禁止使用通配符
+            cors.allowedOrigins("http://localhost:5173", "http://localhost:5174")
+                .allowCredentials(true);
+        }
     }
 
     /*
@@ -121,5 +140,47 @@ public class WebMvcConfig implements WebMvcConfigurer {
     public void addResourceHandlers(@NonNull ResourceHandlerRegistry registry) {
         registry.addResourceHandler("/profile/**")
                 .addResourceLocations("file:./uploads/");
+    }
+
+    /**
+     * 安全响应头过滤器
+     *
+     * 为所有响应添加安全相关的 HTTP 头，防止点击劫持、MIME 嗅探等攻击。
+     */
+    @Bean
+    public FilterRegistrationBean<Filter> securityHeadersFilter() {
+        FilterRegistrationBean<Filter> registration = new FilterRegistrationBean<>();
+        registration.setFilter(new Filter() {
+            @Override
+            public void doFilter(ServletRequest request, ServletResponse response,
+                                 FilterChain chain) throws IOException, ServletException {
+                HttpServletResponse resp = (HttpServletResponse) response;
+                resp.setHeader("X-Content-Type-Options", "nosniff");
+                resp.setHeader("X-Frame-Options", "DENY");
+                resp.setHeader("X-XSS-Protection", "1; mode=block");
+                resp.setHeader("Cache-Control", "no-store");
+                resp.setHeader("Pragma", "no-cache");
+                resp.setHeader("Content-Security-Policy",
+                        "default-src 'self'; "
+                        + "script-src 'self'; "
+                        + "style-src 'self' 'unsafe-inline'; "
+                        + "img-src 'self' data: blob:; "
+                        + "font-src 'self' data:; "
+                        + "connect-src 'self'; "
+                        + "frame-src 'none'; "
+                        + "object-src 'none'; "
+                        + "base-uri 'self'; "
+                        + "form-action 'self'");
+                chain.doFilter(request, response);
+            }
+
+            @Override
+            public void init(FilterConfig filterConfig) {}
+            @Override
+            public void destroy() {}
+        });
+        registration.addUrlPatterns("/*");
+        registration.setOrder(1);
+        return registration;
     }
 }

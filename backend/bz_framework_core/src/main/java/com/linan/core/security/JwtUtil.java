@@ -10,6 +10,8 @@ import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Date;
 import java.util.Map;
 
@@ -55,12 +57,30 @@ public class JwtUtil {
      * 这些密钥来自示例代码、教程文档或开源仓库，不应在生产环境中使用。
      */
     private static final String[] KNOWN_WEAK_SECRETS = {
-            "BareZenBaseSecretKeyForJWTSigning2024"
+            "BareZenBaseSecretKeyForJWTSigning2024",
+            "bXktZGV2LWp3dC1zZWNyZXQta2V5LWZvci1sb2NhbC1kZXZlbG9wbWVudA==",
+            "my-dev-jwt-secret-key-for-local-development"
     };
 
     public JwtUtil(
             @Value("${jwt.secret}") String secret,
             @Value("${jwt.expiration:86400000}") long expiration) {
+        // 在构造函数中先校验密钥合法性，避免 Keys.hmacShaKeyFor 抛出难以理解的异常
+        if (secret == null || secret.isBlank()) {
+            log.error("JWT 密钥未配置！请通过环境变量 JWT_SECRET 设置密钥。"
+                    + "生成安全密钥：openssl rand -base64 32");
+            throw new IllegalStateException("JWT secret is not configured. "
+                    + "Set JWT_SECRET environment variable. "
+                    + "Generate one with: openssl rand -base64 32");
+        }
+        if (secret.length() < MIN_SECRET_LENGTH) {
+            log.error("JWT 密钥长度不足：当前 {} 字符，至少需要 {} 字符（256位）。"
+                            + "请使用更长的密钥，例如：openssl rand -base64 32",
+                    secret.length(), MIN_SECRET_LENGTH);
+            throw new IllegalStateException(
+                    "JWT secret too short: " + secret.length()
+                            + " chars, minimum " + MIN_SECRET_LENGTH + " chars required");
+        }
         this.secret = secret;
         this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
         this.expiration = expiration;
@@ -74,32 +94,23 @@ public class JwtUtil {
      */
     @PostConstruct
     public void validateKey() {
-        if (secret == null || secret.isEmpty()) {
-            log.error("JWT 密钥未配置！请在 application.yml 中设置 jwt.secret，"
-                    + "或通过环境变量 JWT_SECRET 注入。"
-                    + "生成安全密钥：openssl rand -base64 32");
-            throw new IllegalStateException("JWT secret is not configured");
-        }
-
-        if (secret.length() < MIN_SECRET_LENGTH) {
-            log.error("JWT 密钥长度不足：当前 {} 字符，至少需要 {} 字符（256位）。"
-                            + "请使用更长的密钥，例如：openssl rand -base64 32",
-                    secret.length(), MIN_SECRET_LENGTH);
-            throw new IllegalStateException(
-                    "JWT secret too short: " + secret.length()
-                            + " chars, minimum " + MIN_SECRET_LENGTH + " chars required");
-        }
-
+        // 密钥空值和长度检查已在构造函数中完成，此处补充已知弱密钥检测
+        boolean isWeak = false;
         for (String weak : KNOWN_WEAK_SECRETS) {
             if (secret.equals(weak)) {
-                log.warn("═══════════════════════════════════════════════════════");
-                log.warn("  检测到默认/示例 JWT 密钥！");
-                log.warn("  当前密钥是已知的公开弱密钥，存在安全风险。");
-                log.warn("  生产环境务必通过 JWT_SECRET 环境变量设置自定义密钥。");
-                log.warn("  生成安全密钥：openssl rand -base64 32");
-                log.warn("═══════════════════════════════════════════════════════");
+                isWeak = true;
                 break;
             }
+        }
+        if (isWeak) {
+            log.error("═══════════════════════════════════════════════════════");
+            log.error("  检测到已知的公开弱 JWT 密钥！");
+            log.error("  当前密钥是公开的示例密钥，存在严重安全风险。");
+            log.error("  请立即通过 JWT_SECRET 环境变量更换密钥。");
+            log.error("  生成安全密钥：openssl rand -base64 32");
+            log.error("═══════════════════════════════════════════════════════");
+            throw new IllegalStateException(
+                    "JWT secret is a known weak key. Please change it immediately.");
         }
 
         log.info("JWT 密钥校验通过（长度: {} 字符）", secret.length());
@@ -129,10 +140,21 @@ public class JwtUtil {
     }
 
     /**
-     * 获取 Token 的 MD5 摘要（用于 Redis 黑名单 Key，避免存储完整 Token）
+     * 获取 Token 的 SHA-256 摘要（用于 Redis 黑名单 Key，避免存储完整 Token）
      */
     public String getTokenDigest(String token) {
-        return org.springframework.util.DigestUtils.md5DigestAsHex(
-                token.getBytes(StandardCharsets.UTF_8));
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            byte[] hash = md.digest(token.getBytes(StandardCharsets.UTF_8));
+            StringBuilder hexString = new StringBuilder();
+            for (byte b : hash) {
+                String hex = Integer.toHexString(0xff & b);
+                if (hex.length() == 1) hexString.append('0');
+                hexString.append(hex);
+            }
+            return hexString.toString();
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException("SHA-256 algorithm not available", e);
+        }
     }
 }

@@ -1,5 +1,6 @@
 package com.linan.core.common.aspect;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.linan.core.common.annotation.RepeatSubmit;
 import com.linan.core.common.api.Result;
 import com.linan.core.security.interceptor.AuthInterceptor;
@@ -11,10 +12,13 @@ import org.aspectj.lang.reflect.MethodSignature;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
-import org.springframework.util.DigestUtils;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.TimeUnit;
 
 @Aspect
@@ -26,6 +30,8 @@ public class RepeatSubmitAspect {
 
     private static final String REPEAT_SUBMIT_PREFIX = "repeat_submit:";
 
+    private static final ObjectMapper objectMapper = new ObjectMapper();
+
     @Pointcut("@annotation(com.linan.core.common.annotation.RepeatSubmit)")
     public void pointcut() {}
 
@@ -34,13 +40,22 @@ public class RepeatSubmitAspect {
         MethodSignature signature = (MethodSignature) joinPoint.getSignature();
         RepeatSubmit repeatSubmit = signature.getMethod().getAnnotation(RepeatSubmit.class);
 
+        // 获取用户ID（登录用户）或 IP（匿名用户）
         Long userId = AuthInterceptor.getCurrentUserId();
-        if (userId == null) {
-            return joinPoint.proceed();
+        String identifier;
+        if (userId != null) {
+            identifier = "user:" + userId;
+        } else {
+            // 匿名请求：使用客户端 IP 作为标识
+            HttpServletRequest request = getHttpServletRequest();
+            if (request != null) {
+                identifier = "ip:" + getClientIp(request);
+            } else {
+                return joinPoint.proceed(); // 无法获取标识，放行
+            }
         }
 
-        HttpServletRequest request = getHttpServletRequest();
-        String fingerprint = generateFingerprint(request, userId, joinPoint.getArgs());
+        String fingerprint = generateFingerprint(identifier, joinPoint.getArgs());
         String key = REPEAT_SUBMIT_PREFIX + fingerprint;
 
         Boolean acquired = redisTemplate.opsForValue()
@@ -53,27 +68,54 @@ public class RepeatSubmitAspect {
         return Result.error("请勿重复提交");
     }
 
-    private String generateFingerprint(HttpServletRequest request, Long userId, Object[] args) {
+    /**
+     * 生成请求指纹：标识符 + URI + 参数 JSON 序列化
+     */
+    private String generateFingerprint(String identifier, Object[] args) {
         StringBuilder sb = new StringBuilder();
-        sb.append(userId).append(":");
+        sb.append(identifier).append(":");
+
+        HttpServletRequest request = getHttpServletRequest();
         if (request != null) {
             sb.append(request.getRequestURI());
         }
+
+        // 使用 JSON 序列化参数，替代不可靠的 toString()
         if (args != null) {
             for (Object arg : args) {
                 if (arg != null && !(arg instanceof org.springframework.web.multipart.MultipartFile)) {
-                    sb.append(arg.toString());
+                    try {
+                        String json = objectMapper.writeValueAsString(arg);
+                        sb.append(json);
+                    } catch (Exception e) {
+                        sb.append(arg.toString());
+                    }
                 }
             }
         }
-        return DigestUtils.md5DigestAsHex(sb.toString().getBytes(StandardCharsets.UTF_8));
+
+        // 使用 SHA-256 生成定长指纹
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            byte[] hash = md.digest(sb.toString().getBytes(StandardCharsets.UTF_8));
+            StringBuilder hex = new StringBuilder();
+            for (byte b : hash) {
+                String h = Integer.toHexString(0xff & b);
+                if (h.length() == 1) hex.append('0');
+                hex.append(h);
+            }
+            return hex.toString();
+        } catch (NoSuchAlgorithmException e) {
+            // fallback to MD5 (should not happen on standard JVM)
+            return org.springframework.util.DigestUtils.md5DigestAsHex(
+                    sb.toString().getBytes(StandardCharsets.UTF_8));
+        }
     }
 
     private HttpServletRequest getHttpServletRequest() {
         try {
-            org.springframework.web.context.request.ServletRequestAttributes attrs =
-                    (org.springframework.web.context.request.ServletRequestAttributes)
-                    org.springframework.web.context.request.RequestContextHolder.getRequestAttributes();
+            ServletRequestAttributes attrs =
+                    (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
             if (attrs == null) {
                 return null;
             }
@@ -81,5 +123,19 @@ public class RepeatSubmitAspect {
         } catch (Exception e) {
             return null;
         }
+    }
+
+    private String getClientIp(HttpServletRequest request) {
+        String ip = request.getHeader("X-Forwarded-For");
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("X-Real-IP");
+        }
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getRemoteAddr();
+        }
+        if (ip != null && ip.contains(",")) {
+            ip = ip.split(",")[0].trim();
+        }
+        return ip;
     }
 }

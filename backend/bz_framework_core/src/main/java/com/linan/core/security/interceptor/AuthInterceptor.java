@@ -6,6 +6,7 @@ import com.linan.core.security.JwtUtil;
 import com.linan.core.security.PassAuth;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.Claims;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.lang.NonNull;
 import org.springframework.lang.Nullable;
@@ -18,6 +19,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.stereotype.Component;
+
+import java.util.Date;
 
 /**
  * JWT 鉴权拦截器
@@ -35,12 +38,17 @@ public class AuthInterceptor implements HandlerInterceptor {
 
     private final JwtUtil jwtUtil;
 
+    /** Token 过期时间（毫秒），用于计算滑动刷新阈值 */
+    private final long expiration;
+
     /**
      * 构造函数注入 RedisTemplate 和 JwtUtil
      */
-    public AuthInterceptor(RedisTemplate<String, Object> redisTemplate, JwtUtil jwtUtil) {
+    public AuthInterceptor(RedisTemplate<String, Object> redisTemplate, JwtUtil jwtUtil,
+                           @Value("${jwt.expiration:86400000}") long expiration) {
         this.redisTemplate = redisTemplate;
         this.jwtUtil = jwtUtil;
+        this.expiration = expiration;
     }
 
     /**
@@ -50,9 +58,13 @@ public class AuthInterceptor implements HandlerInterceptor {
      * 每个 HTTP 请求由独立的线程处理，ThreadLocal 可以安全地在线程内传递数据，
      * 无需在方法参数中层层传递 userId。Aspect 切面、Service 层都可直接获取。
      *
-     * 使用 InheritableThreadLocal 确保子线程也能获取（如 @Async 异步任务）。
+     * 注意：这里必须使用普通 ThreadLocal 而非 InheritableThreadLocal。
+     * 项目启用了 Java 21 虚拟线程（spring.threads.virtual.enabled=true），
+     * InheritableThreadLocal 会在线程创建时复制父线程的值，
+     * 在虚拟线程/线程池复用场景下可能把上一个请求的 userId 泄漏给其他任务，造成越权。
+     * 如需在 @Async 等异步任务中传递用户上下文，请通过方法参数或 TaskDecorator 显式传递。
      */
-    private static final ThreadLocal<Long> currentUserIdHolder = new InheritableThreadLocal<>();
+    private static final ThreadLocal<Long> currentUserIdHolder = new ThreadLocal<>();
 
     /**
      * 获取当前请求的用户ID（供 Aspect、Service 等任意位置调用）
@@ -115,23 +127,40 @@ public class AuthInterceptor implements HandlerInterceptor {
             return true;
         }
 
-        // ---- 第三步：提取 Authorization Header ----
-        // 标准格式：Authorization: Bearer <token>
+        // ---- 第三步：提取 Token（支持 Authorization Header 或 httpOnly Cookie 双通道）----
+        // 优先级：Authorization Header > httpOnly Cookie（bz_token）
+        // httpOnly Cookie 可避免 JS 读取 Token，降低 XSS 窃取风险；
+        // 同时保留 Header 方式以兼容现有前端与 WebSocket 鉴权场景。
         String authHeader = request.getHeader("Authorization");
+        String token = null;
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            // 标准 Bearer Token 方式
+            token = authHeader.substring(7);
+        } else {
+            // 回退到 httpOnly Cookie（由 AuthController 登录时通过 Set-Cookie 下发）
+            jakarta.servlet.http.Cookie[] cookies = request.getCookies();
+            if (cookies != null) {
+                for (jakarta.servlet.http.Cookie c : cookies) {
+                    if ("bz_token".equals(c.getName())) {
+                        token = c.getValue();
+                        break;
+                    }
+                }
+            }
+        }
 
-        // 如果 Header 为空或格式不正确，返回 401 并中断请求
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+        // 如果 Header 与 Cookie 均无 Token，返回 401 并中断请求
+        if (token == null || token.isEmpty()) {
             writeUnauthorizedResponse(response, "请求头中缺少Authorization信息");
             return false;
         }
 
-        // 提取 Token 部分："Bearer " 后 7 个字符开始
-        String token = authHeader.substring(7);
-
         // ---- 第四步：验证 Token ----
         try {
-            // 1. 检查 Token 是否在黑名单中
-            if (Boolean.TRUE.equals(redisTemplate.hasKey("blacklist:" + token))) {
+            // 1. 检查 Token 是否在黑名单中（digest + 完整 token 兼容）
+            String digest = jwtUtil.getTokenDigest(token);
+            if (Boolean.TRUE.equals(redisTemplate.hasKey("blacklist:" + digest))
+                    || Boolean.TRUE.equals(redisTemplate.hasKey("blacklist:" + token))) {
                 writeUnauthorizedResponse(response, "Token已失效，请重新登录");
                 return false;
             }
@@ -139,6 +168,24 @@ public class AuthInterceptor implements HandlerInterceptor {
             // 2. 解析 Token，验证签名和有效期
             // 如果 Token 无效（过期、伪造、格式错误），会抛出对应的异常
             Claims claims = jwtUtil.parseToken(token);
+
+            // 3. 滑动 Token 刷新：如果剩余时间不足一半，签发新 Token
+            //    同时将旧 Token 摘要加入 Redis 黑名单（TTL 设为旧 Token 剩余有效期），
+            //    避免高频请求场景下旧 Token 仍可被复用，造成多个有效 Token 并存滥用。
+            Date expirationDate = claims.getExpiration();
+            long remainingMs = expirationDate.getTime() - System.currentTimeMillis();
+            if (remainingMs < expiration / 2 && remainingMs > 0) {
+                // 旧 Token 立即失效（TTL 取剩余有效期，到期后黑名单条目自动清除）
+                long oldTtlSeconds = Math.max(remainingMs / 1000, 1L);
+                redisTemplate.opsForValue().set("blacklist:" + digest, "slide_refresh",
+                        oldTtlSeconds, java.util.concurrent.TimeUnit.SECONDS);
+
+                // 签发新 Token，放入响应头（前端拦截器检测到 X-Access-Token 后更新本地存储）
+                Long userId = claims.get("userId", Long.class);
+                String username = claims.get("username", String.class);
+                String newToken = jwtUtil.createToken(userId, username);
+                response.setHeader("X-Access-Token", newToken);
+            }
 
             // 解析成功，存入 ThreadLocal（供全链路使用）和 request 属性
             Long userId = claims.get("userId", Long.class);

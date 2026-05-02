@@ -20,6 +20,24 @@ dependencies {
     // Spring Boot Data Redis（在线用户监控、接口限流、防重复提交需要）
     implementation("org.springframework.boot:spring-boot-starter-data-redis")
 
+    // Spring Boot Cache（权限缓存、字典缓存）
+    implementation("org.springframework.boot:spring-boot-starter-cache")
+
+    // Flyway 数据库迁移
+    implementation("org.flywaydb:flyway-core")
+    implementation("org.flywaydb:flyway-mysql")
+
+    // Spring Boot WebSocket
+    implementation("org.springframework.boot:spring-boot-starter-websocket")
+
+    // Quartz 定时任务
+    implementation("org.springframework.boot:spring-boot-starter-quartz")
+
+    // JWT（WebSocket 认证需要）
+    implementation("io.jsonwebtoken:jjwt-api:0.12.5")
+    runtimeOnly("io.jsonwebtoken:jjwt-impl:0.12.5")
+    runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.12.5")
+
     // MyBatis-Plus（LambdaQueryWrapper、Page 等在 web 模块中直接使用）
     implementation("com.baomidou:mybatis-plus-spring-boot3-starter:3.5.7")
 

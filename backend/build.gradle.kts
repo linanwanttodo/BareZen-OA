@@ -36,6 +36,12 @@ subprojects {
         testImplementation(platform("org.junit:junit-bom:6.0.0"))
         testImplementation("org.junit.jupiter:junit-jupiter")
         testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+
+        // Jsoup HTML 净化（XSS 防护）
+        implementation("org.jsoup:jsoup:1.18.1")
+
+        // Swagger 注解（@Tag, @Operation 等）
+        implementation("io.swagger.core.v3:swagger-annotations:2.2.21")
     }
 
     tasks.test {
