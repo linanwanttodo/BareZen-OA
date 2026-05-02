@@ -1,15 +1,21 @@
 package com.linan.system.service.impl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.linan.core.common.event.NoticePublishEvent;
 import com.linan.system.entity.SysNotice;
 import com.linan.system.mapper.SysNoticeMapper;
 import com.linan.system.service.ISysNoticeService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
 public class SysNoticeServiceImpl extends ServiceImpl<SysNoticeMapper, SysNotice> implements ISysNoticeService {
+
+    @Autowired
+    private ApplicationEventPublisher eventPublisher;
 
     @Override
     public SysNotice selectLatestNotice() {
@@ -28,7 +34,12 @@ public class SysNoticeServiceImpl extends ServiceImpl<SysNoticeMapper, SysNotice
             return false;
         }
         notice.setStatus("1");
-        return updateById(notice);
+        boolean updated = updateById(notice);
+        if (updated) {
+            // 发布成功后发布领域事件，由 Web 模块监听并推送 WebSocket 实时通知
+            eventPublisher.publishEvent(new NoticePublishEvent(notice.getNoticeTitle(), notice.getNoticeContent()));
+        }
+        return updated;
     }
 
     @Override
