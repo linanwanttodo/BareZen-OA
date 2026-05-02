@@ -2,6 +2,7 @@ package com.linan.kb.entity;
 
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.linan.core.common.entity.BaseEntity;
+import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -16,6 +17,7 @@ import lombok.EqualsAndHashCode;
 public class KbDocument extends BaseEntity {
 
     /** 文档标题 */
+    @NotBlank(message = "文档标题不能为空")
     private String title;
 
     /** 分类：general=通用 manual=制度手册 process=流程规范 tech=技术资料 other=其他 */

@@ -2,6 +2,7 @@ package com.linan.hr.entity;
 
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.linan.core.common.entity.BaseEntity;
+import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -27,12 +28,15 @@ public class AttLeaveRequest extends BaseEntity {
     private String deptName;
 
     /** 请假类型：annual=年假 sick=病假 personal=事假 overtime=调休 marriage=婚假 maternity=产假 other=其他 */
+    @NotBlank(message = "请假类型不能为空")
     private String leaveType;
 
     /** 开始时间（yyyy-MM-dd HH:mm） */
+    @NotBlank(message = "开始时间不能为空")
     private String startTime;
 
     /** 结束时间（yyyy-MM-dd HH:mm） */
+    @NotBlank(message = "结束时间不能为空")
     private String endTime;
 
     /** 请假天数 */

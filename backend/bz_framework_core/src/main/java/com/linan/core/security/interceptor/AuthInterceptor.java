@@ -66,6 +66,9 @@ public class AuthInterceptor implements HandlerInterceptor {
      */
     private static final ThreadLocal<Long> currentUserIdHolder = new ThreadLocal<>();
 
+    /** 当前请求的用户名（与 currentUserIdHolder 生命周期一致） */
+    private static final ThreadLocal<String> currentUsernameHolder = new ThreadLocal<>();
+
     /**
      * 获取当前请求的用户ID（供 Aspect、Service 等任意位置调用）
      *
@@ -76,10 +79,20 @@ public class AuthInterceptor implements HandlerInterceptor {
     }
 
     /**
+     * 获取当前请求的用户名（供 Aspect、Service 等任意位置调用）
+     *
+     * @return 当前登录用户的用户名，未登录返回 null
+     */
+    public static String getCurrentUsername() {
+        return currentUsernameHolder.get();
+    }
+
+    /**
      * 清除 ThreadLocal（请求结束后必须调用，防止内存泄漏）
      */
     public static void clearCurrentUser() {
         currentUserIdHolder.remove();
+        currentUsernameHolder.remove();
     }
 
     /*
@@ -189,9 +202,11 @@ public class AuthInterceptor implements HandlerInterceptor {
 
             // 解析成功，存入 ThreadLocal（供全链路使用）和 request 属性
             Long userId = claims.get("userId", Long.class);
+            String username = claims.get("username", String.class);
             currentUserIdHolder.set(userId);
+            currentUsernameHolder.set(username);
             request.setAttribute("userId", userId);
-            request.setAttribute("username", claims.get("username", String.class));
+            request.setAttribute("username", username);
 
             return true; // 鉴权通过，放行
 

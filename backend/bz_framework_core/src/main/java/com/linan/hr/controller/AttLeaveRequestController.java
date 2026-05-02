@@ -117,6 +117,12 @@ public class AttLeaveRequestController {
             return Result.error("该记录已审批，不能重复操作");
         }
 
+        // 禁止审批人审批自己的申请（避免自审自批）
+        Long approverId = AuthInterceptor.getCurrentUserId();
+        if (approverId != null && approverId.equals(leave.getUserId())) {
+            return Result.error("不能审批自己的申请");
+        }
+
         if ("pass".equals(action)) {
             leave.setStatus("1");
         } else if ("reject".equals(action)) {
@@ -125,9 +131,8 @@ public class AttLeaveRequestController {
             return Result.error("无效的审批动作");
         }
 
-        Long approverId = AuthInterceptor.getCurrentUserId();
         leave.setApproverId(approverId);
-        leave.setApproverName(approverId != null ? String.valueOf(approverId) : null);
+        leave.setApproverName(AuthInterceptor.getCurrentUsername());
         leave.setApproveTime(LocalDateTime.now().format(FMT));
         leave.setApproveRemark(remark);
 

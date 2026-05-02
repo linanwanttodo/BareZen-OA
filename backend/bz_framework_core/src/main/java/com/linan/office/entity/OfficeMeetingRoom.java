@@ -2,6 +2,7 @@ package com.linan.office.entity;
 
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.linan.core.common.entity.BaseEntity;
+import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -16,6 +17,7 @@ import lombok.EqualsAndHashCode;
 public class OfficeMeetingRoom extends BaseEntity {
 
     /** 会议室名称 */
+    @NotBlank(message = "会议室名称不能为空")
     private String roomName;
 
     /** 容纳人数 */

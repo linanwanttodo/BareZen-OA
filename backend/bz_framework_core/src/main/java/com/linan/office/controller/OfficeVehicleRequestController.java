@@ -108,6 +108,13 @@ public class OfficeVehicleRequestController {
         if (!"0".equals(request.getStatus())) {
             return Result.error("该申请已审批，不能重复操作");
         }
+
+        // 禁止审批人审批自己的申请（避免自审自批）
+        Long approverId = AuthInterceptor.getCurrentUserId();
+        if (approverId != null && approverId.equals(request.getApplicantId())) {
+            return Result.error("不能审批自己的申请");
+        }
+
         if ("pass".equals(action)) {
             request.setStatus("1");
         } else if ("reject".equals(action)) {
@@ -115,9 +122,8 @@ public class OfficeVehicleRequestController {
         } else {
             return Result.error("无效的审批动作");
         }
-        Long approverId = AuthInterceptor.getCurrentUserId();
         request.setApproverId(approverId);
-        request.setApproverName(approverId != null ? String.valueOf(approverId) : null);
+        request.setApproverName(AuthInterceptor.getCurrentUsername());
         request.setApproveTime(LocalDateTime.now().format(FMT));
         request.setApproveRemark(remark);
         boolean ok = vehicleService.updateById(request);

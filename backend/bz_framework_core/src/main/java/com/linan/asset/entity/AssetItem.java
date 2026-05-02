@@ -2,6 +2,7 @@ package com.linan.asset.entity;
 
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.linan.core.common.entity.BaseEntity;
+import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -18,9 +19,11 @@ import java.math.BigDecimal;
 public class AssetItem extends BaseEntity {
 
     /** 资产编号 */
+    @NotBlank(message = "资产编号不能为空")
     private String assetNo;
 
     /** 资产名称 */
+    @NotBlank(message = "资产名称不能为空")
     private String assetName;
 
     /** 资产分类：computer=电脑办公 equipment=设备 furniture=家具 vehicle=车辆 other=其他 */

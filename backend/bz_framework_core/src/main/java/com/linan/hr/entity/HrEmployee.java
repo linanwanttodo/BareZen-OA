@@ -2,6 +2,8 @@ package com.linan.hr.entity;
 
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.linan.core.common.entity.BaseEntity;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -16,9 +18,11 @@ import lombok.EqualsAndHashCode;
 public class HrEmployee extends BaseEntity {
 
     /** 员工工号（唯一） */
+    @NotBlank(message = "工号不能为空")
     private String empNo;
 
     /** 姓名 */
+    @NotBlank(message = "姓名不能为空")
     private String name;
 
     /** 性别：0=男 1=女 2=未知 */
@@ -34,6 +38,7 @@ public class HrEmployee extends BaseEntity {
     private String position;
 
     /** 手机号 */
+    @Pattern(regexp = "^$|^1[3-9]\\d{9}$", message = "手机号格式不正确")
     private String phone;
 
     /** 邮箱 */

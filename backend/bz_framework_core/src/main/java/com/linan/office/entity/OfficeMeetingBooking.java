@@ -2,6 +2,8 @@ package com.linan.office.entity;
 
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.linan.core.common.entity.BaseEntity;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -16,12 +18,14 @@ import lombok.EqualsAndHashCode;
 public class OfficeMeetingBooking extends BaseEntity {
 
     /** 会议室ID */
+    @NotNull(message = "请选择会议室")
     private Long roomId;
 
     /** 会议室名称（冗余） */
     private String roomName;
 
     /** 会议主题 */
+    @NotBlank(message = "会议主题不能为空")
     private String title;
 
     /** 预订人用户ID */

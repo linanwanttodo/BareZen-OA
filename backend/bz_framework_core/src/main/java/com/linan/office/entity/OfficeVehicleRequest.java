@@ -2,6 +2,7 @@ package com.linan.office.entity;
 
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.linan.core.common.entity.BaseEntity;
+import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -28,12 +29,15 @@ public class OfficeVehicleRequest extends BaseEntity {
     private String vehicleType;
 
     /** 用车事由 */
+    @NotBlank(message = "用车事由不能为空")
     private String purpose;
 
     /** 用车开始时间 */
+    @NotBlank(message = "用车开始时间不能为空")
     private String startTime;
 
     /** 用车结束时间 */
+    @NotBlank(message = "用车结束时间不能为空")
     private String endTime;
 
     /** 目的地 */
