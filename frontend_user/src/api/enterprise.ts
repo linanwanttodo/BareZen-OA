@@ -1,5 +1,5 @@
 import request from './request'
-import type { ApiResult, DashboardData, Notice, Contact, TodoItem, PageData } from '@/types/api'
+import type { ApiResult, DashboardData, Notice, Contact, TodoItem, CreateTodoDTO, UpdateTodoDTO, PageData } from '@/types/api'
 
 // ==================== 工作台 ====================
 
@@ -17,7 +17,7 @@ export function getNoticeListApi(params: { page?: number; pageSize?: number }) {
 
 /** 公告详情 */
 export function getNoticeDetailApi(id: string) {
-  return request.get<any, ApiResult<Notice>>(`/app/v1/notices/${id}`)
+  return request.get<any, ApiResult<Notice>>(`/app/v1/notices/${encodeURIComponent(id)}`)
 }
 
 // ==================== 通讯录 ====================
@@ -35,18 +35,18 @@ export function getTodoListApi(params: { page?: number; pageSize?: number; statu
 }
 
 /** 新增待办 */
-export function addTodoApi(data: Partial<TodoItem>) {
+export function addTodoApi(data: CreateTodoDTO) {
   return request.post<any, ApiResult<void>>('/app/v1/todos', data)
 }
 
 /** 更新待办 */
-export function updateTodoApi(data: Partial<TodoItem>) {
+export function updateTodoApi(data: UpdateTodoDTO) {
   return request.put<any, ApiResult<void>>('/app/v1/todos', data)
 }
 
 /** 删除待办 */
 export function deleteTodoApi(id: string) {
-  return request.delete<any, ApiResult<void>>(`/app/v1/todos/${id}`)
+  return request.delete<any, ApiResult<void>>(`/app/v1/todos/${encodeURIComponent(id)}`)
 }
 
 // ==================== 个人资料 ====================

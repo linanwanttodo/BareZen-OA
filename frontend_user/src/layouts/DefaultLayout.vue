@@ -4,7 +4,7 @@
     <header class="user-header">
       <!-- 左侧：Logo + 品牌名 -->
       <div class="user-header__left">
-        <div class="user-header__logo">B</div>
+        <img src="/logo-icon.svg" alt="BareZen" class="user-header__logo" />
         <span class="user-header__brand">BareZen</span>
       </div>
 
@@ -51,10 +51,10 @@
     <footer class="user-footer">
       <div class="user-footer__inner">
         <div class="user-footer__left">
-          <div class="user-footer__logo">B</div>
+          <img src="/logo-icon.svg" alt="BareZen" class="user-footer__logo" />
           <span>BareZen 企业门户</span>
         </div>
-        <p>Powered by Spring Boot 3 + Vue 3</p>
+        <p>© 2026 BareZen</p>
       </div>
     </footer>
 
@@ -100,7 +100,6 @@ const navItems = [
   { title: '工作台', path: '/' },
   { title: '通知公告', path: '/notices' },
   { title: '通讯录', path: '/contacts' },
-  { title: '文件中心', path: '/files' },
   { title: '待办事项', path: '/todos' },
 ]
 
@@ -136,8 +135,9 @@ async function onPwdSubmit() {
     pwdForm.confirmPassword = ''
     await userStore.logout()
     router.push('/auth/login')
-  } catch {
-    // 错误已在拦截器中处理
+  } catch (e) {
+    const msg = (e as Error)?.message || '密码修改失败'
+    Message.error(msg)
   }
 }
 </script>
@@ -147,7 +147,7 @@ async function onPwdSubmit() {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background: #F7F8FA;
+  background: var(--muted);
 }
 
 /* 顶部导航 */
@@ -156,8 +156,8 @@ async function onPwdSubmit() {
   align-items: center;
   height: 52px;
   padding: 0 32px;
-  background: #FFFFFF;
-  border-bottom: 1px solid #E5E6EB;
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
   position: sticky;
   top: 0;
   z-index: 100;
@@ -173,11 +173,6 @@ async function onPwdSubmit() {
 .user-header__logo {
   width: 30px;
   height: 30px;
-  border-radius: 6px;
-  background: #3370FF;
-  color: #FFFFFF;
-  font-size: 15px;
-  font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -185,7 +180,7 @@ async function onPwdSubmit() {
 .user-header__brand {
   font-size: 16px;
   font-weight: 600;
-  color: #1D2129;
+  color: var(--foreground);
 }
 
 .user-header__nav {
@@ -197,18 +192,18 @@ async function onPwdSubmit() {
 .user-header__nav-item {
   padding: 6px 16px;
   font-size: 14px;
-  color: #4E5969;
+  color: var(--muted-foreground);
   border-radius: 4px;
   cursor: pointer;
   user-select: none;
 }
 .user-header__nav-item:hover {
-  color: #1D2129;
-  background: #F7F8FA;
+  color: var(--foreground);
+  background: var(--muted);
 }
 .user-header__nav-item--active {
-  color: #3370FF;
-  background: #E8F3FF;
+  color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
   font-weight: 500;
 }
 
@@ -225,14 +220,14 @@ async function onPwdSubmit() {
   border-radius: 4px;
 }
 .user-header__user:hover {
-  background: #F7F8FA;
+  background: var(--muted);
 }
 .user-header__avatar {
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: #3370FF;
-  color: #FFFFFF;
+  background: var(--primary);
+  color: var(--primary-foreground);
   font-size: 12px;
   font-weight: 600;
   display: flex;
@@ -241,7 +236,7 @@ async function onPwdSubmit() {
 }
 .user-header__username {
   font-size: 14px;
-  color: #1D2129;
+  color: var(--foreground);
 }
 
 /* 主内容 */
@@ -252,8 +247,8 @@ async function onPwdSubmit() {
 
 /* 页脚 */
 .user-footer {
-  background: #FFFFFF;
-  border-top: 1px solid #E5E6EB;
+  background: var(--card);
+  border-top: 1px solid var(--border);
   padding: 20px 32px;
 }
 .user-footer__inner {
@@ -268,22 +263,14 @@ async function onPwdSubmit() {
   align-items: center;
   gap: 8px;
   font-size: 14px;
-  color: #4E5969;
+  color: var(--muted-foreground);
 }
 .user-footer__logo {
   width: 24px;
   height: 24px;
-  border-radius: 4px;
-  background: #3370FF;
-  color: #FFFFFF;
-  font-size: 12px;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 .user-footer p {
   font-size: 13px;
-  color: #86909C;
+  color: var(--muted-foreground);
 }
 </style>

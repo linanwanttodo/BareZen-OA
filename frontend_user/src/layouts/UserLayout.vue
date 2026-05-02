@@ -3,7 +3,7 @@
     <!-- 顶部导航 -->
     <header class="user-header">
       <div class="user-header__left">
-        <div class="user-header__logo">B</div>
+        <img src="/logo-icon.svg" alt="BareZen" class="user-header__logo" />
         <span class="user-header__brand">BareZen</span>
       </div>
       <a-button size="small" @click="router.push('/')">返回工作台</a-button>
@@ -57,14 +57,6 @@ const router = useRouter()
 .user-header__logo {
   width: 30px;
   height: 30px;
-  border-radius: 6px;
-  background: #3370FF;
-  color: #FFFFFF;
-  font-size: 15px;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 .user-header__brand {
   font-size: 16px;

@@ -5,12 +5,12 @@ export interface ApiResult<T = any> {
   data: T
 }
 
-/** 分页响应数据 */
+/** 分页响应数据（对应后端 PageResult） */
 export interface PageData<T = any> {
-  records: T[]
+  list: T[]
   total: number
-  size: number
-  current: number
+  pageNum: number
+  pageSize: number
   pages: number
 }
 
@@ -71,6 +71,24 @@ export interface Contact {
   sex: string
   avatar: string
   roleNames: string[]
+}
+
+/** 创建待办 DTO — 仅包含前端可提交字段 */
+export interface CreateTodoDTO {
+  title: string
+  description?: string
+  priority?: number
+  dueDate?: string
+}
+
+/** 更新待办 DTO — 仅包含前端可修改字段 */
+export interface UpdateTodoDTO {
+  id: string
+  title?: string
+  description?: string
+  priority?: number
+  status?: number
+  dueDate?: string
 }
 
 /** 待办事项 */

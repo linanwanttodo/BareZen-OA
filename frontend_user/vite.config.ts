@@ -18,9 +18,18 @@ export default defineConfig({
         changeOrigin: true,
       },
     },
+    headers: {
+      'Content-Security-Policy':
+        "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' ws: wss:;",
+    },
   },
   esbuild: {
-    drop: process.env.NODE_ENV === 'production' ? ['console', 'debugger'] : [],
+    // 生产构建时移除 debugger，并将 console.log/debug/info 标记为无副作用供 tree-shake；
+    // 保留 console.error/warn。比手写正则替换安全（正则无法处理嵌套括号）
+    drop: process.env.NODE_ENV === 'production' ? ['debugger'] : [],
+    pure: process.env.NODE_ENV === 'production'
+      ? ['console.log', 'console.debug', 'console.info']
+      : [],
   },
   build: {
     sourcemap: false,

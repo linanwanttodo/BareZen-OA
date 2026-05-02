@@ -36,12 +36,9 @@ export const useUserStore = defineStore('user', () => {
     removeToken()
   }
 
-  const isLoggedIn = ref(!!getToken())
-
   return {
     token,
     userInfo,
-    isLoggedIn,
     login,
     fetchUserInfo,
     logout,

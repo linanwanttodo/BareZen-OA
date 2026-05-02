@@ -1,60 +1,53 @@
 <template>
-  <div class="mx-auto max-w-4xl px-6 py-8">
-    <!-- 个人信息头部 -->
-    <a-card :bordered="true" class="mb-6">
-      <div class="flex items-center gap-6 p-4">
-        <a-avatar :size="64" style="background-color: #3370FF">
-          {{ userInitial }}
-        </a-avatar>
-        <div class="min-w-0 flex-1">
-          <h2 class="text-xl font-bold" style="color: #1D2129">{{ userStore.userInfo?.nickName || '用户' }}</h2>
-          <p class="mt-1 text-sm" style="color: #86909C">@{{ userStore.userInfo?.userName || '-' }}</p>
-          <div class="mt-2 flex flex-wrap gap-2">
-            <a-tag v-for="role in userStore.userInfo?.roles" :key="role" color="blue">{{ role }}</a-tag>
+  <div class="profile-page max-w-2xl mx-auto py-8 px-4">
+    <!-- 页面标题 -->
+    <PageHeader :title="$t('profile.title')" description="查看和编辑你的个人信息" />
+
+    <!-- 头像区域 -->
+    <div class="flex flex-col items-center mb-8">
+      <div class="w-24 h-24 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-3xl font-bold shadow-lg mb-3">
+        {{ userInitial }}
+      </div>
+      <h2 class="text-xl font-semibold text-gray-800">{{ userStore.userInfo?.nickName }}</h2>
+      <p class="text-sm text-gray-500">@{{ userStore.userInfo?.userName }}</p>
+    </div>
+
+    <!-- 信息卡片 -->
+    <Card>
+      <CardContent class="p-6">
+        <div class="space-y-4">
+          <div v-for="(item, index) in profileData" :key="index"
+               class="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
+            <span class="text-gray-500 text-sm">{{ item.label }}</span>
+            <span class="text-gray-800 font-medium">{{ item.value }}</span>
           </div>
         </div>
-        <a-button @click="showEditDialog = true">
-          <template #icon><icon-edit /></template>
-          编辑资料
-        </a-button>
-      </div>
-    </a-card>
 
-    <!-- 详细信息 -->
-    <a-card :bordered="true">
-      <template #title>
-        <div class="flex items-center gap-2">
-          <icon-user style="color: #3370FF" />
-          <span>基本信息</span>
+        <div class="mt-6 flex justify-center">
+          <Button variant="outline" @click="showEditDialog = true">
+            {{ $t('profile.editProfile') }}
+          </Button>
         </div>
-      </template>
-      <a-descriptions :column="2" layout="vertical" :data="profileData" />
-    </a-card>
+      </CardContent>
+    </Card>
 
-    <!-- 编辑资料弹窗 -->
-    <a-modal
-      v-model:visible="showEditDialog"
-      title="编辑个人资料"
-      :width="480"
-      :mask-closable="false"
-      @ok="onEditSubmit"
-      @cancel="showEditDialog = false"
-    >
-      <a-form :model="editForm" layout="vertical">
-        <a-form-item field="nickName" label="昵称" :rules="[{ required: true, message: '请输入昵称' }]">
+    <!-- 编辑资料对话框 -->
+    <a-modal v-model:visible="showEditDialog" :title="$t('profile.editProfile')" @ok="onEditSubmit" @cancel="showEditDialog = false">
+      <a-form :model="editForm" auto-label-width>
+        <a-form-item field="nickName" :label="$t('profile.nickName')" :rules="[{ required: true, message: '请输入昵称' }]">
           <a-input v-model="editForm.nickName" placeholder="请输入昵称" />
         </a-form-item>
-        <a-form-item field="sex" label="性别">
+        <a-form-item field="sex" :label="$t('profile.sex')">
           <a-radio-group v-model="editForm.sex">
-            <a-radio value="1">男</a-radio>
-            <a-radio value="2">女</a-radio>
-            <a-radio value="0">未知</a-radio>
+            <a-radio value="0">{{ $t('profile.male') }}</a-radio>
+            <a-radio value="1">{{ $t('profile.female') }}</a-radio>
+            <a-radio value="2">{{ $t('profile.unknown') }}</a-radio>
           </a-radio-group>
         </a-form-item>
-        <a-form-item field="email" label="邮箱">
+        <a-form-item field="email" :label="$t('profile.email')">
           <a-input v-model="editForm.email" placeholder="请输入邮箱" />
         </a-form-item>
-        <a-form-item field="phone" label="手机号">
+        <a-form-item field="phone" :label="$t('profile.phone')">
           <a-input v-model="editForm.phone" placeholder="请输入手机号" />
         </a-form-item>
       </a-form>
@@ -64,28 +57,30 @@
 
 <script setup lang="ts">
 import { computed, ref, reactive, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Message } from '@arco-design/web-vue'
-import { IconEdit, IconUser } from '@arco-design/web-vue/es/icon'
+import { IconEdit } from '@arco-design/web-vue/es/icon'
 import { useUserStore } from '@/stores/user'
 import { updateProfileApi } from '@/api/enterprise'
 
+const { t } = useI18n()
 const userStore = useUserStore()
 const userInitial = computed(() => (userStore.userInfo?.nickName || '用').charAt(0).toUpperCase())
 
 const sexLabel = computed(() => {
   const sex = userStore.userInfo?.sex
-  if (sex === '1') return '男'
-  if (sex === '2') return '女'
-  return '未知'
+  if (sex === '0') return t('profile.male')
+  if (sex === '1') return t('profile.female')
+  return t('profile.unknown')
 })
 
 const profileData = computed(() => [
   { label: '用户名', value: userStore.userInfo?.userName || '-' },
-  { label: '昵称', value: userStore.userInfo?.nickName || '-' },
-  { label: '邮箱', value: userStore.userInfo?.email || '-' },
-  { label: '手机号', value: userStore.userInfo?.phone || '-' },
-  { label: '性别', value: sexLabel.value },
-  { label: '角色', value: userStore.userInfo?.roles?.join('、') || '-' },
+  { label: t('profile.nickName'), value: userStore.userInfo?.nickName || '-' },
+  { label: t('profile.email'), value: userStore.userInfo?.email || '-' },
+  { label: t('profile.phone'), value: userStore.userInfo?.phone || '-' },
+  { label: t('profile.sex'), value: sexLabel.value },
+  { label: t('profile.roles'), value: userStore.userInfo?.roles?.join('、') || '-' },
 ])
 
 // ---- 编辑资料 ----
@@ -115,7 +110,7 @@ async function onEditSubmit() {
       phone: editForm.phone,
       sex: editForm.sex,
     })
-    Message.success('资料更新成功')
+    Message.success(t('profile.updateSuccess'))
     showEditDialog.value = false
     await userStore.fetchUserInfo()
   } catch {

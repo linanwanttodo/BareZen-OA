@@ -29,19 +29,13 @@ const router = createRouter({
           path: 'notices/:id',
           name: 'NoticeDetail',
           component: () => import('@/pages/notice/detail.vue'),
-          meta: { title: '公告详情' },
+          meta: { title: '公告详情', requiresAuth: true },
         },
         {
           path: 'contacts',
           name: 'Contacts',
           component: () => import('@/pages/contact/index.vue'),
           meta: { title: '通讯录', requiresAuth: true },
-        },
-        {
-          path: 'files',
-          name: 'Files',
-          component: () => import('@/pages/file/index.vue'),
-          meta: { title: '文件中心', requiresAuth: true },
         },
         {
           path: 'todos',
@@ -86,8 +80,7 @@ const router = createRouter({
 })
 
 // 白名单路由：不需要登录即可访问的页面
-// 注意：首页（/）不在白名单中，因为其 meta.requiresAuth = true
-const whiteList = ['/notices', '/auth/login', '/notices/:id(\\d+)']
+const whiteList = ['/notices', '/auth/login']
 
 router.beforeEach(async (to, _from, next) => {
   NProgress.start()
@@ -97,13 +90,15 @@ router.beforeEach(async (to, _from, next) => {
 
   if (to.meta.requiresAuth && !token) {
     next({ path: '/auth/login', query: { redirect: to.fullPath } })
-  } else if (token && !whiteList.includes(to.path)) {
+  } else if (token && !whiteList.some(p => to.path === p)) {
     const userStore = useUserStore()
     if (!userStore.userInfo) {
       try {
         await userStore.fetchUserInfo()
       } catch {
         userStore.resetState()
+        next({ path: '/auth/login', query: { redirect: to.fullPath } })
+        return
       }
     }
     next()

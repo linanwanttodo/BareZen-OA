@@ -1,45 +1,47 @@
 <template>
   <div>
-    <div class="mb-8">
-      <h2 class="text-2xl font-bold" style="color: #1D2129">登录</h2>
-      <p class="text-sm" style="color: #86909C">请使用企业账号登录</p>
+    <div class="mb-8 text-center">
+      <img src="/logo.svg" alt="BareZen" class="mx-auto mb-4 h-10" />
+      <h2 class="text-2xl font-semibold tracking-tight text-[var(--foreground)]">{{ $t('auth.loginTitle') }}</h2>
+      <p class="mt-2 text-sm text-[var(--muted-foreground)]">登录你的企业账户</p>
     </div>
 
-    <a-form :model="formData" layout="vertical" @submit-success="onSubmit">
-      <a-form-item field="username" label="用户名" :rules="[{ required: true, message: '请输入用户名' }]">
+    <a-form :model="formData" layout="vertical" @submit-success="onSubmit" class="space-y-4">
+      <a-form-item field="username" :label="$t('auth.username')" :rules="[{ required: true, message: '请输入用户名' }]">
         <a-input
           v-model="formData.username"
           placeholder="请输入用户名"
           size="large"
           allow-clear
+          class="!rounded-lg"
         />
       </a-form-item>
 
-      <a-form-item field="password" label="密码" :rules="[{ required: true, message: '请输入密码' }]">
+      <a-form-item field="password" :label="$t('auth.password')" :rules="[{ required: true, message: '请输入密码' }]">
         <a-input-password
           v-model="formData.password"
           placeholder="请输入密码"
           size="large"
+          class="!rounded-lg"
         />
       </a-form-item>
 
-      <a-form-item field="captchaCode" label="验证码" :rules="[{ required: true, message: '请输入验证码' }]">
+      <a-form-item field="captchaCode" :label="$t('auth.captcha')" :rules="[{ required: true, message: '请输入验证码' }]">
         <div class="flex items-center gap-3 w-full">
           <a-input
             v-model="formData.captchaCode"
             placeholder="请输入验证码"
             size="large"
-            class="flex-1"
+            class="flex-1 !rounded-lg"
             @keyup.enter="onSubmit"
           />
           <div
-            class="flex h-10 min-w-[120px] shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded border"
-            style="border-color: #E5E6EB; background: #F7F8FA"
+            class="flex h-10 min-w-[120px] shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--muted)]"
             title="点击刷新"
             @click="refreshCaptcha"
           >
             <img v-if="captchaImg" :src="captchaImg" alt="验证码" class="h-full w-[120px]" />
-            <span v-else class="text-xs" style="color: #86909C">加载中</span>
+            <span v-else class="text-xs text-[var(--muted-foreground)]">加载中</span>
           </div>
         </div>
       </a-form-item>
@@ -51,23 +53,29 @@
           long
           size="large"
           :loading="loading"
+          class="!rounded-lg !bg-[var(--primary)] !h-11 text-sm font-medium"
         >
-          登录
+          {{ $t('auth.login') }}
         </a-button>
       </a-form-item>
     </a-form>
 
-    <p class="mt-6 text-center text-sm" style="color: #86909C">如需账号，请联系企业管理员</p>
+    <div class="mt-6 text-center">
+      <p class="text-xs text-[var(--muted-foreground)]">如需账号，请联系企业管理员</p>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useUserStore } from '@/stores/user'
 import { getCaptchaApi } from '@/api/auth'
 import { Message } from '@arco-design/web-vue'
+import { safeRedirect } from '@/utils/url'
 
+const { t } = useI18n()
 const router = useRouter()
 const route = useRoute()
 const userStore = useUserStore()
@@ -86,16 +94,12 @@ async function refreshCaptcha() {
     const res = await getCaptchaApi()
     captchaImg.value = res.data.captchaBase64
     captchaUuid.value = res.data.uuid
-  } catch {
-    // 错误已在拦截器中处理
+  } catch (err) {
+    console.error('captcha refresh error:', err)
   }
 }
 
 async function onSubmit() {
-  if (!formData.username || !formData.password || !formData.captchaCode) {
-    Message.warning('请填写完整的登录信息')
-    return
-  }
   loading.value = true
   try {
     await userStore.login({
@@ -104,9 +108,9 @@ async function onSubmit() {
       captchaCode: formData.captchaCode,
       uuid: captchaUuid.value,
     })
-    Message.success('登录成功')
+    Message.success(t('auth.loginSuccess'))
     const redirect = (route.query.redirect as string) || '/'
-    router.push(redirect)
+    router.push(safeRedirect(redirect))
   } catch {
     refreshCaptcha()
   } finally {

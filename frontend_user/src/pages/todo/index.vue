@@ -2,22 +2,22 @@
   <div class="mx-auto max-w-6xl px-6 py-8">
     <div class="mb-6 flex items-center justify-between">
       <div>
-        <h1 class="text-2xl font-bold" style="color: #1D2129">待办事项</h1>
-        <p class="mt-1 text-sm" style="color: #86909C">管理你的工作待办</p>
+        <h1 class="text-2xl font-bold text-[var(--foreground)]">{{ $t('todo.title') }}</h1>
+        <p class="mt-1 text-sm text-[var(--muted-foreground)]">管理你的工作待办</p>
       </div>
       <a-button type="primary" @click="openAddDialog">
         <template #icon><icon-plus /></template>
-        新增待办
+        {{ $t('todo.add') }}
       </a-button>
     </div>
 
     <!-- 状态筛选 -->
     <div class="mb-6">
       <a-radio-group v-model="statusFilter" type="button" @change="onStatusFilter">
-        <a-radio :value="''">全部</a-radio>
-        <a-radio :value="0">待办</a-radio>
-        <a-radio :value="1">进行中</a-radio>
-        <a-radio :value="2">已完成</a-radio>
+        <a-radio :value="''">{{ $t('todo.all') }}</a-radio>
+        <a-radio :value="0">{{ $t('todo.statusTodo') }}</a-radio>
+        <a-radio :value="1">{{ $t('todo.statusInProgress') }}</a-radio>
+        <a-radio :value="2">{{ $t('todo.statusDone') }}</a-radio>
       </a-radio-group>
     </div>
 
@@ -27,21 +27,20 @@
         <div
           v-for="todo in todos"
           :key="todo.id"
-          class="flex items-start gap-4 rounded-lg border p-5"
-          style="border-color: #E5E6EB; background: #FFFFFF"
+          class="flex items-start gap-4 rounded-lg border border-[var(--border)] bg-[var(--card)] p-5"
           :class="{ 'opacity-60': todo.status === 2 || todo.status === 3 }"
         >
           <div class="mt-0.5 shrink-0">
-            <a-checkbox :model-value="todo.status === 2" @change="(v: boolean) => onToggleDone(todo, v)" />
+            <a-checkbox :model-value="todo.status === 2" @change="(checked: any) => onToggleDone(todo, checked as boolean)" />
           </div>
           <div class="min-w-0 flex-1">
             <div class="mb-1 flex items-center gap-2">
-              <h3 class="font-semibold" style="color: #1D2129" :class="{ 'line-through': todo.status === 2 }">{{ todo.title }}</h3>
+              <h3 class="font-semibold text-[var(--foreground)]" :class="{ 'line-through': todo.status === 2 }">{{ todo.title }}</h3>
               <a-tag :color="priorityColor(todo.priority)" size="small">{{ priorityLabel(todo.priority) }}</a-tag>
               <a-tag :color="statusColor(todo.status)" size="small">{{ statusLabel(todo.status) }}</a-tag>
             </div>
-            <p v-if="todo.description" class="mb-2 line-clamp-2 text-sm" style="color: #86909C">{{ todo.description }}</p>
-            <div class="flex items-center gap-4 text-xs" style="color: #86909C">
+            <p v-if="todo.description" class="mb-2 line-clamp-2 text-sm text-[var(--muted-foreground)]">{{ todo.description }}</p>
+            <div class="flex items-center gap-4 text-xs text-[var(--muted-foreground)]">
               <span v-if="todo.dueDate">截止: {{ todo.dueDate }}</span>
               <span>创建: {{ formatDate(todo.createTime) }}</span>
             </div>
@@ -50,7 +49,7 @@
             <a-button size="small" @click="openEditDialog(todo)">
               <template #icon><icon-edit /></template>
             </a-button>
-            <a-popconfirm content="确认删除此待办？" @ok="onDelete(todo.id)">
+            <a-popconfirm :content="$t('todo.deleteConfirm')" @ok="onDelete(todo.id)">
               <a-button size="small" status="danger">
                 <template #icon><icon-delete /></template>
               </a-button>
@@ -58,7 +57,7 @@
           </div>
         </div>
       </div>
-      <a-empty v-else description="暂无待办事项" />
+      <a-empty v-else :description="$t('todo.noData')" />
     </a-spin>
 
     <!-- 分页 -->
@@ -75,42 +74,42 @@
     <!-- 新增/编辑弹窗 -->
     <a-modal
       v-model:visible="dialogVisible"
-      :title="isEdit ? '编辑待办' : '新增待办'"
+      :title="isEdit ? $t('todo.edit') : $t('todo.add')"
       :width="520"
       :mask-closable="false"
       @ok="onSubmit"
       @cancel="dialogVisible = false"
     >
       <a-form :model="formData" layout="vertical">
-        <a-form-item field="title" label="标题" :rules="[{ required: true, message: '请输入待办标题' }]">
+        <a-form-item field="title" :label="$t('todo.titleLabel')" :rules="[{ required: true, message: '请输入待办标题' }]">
           <a-input v-model="formData.title" placeholder="请输入待办标题" />
         </a-form-item>
-        <a-form-item field="description" label="描述">
+        <a-form-item field="description" :label="$t('todo.descriptionLabel')">
           <a-textarea v-model="formData.description" placeholder="请输入待办描述（可选）" />
         </a-form-item>
         <a-row :gutter="16">
           <a-col :span="12">
-            <a-form-item field="priority" label="优先级">
+            <a-form-item field="priority" :label="$t('todo.priorityLabel')">
               <a-select v-model="formData.priority">
-                <a-option :value="0">低</a-option>
-                <a-option :value="1">中</a-option>
-                <a-option :value="2">高</a-option>
+                <a-option :value="0">{{ $t('todo.priorityLow') }}</a-option>
+                <a-option :value="1">{{ $t('todo.priorityMedium') }}</a-option>
+                <a-option :value="2">{{ $t('todo.priorityHigh') }}</a-option>
                 <a-option :value="3">紧急</a-option>
               </a-select>
             </a-form-item>
           </a-col>
           <a-col :span="12">
-            <a-form-item field="status" label="状态">
+            <a-form-item field="status" :label="$t('todo.statusLabel')">
               <a-select v-model="formData.status">
-                <a-option :value="0">待办</a-option>
-                <a-option :value="1">进行中</a-option>
-                <a-option :value="2">已完成</a-option>
+                <a-option :value="0">{{ $t('todo.statusTodo') }}</a-option>
+                <a-option :value="1">{{ $t('todo.statusInProgress') }}</a-option>
+                <a-option :value="2">{{ $t('todo.statusDone') }}</a-option>
                 <a-option :value="3">已取消</a-option>
               </a-select>
             </a-form-item>
           </a-col>
         </a-row>
-        <a-form-item field="dueDate" label="截止日期">
+        <a-form-item field="dueDate" :label="$t('todo.dueDateLabel')">
           <a-date-picker v-model="formData.dueDate" style="width: 100%" />
         </a-form-item>
       </a-form>
@@ -120,10 +119,14 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Message, Modal } from '@arco-design/web-vue'
 import { IconPlus, IconEdit, IconDelete } from '@arco-design/web-vue/es/icon'
 import { getTodoListApi, addTodoApi, updateTodoApi, deleteTodoApi } from '@/api/enterprise'
 import type { TodoItem } from '@/types/api'
+import { formatDate } from '@/utils/format'
+
+const { t } = useI18n()
 
 const loading = ref(false)
 const todos = ref<TodoItem[]>([])
@@ -146,21 +149,16 @@ const formData = reactive({
 })
 
 function priorityLabel(p: number) {
-  return { 0: '低', 1: '中', 2: '高', 3: '紧急' }[p] || '中'
+  return { 0: t('todo.priorityLow'), 1: t('todo.priorityMedium'), 2: t('todo.priorityHigh'), 3: '紧急' }[p] || t('todo.priorityMedium')
 }
 function priorityColor(p: number) {
   return ({ 0: 'gray', 1: 'blue', 2: 'orange', 3: 'red' } as Record<number, string>)[p] || 'blue'
 }
 function statusLabel(s: number) {
-  return { 0: '待办', 1: '进行中', 2: '已完成', 3: '已取消' }[s] || '待办'
+  return { 0: t('todo.statusTodo'), 1: t('todo.statusInProgress'), 2: t('todo.statusDone'), 3: '已取消' }[s] || t('todo.statusTodo')
 }
 function statusColor(s: number) {
   return ({ 0: 'gray', 1: 'blue', 2: 'green', 3: 'red' } as Record<number, string>)[s] || 'gray'
-}
-
-function formatDate(dateStr?: string) {
-  if (!dateStr) return '-'
-  return dateStr.substring(0, 10)
 }
 
 function resetForm() {
@@ -198,10 +196,10 @@ async function loadTodos() {
       pageSize: pageSize.value,
       status: statusFilter.value !== '' ? statusFilter.value as number : undefined,
     })
-    todos.value = (res.data?.records || []).map((t) => ({ ...t, done: t.status === 2 }))
+    todos.value = res.data?.list || []
     total.value = res.data?.total || 0
-  } catch {
-    // 静默
+  } catch (err) {
+    console.error('todo list load error:', err)
   } finally {
     loading.value = false
   }
@@ -217,8 +215,8 @@ async function onToggleDone(todo: TodoItem, checked: boolean) {
   try {
     await updateTodoApi({ id: todo.id, status: newStatus })
     loadTodos()
-  } catch {
-    // 静默
+  } catch (err) {
+    console.error('todo toggle error:', err)
   }
 }
 
@@ -238,7 +236,6 @@ async function onSubmit() {
         title: formData.title,
         description: formData.description,
         priority: formData.priority,
-        status: formData.status,
         dueDate: formData.dueDate,
       })
     }
@@ -256,8 +253,8 @@ async function onDelete(id: string) {
     await deleteTodoApi(id)
     Message.success('删除成功')
     loadTodos()
-  } catch {
-    // 静默
+  } catch (err) {
+    console.error('todo delete error:', err)
   }
 }
 
