@@ -23,7 +23,10 @@ const routes: RouteRecordRaw[] = [
     path: '/',
     name: 'Layout',
     component: () => import('@/layout/index.vue'),
-    redirect: '/dashboard',
+    // 根路径先指向登录页：/dashboard 是登录后动态挂载的路由，
+    // 未登录时直接 redirect 到 /dashboard 会落入 catch-all 404。
+    // 已登录用户访问根路径时，路由守卫会自动跳转到 /dashboard。
+    redirect: '/login',
     children: [] // 业务路由全部由后端动态加载
   },
   {
