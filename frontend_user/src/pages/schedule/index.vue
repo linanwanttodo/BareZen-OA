@@ -38,7 +38,7 @@
             <div class="mb-1 flex items-center gap-2">
               <h3 class="font-semibold text-[var(--foreground)]" :class="{ 'line-through': item.status === '2' }">{{ item.title }}</h3>
               <a-tag :color="statusColor(item.status)" size="small">{{ statusLabel(item.status) }}</a-tag>
-              <a-tag v-if="item.location" size="small">{{ item.location }}</a-tag>
+              <a-tag v-if="item.location" size="small">{{ $t('schedule.locationLabel') }}：{{ item.location }}</a-tag>
             </div>
             <p v-if="item.description" class="text-sm text-[var(--muted-foreground)]">{{ item.description }}</p>
             <p v-if="item.remindTime" class="mt-1 text-xs text-[var(--warning)]">{{ $t('schedule.remind') }}：{{ item.remindTime }}</p>
