@@ -57,6 +57,8 @@ export interface Notice {
   noticeType: string
   status: string
   scope: string
+  requireRead: string
+  isRead?: boolean
   createTime: string
   updateTime: string
 }
@@ -129,4 +131,101 @@ export const STATUS_MAP: Record<number, { label: string; theme: string }> = {
   1: { label: '进行中', theme: 'primary' },
   2: { label: '已完成', theme: 'success' },
   3: { label: '已取消', theme: 'default' },
+}
+
+/** 加班申请 */
+export interface OvertimeRequest {
+  id: string
+  userId: string
+  userName: string
+  deptName: string
+  overtimeDate: string
+  startTime: string
+  endTime: string
+  durationHours: string
+  reason: string
+  status: string
+  approverName: string
+  approveTime: string
+  approveRemark: string
+  createTime: string
+}
+
+/** 出差申请 */
+export interface TravelRequest {
+  id: string
+  userId: string
+  userName: string
+  deptName: string
+  destination: string
+  purpose: string
+  startTime: string
+  endTime: string
+  days: string
+  status: string
+  approverName: string
+  approveTime: string
+  approveRemark: string
+  createTime: string
+}
+
+/** 工作日志 */
+export interface WorkLog {
+  id: string
+  userId: string
+  userName: string
+  deptName: string
+  logType: string // daily / weekly
+  logDate: string
+  content: string
+  reviewerId: string
+  reviewerName: string
+  reviewTime: string
+  reviewRemark: string
+  createTime: string
+}
+
+/** 个人日程 */
+export interface Schedule {
+  id: string
+  userId: string
+  userName: string
+  title: string
+  description: string
+  startTime: string
+  endTime: string
+  remindTime: string
+  status: string // 0=未开始 1=进行中 2=已完成 3=已取消
+  location: string
+  createTime: string
+}
+
+/** 办公用品 */
+export interface Supply {
+  id: string
+  supplyName: string
+  category: string
+  spec: string
+  stock: number
+  unit: string
+  status: string
+  remark: string
+  createTime: string
+}
+
+/** 用品申领记录 */
+export interface SupplyRequest {
+  id: string
+  supplyId: string
+  supplyName: string
+  userId: string
+  userName: string
+  deptName: string
+  quantity: number
+  reason: string
+  status: string
+  approverName: string
+  approveTime: string
+  approveRemark: string
+  createTime: string
 }

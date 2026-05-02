@@ -43,6 +43,30 @@ const router = createRouter({
           component: () => import('@/pages/todo/index.vue'),
           meta: { title: '待办事项', requiresAuth: true },
         },
+        {
+          path: 'attendance',
+          name: 'Attendance',
+          component: () => import('@/pages/attendance/index.vue'),
+          meta: { title: '我的申请', requiresAuth: true },
+        },
+        {
+          path: 'worklogs',
+          name: 'WorkLogs',
+          component: () => import('@/pages/worklog/index.vue'),
+          meta: { title: '工作日志', requiresAuth: true },
+        },
+        {
+          path: 'schedules',
+          name: 'Schedules',
+          component: () => import('@/pages/schedule/index.vue'),
+          meta: { title: '日程管理', requiresAuth: true },
+        },
+        {
+          path: 'supplies',
+          name: 'Supplies',
+          component: () => import('@/pages/supply/index.vue'),
+          meta: { title: '办公用品', requiresAuth: true },
+        },
       ],
     },
     {

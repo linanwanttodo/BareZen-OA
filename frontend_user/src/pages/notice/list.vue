@@ -23,6 +23,7 @@
               {{ notice.noticeType === '1' ? $t('notice.typeNotice') : $t('notice.typeAnnouncement') }}
             </a-tag>
             <h3 class="truncate text-base font-semibold text-[var(--foreground)]">{{ notice.noticeTitle }}</h3>
+            <span v-if="notice.requireRead === 'Y' && notice.isRead === false" class="shrink-0 rounded bg-red-500 px-1.5 py-0.5 text-[10px] font-medium text-white">NEW</span>
           </div>
           <p class="mb-3 line-clamp-2 leading-relaxed text-sm text-[var(--muted-foreground)]">{{ stripHtml(notice.noticeContent) }}</p>
           <div class="flex items-center gap-4 text-xs text-[var(--muted-foreground)]">
