@@ -11,7 +11,7 @@ import com.linan.system.mapper.SysUserDeptMapper;
 import com.linan.system.mapper.SysUserMapper;
 import com.linan.system.mapper.SysUserRoleMapper;
 import com.linan.system.service.ISysUserService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,13 +26,12 @@ import java.util.stream.Collectors;
  * Controller 层只需调用 Service 方法，不直接操作 Mapper。
  */
 @Service
+@RequiredArgsConstructor
 public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> implements ISysUserService {
 
-    @Autowired
-    private SysUserRoleMapper userRoleMapper;
+    private final SysUserRoleMapper userRoleMapper;
 
-    @Autowired
-    private SysUserDeptMapper userDeptMapper;
+    private final SysUserDeptMapper userDeptMapper;
 
     @Override
     public SysUser getUserByUserName(String userName) {

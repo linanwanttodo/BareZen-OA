@@ -41,11 +41,10 @@ class SysUserServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        userService = new SysUserServiceImpl();
-        // 手动注入 baseMapper（继承自 MyBatis-Plus ServiceImpl）
+        // 构造器注入（与生产代码一致）：传入 userRoleMapper / userDeptMapper，
+        // baseMapper（继承自 MyBatis-Plus ServiceImpl）仍需反射注入
+        userService = new SysUserServiceImpl(userRoleMapper, userDeptMapper);
         ReflectionTestUtils.setField(userService, "baseMapper", userMapper);
-        ReflectionTestUtils.setField(userService, "userRoleMapper", userRoleMapper);
-        ReflectionTestUtils.setField(userService, "userDeptMapper", userDeptMapper);
 
         validUser = new SysUser();
         validUser.setUserName("testuser");

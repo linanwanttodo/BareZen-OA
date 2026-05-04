@@ -6,7 +6,7 @@ import com.linan.core.security.RequirePermission;
 import com.linan.system.entity.SysOperLog;
 import com.linan.system.service.ISysOperLogService;
 import com.linan.system.service.ISysUserService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -25,22 +25,18 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @Tag(name = "仪表盘", description = "管理端仪表盘数据聚合")
 @RestController
 @RequestMapping("/api/system/v1/dashboard")
+@RequiredArgsConstructor
 public class DashboardController {
 
-    @Autowired
-    private ISysOperLogService operLogService;
+    private final ISysOperLogService operLogService;
 
-    @Autowired
-    private ISysUserService userService;
+    private final ISysUserService userService;
 
-    @Autowired
-    private JdbcTemplate jdbcTemplate;
+    private final JdbcTemplate jdbcTemplate;
 
-    @Autowired
-    private com.linan.system.monitor.OnlineUserService onlineUserService;
+    private final com.linan.system.monitor.OnlineUserService onlineUserService;
 
-    @Autowired
-    private com.linan.system.service.ISysFileService fileService;
+    private final com.linan.system.service.ISysFileService fileService;
 
     /**
      * 获取图表数据
@@ -70,7 +66,62 @@ public class DashboardController {
         long fileCount = fileService.count();
         data.put("fileCount", fileCount);
 
+        // 6. 审批效率统计（各审批流待办/平均时长/驳回率）
+        data.put("approvalStats", getApprovalStats());
+
         return Result.success(data);
+    }
+
+    /**
+     * 审批效率统计：聚合各审批表（请假/加班/出差/用车/用品申领）的
+     * 待审批数、平均审批时长（小时）、驳回率，支撑管理层数据驱动决策。
+     *
+     * <p>各审批表结构一致（status 0=待审批 1=通过 2=驳回；create_time 创建、
+     * approve_time 审批），统一按表名聚合。approve_time 为 yyyy-MM-dd HH:mm:ss 文本，
+     * 用 TIMESTAMPDIFF 计算耗时；驳回率 = 驳回数 / 已处理数。</p>
+     */
+    private List<Map<String, Object>> getApprovalStats() {
+        // 表名 -> 流程类型中文名
+        Map<String, String> tables = new LinkedHashMap<>();
+        tables.put("att_leave_request", "请假审批");
+        tables.put("att_overtime_request", "加班审批");
+        tables.put("att_travel_request", "出差审批");
+        tables.put("office_vehicle_request", "用车审批");
+        tables.put("office_supply_request", "用品申领审批");
+
+        List<Map<String, Object>> stats = new ArrayList<>();
+        for (Map.Entry<String, String> entry : tables.entrySet()) {
+            String table = entry.getKey();
+            String sql = """
+                SELECT
+                    COUNT(*) AS total,
+                    SUM(CASE WHEN status = '0' THEN 1 ELSE 0 END) AS pending,
+                    SUM(CASE WHEN status = '2' THEN 1 ELSE 0 END) AS rejected,
+                    COALESCE(ROUND(AVG(CASE
+                        WHEN status IN ('1','2') AND approve_time IS NOT NULL AND approve_time <> ''
+                        THEN TIMESTAMPDIFF(HOUR, create_time, STR_TO_DATE(approve_time, '%%Y-%%m-%%d %%H:%%i:%%s'))
+                    END), 1), 0) AS avgHours
+                FROM `%s`
+                WHERE del_flag = 0
+            """.formatted(table);
+            Map<String, Object> row = jdbcTemplate.queryForMap(sql);
+            long total = ((Number) row.get("total")).longValue();
+            long pending = ((Number) row.get("pending")).longValue();
+            long rejected = ((Number) row.get("rejected")).longValue();
+            long processed = total - pending; // 已处理（通过+驳回）
+            double rejectRate = processed > 0 ? Math.round(rejected * 1000.0 / processed) / 10.0 : 0.0;
+
+            Map<String, Object> item = new HashMap<>();
+            item.put("type", entry.getKey());
+            item.put("typeName", entry.getValue());
+            item.put("total", total);
+            item.put("pending", pending);
+            item.put("rejected", rejected);
+            item.put("avgHours", row.get("avgHours"));
+            item.put("rejectRate", rejectRate);
+            stats.add(item);
+        }
+        return stats;
     }
 
     private List<Map<String, Object>> getVisitTrend() {

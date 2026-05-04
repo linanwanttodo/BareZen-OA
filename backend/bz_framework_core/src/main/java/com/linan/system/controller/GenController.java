@@ -5,7 +5,7 @@ import com.linan.core.gen.TableInfo;
 import com.linan.core.security.RequirePermission;
 import com.linan.system.service.IGenService;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -22,10 +22,10 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @Tag(name = "代码生成", description = "数据库表查询与代码生成")
 @RestController
 @RequestMapping("/api/system/v1/gen")
+@RequiredArgsConstructor
 public class GenController {
 
-    @Autowired
-    private IGenService genService;
+    private final IGenService genService;
 
     /**
      * 查询业务表列表

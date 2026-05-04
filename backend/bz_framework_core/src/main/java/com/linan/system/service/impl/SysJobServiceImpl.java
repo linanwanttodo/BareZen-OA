@@ -7,7 +7,7 @@ import com.linan.system.mapper.SysJobMapper;
 import com.linan.system.service.ISysJobService;
 import lombok.extern.slf4j.Slf4j;
 import org.quartz.*;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,16 +20,14 @@ import org.springframework.transaction.annotation.Transactional;
  */
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class SysJobServiceImpl extends ServiceImpl<SysJobMapper, SysJob> implements ISysJobService {
 
-    @Autowired
-    private SysJobMapper jobMapper;
+    private final SysJobMapper jobMapper;
 
-    @Autowired
-    private SysJobLogMapper jobLogMapper;
+    private final SysJobLogMapper jobLogMapper;
 
-    @Autowired
-    private Scheduler scheduler;
+    private final Scheduler scheduler;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -101,7 +99,8 @@ public class SysJobServiceImpl extends ServiceImpl<SysJobMapper, SysJob> impleme
 
         try {
             scheduler.pauseJob(JobKey.jobKey(jobId.toString(), jobGroup));
-            job.setStatus("1");
+            // 状态（0=暂停 1=正常）：暂停任务置为 0，避免 UI 开关状态与实际调度状态颠倒
+            job.setStatus("0");
             jobMapper.updateById(job);
             log.info("定时任务 [{}] 已暂停", job.getJobName());
         } catch (SchedulerException e) {
@@ -117,7 +116,8 @@ public class SysJobServiceImpl extends ServiceImpl<SysJobMapper, SysJob> impleme
 
         try {
             scheduler.resumeJob(JobKey.jobKey(jobId.toString(), jobGroup));
-            job.setStatus("0");
+            // 状态（0=暂停 1=正常）：恢复任务置为 1，避免 UI 开关状态与实际调度状态颠倒
+            job.setStatus("1");
             jobMapper.updateById(job);
             log.info("定时任务 [{}] 已恢复", job.getJobName());
         } catch (SchedulerException e) {

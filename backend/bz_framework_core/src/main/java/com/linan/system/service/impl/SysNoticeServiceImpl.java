@@ -5,17 +5,17 @@ import com.linan.core.common.event.NoticePublishEvent;
 import com.linan.system.entity.SysNotice;
 import com.linan.system.mapper.SysNoticeMapper;
 import com.linan.system.service.ISysNoticeService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class SysNoticeServiceImpl extends ServiceImpl<SysNoticeMapper, SysNotice> implements ISysNoticeService {
 
-    @Autowired
-    private ApplicationEventPublisher eventPublisher;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     public SysNotice selectLatestNotice() {

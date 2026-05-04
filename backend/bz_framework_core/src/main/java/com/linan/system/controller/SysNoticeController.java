@@ -9,7 +9,7 @@ import com.linan.system.entity.SysNotice;
 import com.linan.system.entity.SysNoticeRead;
 import com.linan.system.service.ISysNoticeReadService;
 import com.linan.system.service.ISysNoticeService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -23,9 +23,10 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @Tag(name = "通知公告", description = "通知公告的 CRUD 与发布管理")
 @RestController
 @RequestMapping("/api/system/v1/notices")
+@RequiredArgsConstructor
 public class SysNoticeController extends BaseController<SysNotice, ISysNoticeService> {
-    @Autowired private ISysNoticeService noticeService;
-    @Autowired private ISysNoticeReadService noticeReadService;
+    private final ISysNoticeService noticeService;
+    private final ISysNoticeReadService noticeReadService;
     @Override protected ISysNoticeService getService() { return noticeService; }
 
     @RequirePermission("system:notice:list")

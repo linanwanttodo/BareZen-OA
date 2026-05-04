@@ -7,13 +7,14 @@ import com.linan.core.common.annotation.OperLog;
 import com.linan.core.common.api.PageResult;
 import com.linan.core.common.api.Result;
 import com.linan.core.common.controller.BaseController;
+import com.linan.core.security.PasswordUtil;
 import com.linan.core.security.RequirePermission;
 import com.linan.system.entity.SysUser;
 import com.linan.system.entity.SysUserDept;
 import com.linan.system.mapper.SysUserMapper;
 import com.linan.system.service.ISysUserService;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
@@ -31,13 +32,12 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @Tag(name = "用户管理", description = "系统用户 CRUD")
 @RestController
 @RequestMapping("/api/system/v1/users")
+@RequiredArgsConstructor
 public class SysUserController extends BaseController<SysUser, ISysUserService> {
 
-    @Autowired
-    private SysUserMapper userMapper;
+    private final SysUserMapper userMapper;
 
-    @Autowired
-    private ISysUserService userService;
+    private final ISysUserService userService;
 
     @Override
     protected ISysUserService getService() {
@@ -146,6 +146,34 @@ public class SysUserController extends BaseController<SysUser, ISysUserService> 
         user.setStatus(status);
         boolean ok = userService.updateById(user);
         return ok ? Result.success(null) : Result.error("状态切换失败");
+    }
+
+    /**
+     * 重置用户密码（管理员）
+     * PUT /api/system/v1/users/{id}/password  body: {"password": "新密码"}
+     *
+     * <p>与注册/个人改密保持一致：强制 8 位强密码策略（大写+小写+数字+特殊字符）。</p>
+     */
+    @Operation(summary = "重置用户密码")
+    @OperLog(title = "用户管理", businessType = 2)
+    @RequirePermission("system:user:edit")
+    @PutMapping("/{id}/password")
+    public Result<Void> resetPassword(@PathVariable Long id, @RequestBody Map<String, String> body) {
+        String password = body.get("password");
+        if (password == null || password.isEmpty()) {
+            return Result.error("新密码不能为空");
+        }
+        String policyMsg = PasswordUtil.validatePasswordPolicy(password);
+        if (policyMsg != null) {
+            return Result.error(policyMsg);
+        }
+        SysUser user = userMapper.selectById(id);
+        if (user == null) {
+            return Result.error("用户不存在");
+        }
+        user.setPassword(PasswordUtil.encode(password));
+        boolean ok = userService.updateById(user);
+        return ok ? Result.success(null) : Result.error("重置失败");
     }
 
     // ============ 角色分配 ============

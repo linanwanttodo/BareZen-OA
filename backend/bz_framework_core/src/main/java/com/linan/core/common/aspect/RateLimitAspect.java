@@ -2,12 +2,14 @@ package com.linan.core.common.aspect;
 
 import com.linan.core.common.annotation.RateLimit;
 import com.linan.core.common.api.Result;
+import com.linan.core.common.util.IpUtil;
+import com.linan.core.security.interceptor.AuthInterceptor;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Pointcut;
 import org.aspectj.lang.reflect.MethodSignature;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Component;
@@ -19,10 +21,12 @@ import java.util.List;
 
 @Aspect
 @Component
+@RequiredArgsConstructor
 public class RateLimitAspect {
 
-    @Autowired
-    private StringRedisTemplate stringRedisTemplate;
+    private final StringRedisTemplate stringRedisTemplate;
+
+    private final IpUtil ipUtil;
 
     private static final String RATE_LIMIT_PREFIX = "rate_limit:";
 
@@ -71,10 +75,6 @@ public class RateLimitAspect {
     }
 
     private String buildKey(RateLimit rateLimit) {
-        if (rateLimit.key() != null && !rateLimit.key().isEmpty()) {
-            return rateLimit.key();
-        }
-
         ServletRequestAttributes attributes =
                 (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
         if (attributes == null) {
@@ -82,23 +82,18 @@ public class RateLimitAspect {
         }
 
         HttpServletRequest request = attributes.getRequest();
-        String ip = getClientIp(request);
+        String ip = ipUtil.getClientIp(request);
+
+        if (rateLimit.key() != null && !rateLimit.key().isEmpty()) {
+            // 固定 key 追加维度：已登录用户按用户维度、匿名请求按 IP 维度，
+            // 避免「auth:login」这类全局窗口被单点耗尽导致误伤全员（或全员共享同一配额）
+            Long userId = AuthInterceptor.getCurrentUserId();
+            String dimension = userId != null ? "user:" + userId : "ip:" + ip;
+            return rateLimit.key() + ":" + dimension;
+        }
+
         String method = request.getMethod();
         String path = request.getRequestURI();
         return ip + ":" + method + ":" + path;
-    }
-
-    private String getClientIp(HttpServletRequest request) {
-        String ip = request.getHeader("X-Forwarded-For");
-        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getHeader("X-Real-IP");
-        }
-        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getRemoteAddr();
-        }
-        if (ip != null && ip.contains(",")) {
-            ip = ip.split(",")[0].trim();
-        }
-        return ip;
     }
 }

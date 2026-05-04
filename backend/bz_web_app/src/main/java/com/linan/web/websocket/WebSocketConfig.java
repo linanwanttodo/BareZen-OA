@@ -12,7 +12,9 @@ import org.springframework.web.socket.server.standard.ServletServerContainerFact
 /**
  * WebSocket 配置
  *
- * <p>注册 WebSocket 端点，前端通过 {@code ws://host:port/ws/notify?token=xxx} 连接。</p>
+ * <p>注册 WebSocket 端点，前端通过 {@code ws://host:port/ws/notify} 连接，
+ * 鉴权由 {@link WebSocketAuthInterceptor} 在握手阶段完成
+ * （Authorization Header 或 httpOnly Cookie，见该拦截器说明）。</p>
  *
  * <h3>安全说明</h3>
  * <ul>
@@ -29,12 +31,16 @@ public class WebSocketConfig implements WebSocketConfigurer {
 
     private final NotificationWebSocketHandler handler;
 
+    private final WebSocketAuthInterceptor authInterceptor;
+
     /** 逗号分隔的允许来源，如 https://admin.example.com,https://app.example.com */
     @Value("${websocket.allowed-origins:}")
     private String allowedOrigins;
 
-    public WebSocketConfig(NotificationWebSocketHandler handler) {
+    public WebSocketConfig(NotificationWebSocketHandler handler,
+                           WebSocketAuthInterceptor authInterceptor) {
         this.handler = handler;
+        this.authInterceptor = authInterceptor;
     }
 
     @Override
@@ -46,11 +52,13 @@ public class WebSocketConfig implements WebSocketConfigurer {
                 origins[i] = origins[i].trim();
             }
             registry.addHandler(handler, "/ws/notify")
+                    .addInterceptors(authInterceptor)
                     .setAllowedOrigins(origins)
                     .withSockJS();
         } else {
             // 开发环境：仅允许 localhost 来源
             registry.addHandler(handler, "/ws/notify")
+                    .addInterceptors(authInterceptor)
                     .setAllowedOrigins("http://localhost:5173", "http://localhost:5174")
                     .withSockJS();
         }

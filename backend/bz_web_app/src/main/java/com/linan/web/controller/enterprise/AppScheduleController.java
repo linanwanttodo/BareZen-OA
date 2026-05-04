@@ -10,7 +10,7 @@ import com.linan.hr.entity.HrSchedule;
 import com.linan.hr.service.IHrScheduleService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -26,12 +26,12 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @Tag(name = "个人日程", description = "用户前台 - 日程管理")
 @RestController
 @RequestMapping("/api/app/v1/schedules")
+@RequiredArgsConstructor
 public class AppScheduleController {
 
     private static final Logger log = LoggerFactory.getLogger(AppScheduleController.class);
 
-    @Autowired
-    private IHrScheduleService scheduleService;
+    private final IHrScheduleService scheduleService;
 
     /**
      * 我的日程列表

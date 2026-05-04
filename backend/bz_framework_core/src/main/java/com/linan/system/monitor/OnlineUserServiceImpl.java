@@ -3,7 +3,7 @@ package com.linan.system.monitor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.linan.core.security.JwtUtil;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.Cursor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ScanOptions;
@@ -16,20 +16,18 @@ import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class OnlineUserServiceImpl implements OnlineUserService {
 
     private static final String ONLINE_USER_PREFIX = "online_user:";
     private static final String BLACKLIST_PREFIX = "blacklist:";
     private static final long TOKEN_EXPIRATION_HOURS = 24;
 
-    @Autowired
-    private RedisTemplate<String, Object> redisTemplate;
+    private final RedisTemplate<String, Object> redisTemplate;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+    private final ObjectMapper objectMapper;
 
-    @Autowired
-    private JwtUtil jwtUtil;
+    private final JwtUtil jwtUtil;
 
     @Override
     public void recordLogin(Long userId, String userName, String nickName,

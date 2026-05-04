@@ -7,7 +7,7 @@ import com.linan.core.common.api.Result;
 import com.linan.core.security.RequirePermission;
 import com.linan.system.entity.SysJobLog;
 import com.linan.system.mapper.SysJobLogMapper;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -21,10 +21,10 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @Tag(name = "任务日志", description = "系统监控 - 定时任务执行日志")
 @RestController
 @RequestMapping("/api/system/v1/job-logs")
+@RequiredArgsConstructor
 public class SysJobLogController {
 
-    @Autowired
-    private SysJobLogMapper jobLogMapper;
+    private final SysJobLogMapper jobLogMapper;
 
     @RequirePermission("monitor:job:list")
     @Operation(summary = "分页查询任务日志")

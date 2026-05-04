@@ -10,7 +10,7 @@ import com.linan.core.security.RequirePermission;
 import com.linan.system.entity.SysRole;
 import com.linan.system.service.ISysRoleService;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -26,10 +26,10 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @Tag(name = "角色管理", description = "角色 CRUD 与权限分配")
 @RestController
 @RequestMapping("/api/system/v1/roles")
+@RequiredArgsConstructor
 public class SysRoleController {
 
-    @Autowired
-    private ISysRoleService roleService;
+    private final ISysRoleService roleService;
 
     /**
      * 条件分页查询
@@ -126,6 +126,17 @@ public class SysRoleController {
     public Result<Void> assignMenus(@PathVariable Long roleId, @RequestBody List<Long> menuIds) {
         roleService.assignRoleMenus(roleId, menuIds);
         return Result.success(null);
+    }
+
+    /**
+     * 查询角色已分配的菜单ID列表（分配弹窗回显）
+     * GET /api/system/v1/roles/{roleId}/menus
+     */
+    @Operation(summary = "查询角色菜单ID列表")
+    @RequirePermission("system:role:list")
+    @GetMapping("/{roleId}/menus")
+    public Result<List<Long>> getRoleMenuIds(@PathVariable Long roleId) {
+        return Result.success(roleService.getMenuIdsByRoleId(roleId));
     }
 
     /**

@@ -15,7 +15,7 @@ import com.linan.hr.service.IHrWorkLogService;
 import com.linan.system.service.IApprovalFlowLogService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -33,21 +33,18 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @Tag(name = "员工自助申请", description = "用户前台 - 加班/出差自助申请")
 @RestController
 @RequestMapping("/api/app/v1")
+@RequiredArgsConstructor
 public class AppAttendanceController {
 
     private static final Logger log = LoggerFactory.getLogger(AppAttendanceController.class);
 
-    @Autowired
-    private IAttOvertimeRequestService overtimeService;
+    private final IAttOvertimeRequestService overtimeService;
 
-    @Autowired
-    private IAttTravelRequestService travelService;
+    private final IAttTravelRequestService travelService;
 
-    @Autowired
-    private IHrWorkLogService workLogService;
+    private final IHrWorkLogService workLogService;
 
-    @Autowired
-    private IApprovalFlowLogService flowLogService;
+    private final IApprovalFlowLogService flowLogService;
 
     // ==================== 加班申请 ====================
 

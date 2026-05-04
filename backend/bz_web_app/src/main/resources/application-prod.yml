@@ -6,7 +6,8 @@
 
 # ---- 服务端口 ----
 server:
-  port: 8080
+  # 默认 8080；生产部署通过环境变量 SERVER_PORT 覆盖
+  port: ${SERVER_PORT:8080}
 
 # ---- 日志级别与文件轮转 ----
 # 生产环境使用 INFO 级别，仅记录业务关键信息；
@@ -44,6 +45,8 @@ spring:
       connection-timeout: 10000             # 连接超时缩短到 10 秒
       idle-timeout: 300000                  # 空闲超时 5 分钟
       max-lifetime: 1200000                # 连接最大存活 20 分钟
+      initialization-fail-timeout: 1        # fail-fast：启动时连不上数据库立即失败，
+                                            # 不让应用带病启动（如误配 DB_HOST/DB_PASSWORD）
 
   # ---- Redis 配置 ----
   # 生产环境 Redis 通常需要密码认证（Spring Boot 3.x 前缀为 spring.data.redis）

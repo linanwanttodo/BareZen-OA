@@ -8,7 +8,7 @@ import com.linan.core.common.controller.BaseController;
 import com.linan.core.security.RequirePermission;
 import com.linan.system.entity.SysOperLog;
 import com.linan.system.service.ISysOperLogService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -21,8 +21,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @Tag(name = "操作日志", description = "操作日志查询与清理")
 @RestController
 @RequestMapping("/api/system/v1/operlogs")
+@RequiredArgsConstructor
 public class SysOperLogController extends BaseController<SysOperLog, ISysOperLogService> {
-    @Autowired private ISysOperLogService operLogService;
+    private final ISysOperLogService operLogService;
     @Override protected ISysOperLogService getService() { return operLogService; }
 
     @RequirePermission("monitor:operlog:list")

@@ -2,6 +2,8 @@ package com.linan.core.config;
 
 import com.linan.core.security.JwtUtil;
 import com.linan.core.security.interceptor.AuthInterceptor;
+import com.linan.core.security.interceptor.OpenApiInterceptor;
+import com.linan.system.service.ISysApiKeyService;
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
@@ -45,10 +47,17 @@ public class WebMvcConfig implements WebMvcConfigurer {
      * 通过构造函数注入 RedisTemplate、JwtUtil 和 JWT 过期时间
      */
     public WebMvcConfig(RedisTemplate<String, Object> redisTemplate, JwtUtil jwtUtil,
+                        ISysApiKeyService apiKeyService,
                         @Value("${jwt.expiration:86400000}") long jwtExpiration) {
         this.redisTemplate = redisTemplate;
         this.authInterceptor = new AuthInterceptor(redisTemplate, jwtUtil, jwtExpiration);
+        this.openApiInterceptor = new OpenApiInterceptor(apiKeyService);
     }
+
+    /**
+     * Open API 拦截器（/api/open/** 路径使用 API Key 认证，与 JWT 拦截器互斥）
+     */
+    private final OpenApiInterceptor openApiInterceptor;
 
     /**
      * 注册拦截器
@@ -73,16 +82,20 @@ public class WebMvcConfig implements WebMvcConfigurer {
      */
     @Override
     public void addInterceptors(@NonNull InterceptorRegistry registry) {
+        // JWT 拦截器：拦截所有 /api/ 路径（/api/open/** 除外，由 Open API 拦截器接管）
         registry.addInterceptor(authInterceptor)               // 注册拦截器实例
                 .addPathPatterns("/api/**")                    // 拦截所有 /api/ 路径
                 .excludePathPatterns(                          // 排除以下路径
+                        "/api/open/**",                        // 开放平台接口走 API Key 认证
                         "/api/auth/v1/login",                  // 登录接口（获取 Token）
                         "/api/auth/v1/register",               // 注册接口
                         "/api/auth/v1/captcha",                // 验证码接口
                         "/api/common/v1/health"                // 健康检查接口
                         // 文件下载需登录；公开文件在 Controller 内校验 scope
                 );
-        // 如果需要排除多个模式，可以链式调用多次 excludePathPatterns，或一次传入多个 pattern
+        // Open API 拦截器：仅拦截 /api/open/**，通过 X-Api-Key 认证外部系统
+        registry.addInterceptor(openApiInterceptor)
+                .addPathPatterns("/api/open/**");
     }
 
     /**
@@ -114,8 +127,9 @@ public class WebMvcConfig implements WebMvcConfigurer {
             cors.allowedOrigins(origins)
                 .allowCredentials(true);
         } else {
-            // 开发环境：明确指定前端来源，禁止使用通配符
-            cors.allowedOrigins("http://localhost:5173", "http://localhost:5174")
+            // 开发模式：放行 localhost/127.0.0.1 任意端口（vite 端口被占自动换端口时不会被 403 拦截）
+            // 使用 allowedOriginPatterns 支持端口通配，与 allowCredentials(true) 兼容
+            cors.allowedOriginPatterns("http://localhost:*", "http://127.0.0.1:*")
                 .allowCredentials(true);
         }
     }

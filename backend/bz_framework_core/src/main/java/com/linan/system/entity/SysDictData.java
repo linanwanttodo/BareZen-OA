@@ -1,5 +1,6 @@
 package com.linan.system.entity;
 
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.linan.core.common.entity.BaseEntity;
 import lombok.Data;
@@ -15,7 +16,13 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 @TableName("sys_dict_data")
 public class SysDictData extends BaseEntity {
-    /** 字典编码（如：1） */
+    /**
+     * 字典编码（如：1）
+     * 注意：sys_dict_data 表并无 dict_code 列（表结构以 V2 迁移为准），
+     * 该字段仅作前端展示占位，标记为不存在于表，避免 MyBatis-Plus 生成对
+     * dict_code 列的查询（会导致 Unknown column 报错）。
+     */
+    @TableField(exist = false)
     private String dictCode;
     /** 字典标签（如：男） */
     private String dictLabel;
@@ -31,6 +38,7 @@ public class SysDictData extends BaseEntity {
     private String listClass;
     /** 是否默认（Y/N） */
     private String isDefault;
-    /** 状态（0正常 1停用） */
+
+    /** 状态（0=停用 1=正常，与 sys_dict_data 表注释一致） */
     private String status;
 }

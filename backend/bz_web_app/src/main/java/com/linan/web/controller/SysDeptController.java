@@ -6,7 +6,7 @@ import com.linan.core.security.RequirePermission;
 import com.linan.system.entity.SysDept;
 import com.linan.system.service.ISysDeptService;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -22,10 +22,10 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @Tag(name = "部门管理", description = "部门树形结构与 CRUD")
 @RestController
 @RequestMapping("/api/system/v1/depts")
+@RequiredArgsConstructor
 public class SysDeptController {
 
-    @Autowired
-    private ISysDeptService deptService;
+    private final ISysDeptService deptService;
 
     /**
      * 获取部门树形列表

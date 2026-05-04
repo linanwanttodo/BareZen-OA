@@ -5,7 +5,7 @@ import com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor;
 import com.baomidou.mybatisplus.extension.plugins.inner.PaginationInnerInterceptor;
 import com.linan.core.security.DataScopeInterceptor;
 import org.mybatis.spring.annotation.MapperScan;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -22,9 +22,15 @@ import org.springframework.context.annotation.Configuration;
 @MapperScan("com.linan.**.mapper")  // 扫描所有子模块中的 Mapper 接口
 public class MyBatisPlusConfig {
 
-    @Autowired
-    @Lazy  // 延迟加载 DataScopeInterceptor，打破 Mapper → sqlSessionFactory → MyBatisPlusConfig → DataScopeInterceptor 的循环依赖
-    private DataScopeInterceptor dataScopeInterceptor;
+    private final DataScopeInterceptor dataScopeInterceptor;
+
+    /**
+     * 构造器注入 + {@code @Lazy}：延迟加载 DataScopeInterceptor，
+     * 打破 Mapper → sqlSessionFactory → MyBatisPlusConfig → DataScopeInterceptor 的循环依赖。
+     */
+    public MyBatisPlusConfig(@Lazy DataScopeInterceptor dataScopeInterceptor) {
+        this.dataScopeInterceptor = dataScopeInterceptor;
+    }
 
     /**
      * MyBatis-Plus 核心拦截器

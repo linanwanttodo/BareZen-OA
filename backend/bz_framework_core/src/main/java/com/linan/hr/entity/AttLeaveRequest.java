@@ -59,4 +59,10 @@ public class AttLeaveRequest extends BaseEntity {
 
     /** 审批意见 */
     private String approveRemark;
+
+    /** 指定审批人用户ID（NULL=任意有权限者审批，V31 新增） */
+    private Long assigneeId;
+
+    /** 指定审批人姓名 */
+    private String assigneeName;
 }

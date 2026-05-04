@@ -6,11 +6,13 @@ import com.linan.office.service.IOfficeSupplyService;
 import com.linan.system.service.ISysConfigService;
 import com.linan.web.websocket.NotificationService;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -23,6 +25,7 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class SupplyStockWarningScheduler {
 
     /** 系统配置键：库存预警阈值 */
@@ -31,20 +34,35 @@ public class SupplyStockWarningScheduler {
     /** 默认预警阈值 */
     private static final int DEFAULT_THRESHOLD = 5;
 
-    @Autowired
-    private IOfficeSupplyService supplyService;
+    /** 分布式锁 key：防止多实例部署时重复广播预警 */
+    private static final String WARN_LOCK_KEY = "scheduler:lock:supply_stock_warn";
 
-    @Autowired
-    private ISysConfigService configService;
+    /** 锁持有时间（秒）：任务秒级完成，TTL 兜底防止实例宕机导致死锁 */
+    private static final long LOCK_EXPIRE_SECONDS = 30;
 
-    @Autowired
-    private NotificationService notificationService;
+    private final IOfficeSupplyService supplyService;
+
+    private final ISysConfigService configService;
+
+    private final NotificationService notificationService;
+
+    private final RedisTemplate<String, Object> redisTemplate;
 
     /**
      * 每天 09:00 执行库存检查
      */
     @Scheduled(cron = "0 0 9 * * ?")
     public void checkLowStock() {
+        // 原子抢占（SET NX EX）：多实例部署时同一时刻只有一个实例执行本次扫描，
+        // 其余实例直接跳过，避免库存预警重复广播。
+        // 不做手动释放：锁带 30s TTL，任务秒级完成，无需处理「误删他人新锁」的复杂度
+        Boolean acquired = redisTemplate.opsForValue()
+                .setIfAbsent(WARN_LOCK_KEY, "1", LOCK_EXPIRE_SECONDS, TimeUnit.SECONDS);
+        if (!Boolean.TRUE.equals(acquired)) {
+            log.debug("库存预警任务已被其他实例抢占，跳过本次执行");
+            return;
+        }
+
         int threshold = readThreshold();
         LambdaQueryWrapper<OfficeSupply> wrapper = new LambdaQueryWrapper<OfficeSupply>()
                 .eq(OfficeSupply::getStatus, "0")

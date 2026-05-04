@@ -3,13 +3,14 @@ package com.linan.core.common.aspect;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.linan.core.common.annotation.RepeatSubmit;
 import com.linan.core.common.api.Result;
+import com.linan.core.common.util.IpUtil;
 import com.linan.core.security.interceptor.AuthInterceptor;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Pointcut;
 import org.aspectj.lang.reflect.MethodSignature;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
@@ -23,10 +24,12 @@ import java.util.concurrent.TimeUnit;
 
 @Aspect
 @Component
+@RequiredArgsConstructor
 public class RepeatSubmitAspect {
 
-    @Autowired
-    private RedisTemplate<String, Object> redisTemplate;
+    private final RedisTemplate<String, Object> redisTemplate;
+
+    private final IpUtil ipUtil;
 
     private static final String REPEAT_SUBMIT_PREFIX = "repeat_submit:";
 
@@ -49,7 +52,7 @@ public class RepeatSubmitAspect {
             // 匿名请求：使用客户端 IP 作为标识
             HttpServletRequest request = getHttpServletRequest();
             if (request != null) {
-                identifier = "ip:" + getClientIp(request);
+                identifier = "ip:" + ipUtil.getClientIp(request);
             } else {
                 return joinPoint.proceed(); // 无法获取标识，放行
             }
@@ -123,19 +126,5 @@ public class RepeatSubmitAspect {
         } catch (Exception e) {
             return null;
         }
-    }
-
-    private String getClientIp(HttpServletRequest request) {
-        String ip = request.getHeader("X-Forwarded-For");
-        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getHeader("X-Real-IP");
-        }
-        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getRemoteAddr();
-        }
-        if (ip != null && ip.contains(",")) {
-            ip = ip.split(",")[0].trim();
-        }
-        return ip;
     }
 }

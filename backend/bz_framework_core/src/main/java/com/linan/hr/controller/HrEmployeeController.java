@@ -10,7 +10,7 @@ import com.linan.core.security.RequirePermission;
 import com.linan.hr.entity.HrEmployee;
 import com.linan.hr.service.IHrEmployeeService;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -24,10 +24,10 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @Tag(name = "员工档案", description = "人事管理 - 员工档案 CRUD")
 @RestController
 @RequestMapping("/api/hr/v1/employees")
+@RequiredArgsConstructor
 public class HrEmployeeController {
 
-    @Autowired
-    private IHrEmployeeService employeeService;
+    private final IHrEmployeeService employeeService;
 
     /**
      * 条件分页查询

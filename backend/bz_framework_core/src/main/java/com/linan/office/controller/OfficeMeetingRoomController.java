@@ -10,7 +10,7 @@ import com.linan.core.security.RequirePermission;
 import com.linan.office.entity.OfficeMeetingRoom;
 import com.linan.office.service.IOfficeMeetingRoomService;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -26,10 +26,10 @@ import java.util.List;
 @Tag(name = "会议室管理", description = "行政办公 - 会议室管理")
 @RestController
 @RequestMapping("/api/office/v1/rooms")
+@RequiredArgsConstructor
 public class OfficeMeetingRoomController {
 
-    @Autowired
-    private IOfficeMeetingRoomService roomService;
+    private final IOfficeMeetingRoomService roomService;
 
     /**
      * 分页查询会议室

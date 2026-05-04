@@ -17,7 +17,7 @@ import com.linan.system.service.ISysNoticeReadService;
 import com.linan.system.service.ISysNoticeService;
 import com.linan.system.service.ITodoItemService;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -38,22 +38,18 @@ import java.util.stream.Collectors;
 @Tag(name = "员工门户", description = "用户前台 - 工作台/公告/通讯录/待办")
 @RestController
 @RequestMapping("/api/app/v1")
+@RequiredArgsConstructor
 public class AppEnterpriseController {
 
-    @Autowired
-    private ISysNoticeService noticeService;
+    private final ISysNoticeService noticeService;
 
-    @Autowired
-    private ISysNoticeReadService noticeReadService;
+    private final ISysNoticeReadService noticeReadService;
 
-    @Autowired
-    private ITodoItemService todoItemService;
+    private final ITodoItemService todoItemService;
 
-    @Autowired
-    private SysUserMapper userMapper;
+    private final SysUserMapper userMapper;
 
-    @Autowired
-    private SysRoleMapper roleMapper;
+    private final SysRoleMapper roleMapper;
 
     // ==================== 工作台概览 ====================
 

@@ -20,7 +20,7 @@ import org.apache.ibatis.mapping.SqlCommandType;
 import org.apache.ibatis.session.Configuration;
 import org.apache.ibatis.session.ResultHandler;
 import org.apache.ibatis.session.RowBounds;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
@@ -54,16 +54,14 @@ import org.apache.ibatis.mapping.ParameterMapping;
  */
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class DataScopeInterceptor implements InnerInterceptor {
 
-    @Autowired
-    private SysRoleMapper roleMapper;
+    private final SysRoleMapper roleMapper;
 
-    @Autowired
-    private SysDeptMapper deptMapper;
+    private final SysDeptMapper deptMapper;
 
-    @Autowired
-    private SysUserDeptMapper userDeptMapper;
+    private final SysUserDeptMapper userDeptMapper;
 
     @Override
     public void beforeQuery(Executor executor, MappedStatement ms, Object parameter,

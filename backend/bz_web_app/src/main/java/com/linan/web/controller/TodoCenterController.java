@@ -7,7 +7,7 @@ import com.linan.hr.entity.AttLeaveRequest;
 import com.linan.hr.service.IAttLeaveRequestService;
 import com.linan.office.entity.OfficeVehicleRequest;
 import com.linan.office.service.IOfficeVehicleRequestService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -31,13 +31,12 @@ import java.util.stream.Collectors;
 @Tag(name = "统一待办中心", description = "聚合各模块待审批事项")
 @RestController
 @RequestMapping("/api/system/v1/todo-center")
+@RequiredArgsConstructor
 public class TodoCenterController {
 
-    @Autowired
-    private IAttLeaveRequestService leaveService;
+    private final IAttLeaveRequestService leaveService;
 
-    @Autowired
-    private IOfficeVehicleRequestService vehicleService;
+    private final IOfficeVehicleRequestService vehicleService;
 
     /**
      * 待办事项类型

@@ -1,8 +1,12 @@
 package com.linan.core.common.aspect;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.linan.core.common.annotation.OperLog;
+import com.linan.core.common.util.IpUtil;
 import com.linan.core.security.interceptor.AuthInterceptor;
 import com.linan.system.entity.SysOperLog;
 import jakarta.servlet.http.HttpServletRequest;
@@ -11,7 +15,7 @@ import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.reflect.MethodSignature;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
@@ -32,10 +36,12 @@ import java.util.stream.Collectors;
 @Slf4j
 @Aspect
 @Component
+@RequiredArgsConstructor
 public class OperLogAspect {
 
-    @Autowired
-    private OperLogAsyncService operLogAsyncService;
+    private final OperLogAsyncService operLogAsyncService;
+
+    private final IpUtil ipUtil;
 
     /** 敏感字段列表——记录日志时自动脱敏 */
     private static final List<String> SENSITIVE_FIELDS = List.of(
@@ -48,6 +54,12 @@ public class OperLogAspect {
     );
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
+
+    static {
+        // 注册 JavaTimeModule：实体中的 LocalDateTime 等时间字段可正常序列化（ISO 字符串）
+        objectMapper.registerModule(new JavaTimeModule());
+        objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+    }
 
     @Around("@annotation(com.linan.core.common.annotation.OperLog)")
     public Object around(ProceedingJoinPoint joinPoint) throws Throwable {
@@ -70,7 +82,7 @@ public class OperLogAspect {
         if (request != null) {
             logEntity.setRequestMethod(request.getMethod());
             logEntity.setOperUrl(request.getRequestURI());
-            logEntity.setOperIp(getClientIp(request));
+            logEntity.setOperIp(ipUtil.getClientIp(request));
         }
 
         Long userId = AuthInterceptor.getCurrentUserId();
@@ -134,18 +146,40 @@ public class OperLogAspect {
             }
 
             String name = i < paramNames.length ? paramNames[i] : "arg" + i;
-            // 脱敏处理
+            // 脱敏处理（参数名命中 / Map key 命中 / 实体字段命中 三通道全覆盖）
             if (SENSITIVE_FIELDS.contains(name)) {
                 paramMap.put(name, "****");
-            } else if (arg instanceof Map) {
-                // 对 Map 类型参数进行递归脱敏
-                paramMap.put(name, desensitizeMap((Map<?, ?>) arg));
             } else {
-                paramMap.put(name, arg);
+                paramMap.put(name, desensitizeObject(arg));
             }
         }
 
         return paramMap.isEmpty() ? "" : toJsonString(paramMap);
+    }
+
+    /**
+     * 脱敏任意对象参数
+     *
+     * <p>Map 直接递归脱敏；实体/Pojo 先经 Jackson 转为 Map 再递归脱敏，
+     * 保证 {@code @RequestBody} 实体中的 password/idCard/phone 等敏感字段不会明文入库。
+     * 基本类型原样返回；转换失败（无法序列化的类型）时退回原对象，由 toJsonString 兜底。</p>
+     */
+    @SuppressWarnings("unchecked")
+    private Object desensitizeObject(Object obj) {
+        if (obj instanceof Map) {
+            return desensitizeMap((Map<?, ?>) obj);
+        }
+        if (obj instanceof CharSequence || obj instanceof Number || obj instanceof Boolean
+                || obj instanceof Character) {
+            return obj;
+        }
+        try {
+            Map<String, Object> map = objectMapper.convertValue(obj,
+                    new TypeReference<LinkedHashMap<String, Object>>() {});
+            return desensitizeMap(map);
+        } catch (Exception e) {
+            return obj;
+        }
     }
 
     /**
@@ -213,19 +247,5 @@ public class OperLogAspect {
         if (str == null) return null;
         if (str.length() <= maxLength) return str;
         return str.substring(0, maxLength) + "...(truncated)";
-    }
-
-    private String getClientIp(HttpServletRequest request) {
-        String ip = request.getHeader("X-Forwarded-For");
-        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getHeader("X-Real-IP");
-        }
-        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getRemoteAddr();
-        }
-        if (ip != null && ip.contains(",")) {
-            ip = ip.split(",")[0].trim();
-        }
-        return ip;
     }
 }

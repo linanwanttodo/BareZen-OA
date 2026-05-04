@@ -11,7 +11,7 @@ import com.linan.office.entity.OfficeSupplyRequest;
 import com.linan.office.service.IOfficeSupplyRequestService;
 import com.linan.system.entity.ApprovalFlowLog;
 import com.linan.system.service.IApprovalFlowLogService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -33,19 +33,16 @@ import java.util.List;
 @Tag(name = "审批流程进度", description = "用户前台 - 查看我的申请进度")
 @RestController
 @RequestMapping("/api/app/v1/flow-logs")
+@RequiredArgsConstructor
 public class AppFlowLogController {
 
-    @Autowired
-    private IApprovalFlowLogService flowLogService;
+    private final IApprovalFlowLogService flowLogService;
 
-    @Autowired
-    private IAttOvertimeRequestService overtimeService;
+    private final IAttOvertimeRequestService overtimeService;
 
-    @Autowired
-    private IAttTravelRequestService travelService;
+    private final IAttTravelRequestService travelService;
 
-    @Autowired
-    private IOfficeSupplyRequestService supplyRequestService;
+    private final IOfficeSupplyRequestService supplyRequestService;
 
     /**
      * 查询我的申请单流程节点

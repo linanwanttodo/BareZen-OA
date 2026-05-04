@@ -6,7 +6,7 @@ import com.linan.core.common.api.Result;
 import com.linan.core.security.RequirePermission;
 import com.linan.system.service.IDbBackupService;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.File;
@@ -29,10 +29,10 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @Tag(name = "数据备份", description = "系统监控 - 数据库备份管理")
 @RestController
 @RequestMapping("/api/system/v1/backup")
+@RequiredArgsConstructor
 public class DbBackupController {
 
-    @Autowired
-    private IDbBackupService backupService;
+    private final IDbBackupService backupService;
 
     /**
      * 创建备份

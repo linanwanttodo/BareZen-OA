@@ -5,7 +5,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.linan.core.common.api.PageResult;
 import com.linan.core.common.api.Result;
 import com.linan.core.security.RequirePermission;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,10 +18,10 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @Tag(name = "在线用户", description = "在线用户监控与强制下线")
 @RestController
 @RequestMapping("/api/system/v1/monitor/online")
+@RequiredArgsConstructor
 public class OnlineUserController {
 
-    @Autowired
-    private OnlineUserService onlineUserService;
+    private final OnlineUserService onlineUserService;
 
     @RequirePermission("monitor:online:list")
     @Operation(summary = "分页查询在线用户")

@@ -13,6 +13,11 @@ public interface ISysRoleService extends IService<SysRole> {
     void assignRoleMenus(Long roleId, List<Long> menuIds);
 
     /**
+     * 查询角色已分配的菜单ID列表（用于分配弹窗回显）
+     */
+    List<Long> getMenuIdsByRoleId(Long roleId);
+
+    /**
      * 检查角色标识是否唯一
      *
      * @return true 表示唯一（不存在），false 表示已存在

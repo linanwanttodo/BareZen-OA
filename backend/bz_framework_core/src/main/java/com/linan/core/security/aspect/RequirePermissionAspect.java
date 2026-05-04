@@ -10,7 +10,7 @@ import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Pointcut;
 import org.aspectj.lang.reflect.MethodSignature;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
@@ -34,10 +34,10 @@ import java.util.Arrays;
  */
 @Aspect
 @Component
+@RequiredArgsConstructor
 public class RequirePermissionAspect {
 
-    @Autowired
-    private PermissionService permissionService;
+    private final PermissionService permissionService;
 
     /**
      * 切入点：所有标记了 @RequirePermission 的方法

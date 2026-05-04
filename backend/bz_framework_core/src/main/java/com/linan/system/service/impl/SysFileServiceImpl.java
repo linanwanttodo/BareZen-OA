@@ -161,8 +161,18 @@ public class SysFileServiceImpl extends ServiceImpl<SysFileMapper, SysFile> impl
             throw new RuntimeException("文件夹不可下载");
         }
 
+        // 路径遍历防御：filePath 虽由服务端生成（yyyy/MM/dd + UUID），
+        // 但为防数据库被篡改后拼接出任意路径，仍拒绝包含 .. 的路径
+        String relativePath = sysFile.getFilePath();
+        if (!StringUtils.hasText(relativePath)
+                || relativePath.contains("..")
+                || relativePath.startsWith("/")
+                || relativePath.contains("\\")) {
+            throw new RuntimeException("非法文件路径");
+        }
+
         // 用 basePath 拼出完整磁盘路径
-        File file = new File(basePath + sysFile.getFilePath());
+        File file = new File(basePath + relativePath);
         if (!file.exists()) {
             throw new RuntimeException("文件已丢失");
         }

@@ -20,6 +20,12 @@ public interface SysRoleMenuMapper {
     Long countByMenuId(@Param("menuId") Long menuId);
 
     /**
+     * 查询角色已分配的全部菜单ID
+     */
+    @Select("SELECT menu_id FROM sys_role_menu WHERE role_id = #{roleId}")
+    List<Long> selectMenuIdsByRoleId(@Param("roleId") Long roleId);
+
+    /**
      * 根据角色ID删除关联
      */
     void deleteByRoleId(@Param("roleId") Long roleId);

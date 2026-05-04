@@ -6,24 +6,16 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.linan.core.common.annotation.OperLog;
 import com.linan.core.common.api.PageResult;
 import com.linan.core.common.api.Result;
-import com.linan.core.common.event.ApprovalCompletedEvent;
 import com.linan.core.security.RequirePermission;
-import com.linan.core.security.interceptor.AuthInterceptor;
 import com.linan.office.entity.OfficeSupply;
 import com.linan.office.entity.OfficeSupplyRequest;
 import com.linan.office.service.IOfficeSupplyRequestService;
 import com.linan.office.service.IOfficeSupplyService;
-import com.linan.system.service.IApprovalFlowLogService;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.web.bind.annotation.*;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 
 /**
  * 办公用品管理 Controller（管理后台）
@@ -38,19 +30,15 @@ import java.time.format.DateTimeFormatter;
 @RequestMapping("/api/office/v1/supplies")
 public class OfficeSupplyController {
 
-    private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    private final IOfficeSupplyService supplyService;
 
-    @Autowired
-    private IOfficeSupplyService supplyService;
+    private final IOfficeSupplyRequestService requestService;
 
-    @Autowired
-    private IOfficeSupplyRequestService requestService;
-
-    @Autowired
-    private ApplicationEventPublisher eventPublisher;
-
-    @Autowired
-    private IApprovalFlowLogService flowLogService;
+    public OfficeSupplyController(IOfficeSupplyService supplyService,
+                                  IOfficeSupplyRequestService requestService) {
+        this.supplyService = supplyService;
+        this.requestService = requestService;
+    }
 
     // ============ 用品管理 ============
 
@@ -148,6 +136,9 @@ public class OfficeSupplyController {
 
     /**
      * 审批申领（通过/驳回），通过时扣减库存
+     *
+     * <p>业务逻辑（行锁/库存扣减/流程记录）与事务已下沉至 Service，
+     * 保证库存扣减与状态变更的整体原子性。</p>
      */
     @Operation(summary = "审批申领")
     @OperLog(title = "办公用品", businessType = 2)
@@ -156,53 +147,8 @@ public class OfficeSupplyController {
     public Result<Void> approve(@PathVariable Long id,
                                 @RequestParam String action,
                                 @RequestParam(required = false) String remark) {
-        OfficeSupplyRequest request = requestService.getById(id);
-        if (request == null) {
-            return Result.error("申领记录不存在");
-        }
-        if (!"0".equals(request.getStatus())) {
-            return Result.error("该记录已审批，不能重复操作");
-        }
-        Long approverId = AuthInterceptor.getCurrentUserId();
-        if (approverId != null && approverId.equals(request.getUserId())) {
-            return Result.error("不能审批自己的申请");
-        }
-
-        if ("pass".equals(action)) {
-            // 校验并扣减库存
-            OfficeSupply supply = supplyService.getById(request.getSupplyId());
-            if (supply == null) {
-                return Result.error("用品已不存在");
-            }
-            if (supply.getStock() < request.getQuantity()) {
-                return Result.error("库存不足，当前库存 " + supply.getStock());
-            }
-            supply.setStock(supply.getStock() - request.getQuantity());
-            supplyService.updateById(supply);
-            request.setStatus("1");
-        } else if ("reject".equals(action)) {
-            request.setStatus("2");
-        } else {
-            return Result.error("无效的审批动作");
-        }
-
-        request.setApproverId(approverId);
-        request.setApproverName(AuthInterceptor.getCurrentUsername());
-        request.setApproveTime(LocalDateTime.now().format(FMT));
-        request.setApproveRemark(remark);
-        boolean ok = requestService.updateById(request);
-        if (ok) {
-            String node = "pass".equals(action) ? "审批通过" : "审批驳回";
-            flowLogService.record("supply", request.getId(), node, request.getStatus(),
-                    approverId, AuthInterceptor.getCurrentUsername(), remark);
-            String result = "pass".equals(action) ? "已通过" : "已驳回";
-            eventPublisher.publishEvent(new ApprovalCompletedEvent(
-                    request.getUserId(),
-                    "用品申领审批" + result,
-                    "您的用品申领（" + request.getSupplyName() + " × " + request.getQuantity() + "）" + result
-                            + (remark != null && !remark.isEmpty() ? "，审批意见：" + remark : "")));
-        }
-        return ok ? Result.success(null) : Result.error("审批失败");
+        requestService.approve(id, action, remark);
+        return Result.success(null);
     }
 
     /**

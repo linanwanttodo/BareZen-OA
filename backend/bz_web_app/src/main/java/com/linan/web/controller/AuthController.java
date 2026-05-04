@@ -3,6 +3,7 @@ package com.linan.web.controller;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.linan.core.common.annotation.RateLimit;
 import com.linan.core.common.api.Result;
+import com.linan.core.common.util.IpUtil;
 import com.linan.core.security.JwtUtil;
 import com.linan.core.security.PassAuth;
 import com.linan.core.security.PasswordUtil;
@@ -15,10 +16,13 @@ import com.linan.system.mapper.SysMenuMapper;
 import com.linan.system.mapper.SysRoleMapper;
 import com.linan.system.mapper.SysUserMapper;
 import com.linan.system.monitor.OnlineUserService;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
@@ -29,6 +33,7 @@ import java.security.SecureRandom;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -50,21 +55,26 @@ public class AuthController {
     private final SysRoleMapper roleMapper;
     private final SysMenuMapper menuMapper;
     private final RedisTemplate<String, Object> redisTemplate;
+    private final StringRedisTemplate stringRedisTemplate;
     private final OnlineUserService onlineUserService;
     private final JwtUtil jwtUtil;
     private final SysLogininforMapper logininforMapper;
+    private final IpUtil ipUtil;
 
     public AuthController(SysUserMapper userMapper, SysRoleMapper roleMapper,
                           SysMenuMapper menuMapper, RedisTemplate<String, Object> redisTemplate,
+                          StringRedisTemplate stringRedisTemplate,
                           OnlineUserService onlineUserService, JwtUtil jwtUtil,
-                          SysLogininforMapper logininforMapper) {
+                          SysLogininforMapper logininforMapper, IpUtil ipUtil) {
         this.userMapper = userMapper;
         this.roleMapper = roleMapper;
         this.menuMapper = menuMapper;
         this.redisTemplate = redisTemplate;
+        this.stringRedisTemplate = stringRedisTemplate;
         this.onlineUserService = onlineUserService;
         this.jwtUtil = jwtUtil;
         this.logininforMapper = logininforMapper;
+        this.ipUtil = ipUtil;
     }
 
     /** 是否开放注册，生产默认关闭 */
@@ -76,6 +86,24 @@ public class AuthController {
 
     /** 锁定时间（分钟） */
     private static final int LOGIN_LOCK_MINUTES = 15;
+
+    /**
+     * Lua 脚本：登录失败计数原子递增。
+     * INCR 与首次 EXPIRE 在同一次脚本内完成，避免「先 INCR 后判 1 再 EXPIRE」
+     * 的竞态窗口——并发失败请求交错时，key 可能永不设置 TTL，导致计数永久残留。
+     *
+     * KEYS[1] = 锁定计数 key
+     * ARGV[1] = 锁定时间（分钟，作为 TTL 秒数）
+     * 返回值：当前失败次数
+     */
+    private static final DefaultRedisScript<Long> LOGIN_FAIL_SCRIPT = new DefaultRedisScript<>(
+            "local current = redis.call('INCR', KEYS[1]) " +
+            "if current == 1 then " +
+            "    redis.call('EXPIRE', KEYS[1], tonumber(ARGV[1]) * 60) " +
+            "end " +
+            "return current",
+            Long.class
+    );
 
     private static final Set<String> AVATAR_ALLOWED_EXT = Set.of(".jpg", ".jpeg", ".png", ".gif", ".webp");
     private static final long AVATAR_MAX_SIZE = 2 * 1024 * 1024L;
@@ -466,14 +494,8 @@ public class AuthController {
         user.setPassword(PasswordUtil.encode(newPassword));
         userMapper.updateById(user);
 
-        // 密码修改成功后，将当前 Token 加入黑名单，使用户需要重新登录
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            String token = authHeader.substring(7);
-            String digest = jwtUtil.getTokenDigest(token);
-            redisTemplate.opsForValue().set("blacklist:" + digest, "password_changed",
-                    24, java.util.concurrent.TimeUnit.HOURS);
-            onlineUserService.forceLogout(token);
-        }
+        // 密码修改成功后，将当前 Token 加入黑名单（Header 或 Cookie 双通道），使用户需要重新登录
+        blacklistCurrentToken(authHeader, "password_changed");
         // 清除 httpOnly Cookie，强制用户重新登录
         clearAuthCookie();
 
@@ -487,13 +509,8 @@ public class AuthController {
     @Operation(summary = "退出登录")
     @PostMapping("/logout")
     public Result<Void> logout(@RequestHeader(value = "Authorization", required = false) String authHeader) {
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            String token = authHeader.substring(7);
-            String digest = jwtUtil.getTokenDigest(token);
-            // 黑名单使用 digest，避免存完整 JWT
-            redisTemplate.opsForValue().set("blacklist:" + digest, "logout", 24, java.util.concurrent.TimeUnit.HOURS);
-            onlineUserService.forceLogout(token);
-        }
+        // Token 加入黑名单（Header 或 Cookie 双通道），黑名单使用 digest 避免存完整 JWT
+        blacklistCurrentToken(authHeader, "logout");
         // 清除 httpOnly Cookie
         clearAuthCookie();
         return Result.success(null);
@@ -520,13 +537,8 @@ public class AuthController {
             return Result.error("该账号已被停用");
         }
 
-        // 旧 token 立即失效
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            String oldToken = authHeader.substring(7);
-            String digest = jwtUtil.getTokenDigest(oldToken);
-            redisTemplate.opsForValue().set("blacklist:" + digest, "refresh", 24, java.util.concurrent.TimeUnit.HOURS);
-            onlineUserService.forceLogout(oldToken);
-        }
+        // 旧 token 立即失效（Header 或 Cookie 双通道）
+        blacklistCurrentToken(authHeader, "refresh");
 
         // 生成新 Token 并记录在线（使用真实客户端 IP）
         String newToken = jwtUtil.createToken(user.getId(), user.getUserName());
@@ -561,8 +573,8 @@ public class AuthController {
     /**
      * 获取客户端真实 IP 地址
      *
-     * <p>依次从 X-Forwarded-For、X-Real-IP、RemoteAddr 中获取，
-     * 处理反向代理场景下的 IP 透传。</p>
+     * <p>统一委托 {@link IpUtil} 提取（默认仅取 RemoteAddr 防伪造，
+     * 部署可信反向代理后可通过 {@code security.trust-proxy-headers} 开启代理头透传）。</p>
      *
      * @return 客户端 IP 地址，获取失败返回 "unknown"
      */
@@ -573,20 +585,48 @@ public class AuthController {
             if (attributes == null) {
                 return "unknown";
             }
-            HttpServletRequest request = attributes.getRequest();
-            String ip = request.getHeader("X-Forwarded-For");
-            if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
-                ip = request.getHeader("X-Real-IP");
-            }
-            if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
-                ip = request.getRemoteAddr();
-            }
-            if (ip != null && ip.contains(",")) {
-                ip = ip.split(",")[0].trim();
-            }
-            return ip != null ? ip : "unknown";
+            return ipUtil.getClientIp(attributes.getRequest());
         } catch (Exception e) {
             return "unknown";
+        }
+    }
+
+    /**
+     * 将当前请求携带的 Token 加入黑名单（双通道：Authorization Header 优先，回退 httpOnly Cookie）
+     *
+     * <p>客户端登录后的标准鉴权通道是 httpOnly Cookie（bz_token）。此前登出/改密/刷新
+     * 只拉黑 Header 中的 Bearer token，纯 Cookie 鉴权的会话在服务端旧 token 仍有效——
+     * 已泄露的 token 无法立即失效。此处统一双通道拉黑（digest key，24h TTL），
+     * 与 {@link AuthInterceptor} 的请求期黑名单校验路径对齐。</p>
+     *
+     * @param authHeader Authorization 请求头（可能为 null）
+     * @param reason     拉黑原因：logout / password_changed / refresh
+     */
+    private void blacklistCurrentToken(String authHeader, String reason) {
+        String token = null;
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            token = authHeader.substring(7);
+        } else {
+            // 回退读取 httpOnly Cookie（bz_token）
+            ServletRequestAttributes attributes =
+                    (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+            if (attributes != null) {
+                Cookie[] cookies = attributes.getRequest().getCookies();
+                if (cookies != null) {
+                    for (Cookie cookie : cookies) {
+                        if ("bz_token".equals(cookie.getName())) {
+                            token = cookie.getValue();
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        if (token != null && !token.isEmpty()) {
+            String digest = jwtUtil.getTokenDigest(token);
+            // 黑名单使用 digest，避免存完整 JWT
+            redisTemplate.opsForValue().set("blacklist:" + digest, reason, 24, TimeUnit.HOURS);
+            onlineUserService.forceLogout(token);
         }
     }
 
@@ -665,12 +705,14 @@ public class AuthController {
     }
 
     /**
-     * 记录登录失败计数（Redis 原子递增）
+     * 记录登录失败计数（Lua 原子递增 + TTL 设置）
      */
     private void recordLoginFailure(String lockKey) {
-        Long current = redisTemplate.opsForValue().increment(lockKey);
-        if (current != null && current == 1) {
-            redisTemplate.expire(lockKey, LOGIN_LOCK_MINUTES, java.util.concurrent.TimeUnit.MINUTES);
+        try {
+            stringRedisTemplate.execute(LOGIN_FAIL_SCRIPT, List.of(lockKey), String.valueOf(LOGIN_LOCK_MINUTES));
+        } catch (Exception e) {
+            // 计数失败不阻断登录主流程，仅记录日志
+            log.warn("记录登录失败计数失败: {}", e.getMessage());
         }
     }
 }

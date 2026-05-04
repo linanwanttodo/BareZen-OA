@@ -1,5 +1,6 @@
 package com.linan.system.service;
 
+import com.baomidou.mybatisplus.extension.service.IService;
 import com.linan.system.entity.SysDictData;
 
 import java.util.List;
@@ -7,7 +8,7 @@ import java.util.List;
 /**
  * 字典数据 Service 接口
  */
-public interface ISysDictDataService {
+public interface ISysDictDataService extends IService<SysDictData> {
 
     /**
      * 根据字典类型查询字典数据列表（带缓存）

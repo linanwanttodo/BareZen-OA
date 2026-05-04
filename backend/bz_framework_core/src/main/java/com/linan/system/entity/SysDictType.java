@@ -19,6 +19,6 @@ public class SysDictType extends BaseEntity {
     private String dictName;
     /** 字典类型编码（如：sys_user_sex，全局唯一） */
     private String dictType;
-    /** 状态（0正常 1停用） */
+    /** 状态（0=停用 1=正常，与 sys_dict_type 表注释一致） */
     private String status;
 }

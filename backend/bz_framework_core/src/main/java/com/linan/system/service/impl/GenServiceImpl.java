@@ -403,7 +403,7 @@ public class GenServiceImpl implements IGenService {
         sb.append("import com.linan.core.security.RequirePermission;\n");
         sb.append("import com.linan.").append(table.getModuleName()).append(".entity.").append(table.getClassName()).append(";\n");
         sb.append("import com.linan.").append(table.getModuleName()).append(".service.I").append(table.getClassName()).append("Service;\n");
-        sb.append("import org.springframework.beans.factory.annotation.Autowired;\n");
+        sb.append("import lombok.RequiredArgsConstructor;\n");
         sb.append("import org.springframework.web.bind.annotation.*;\n\n");
 
         String comment = StringUtils.hasText(table.getTableComment()) ? table.getTableComment() : table.getTableName();

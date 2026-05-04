@@ -1,11 +1,12 @@
 package com.linan.web.scheduler;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.linan.hr.entity.HrSchedule;
 import com.linan.hr.service.IHrScheduleService;
 import com.linan.web.websocket.NotificationService;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -23,15 +24,14 @@ import java.util.List;
  */
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class ScheduleReminderScheduler {
 
     private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
-    @Autowired
-    private IHrScheduleService scheduleService;
+    private final IHrScheduleService scheduleService;
 
-    @Autowired
-    private NotificationService notificationService;
+    private final NotificationService notificationService;
 
     /**
      * 每分钟执行一次日程提醒扫描
@@ -56,6 +56,18 @@ public class ScheduleReminderScheduler {
             if (schedule.getUserId() == null) {
                 continue;
             }
+            // 原子抢占（条件更新）：仅当 remind_sent 仍为 'N' 时才置为 'Y'。
+            // 多实例部署或并发执行时，同一日程只会有一个执行者抢占成功并推送，
+            // 其余执行者更新影响 0 行直接跳过，避免重复提醒（原子抢占，P1）
+            boolean claimed = scheduleService.update(new LambdaUpdateWrapper<HrSchedule>()
+                    .eq(HrSchedule::getId, schedule.getId())
+                    .eq(HrSchedule::getRemindSent, "N")
+                    .le(HrSchedule::getRemindTime, now)
+                    .set(HrSchedule::getRemindSent, "Y"));
+            if (!claimed) {
+                continue;
+            }
+
             String title = "日程提醒：" + schedule.getTitle();
             String content = "您有日程即将开始："
                     + schedule.getTitle()
@@ -63,10 +75,6 @@ public class ScheduleReminderScheduler {
                     + (schedule.getLocation() != null && !schedule.getLocation().isEmpty()
                         ? "，地点：" + schedule.getLocation() : "");
             notificationService.notifyUser(schedule.getUserId(), title, content);
-
-            // 标记已提醒，避免重复推送
-            schedule.setRemindSent("Y");
-            scheduleService.updateById(schedule);
             log.info("日程提醒已推送用户 {}: {}", schedule.getUserId(), schedule.getTitle());
         }
     }

@@ -10,7 +10,7 @@ import com.linan.core.security.RequirePermission;
 import com.linan.system.entity.SysJob;
 import com.linan.system.service.ISysJobService;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -27,10 +27,10 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @Tag(name = "定时任务", description = "系统监控 - 定时任务管理")
 @RestController
 @RequestMapping("/api/system/v1/jobs")
+@RequiredArgsConstructor
 public class SysJobController {
 
-    @Autowired
-    private ISysJobService jobService;
+    private final ISysJobService jobService;
 
     // ============ 分页查询 ============
 

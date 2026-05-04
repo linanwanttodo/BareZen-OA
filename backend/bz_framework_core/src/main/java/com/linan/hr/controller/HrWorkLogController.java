@@ -11,7 +11,7 @@ import com.linan.core.security.interceptor.AuthInterceptor;
 import com.linan.hr.entity.HrWorkLog;
 import com.linan.hr.service.IHrWorkLogService;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -30,12 +30,12 @@ import java.time.format.DateTimeFormatter;
 @Tag(name = "工作日志", description = "人事管理 - 工作日志")
 @RestController
 @RequestMapping("/api/hr/v1/worklogs")
+@RequiredArgsConstructor
 public class HrWorkLogController {
 
     private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-    @Autowired
-    private IHrWorkLogService workLogService;
+    private final IHrWorkLogService workLogService;
 
     /**
      * 条件分页查询
@@ -126,6 +126,10 @@ public class HrWorkLogController {
             return Result.error("日志不存在");
         }
         Long reviewerId = AuthInterceptor.getCurrentUserId();
+        // 禁止批阅自己的日志（与审批流程"不能审批自己"的规则一致，避免自评自批）
+        if (reviewerId != null && reviewerId.equals(log.getUserId())) {
+            return Result.error("不能批阅自己的日志");
+        }
         log.setReviewerId(reviewerId);
         log.setReviewerName(AuthInterceptor.getCurrentUsername());
         log.setReviewTime(LocalDateTime.now().format(FMT));

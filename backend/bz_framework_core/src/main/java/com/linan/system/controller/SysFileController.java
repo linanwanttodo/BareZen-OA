@@ -15,7 +15,7 @@ import com.linan.system.mapper.SysRoleMapper;
 import com.linan.system.service.ISysFileService;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -39,16 +39,14 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @Tag(name = "文件管理", description = "文件上传、下载、文件夹管理")
 @RestController
 @RequestMapping("/api/system/v1/files")
+@RequiredArgsConstructor
 public class SysFileController {
 
-    @Autowired
-    private ISysFileService fileService;
+    private final ISysFileService fileService;
 
-    @Autowired
-    private SysRoleMapper roleMapper;
+    private final SysRoleMapper roleMapper;
 
-    @Autowired
-    private SysMenuMapper menuMapper;
+    private final SysMenuMapper menuMapper;
 
     // ============ 文件上传 ============
 

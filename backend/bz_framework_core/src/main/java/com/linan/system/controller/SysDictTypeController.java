@@ -7,7 +7,7 @@ import com.linan.core.common.controller.BaseController;
 import com.linan.core.security.RequirePermission;
 import com.linan.system.entity.SysDictType;
 import com.linan.system.service.ISysDictTypeService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -16,8 +16,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @Tag(name = "字典管理", description = "字典类型 CRUD")
 @RestController
 @RequestMapping("/api/system/v1/dict/types")
+@RequiredArgsConstructor
 public class SysDictTypeController extends BaseController<SysDictType, ISysDictTypeService> {
-    @Autowired private ISysDictTypeService dictTypeService;
+    private final ISysDictTypeService dictTypeService;
     @Override protected ISysDictTypeService getService() { return dictTypeService; }
 
     @RequirePermission("system:dict:list")

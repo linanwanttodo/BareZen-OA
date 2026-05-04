@@ -4,7 +4,7 @@ import com.linan.system.entity.SysRole;
 import com.linan.system.mapper.SysMenuMapper;
 import com.linan.system.mapper.SysRoleMapper;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
@@ -30,13 +30,12 @@ import java.util.Set;
  */
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class PermissionService {
 
-    @Autowired
-    private SysRoleMapper roleMapper;
+    private final SysRoleMapper roleMapper;
 
-    @Autowired
-    private SysMenuMapper menuMapper;
+    private final SysMenuMapper menuMapper;
 
     /**
      * 获取用户的所有权限标识，带 Redis 缓存

@@ -1,6 +1,7 @@
 package com.linan.hr.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.linan.core.common.annotation.OperLog;
@@ -13,7 +14,7 @@ import com.linan.hr.entity.AttLeaveRequest;
 import com.linan.hr.service.IAttLeaveRequestService;
 import com.linan.system.service.IApprovalFlowLogService;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.web.bind.annotation.*;
 
@@ -34,18 +35,16 @@ import java.time.format.DateTimeFormatter;
 @Tag(name = "请假审批", description = "考勤管理 - 请假申请与审批")
 @RestController
 @RequestMapping("/api/hr/v1/leaves")
+@RequiredArgsConstructor
 public class AttLeaveRequestController {
 
     private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-    @Autowired
-    private IAttLeaveRequestService leaveService;
+    private final IAttLeaveRequestService leaveService;
 
-    @Autowired
-    private ApplicationEventPublisher eventPublisher;
+    private final ApplicationEventPublisher eventPublisher;
 
-    @Autowired
-    private IApprovalFlowLogService flowLogService;
+    private final IApprovalFlowLogService flowLogService;
 
     /**
      * 分页查询请假记录
@@ -99,9 +98,10 @@ public class AttLeaveRequestController {
             return Result.error("未登录");
         }
         request.setUserId(userId);
-        // 申请人姓名由前端传入（来自用户信息）；后端兜底
+        // 申请人姓名由前端传入（来自用户信息）；后端兜底填真实用户名（JWT 中解析），禁止把 userId 当姓名落库
         if (request.getUserName() == null || request.getUserName().isEmpty()) {
-            request.setUserName(String.valueOf(userId));
+            String username = AuthInterceptor.getCurrentUsername();
+            request.setUserName(username != null ? username : "用户" + userId);
         }
         request.setStatus("0");
         boolean ok = leaveService.save(request);
@@ -114,6 +114,9 @@ public class AttLeaveRequestController {
 
     /**
      * 审批请假（通过/驳回）
+     *
+     * <p>原子条件更新（WHERE status='0'）：并发重复审批时仅首个请求生效，
+     * 后到者受影响行数为 0 返回"已审批"，避免覆盖首次审批结果。</p>
      */
     @Operation(summary = "审批请假")
     @OperLog(title = "请假审批", businessType = 2)
@@ -126,9 +129,6 @@ public class AttLeaveRequestController {
         if (leave == null) {
             return Result.error("请假记录不存在");
         }
-        if (!"0".equals(leave.getStatus())) {
-            return Result.error("该记录已审批，不能重复操作");
-        }
 
         // 禁止审批人审批自己的申请（避免自审自批）
         Long approverId = AuthInterceptor.getCurrentUserId();
@@ -136,38 +136,53 @@ public class AttLeaveRequestController {
             return Result.error("不能审批自己的申请");
         }
 
+        // 指定审批人校验（V31）：若申请指定了审批人，仅该审批人可操作
+        if (leave.getAssigneeId() != null
+                && (approverId == null || !approverId.equals(leave.getAssigneeId()))) {
+            return Result.error("该申请已指定审批人（" + leave.getAssigneeName() + "），仅其可审批");
+        }
+
+        String targetStatus;
         if ("pass".equals(action)) {
-            leave.setStatus("1");
+            targetStatus = "1";
         } else if ("reject".equals(action)) {
-            leave.setStatus("2");
+            targetStatus = "2";
         } else {
             return Result.error("无效的审批动作");
         }
 
-        leave.setApproverId(approverId);
-        leave.setApproverName(AuthInterceptor.getCurrentUsername());
-        leave.setApproveTime(LocalDateTime.now().format(FMT));
-        leave.setApproveRemark(remark);
-
-        boolean ok = leaveService.updateById(leave);
-        if (ok) {
-            // 记录流程节点：审批通过/驳回
-            String node = "pass".equals(action) ? "审批通过" : "审批驳回";
-            flowLogService.record("leave", leave.getId(), node, leave.getStatus(),
-                    approverId, AuthInterceptor.getCurrentUsername(), remark);
-            // 审批结果通知申请人（通过/驳回均推送）
-            String result = "pass".equals(action) ? "已通过" : "已驳回";
-            eventPublisher.publishEvent(new ApprovalCompletedEvent(
-                    leave.getUserId(),
-                    "请假审批" + result,
-                    "您的请假申请（" + leave.getStartTime() + " ~ " + leave.getEndTime() + "）" + result
-                            + (remark != null && !remark.isEmpty() ? "，审批意见：" + remark : "")));
+        // 原子条件更新：仅当仍为待审批（status='0'）时生效，并发重复审批后到者受影响行数为 0
+        boolean ok = leaveService.update(new LambdaUpdateWrapper<AttLeaveRequest>()
+                .eq(AttLeaveRequest::getId, id)
+                .eq(AttLeaveRequest::getStatus, "0")
+                .set(AttLeaveRequest::getStatus, targetStatus)
+                .set(AttLeaveRequest::getApproverId, approverId)
+                .set(AttLeaveRequest::getApproverName, AuthInterceptor.getCurrentUsername())
+                .set(AttLeaveRequest::getApproveTime, LocalDateTime.now().format(FMT))
+                .set(AttLeaveRequest::getApproveRemark, remark));
+        if (!ok) {
+            return Result.error("该记录已审批，不能重复操作");
         }
-        return ok ? Result.success(null) : Result.error("审批失败");
+
+        // 记录流程节点：审批通过/驳回
+        String node = "pass".equals(action) ? "审批通过" : "审批驳回";
+        flowLogService.record("leave", id, node, targetStatus,
+                approverId, AuthInterceptor.getCurrentUsername(), remark);
+        // 审批结果通知申请人（通过/驳回均推送）
+        String result = "pass".equals(action) ? "已通过" : "已驳回";
+        eventPublisher.publishEvent(new ApprovalCompletedEvent(
+                leave.getUserId(),
+                "请假审批" + result,
+                "您的请假申请（" + leave.getStartTime() + " ~ " + leave.getEndTime() + "）" + result
+                        + (remark != null && !remark.isEmpty() ? "，审批意见：" + remark : "")));
+        return Result.success(null);
     }
 
     /**
      * 撤销请假申请（仅待审批状态可撤销）
+     *
+     * <p>原子条件更新：与审批并发（如管理员同时审批）时仅一个操作生效，
+     * 撤销或审批先到先得，避免状态被并发覆盖。</p>
      */
     @Operation(summary = "撤销请假申请")
     @OperLog(title = "请假审批", businessType = 3)
@@ -178,21 +193,21 @@ public class AttLeaveRequestController {
         if (leave == null) {
             return Result.error("请假记录不存在");
         }
-        if (!"0".equals(leave.getStatus())) {
-            return Result.error("仅待审批状态的申请可撤销");
-        }
         // 仅本人可撤销自己的申请
         Long userId = AuthInterceptor.getCurrentUserId();
         if (userId != null && !userId.equals(leave.getUserId())) {
             return Result.error("只能撤销自己的申请");
         }
-        leave.setStatus("3");
-        boolean ok = leaveService.updateById(leave);
-        if (ok) {
-            flowLogService.record("leave", leave.getId(), "撤销申请", "3",
-                    userId, AuthInterceptor.getCurrentUsername(), null);
+        boolean ok = leaveService.update(new LambdaUpdateWrapper<AttLeaveRequest>()
+                .eq(AttLeaveRequest::getId, id)
+                .eq(AttLeaveRequest::getStatus, "0")
+                .set(AttLeaveRequest::getStatus, "3"));
+        if (!ok) {
+            return Result.error("仅待审批状态的申请可撤销");
         }
-        return ok ? Result.success(null) : Result.error("撤销失败");
+        flowLogService.record("leave", id, "撤销申请", "3",
+                userId, AuthInterceptor.getCurrentUsername(), null);
+        return Result.success(null);
     }
 
     /**

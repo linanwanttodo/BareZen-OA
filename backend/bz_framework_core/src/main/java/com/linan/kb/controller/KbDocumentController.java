@@ -11,7 +11,7 @@ import com.linan.core.security.interceptor.AuthInterceptor;
 import com.linan.kb.entity.KbDocument;
 import com.linan.kb.service.IKbDocumentService;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -27,10 +27,10 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @Tag(name = "知识文档", description = "知识库 - 文档沉淀")
 @RestController
 @RequestMapping("/api/kb/v1/documents")
+@RequiredArgsConstructor
 public class KbDocumentController {
 
-    @Autowired
-    private IKbDocumentService documentService;
+    private final IKbDocumentService documentService;
 
     /**
      * 条件分页查询
@@ -76,7 +76,8 @@ public class KbDocumentController {
         Long userId = AuthInterceptor.getCurrentUserId();
         doc.setAuthorId(userId);
         if (doc.getAuthorName() == null || doc.getAuthorName().isEmpty()) {
-            doc.setAuthorName(userId != null ? String.valueOf(userId) : null);
+            // 后端兜底填真实用户名（JWT 中解析），禁止把 userId 当姓名落库
+            doc.setAuthorName(userId != null ? AuthInterceptor.getCurrentUsername() : null);
         }
         if (doc.getViewCount() == null) {
             doc.setViewCount(0);

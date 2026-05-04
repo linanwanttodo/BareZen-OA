@@ -4,7 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.linan.system.entity.SysOperLog;
 import com.linan.system.service.ISysOperLogService;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
@@ -19,10 +19,10 @@ import java.time.LocalDateTime;
  */
 @Slf4j
 @Component("cleanTask")
+@RequiredArgsConstructor
 public class CleanTask {
 
-    @Autowired
-    private ISysOperLogService operLogService;
+    private final ISysOperLogService operLogService;
 
     /**
      * 清理操作日志

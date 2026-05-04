@@ -10,7 +10,7 @@ import com.linan.core.common.api.PageResult;
 import com.linan.core.common.api.Result;
 import com.linan.core.security.RequirePermission;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -28,10 +28,10 @@ import java.time.LocalDate;
 @Tag(name = "资产台账", description = "资产管理 - 固定资产台账")
 @RestController
 @RequestMapping("/api/asset/v1/items")
+@RequiredArgsConstructor
 public class AssetItemController {
 
-    @Autowired
-    private IAssetItemService assetService;
+    private final IAssetItemService assetService;
 
     /**
      * 条件分页查询

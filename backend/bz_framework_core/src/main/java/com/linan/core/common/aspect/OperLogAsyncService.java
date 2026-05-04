@@ -3,7 +3,7 @@ package com.linan.core.common.aspect;
 import com.linan.system.entity.SysOperLog;
 import com.linan.system.service.ISysOperLogService;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
@@ -15,10 +15,10 @@ import org.springframework.stereotype.Service;
  */
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class OperLogAsyncService {
 
-    @Autowired
-    private ISysOperLogService operLogService;
+    private final ISysOperLogService operLogService;
 
     /**
      * 异步保存操作日志

@@ -7,7 +7,7 @@ import com.linan.system.entity.SysRoleMenu;
 import com.linan.system.mapper.SysRoleMapper;
 import com.linan.system.mapper.SysRoleMenuMapper;
 import com.linan.system.service.ISysRoleService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,10 +15,10 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class SysRoleServiceImpl extends ServiceImpl<SysRoleMapper, SysRole> implements ISysRoleService {
 
-    @Autowired
-    private SysRoleMenuMapper roleMenuMapper;
+    private final SysRoleMenuMapper roleMenuMapper;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -36,6 +36,11 @@ public class SysRoleServiceImpl extends ServiceImpl<SysRoleMapper, SysRole> impl
             }).collect(Collectors.toList());
             roleMenuMapper.batchInsert(list);
         }
+    }
+
+    @Override
+    public List<Long> getMenuIdsByRoleId(Long roleId) {
+        return roleMenuMapper.selectMenuIdsByRoleId(roleId);
     }
 
     @Override

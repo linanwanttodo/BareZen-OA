@@ -13,7 +13,7 @@ import com.linan.office.service.IOfficeSupplyService;
 import com.linan.system.service.IApprovalFlowLogService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -29,18 +29,16 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @Tag(name = "办公用品申领", description = "用户前台 - 用品申领")
 @RestController
 @RequestMapping("/api/app/v1/supplies")
+@RequiredArgsConstructor
 public class AppSupplyController {
 
     private static final Logger log = LoggerFactory.getLogger(AppSupplyController.class);
 
-    @Autowired
-    private IOfficeSupplyService supplyService;
+    private final IOfficeSupplyService supplyService;
 
-    @Autowired
-    private IOfficeSupplyRequestService requestService;
+    private final IOfficeSupplyRequestService requestService;
 
-    @Autowired
-    private IApprovalFlowLogService flowLogService;
+    private final IApprovalFlowLogService flowLogService;
 
     /**
      * 可申领用品列表

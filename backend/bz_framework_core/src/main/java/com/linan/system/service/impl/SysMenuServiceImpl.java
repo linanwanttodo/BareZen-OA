@@ -5,7 +5,7 @@ import com.linan.system.entity.SysMenu;
 import com.linan.system.mapper.SysMenuMapper;
 import com.linan.system.mapper.SysRoleMenuMapper;
 import com.linan.system.service.ISysMenuService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -13,10 +13,10 @@ import java.util.Comparator;
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper, SysMenu> implements ISysMenuService {
 
-    @Autowired
-    private SysRoleMenuMapper roleMenuMapper;
+    private final SysRoleMenuMapper roleMenuMapper;
 
     @Override
     public List<SysMenu> selectMenuTree(Long userId) {

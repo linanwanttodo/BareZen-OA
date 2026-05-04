@@ -7,7 +7,7 @@ import com.linan.core.security.interceptor.AuthInterceptor;
 import com.linan.system.entity.SysMenu;
 import com.linan.system.service.ISysMenuService;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -23,10 +23,10 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @Tag(name = "菜单管理", description = "菜单树、CRUD 与权限标识管理")
 @RestController
 @RequestMapping("/api/system/v1/menus")
+@RequiredArgsConstructor
 public class SysMenuController {
 
-    @Autowired
-    private ISysMenuService menuService;
+    private final ISysMenuService menuService;
 
     /**
      * 获取当前用户的路由菜单（用于前端动态路由）

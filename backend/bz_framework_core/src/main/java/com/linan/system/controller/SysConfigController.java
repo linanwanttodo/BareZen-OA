@@ -9,7 +9,7 @@ import com.linan.core.security.RequirePermission;
 import com.linan.system.entity.SysConfig;
 import com.linan.system.service.ISysConfigService;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -24,10 +24,10 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @Tag(name = "系统配置", description = "系统参数配置管理")
 @RestController
 @RequestMapping("/api/system/v1/config")
+@RequiredArgsConstructor
 public class SysConfigController {
 
-    @Autowired
-    private ISysConfigService configService;
+    private final ISysConfigService configService;
 
     /**
      * 分页查询配置列表
