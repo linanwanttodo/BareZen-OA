@@ -4,7 +4,8 @@
  * 使用 SockJS 连接后端 /ws/notify 端点（与后端 NotificationWebSocketHandler 对应），
  * 接收公告发布等实时广播，以 Toast 形式展示。
  *
- * 连接鉴权：通过 URL 参数 ?token=xxx 传递 JWT（与后端 extractToken 解析一致）。
+ * 连接鉴权：登录后后端已下发 httpOnly Cookie（bz_token），同源握手自动携带，
+ * 不再通过 URL 参数传递 JWT（避免 Token 进入代理访问日志）。
  */
 import SockJS from 'sockjs-client'
 import { getToken } from '@/utils/auth'
@@ -25,11 +26,11 @@ let manualClose = false
 const RECONNECT_INTERVAL = 5000
 
 function showNotification(msg: NotificationMessage) {
-  // 广播公告：标题 + 内容首行
+  // 广播公告：标题 + 内容首行（Toast.info 仅接收消息文本，时长走内部默认值）
   const title = msg.title || '新通知'
   const content = msg.content || ''
   const firstLine = content.split('\n')[0] || ''
-  Toast.info(`${title}${firstLine ? '：' + firstLine : ''}`, 5000)
+  Toast.info(`${title}${firstLine ? '：' + firstLine : ''}`)
 }
 
 function connectSocket() {
@@ -38,8 +39,9 @@ function connectSocket() {
 
   manualClose = false
   // 兼容 Vite 代理：开发环境走 /ws 代理到后端，生产由网关转发
+  // 鉴权依赖同源 httpOnly Cookie（bz_token），无需 URL 传参
   const base = window.location.origin
-  const sockJs = new SockJS(`${base}/ws/notify?token=${encodeURIComponent(token)}`)
+  const sockJs = new SockJS(`${base}/ws/notify`)
   sock = sockJs as unknown as WebSocket
 
   sockJs.onopen = () => {

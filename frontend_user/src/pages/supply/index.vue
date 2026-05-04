@@ -14,7 +14,7 @@
     <!-- 可申领用品 -->
     <div v-if="activeTab === 'supply'">
       <div class="mb-4 flex justify-end">
-        <a-input v-model="keyword" :placeholder="$t('supplyApply.searchPlaceholder')" allow-clear style="width: 240px" @press-enter="loadSupplies" @clear="loadSupplies">
+        <a-input v-model="keyword" :placeholder="$t('supplyApply.searchPlaceholder')" allow-clear style="width: 100%; max-width: " @press-enter="loadSupplies" @clear="loadSupplies">
           <template #prefix><icon-search /></template>
         </a-input>
       </div>

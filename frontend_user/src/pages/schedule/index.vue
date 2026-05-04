@@ -41,7 +41,7 @@
               <a-tag v-if="item.location" size="small">{{ $t('schedule.locationLabel') }}：{{ item.location }}</a-tag>
             </div>
             <p v-if="item.description" class="text-sm text-[var(--muted-foreground)]">{{ item.description }}</p>
-            <p v-if="item.remindTime" class="mt-1 text-xs text-[var(--warning)]">{{ $t('schedule.remind') }}：{{ item.remindTime }}</p>
+            <p v-if="item.remindTime" class="mt-1 text-xs text-[var(--bz-warning)]">{{ $t('schedule.remind') }}：{{ item.remindTime }}</p>
           </div>
           <div class="flex shrink-0 items-center gap-2">
             <a-button v-if="item.status === '0'" size="small" type="primary" @click="markDone(item)">
@@ -65,9 +65,9 @@
           <a-input v-model="form.title" :placeholder="$t('common.inputPlaceholder')" />
         </a-form-item>
         <a-form-item :label="$t('schedule.timeRange')" required>
-          <a-date-picker v-model="form.startTime" show-time style="width: 230px" :placeholder="$t('schedule.startTime')" />
+          <a-date-picker v-model="form.startTime" show-time style="width: 100%; max-width: " :placeholder="$t('schedule.startTime')" />
           <span class="mx-2">~</span>
-          <a-date-picker v-model="form.endTime" show-time style="width: 230px" :placeholder="$t('schedule.endTime')" />
+          <a-date-picker v-model="form.endTime" show-time style="width: 100%; max-width: " :placeholder="$t('schedule.endTime')" />
         </a-form-item>
         <a-row :gutter="16">
           <a-col :span="12">

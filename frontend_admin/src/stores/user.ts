@@ -44,6 +44,9 @@ export const useUserStore = defineStore('user', () => {
   async function logout() {
     try {
       await logoutApi()
+    } catch {
+      // 登出接口失败（如 token 已被拉黑/过期返回 401）属预期：
+      // 吞掉异常，本地清理照常执行，避免调用方再弹「未登录」造成双弹窗
     } finally {
       resetState()
     }

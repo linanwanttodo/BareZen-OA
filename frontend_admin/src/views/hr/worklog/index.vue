@@ -138,7 +138,9 @@ import { ref, reactive, onMounted } from 'vue'
 import { Message } from '@arco-design/web-vue'
 import { getWorkLogPageApi, addWorkLogApi, updateWorkLogApi, deleteWorkLogApi, reviewWorkLogApi, type HrWorkLog } from '@/api/worklog'
 import { useUserStore } from '@/stores/user'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const userStore = useUserStore()
 const loading = ref(false)
 const saving = ref(false)
@@ -190,7 +192,7 @@ function handleEdit(record: HrWorkLog) {
 
 async function handleSave() {
   if (!form.content) {
-    Message.warning('日志内容必填')
+    Message.warning(t('common.msg.contentRequired'))
     return
   }
   saving.value = true
@@ -200,7 +202,7 @@ async function handleSave() {
     } else {
       await addWorkLogApi(form)
     }
-    Message.success('保存成功')
+    Message.success(t('common.saveSuccess'))
     editVisible.value = false
     loadData()
   } finally {
@@ -210,7 +212,7 @@ async function handleSave() {
 
 async function handleDelete(record: HrWorkLog) {
   await deleteWorkLogApi(record.id)
-  Message.success('删除成功')
+  Message.success(t('common.deleteSuccess'))
   loadData()
 }
 
@@ -229,7 +231,7 @@ async function handleReview() {
   reviewing.value = true
   try {
     await reviewWorkLogApi(reviewForm.id, reviewForm.remark)
-    Message.success('批阅完成')
+    Message.success(t('common.msg.reviewDone'))
     reviewVisible.value = false
     loadData()
   } finally {

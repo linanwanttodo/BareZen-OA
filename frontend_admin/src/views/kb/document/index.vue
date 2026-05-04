@@ -144,7 +144,9 @@ import { Message } from '@arco-design/web-vue'
 import DOMPurify from 'dompurify'
 import { getDocPageApi, getDocApi, addDocApi, updateDocApi, deleteDocApi, changeDocStatusApi, type KbDocument } from '@/api/kb'
 import { useUserStore } from '@/stores/user'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const userStore = useUserStore()
 const loading = ref(false)
 const saving = ref(false)
@@ -165,11 +167,11 @@ const safeContent = computed(() => {
 })
 
 const categoryMap: Record<string, string> = {
-  general: '通用', manual: '制度手册', process: '流程规范', tech: '技术资料', other: '其他',
+  general: 'enums.kbCategory.general', manual: 'enums.kbCategory.manual', process: 'enums.kbCategory.process', tech: 'enums.kbCategory.tech', other: 'enums.kbCategory.other',
 }
 
 function categoryText(category: string | undefined): string {
-  return category != null ? categoryMap[category] || '-' : '-'
+  return category != null ? t(categoryMap[category] || '-') : '-'
 }
 
 async function loadData() {
@@ -217,7 +219,7 @@ function handleEdit(record: KbDocument) {
 
 async function handleSave() {
   if (!form.title) {
-    Message.warning('文档标题必填')
+    Message.warning(t('common.msg.docTitleRequired'))
     return
   }
   saving.value = true
@@ -227,7 +229,7 @@ async function handleSave() {
     } else {
       await addDocApi(form)
     }
-    Message.success('保存成功')
+    Message.success(t('common.saveSuccess'))
     editVisible.value = false
     loadData()
   } finally {
@@ -237,13 +239,13 @@ async function handleSave() {
 
 async function handleDelete(record: KbDocument) {
   await deleteDocApi(record.id)
-  Message.success('删除成功')
+  Message.success(t('common.deleteSuccess'))
   loadData()
 }
 
 async function handlePublish(record: KbDocument) {
   await changeDocStatusApi(record.id, '1')
-  Message.success('已发布')
+  Message.success(t('common.msg.published'))
   loadData()
 }
 

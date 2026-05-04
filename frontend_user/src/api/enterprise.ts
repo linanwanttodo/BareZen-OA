@@ -1,5 +1,8 @@
 import request from './request'
-import type { ApiResult, DashboardData, Notice, Contact, TodoItem, CreateTodoDTO, UpdateTodoDTO, PageData } from '@/types/api'
+import type { ApiResult, DashboardData, Notice, Contact, TodoItem, CreateTodoDTO, UpdateTodoDTO, PageData, OvertimeRequest, TravelRequest, WorkLog, Schedule, Supply, SupplyRequest, FlowLog } from '@/types/api'
+
+// 页面组件从 @/api/enterprise 导入业务实体类型，此处 re-export 保持入口统一
+export type { OvertimeRequest, TravelRequest, WorkLog, Schedule, Supply, SupplyRequest, FlowLog } from '@/types/api'
 
 // ==================== 工作台 ====================
 

@@ -11,14 +11,35 @@
       <!-- 中间：导航菜单 -->
       <nav class="user-header__nav">
         <a
-          v-for="item in navItems"
+          v-for="item in flatNavItems"
           :key="item.path"
           class="user-header__nav-item"
-          :class="{ 'user-header__nav-item--active': route.path === item.path || route.path.startsWith(item.path + '/') }"
+          :class="{ 'user-header__nav-item--active': isNavActive(item.path) }"
           @click="router.push(item.path)"
         >
           {{ item.title }}
         </a>
+
+        <a-dropdown
+          v-for="group in dropdownGroups"
+          :key="group.title"
+          trigger="hover"
+          position="bl"
+          :hide-on-select="false"
+        >
+          <div
+            class="user-header__nav-item user-header__nav-group"
+            :class="{ 'user-header__nav-item--active': isGroupActive(group) }"
+          >
+            <span>{{ group.title }}</span>
+            <ChevronDown :size="14" class="user-header__nav-group-icon" />
+          </div>
+          <template #content>
+            <a-doption v-for="child in group.children" :key="child.path" @click="router.push(child.path)">
+              {{ child.title }}
+            </a-doption>
+          </template>
+        </a-dropdown>
       </nav>
 
       <!-- 右侧：用户信息 -->
@@ -89,7 +110,7 @@
         <!-- 校验规则清单 -->
         <div v-if="pwdForm.newPassword" class="mb-2 rounded-md bg-[var(--muted)] p-3 text-xs">
           <p class="mb-1 font-medium">密码强度要求：</p>
-          <p v-for="rule in passwordRules" :key="rule.label" :class="rule.valid ? 'text-[var(--success)]' : 'text-[var(--muted-foreground)]'">
+          <p v-for="rule in passwordRules" :key="rule.label" :class="rule.valid ? 'text-[var(--bz-success)]' : 'text-[var(--muted-foreground)]'">
             {{ rule.valid ? '已满足' : '未满足' }} {{ rule.label }}
           </p>
         </div>
@@ -105,6 +126,7 @@
 import { computed, ref, reactive } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { Message } from '@arco-design/web-vue'
+import { ChevronDown } from 'lucide-vue-next'
 import { useUserStore } from '@/stores/user'
 import { changePasswordApi } from '@/api/auth'
 
@@ -115,12 +137,44 @@ const userStore = useUserStore()
 const nickName = computed(() => userStore.userInfo?.nickName || '用户')
 const userInitial = computed(() => nickName.value.charAt(0).toUpperCase())
 
-const navItems = [
+interface NavItem {
+  title: string
+  path: string
+}
+
+// 平铺导航 + 分组下拉导航，与首页 8 个快捷入口一一对应
+const flatNavItems: NavItem[] = [
   { title: '工作台', path: '/' },
   { title: '通知公告', path: '/notices' },
-  { title: '通讯录', path: '/contacts' },
   { title: '待办事项', path: '/todos' },
 ]
+
+const dropdownGroups: { title: string; children: NavItem[] }[] = [
+  {
+    title: '考勤办公',
+    children: [
+      { title: '我的申请', path: '/attendance' },
+      { title: '工作日志', path: '/worklogs' },
+      { title: '日程安排', path: '/schedules' },
+    ],
+  },
+  {
+    title: '行政服务',
+    children: [
+      { title: '办公用品', path: '/supplies' },
+      { title: '通讯录', path: '/contacts' },
+    ],
+  },
+]
+
+function isNavActive(path: string): boolean {
+  if (path === '/') return route.path === '/'
+  return route.path === path || route.path.startsWith(path + '/')
+}
+
+function isGroupActive(group: { children: NavItem[] }): boolean {
+  return group.children.some((child) => isNavActive(child.path))
+}
 
 async function onLogout() {
   await userStore.logout()
@@ -275,6 +329,18 @@ async function onPwdSubmit() {
   font-weight: 500;
 }
 
+.user-header__nav-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.user-header__nav-group-icon {
+  transition: transform 0.2s;
+}
+.user-header__nav-group:hover .user-header__nav-group-icon {
+  transform: rotate(180deg);
+}
+
 .user-header__right {
   flex-shrink: 0;
   margin-left: 24px;
@@ -340,5 +406,49 @@ async function onPwdSubmit() {
 .user-footer p {
   font-size: 13px;
   color: var(--muted-foreground);
+}
+
+/* ============ 移动端适配（<768px） ============ */
+@media (max-width: 768px) {
+  .user-header {
+    padding: 0 12px;
+  }
+  .user-header__left {
+    margin-right: 8px;
+  }
+  .user-header__brand {
+    display: none; /* 窄屏隐藏品牌文字，仅保留 Logo */
+  }
+  /* 导航横向滚动，避免换行挤压布局 */
+  .user-header__nav {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; /* Firefox 隐藏滚动条 */
+  }
+  .user-header__nav::-webkit-scrollbar {
+    display: none; /* Chrome/Safari 隐藏滚动条 */
+  }
+  .user-header__nav-item {
+    padding: 6px 10px;
+    font-size: 13px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .user-header__right {
+    margin-left: 8px;
+  }
+  .user-header__username {
+    display: none; /* 窄屏仅显示头像，姓名移入下拉菜单 */
+  }
+  .user-main {
+    padding: 12px;
+  }
+  .user-footer {
+    padding: 12px;
+  }
+  .user-footer__inner {
+    flex-direction: column;
+    gap: 8px;
+  }
 }
 </style>

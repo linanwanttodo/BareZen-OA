@@ -145,7 +145,15 @@
           </a-col>
           <a-col :span="12">
             <a-form-item field="price" :label="$t('asset.price')">
-              <a-input-number v-model="form.price" :min="0" :precision="2" style="width: 100%" :placeholder="$t('common.inputPlaceholder')" />
+              <!-- 接口 price 为 string，a-input-number 需要 number，双向桥接转换 -->
+              <a-input-number
+                :model-value="form.price != null && form.price !== '' ? Number(form.price) : undefined"
+                :min="0"
+                :precision="2"
+                style="width: 100%"
+                :placeholder="$t('common.inputPlaceholder')"
+                @update:model-value="(val) => (form.price = val != null ? String(val) : '')"
+              />
             </a-form-item>
           </a-col>
           <a-col :span="12">
@@ -178,7 +186,9 @@
 import { ref, reactive, onMounted } from 'vue'
 import { Message } from '@arco-design/web-vue'
 import { getAssetPageApi, addAssetApi, updateAssetApi, deleteAssetApi, scrapAssetApi, type AssetItem } from '@/api/asset'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const loading = ref(false)
 const saving = ref(false)
 const tableData = ref<AssetItem[]>([])
@@ -197,16 +207,16 @@ const pagination = reactive({ current: 1, pageSize: 10, total: 0 })
 const form = reactive<Partial<AssetItem>>({})
 
 const categoryMap: Record<string, string> = {
-  computer: '电脑办公', equipment: '设备', furniture: '家具', vehicle: '车辆', other: '其他',
+  computer: 'enums.assetCategory.computer', equipment: 'enums.assetCategory.equipment', furniture: 'enums.assetCategory.furniture', vehicle: 'enums.assetCategory.vehicle', other: 'enums.assetCategory.other',
 }
 
 function categoryText(category: string | undefined): string {
-  return category != null ? categoryMap[category] || '-' : '-'
+  return category != null ? t(categoryMap[category] || '-') : '-'
 }
 
 function statusText(status: string | undefined): string {
-  const map: Record<string, string> = { 0: '在库', 1: '使用中', 2: '维修中', 3: '已报废' }
-  return status != null ? map[status] || '-' : '-'
+  const map: Record<string, string> = { 0: 'enums.assetStatus.inStock', 1: 'enums.assetStatus.inUse', 2: 'enums.assetStatus.maintenance', 3: 'enums.assetStatus.scrapped' }
+  return status != null ? t(map[status] || '-') : '-'
 }
 
 function statusColor(status: string | undefined): string {
@@ -264,7 +274,7 @@ function handleEdit(record: AssetItem) {
 
 async function handleSave() {
   if (!form.assetNo || !form.assetName) {
-    Message.warning('资产编号和名称必填')
+    Message.warning(t('common.msg.assetNoNameRequired'))
     return
   }
   saving.value = true
@@ -274,7 +284,7 @@ async function handleSave() {
     } else {
       await addAssetApi(form)
     }
-    Message.success('保存成功')
+    Message.success(t('common.saveSuccess'))
     editVisible.value = false
     loadData()
   } finally {
@@ -284,13 +294,13 @@ async function handleSave() {
 
 async function handleDelete(record: AssetItem) {
   await deleteAssetApi(record.id)
-  Message.success('删除成功')
+  Message.success(t('common.deleteSuccess'))
   loadData()
 }
 
 async function handleScrap(record: AssetItem) {
   await scrapAssetApi(record.id)
-  Message.success('已报废')
+  Message.success(t('common.msg.scrapped'))
   loadData()
 }
 

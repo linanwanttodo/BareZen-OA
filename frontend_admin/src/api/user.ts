@@ -30,11 +30,6 @@ export function getUserListApi(params: UserListParams) {
   return request.get<PageData<SysUser>>('/system/v1/users/page', { params })
 }
 
-/** 用户详情 */
-export function getUserApi(id: string) {
-  return request.get<SysUser>(`/system/v1/users/${encodeURIComponent(id)}`)
-}
-
 /** 新增用户 */
 export function addUserApi(data: Partial<SysUser> & { password?: string }) {
   return request.post<void>('/system/v1/users', data)

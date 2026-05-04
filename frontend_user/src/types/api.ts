@@ -142,7 +142,7 @@ export interface OvertimeRequest {
   overtimeDate: string
   startTime: string
   endTime: string
-  durationHours: string
+  durationHours: number // 后端 BigDecimal
   reason: string
   status: string
   approverName: string
@@ -161,7 +161,7 @@ export interface TravelRequest {
   purpose: string
   startTime: string
   endTime: string
-  days: string
+  days: number // 后端 BigDecimal
   status: string
   approverName: string
   approveTime: string

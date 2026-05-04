@@ -28,7 +28,7 @@
               v-for="child in item.children"
               :key="child.id"
               class="top-navbar__dropdown-item"
-              :class="{ 'top-navbar__dropdown-item--active': isActive(child) }"
+              :class="{ 'top-navbar__dropdown-item--active': isActive(child, item) }"
               @click="navigate(child, item)"
             >
               {{ getMenuTranslation(child) }}
@@ -95,7 +95,7 @@
         <!-- 校验规则清单 -->
         <div v-if="pwdForm.newPassword" class="mb-2 rounded-md bg-[var(--muted)] p-3 text-xs">
           <p class="mb-1 font-medium">{{ $t('user.pwdPolicyTitle') }}</p>
-          <p v-for="rule in passwordRules" :key="rule.label" :class="rule.valid ? 'text-[var(--success)]' : 'text-[var(--muted-foreground)]'">
+          <p v-for="rule in passwordRules" :key="rule.label" :class="rule.valid ? 'text-[var(--bz-success)]' : 'text-[var(--muted-foreground)]'">
             {{ rule.valid ? '已满足' : '未满足' }} {{ rule.label }}
           </p>
         </div>
@@ -116,6 +116,7 @@ import { useUserStore } from '@/stores/user'
 import { usePermissionStore } from '@/stores/permission'
 import { changePasswordApi } from '@/api/auth'
 import LangSwitch from '@/components/common/LangSwitch.vue'
+import { resolveMenuPath } from '@/utils/menuPath'
 import type { SysMenu } from '@/types/menu'
 
 const { t } = useI18n()
@@ -127,9 +128,18 @@ const permissionStore = usePermissionStore()
 const nickName = computed(() => userStore.userInfo?.nickName || t('user.adminUser'))
 const userInitial = computed(() => nickName.value.charAt(0).toUpperCase())
 
-/** 可见的菜单（仅 M=目录/C=菜单，排除按钮） */
+/**
+ * 可见的菜单（仅 M=目录/C=菜单，排除按钮）。
+ * 同时过滤 visible='1' 的隐藏菜单（如「个人中心」只通过头像下拉访问，
+ * 不显示在导航栏），顶层与子菜单均过滤。
+ */
 const visibleMenus = computed<SysMenu[]>(() => {
-  return permissionStore.menuList.filter(m => m.menuType !== 'F')
+  return permissionStore.menuList
+    .filter(m => m.menuType !== 'F' && m.visible !== '1')
+    .map(m => ({
+      ...m,
+      children: (m.children || []).filter(c => c.menuType !== 'F' && c.visible !== '1'),
+    }))
 })
 
 /**
@@ -164,6 +174,7 @@ function getMenuTranslation(item: SysMenu): string {
     'profile': 'profile',
     'backup': 'backup',
     'role-dept': 'roleDept',
+    'file': 'file',
   }
   const routeKey = routeKeyMap[key]
   if (routeKey) {
@@ -181,31 +192,23 @@ const dropdownOpen = reactive<Record<string, boolean>>({})
 function openDropdown(id: string) { dropdownOpen[id] = true }
 function closeDropdown(id: string) { dropdownOpen[id] = false }
 
-function isActive(item: SysMenu): boolean {
-  const path = item.path
-  if (!path) return false
-  if (path.startsWith('http')) return false
-  const normalized = path.startsWith('/') ? path : '/' + path
+function isActive(item: SysMenu, parent?: SysMenu): boolean {
+  const normalized = resolveMenuPath(item, parent)
+  if (!normalized || normalized.startsWith('http')) return false
   return route.path === normalized || route.path.startsWith(normalized + '/')
 }
 
 function navigate(item: SysMenu, parent?: SysMenu) {
-  const path = item.path
-  if (!path) return
-  if (path.startsWith('http')) {
-    window.open(path, '_blank')
+  const fullPath = resolveMenuPath(item, parent)
+  if (!fullPath) return
+  if (fullPath.startsWith('http')) {
+    window.open(fullPath, '_blank')
     return
   }
-  // 拼接完整路径：/parent/child
-  let fullPath = path
-  if (parent && parent.path && item.menuType === 'C') {
-    fullPath = parent.path + '/' + path
-  }
-  const normalized = fullPath.startsWith('/') ? fullPath : '/' + fullPath
   // 尝试 push，如果路由不存在则 fallback 到静态路由
-  router.push(normalized).catch(() => {
+  router.push(fullPath).catch(() => {
     // 如果动态路由不存在，尝试静态路由
-    router.push(normalized)
+    router.push(fullPath)
   })
 }
 
@@ -291,7 +294,9 @@ async function onPwdSubmit() {
     })
     Message.success(t('login.passwordChangeSuccess'))
     pwdDialogVisible.value = false
-    userStore.logout()
+    // 改密成功后后端已拉黑当前 token：再调登出接口必然 401，
+    // 直接同步清理本地状态（token/用户信息/动态路由），避免与 401 处理互相竞争
+    userStore.resetState()
     router.push('/login')
   } catch (e) {
     const msg = (e as Error)?.message || '密码修改失败'

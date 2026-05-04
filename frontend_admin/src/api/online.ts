@@ -23,7 +23,7 @@ export function getOnlineUserCountApi() {
   return request.get<number>('/system/v1/monitor/online/count')
 }
 
-/** 强制下线（使用 tokenDigest） */
+/** 强制下线（后端 DELETE /forceLogout 接收 body {token}，支持完整 token 或 tokenDigest） */
 export function forceLogoutApi(tokenDigest: string) {
-  return request.delete<void>(`/system/v1/monitor/online/${encodeURIComponent(tokenDigest)}`)
+  return request.delete<void>('/system/v1/monitor/online/forceLogout', { data: { token: tokenDigest } })
 }

@@ -27,7 +27,7 @@
               <span class="dict-type-item__name">{{ item.dictName }}</span>
               <span class="dict-type-item__key">{{ item.dictType }}</span>
             </div>
-            <a-tag v-if="item.status === '1'" color="red" size="small">{{ $t('common.disable') }}</a-tag>
+            <a-tag v-if="item.status === '0'" color="red" size="small">{{ $t('common.disable') }}</a-tag>
             <a-dropdown>
               <icon-more class="cursor-pointer" style="color: #86909C" />
               <template #content>
@@ -85,8 +85,8 @@
                 </a-table-column>
                 <a-table-column :title="$t('common.status')" :width="80">
                   <template #cell="{ record }">
-                    <a-tag :color="record.status === '0' ? 'green' : 'red'" size="small">
-                      {{ record.status === '0' ? $t('common.normal') : $t('common.disable') }}
+                    <a-tag :color="record.status === '1' ? 'green' : 'red'" size="small">
+                      {{ record.status === '1' ? $t('common.normal') : $t('common.disable') }}
                     </a-tag>
                   </template>
                 </a-table-column>
@@ -136,8 +136,8 @@
         </a-form-item>
         <a-form-item field="status" :label="$t('common.status')">
           <a-radio-group v-model="typeFormData.status">
-            <a-radio value="0">{{ $t('common.normal') }}</a-radio>
-            <a-radio value="1">{{ $t('common.disable') }}</a-radio>
+            <a-radio value="1">{{ $t('common.normal') }}</a-radio>
+            <a-radio value="0">{{ $t('common.disable') }}</a-radio>
           </a-radio-group>
         </a-form-item>
       </a-form>
@@ -203,8 +203,8 @@
         </a-row>
         <a-form-item field="status" :label="$t('common.status')">
           <a-radio-group v-model="dataFormData.status">
-            <a-radio value="0">{{ $t('common.normal') }}</a-radio>
-            <a-radio value="1">{{ $t('common.disable') }}</a-radio>
+            <a-radio value="1">{{ $t('common.normal') }}</a-radio>
+            <a-radio value="0">{{ $t('common.disable') }}</a-radio>
           </a-radio-group>
         </a-form-item>
       </a-form>
@@ -276,7 +276,7 @@ function handleSelectType(item: SysDictType) {
 const typeFormVisible = ref(false)
 const typeFormType = ref<'add' | 'edit'>('add')
 
-const defaultTypeFormData = { id: undefined as string | undefined, dictName: '', dictType: '', status: '0' }
+const defaultTypeFormData = { id: undefined as string | undefined, dictName: '', dictType: '', status: '1' }
 const typeFormData = reactive({ ...defaultTypeFormData })
 
 function handleAddType() {
@@ -367,7 +367,7 @@ const defaultDataFormData = {
   cssClass: '',
   listClass: '' as string,
   isDefault: 'N',
-  status: '0',
+  status: '1',
 }
 const dataFormData = reactive({ ...defaultDataFormData })
 

@@ -20,9 +20,9 @@
           <a-row :gutter="16">
             <a-col :span="12">
               <a-form-item :label="$t('attendance.timeRange')" required>
-                <a-date-picker v-model="overtimeForm.startTime" show-time style="width: 230px" :placeholder="$t('attendance.startTime')" />
+                <a-date-picker v-model="overtimeForm.startTime" show-time style="width: 100%; max-width: " :placeholder="$t('attendance.startTime')" />
                 <span class="mx-2">~</span>
-                <a-date-picker v-model="overtimeForm.endTime" show-time style="width: 230px" :placeholder="$t('attendance.endTime')" />
+                <a-date-picker v-model="overtimeForm.endTime" show-time style="width: 100%; max-width: " :placeholder="$t('attendance.endTime')" />
               </a-form-item>
             </a-col>
             <a-col :span="6">
@@ -84,9 +84,9 @@
             </a-col>
             <a-col :span="12">
               <a-form-item :label="$t('attendance.timeRange')" required>
-                <a-date-picker v-model="travelForm.startTime" show-time style="width: 230px" :placeholder="$t('attendance.startTime')" />
+                <a-date-picker v-model="travelForm.startTime" show-time style="width: 100%; max-width: " :placeholder="$t('attendance.startTime')" />
                 <span class="mx-2">~</span>
-                <a-date-picker v-model="travelForm.endTime" show-time style="width: 230px" :placeholder="$t('attendance.endTime')" />
+                <a-date-picker v-model="travelForm.endTime" show-time style="width: 100%; max-width: " :placeholder="$t('attendance.endTime')" />
               </a-form-item>
             </a-col>
             <a-col :span="6">

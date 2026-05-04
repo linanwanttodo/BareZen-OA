@@ -6,6 +6,9 @@ import type { ApiResult } from '@/types/api'
 
 const BASE_URL = import.meta.env.VITE_APP_BASE_API || '/api'
 
+// 401 整页跳转防重入：并发请求同时 401 时只执行一次跳转，避免重复刷新/重复弹窗
+let redirectingToLogin = false
+
 const service: AxiosInstance = axios.create({
   baseURL: BASE_URL,
   timeout: 15000,
@@ -56,8 +59,11 @@ service.interceptors.response.use(
       import('@/stores/user').then(({ useUserStore }) => {
         useUserStore().resetState()
       }).finally(() => {
+        // 防重入：已有 401 在跳转中则跳过（页面即将整页刷新）
+        if (redirectingToLogin) return
         // 已在登录页时不重复跳转
         if (!window.location.pathname.startsWith('/login')) {
+          redirectingToLogin = true
           const redirect = encodeURIComponent(window.location.pathname + window.location.search)
           window.location.href = `/login?redirect=${redirect}`
         }

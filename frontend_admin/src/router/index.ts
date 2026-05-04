@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
+import { getToken } from '@/utils/auth'
 
 const routes: RouteRecordRaw[] = [
   {
@@ -23,15 +24,22 @@ const routes: RouteRecordRaw[] = [
     path: '/',
     name: 'Layout',
     component: () => import('@/layout/index.vue'),
-    // 根路径先指向登录页：/dashboard 是登录后动态挂载的路由，
-    // 未登录时直接 redirect 到 /dashboard 会落入 catch-all 404。
-    // 已登录用户访问根路径时，路由守卫会自动跳转到 /dashboard。
-    redirect: '/login',
+    // 根路径按登录态定向：未登录 → 登录页；已登录 → 仪表盘。
+    // 不能用固定 redirect '/login'：登录后 push('/') 会被 vue-router
+    // 先重定向到 /login，与当前路由相同而判定为「重复导航」，守卫被
+    // 跳过，页面卡在登录页（登录成功但无跳转）。
+    redirect: () => (getToken() ? '/dashboard' : '/login'),
     children: [] // 业务路由全部由后端动态加载
   },
   {
+    // catch-all 不再提前 redirect '/404'：
+    // 若重定向先于守卫生效，已登录访问尚未挂载的 /dashboard 时，
+    // 守卫来不及加载动态路由，会被直接打入 404。
+    // 直接渲染 404 组件，让守卫有机会先挂载动态路由再重放导航。
     path: '/:pathMatch(.*)*',
-    redirect: '/404'
+    name: 'NotFound',
+    component: () => import('@/views/error/404.vue'),
+    meta: { title: '404' }
   }
 ]
 

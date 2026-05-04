@@ -161,7 +161,9 @@ import { Message } from '@arco-design/web-vue'
 import { getVehiclePageApi, submitVehicleApi, approveVehicleApi, cancelVehicleApi, deleteVehicleApi, type OfficeVehicleRequest } from '@/api/office'
 import { getFlowLogsApi, type ApprovalFlowNode } from '@/api/flowlog'
 import { useUserStore } from '@/stores/user'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const userStore = useUserStore()
 const loading = ref(false)
 const submitting = ref(false)
@@ -186,15 +188,15 @@ const approveForm = reactive<{ id: string; action: 'pass' | 'reject'; remark: st
   remark: '',
 })
 
-const vehicleTypeMap: Record<string, string> = { car: '轿车', van: '商务车', bus: '客车', other: '其他' }
+const vehicleTypeMap: Record<string, string> = { car: 'enums.vehicleType.car', van: 'enums.vehicleType.van', bus: 'enums.vehicleType.bus', other: 'enums.vehicleType.other' }
 
 function vehicleTypeText(type: string | undefined): string {
-  return type != null ? vehicleTypeMap[type] || '-' : '-'
+  return type != null ? t(vehicleTypeMap[type] || '-') : '-'
 }
 
 function statusText(status: string | undefined): string {
-  const map: Record<string, string> = { 0: '待审批', 1: '已通过', 2: '已驳回', 3: '已取消' }
-  return status != null ? map[status] || '-' : '-'
+  const map: Record<string, string> = { 0: 'enums.status.pending', 1: 'enums.status.approved', 2: 'enums.status.rejected', 3: 'enums.status.cancelled' }
+  return status != null ? t(map[status] || '-') : '-'
 }
 
 function statusColor(status: string | undefined): string {
@@ -246,11 +248,11 @@ function handleAdd() {
 
 async function handleSubmit() {
   if (!form.startTime || !form.endTime) {
-    Message.warning('请选择用车时间')
+    Message.warning(t('common.msg.vehicleTimeRequired'))
     return
   }
   if (!form.purpose) {
-    Message.warning('请填写用车事由')
+    Message.warning(t('common.msg.vehicleReasonRequired'))
     return
   }
   submitting.value = true
@@ -265,7 +267,7 @@ async function handleSubmit() {
       destination: form.destination,
       passengerCount: Number(form.passengerCount) || 1,
     })
-    Message.success('提交成功')
+    Message.success(t('common.msg.submitSuccess'))
     addVisible.value = false
     loadData()
   } finally {
@@ -284,7 +286,7 @@ async function handleApprove() {
   approving.value = true
   try {
     await approveVehicleApi(approveForm.id, approveForm.action, approveForm.remark)
-    Message.success('审批完成')
+    Message.success(t('common.msg.approveDone'))
     approveVisible.value = false
     loadData()
   } finally {
@@ -294,18 +296,18 @@ async function handleApprove() {
 
 async function handleCancel(record: OfficeVehicleRequest) {
   await cancelVehicleApi(record.id)
-  Message.success('已取消')
+  Message.success(t('common.msg.cancelled'))
   loadData()
 }
 
 async function handleDelete(record: OfficeVehicleRequest) {
   await deleteVehicleApi(record.id)
-  Message.success('删除成功')
+  Message.success(t('common.deleteSuccess'))
   loadData()
 }
 
 function showRemark(record: OfficeVehicleRequest) {
-  Message.info(`${record.approveRemark || '-'}`, 5000)
+  Message.info({ content: record.approveRemark || '-', duration: 5000 })
 }
 
 // ============ 流程进度 ============

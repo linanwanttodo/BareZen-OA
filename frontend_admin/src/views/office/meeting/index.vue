@@ -161,7 +161,9 @@ import {
   type OfficeMeetingRoom, type OfficeMeetingBooking,
 } from '@/api/office'
 import { useUserStore } from '@/stores/user'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const userStore = useUserStore()
 const roomLoading = ref(false)
 const loading = ref(false)
@@ -225,7 +227,7 @@ function openRoomEdit(room: OfficeMeetingRoom) {
 
 async function handleSaveRoom() {
   if (!roomForm.roomName) {
-    Message.warning('会议室名称必填')
+    Message.warning(t('common.msg.meetingRoomRequired'))
     return
   }
   saving.value = true
@@ -235,7 +237,7 @@ async function handleSaveRoom() {
     } else {
       await addRoomApi(roomForm)
     }
-    Message.success('保存成功')
+    Message.success(t('common.saveSuccess'))
     roomDialogVisible.value = false
     Object.keys(roomForm).forEach((k) => delete (roomForm as Record<string, unknown>)[k])
     loadRooms()
@@ -246,17 +248,17 @@ async function handleSaveRoom() {
 
 async function handleDeleteRoom(room: OfficeMeetingRoom) {
   await deleteRoomApi(room.id)
-  Message.success('删除成功')
+  Message.success(t('common.deleteSuccess'))
   loadRooms()
 }
 
 async function handleSaveBooking() {
   if (!bookingForm.roomId || !bookingForm.title) {
-    Message.warning('请选择会议室并填写会议主题')
+    Message.warning(t('common.msg.meetingInfoRequired'))
     return
   }
   if (!bookingForm.startTime || !bookingForm.endTime) {
-    Message.warning('请选择会议时间')
+    Message.warning(t('common.msg.meetingTimeRequired'))
     return
   }
   saving.value = true
@@ -270,7 +272,7 @@ async function handleSaveBooking() {
       remark: bookingForm.remark,
       bookerName: userStore.userInfo?.nickName || '',
     })
-    Message.success('预订成功')
+    Message.success(t('common.msg.bookingSuccess'))
     bookingVisible.value = false
     bookingForm.roomId = ''
     bookingForm.title = ''
@@ -286,7 +288,7 @@ async function handleSaveBooking() {
 
 async function handleDeleteBooking(record: OfficeMeetingBooking) {
   await deleteBookingApi(record.id)
-  Message.success('删除成功')
+  Message.success(t('common.deleteSuccess'))
   loadBookings()
 }
 

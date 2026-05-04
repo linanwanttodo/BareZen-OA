@@ -82,8 +82,3 @@ export function updateDictDataApi(data: Partial<SysDictData>) {
 export function deleteDictDataApi(id: string) {
   return request.delete<void>(`/system/v1/dict/data/${encodeURIComponent(id)}`)
 }
-
-/** 获取角色菜单树（含已选中菜单ID） */
-export function getRoleMenuTreeApi(roleId: string) {
-  return request.get<{ menus: import('@/types/menu').SysMenu[]; checkedKeys: string[] }>(`/system/v1/roles/${encodeURIComponent(roleId)}/menu-tree`)
-}

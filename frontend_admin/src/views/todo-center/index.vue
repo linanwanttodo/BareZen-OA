@@ -108,7 +108,9 @@ import { Message } from '@arco-design/web-vue'
 import { getTodoPageApi, getTodoSummaryApi, type TodoItem } from '@/api/todo'
 import { approveLeaveApi } from '@/api/leave'
 import { approveVehicleApi } from '@/api/office'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const loading = ref(false)
 const approving = ref(false)
 const tableData = ref<TodoItem[]>([])
@@ -156,7 +158,7 @@ async function handleApprove() {
     } else if (item.type === 'vehicle') {
       await approveVehicleApi(item.id, approveForm.action, approveForm.remark)
     }
-    Message.success('审批完成')
+    Message.success(t('common.msg.approveDone'))
     approveVisible.value = false
     loadData()
     loadSummary()

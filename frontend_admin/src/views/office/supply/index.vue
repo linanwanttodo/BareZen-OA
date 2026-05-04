@@ -212,6 +212,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { Message } from '@arco-design/web-vue'
 import {
   getSupplyPageApi, addSupplyApi, updateSupplyApi, deleteSupplyApi,
@@ -219,8 +220,13 @@ import {
   type OfficeSupply, type OfficeSupplyRequest,
 } from '@/api/supply'
 import { getFlowLogsApi, type ApprovalFlowNode } from '@/api/flowlog'
+import { useI18n } from 'vue-i18n'
 
-const activeTab = ref('supply')
+const { t } = useI18n()
+const route = useRoute()
+
+// 申领管理菜单（office/supply-request）与用品管理菜单（office/supply）共用本页，按路由 path 定位初始 Tab
+const activeTab = ref(route.path.includes('supply-request') ? 'request' : 'supply')
 const loading = ref(false)
 const requestLoading = ref(false)
 const saving = ref(false)
@@ -238,12 +244,12 @@ const requestStatusFilter = ref('')
 const supplyForm = reactive<Partial<OfficeSupply>>({})
 const approveForm = reactive<{ id: string; action: 'pass' | 'reject'; remark: string }>({ id: '', action: 'pass', remark: '' })
 
-const categoryMap: Record<string, string> = { stationery: '文具', electronics: '电子耗材', cleaning: '清洁用品', other: '其他' }
-function categoryText(c: string | undefined): string { return c != null ? categoryMap[c] || '-' : '-' }
+const categoryMap: Record<string, string> = { stationery: 'enums.supplyCategory.stationery', electronics: 'enums.supplyCategory.electronics', cleaning: 'enums.supplyCategory.cleaning', other: 'enums.supplyCategory.other' }
+function categoryText(c: string | undefined): string { return c != null ? t(categoryMap[c] || '-') : '-' }
 
 function statusText(status: string | undefined): string {
-  const map: Record<string, string> = { 0: '待审批', 1: '已通过', 2: '已驳回', 3: '已取消' }
-  return status != null ? map[status] || '-' : '-'
+  const map: Record<string, string> = { 0: 'enums.status.pending', 1: 'enums.status.approved', 2: 'enums.status.rejected', 3: 'enums.status.cancelled' }
+  return status != null ? t(map[status] || '-') : '-'
 }
 function statusColor(status: string | undefined): string {
   if (status === '0') return 'orange'
@@ -294,12 +300,12 @@ function openSupplyEdit(record: OfficeSupply) {
 }
 
 async function handleSaveSupply() {
-  if (!supplyForm.supplyName) { Message.warning('用品名称必填'); return }
+  if (!supplyForm.supplyName) { Message.warning(t('common.msg.supplyNameRequired')); return }
   saving.value = true
   try {
     if (isSupplyEdit.value) await updateSupplyApi(supplyForm)
     else await addSupplyApi(supplyForm)
-    Message.success('保存成功')
+    Message.success(t('common.saveSuccess'))
     supplyDialogVisible.value = false
     loadSupplies()
   } finally { saving.value = false }
@@ -307,7 +313,7 @@ async function handleSaveSupply() {
 
 async function handleDeleteSupply(record: OfficeSupply) {
   await deleteSupplyApi(record.id)
-  Message.success('删除成功')
+  Message.success(t('common.deleteSuccess'))
   loadSupplies()
 }
 
@@ -322,7 +328,7 @@ async function handleApprove() {
   approving.value = true
   try {
     await approveSupplyRequestApi(approveForm.id, approveForm.action, approveForm.remark)
-    Message.success('审批完成')
+    Message.success(t('common.msg.approveDone'))
     approveVisible.value = false
     loadRequests()
     loadSupplies() // 库存可能变化
@@ -331,12 +337,12 @@ async function handleApprove() {
 
 async function handleDeleteRequest(record: OfficeSupplyRequest) {
   await deleteSupplyRequestApi(record.id)
-  Message.success('删除成功')
+  Message.success(t('common.deleteSuccess'))
   loadRequests()
 }
 
 function showRemark(record: OfficeSupplyRequest) {
-  Message.info(`${record.approveRemark || '-'}`, 5000)
+  Message.info({ content: record.approveRemark || '-', duration: 5000 })
 }
 
 // ============ 流程进度 ============

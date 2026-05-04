@@ -213,8 +213,8 @@
         </a-form-item>
         <div v-if="resetPwdData.password" class="mb-4 rounded-md bg-[var(--muted)] p-3 text-xs text-[var(--muted-foreground)]">
           <p class="mb-1 font-medium">{{ $t('user.pwdPolicyTitle') }}</p>
-          <p :class="passwordRules.length" v-for="rule in passwordRules" :key="rule.label">
-            <span :class="rule.valid ? 'text-[var(--success)]' : 'text-[var(--muted-foreground)]'">
+          <p v-for="rule in passwordRules" :key="rule.label">
+            <span :class="rule.valid ? 'text-[var(--bz-success)]' : 'text-[var(--muted-foreground)]'">
               {{ rule.valid ? '已满足' : '未满足' }} {{ rule.label }}
             </span>
           </p>
@@ -240,7 +240,7 @@
       <div v-if="batchError" class="mt-3 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">{{ batchError }}</div>
       <div class="mt-3 rounded-md bg-[var(--muted)] p-3 text-xs text-[var(--muted-foreground)]">
         <p class="mb-1 font-medium">{{ $t('user.pwdPolicyTitle') }}</p>
-        <p v-for="rule in batchPasswordRules" :key="rule.label" :class="rule.valid ? 'text-[var(--success)]' : 'text-[var(--muted-foreground)]'">
+        <p v-for="rule in batchPasswordRules" :key="rule.label" :class="rule.valid ? 'text-[var(--bz-success)]' : 'text-[var(--muted-foreground)]'">
           {{ rule.valid ? '已满足' : '未满足' }} {{ rule.label }}
         </p>
       </div>
@@ -296,6 +296,7 @@ import {
   addUserApi,
   updateUserApi,
   deleteUserApi,
+  batchAddUsersApi,
   batchDeleteUserApi,
   changeUserStatusApi,
   getUserRoleIdsApi,

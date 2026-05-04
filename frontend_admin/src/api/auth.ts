@@ -1,13 +1,22 @@
 import request from './request'
 import type { ApiResult, LoginParams, LoginResult, CurrentUser, CaptchaResult } from '@/types/api'
 
+/** 用户注册参数（注册功能经后端 registerEnabled 开关控制，默认关闭） */
+export interface RegisterParams {
+  userName: string
+  nickName?: string
+  password: string
+  email?: string
+  phone?: string
+}
+
 /** 用户登录 */
 export function loginApi(data: LoginParams) {
   return request.post<any, ApiResult<LoginResult>>('/auth/v1/login', data)
 }
 
 /** 用户注册 */
-export function registerApi(data: any) {
+export function registerApi(data: RegisterParams) {
   return request.post<any, ApiResult<void>>('/auth/v1/register', data)
 }
 

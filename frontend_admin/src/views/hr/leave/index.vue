@@ -159,7 +159,9 @@ import { Message } from '@arco-design/web-vue'
 import { getLeavePageApi, submitLeaveApi, approveLeaveApi, revokeLeaveApi, deleteLeaveApi, type AttLeaveRequest } from '@/api/leave'
 import { getFlowLogsApi, type ApprovalFlowNode } from '@/api/flowlog'
 import { useUserStore } from '@/stores/user'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const userStore = useUserStore()
 const loading = ref(false)
 const submitting = ref(false)
@@ -172,10 +174,24 @@ const searchForm = reactive({ status: '' })
 
 const pagination = reactive({ current: 1, pageSize: 10, total: 0 })
 
-const form = reactive<Partial<AttLeaveRequest>>({
+// 表单与接口类型分离：接口 AttLeaveRequest.leaveDays 为 string（后端回显），
+// 表单内为 number（a-input-number 双向绑定），提交时再转字符串
+interface LeaveForm {
+  leaveType: string
+  leaveDays: number
+  userName: string
+  startTime: string
+  endTime: string
+  reason: string
+}
+
+const form = reactive<LeaveForm>({
   leaveType: 'annual',
   leaveDays: 1,
   userName: userStore.userInfo?.nickName || '',
+  startTime: '',
+  endTime: '',
+  reason: '',
 })
 
 const approveForm = reactive<{ id: string; action: 'pass' | 'reject'; remark: string }>({
@@ -185,17 +201,17 @@ const approveForm = reactive<{ id: string; action: 'pass' | 'reject'; remark: st
 })
 
 const leaveTypeMap: Record<string, string> = {
-  annual: '年假', sick: '病假', personal: '事假', overtime: '调休',
-  marriage: '婚假', maternity: '产假', other: '其他',
+  annual: 'enums.leaveType.annual', sick: 'enums.leaveType.sick', personal: 'enums.leaveType.personal', overtime: 'enums.leaveType.overtime',
+  marriage: 'enums.leaveType.marriage', maternity: 'enums.leaveType.maternity', other: 'enums.leaveType.other',
 }
 
 function leaveTypeText(type: string | undefined): string {
-  return type != null ? leaveTypeMap[type] || '-' : '-'
+  return type != null ? t(leaveTypeMap[type] || '-') : '-'
 }
 
 function statusText(status: string | undefined): string {
-  const map: Record<string, string> = { 0: '待审批', 1: '已通过', 2: '已驳回', 3: '已撤销' }
-  return status != null ? map[status] || '-' : '-'
+  const map: Record<string, string> = { 0: 'enums.status.pending', 1: 'enums.status.approved', 2: 'enums.status.rejected', 3: 'enums.status.withdrawn' }
+  return status != null ? t(map[status] || '-') : '-'
 }
 
 function statusColor(status: string | undefined): string {
@@ -243,11 +259,11 @@ function handleAdd() {
 
 async function handleSubmit() {
   if (!form.startTime || !form.endTime) {
-    Message.warning('请选择请假起止时间')
+    Message.warning(t('common.msg.leaveTimeRequired'))
     return
   }
   if (!form.reason) {
-    Message.warning('请填写请假事由')
+    Message.warning(t('common.msg.leaveReasonRequired'))
     return
   }
   submitting.value = true
@@ -257,10 +273,10 @@ async function handleSubmit() {
       leaveType: form.leaveType,
       startTime: form.startTime,
       endTime: form.endTime,
-      leaveDays: Number(form.leaveDays) || 1,
+      leaveDays: String(form.leaveDays),
       reason: form.reason,
     })
-    Message.success('提交成功')
+    Message.success(t('common.msg.submitSuccess'))
     addVisible.value = false
     loadData()
   } finally {
@@ -279,7 +295,7 @@ async function handleApprove() {
   approving.value = true
   try {
     await approveLeaveApi(approveForm.id, approveForm.action, approveForm.remark)
-    Message.success('审批完成')
+    Message.success(t('common.msg.approveDone'))
     approveVisible.value = false
     loadData()
   } finally {
@@ -289,18 +305,18 @@ async function handleApprove() {
 
 async function handleRevoke(record: AttLeaveRequest) {
   await revokeLeaveApi(record.id)
-  Message.success('已撤销')
+  Message.success(t('common.msg.withdrawn'))
   loadData()
 }
 
 async function handleDelete(record: AttLeaveRequest) {
   await deleteLeaveApi(record.id)
-  Message.success('删除成功')
+  Message.success(t('common.deleteSuccess'))
   loadData()
 }
 
 function showRemark(record: AttLeaveRequest) {
-  Message.info(`${record.approveRemark || '-'}`, 5000)
+  Message.info({ content: record.approveRemark || '-', duration: 5000 })
 }
 
 // ============ 流程进度 ============

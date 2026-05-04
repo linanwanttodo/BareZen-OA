@@ -16,6 +16,9 @@ export default defineConfig({
   },
   server: {
     port: 5173,
+    // 端口被占用时直接报错而非静默换端口：后端 CORS 白名单按端口匹配，
+    // 静默换端口会导致所有请求 403，报错更直观
+    strictPort: true,
     host: '0.0.0.0',
     proxy: {
       '/api': {

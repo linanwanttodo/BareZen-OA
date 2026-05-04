@@ -54,7 +54,7 @@
                 {{ item.logType === 'weekly' ? $t('worklog.typeWeekly') : $t('worklog.typeDaily') }}
               </a-tag>
               <span class="text-sm text-[var(--muted-foreground)]">{{ item.logDate || '-' }}</span>
-              <span v-if="item.reviewerName" class="text-xs text-[var(--success)]">{{ $t('worklog.reviewed') }}</span>
+              <span v-if="item.reviewerName" class="text-xs text-[var(--bz-success)]">{{ $t('worklog.reviewed') }}</span>
             </div>
             <p class="whitespace-pre-wrap text-sm leading-relaxed text-[var(--foreground)]">{{ item.content }}</p>
             <p v-if="item.reviewRemark" class="mt-2 text-xs text-[var(--muted-foreground)]">

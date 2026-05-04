@@ -6,6 +6,8 @@ import type { SysMenu } from '@/types/menu'
 export const usePermissionStore = defineStore('permission', () => {
   const routes = ref<RouteRecordRaw[]>([])
   const menuList = ref<SysMenu[]>([])
+  /** 已挂载动态路由的移除函数（router.addRoute 返回值），登出/换账号时逐个移除 */
+  const routeRemovers = ref<Array<() => void>>([])
 
   /** 根据后端菜单生成路由 */
   function generateRoutes(menus: SysMenu[]) {
@@ -15,8 +17,15 @@ export const usePermissionStore = defineStore('permission', () => {
     return dynamicRoutes
   }
 
-  /** 重置权限 */
+  /** 登记动态路由移除函数（路由守卫挂载路由时调用） */
+  function collectRouteRemover(removeFn: () => void) {
+    routeRemovers.value.push(removeFn)
+  }
+
+  /** 重置权限（登出/换账号）：先移除已挂载的动态路由，避免旧账号路由残留导致越权 */
   function resetPermission() {
+    routeRemovers.value.forEach((removeFn) => removeFn())
+    routeRemovers.value = []
     routes.value = []
     menuList.value = []
   }
@@ -24,7 +33,9 @@ export const usePermissionStore = defineStore('permission', () => {
   return {
     routes,
     menuList,
+    routeRemovers,
     generateRoutes,
+    collectRouteRemover,
     resetPermission,
   }
 })
@@ -36,7 +47,9 @@ function transformMenusToRoutes(menus: SysMenu[]): RouteRecordRaw[] {
   for (const menu of menus) {
     if (menu.menuType === 'F') continue // 按钮级别不生成路由
 
-    const route: any = {
+    // 动态路由需按条件逐步补充 component/redirect/children，
+    // 用 Partial 先构建骨架，最终在 push 时断言为完整 RouteRecordRaw
+    const route: Partial<RouteRecordRaw> = {
       path: menu.path.startsWith('/') ? menu.path : `/${menu.path}`,
       name: menu.path.replace(/\//g, '-').replace(/^-/, '') || `menu-${menu.id}`,
       meta: {
@@ -60,7 +73,9 @@ function transformMenusToRoutes(menus: SysMenu[]): RouteRecordRaw[] {
       }
     }
 
-    routes.push(route)
+    // 骨架构建完毕（path/name/meta + 可选 component/redirect/children），
+    // 断言为完整 RouteRecordRaw 后入栈
+    routes.push(route as RouteRecordRaw)
   }
 
   return routes

@@ -35,6 +35,28 @@
       </a-card>
     </div>
 
+    <!-- 审批效率 -->
+    <a-card class="mt-4 p-5">
+      <div class="mb-3 flex items-center justify-between">
+        <h3 class="text-base font-semibold text-[var(--foreground)]">{{ $t('dashboard.approvalStats') }}</h3>
+        <span class="text-xs text-[var(--muted-foreground)]">{{ $t('dashboard.approvalStatsHint') }}</span>
+      </div>
+      <div v-if="approvalStats.length" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        <div v-for="s in approvalStats" :key="s.type" class="rounded-lg border border-[var(--border)] p-4">
+          <p class="text-sm font-medium text-[var(--foreground)]">{{ s.typeName }}</p>
+          <p class="mt-2 flex items-baseline gap-3">
+            <span class="text-xl font-semibold text-[var(--foreground)]">{{ s.pending }}</span>
+            <span class="text-xs text-[var(--muted-foreground)]">{{ $t('dashboard.pendingApproval') }}</span>
+          </p>
+          <p class="mt-2 text-xs text-[var(--muted-foreground)]">
+            {{ $t('dashboard.avgHours') }}: <span class="text-[var(--foreground)]">{{ s.avgHours }}h</span>
+            · {{ $t('dashboard.rejectRate') }}: <span class="text-[var(--foreground)]">{{ s.rejectRate }}%</span>
+          </p>
+        </div>
+      </div>
+      <p v-else class="py-6 text-center text-sm text-[var(--muted-foreground)]">{{ $t('dashboard.noApprovalStats') }}</p>
+    </a-card>
+
     <!-- 公告 + 最近操作 -->
     <div class="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
       <a-card class="p-5">
@@ -118,7 +140,7 @@ import { getMenuListApi } from '@/api/menu'
 import { getOnlineUserCountApi } from '@/api/online'
 import { getPublishedNoticesApi, getNoticePageApi, type SysNotice } from '@/api/notice'
 import { getOperLogPageApi, type SysOperLog } from '@/api/operLog'
-import { getDashboardChartsApi } from '@/api/dashboard'
+import { getDashboardChartsApi, type ApprovalStat } from '@/api/dashboard'
 import { sanitizeHtml } from '@/utils/dom'
 
 const { t } = useI18n()
@@ -151,6 +173,9 @@ function handleNoticeClick(item: SysNotice) {
 
 // ============ 操作日志 ============
 const operLogs = ref<SysOperLog[]>([])
+
+// ============ 审批效率 ============
+const approvalStats = ref<ApprovalStat[]>([])
 
 // ============ 图表 ============
 const lineChartRef = ref<HTMLElement>()
@@ -258,6 +283,7 @@ async function loadCharts() {
     const res = await getDashboardChartsApi()
     const data = res.data
     if (data) {
+      approvalStats.value = data.approvalStats || []
       await nextTick()
       initLineChart(data.visitTrend)
       initPieChart(data.roleDistribution)

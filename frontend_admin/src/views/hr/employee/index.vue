@@ -189,7 +189,9 @@
 import { ref, reactive, onMounted } from 'vue'
 import { Message } from '@arco-design/web-vue'
 import { getEmployeePageApi, addEmployeeApi, updateEmployeeApi, deleteEmployeeApi, type HrEmployee } from '@/api/hr'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const loading = ref(false)
 const saving = ref(false)
 const tableData = ref<HrEmployee[]>([])
@@ -211,19 +213,19 @@ const pagination = reactive({
 const form = reactive<Partial<HrEmployee>>({})
 
 function genderText(gender: string | undefined): string {
-  if (gender === '0') return '男'
-  if (gender === '1') return '女'
-  return '未知'
+  if (gender === '0') return t('enums.gender.male')
+  if (gender === '1') return t('enums.gender.female')
+  return t('enums.gender.unknown')
 }
 
 function employmentText(type: string | undefined): string {
-  const map: Record<string, string> = { 0: '全职', 1: '实习', 2: '兼职', 3: '劳务' }
-  return type != null ? map[type] || '-' : '-'
+  const map: Record<string, string> = { 0: 'enums.empType.fullTime', 1: 'enums.empType.intern', 2: 'enums.empType.partTime', 3: 'enums.empType.labor' }
+  return type != null ? t(map[type] || '-') : '-'
 }
 
 function statusText(status: string | undefined): string {
-  const map: Record<string, string> = { 0: '试用', 1: '在职', 2: '离职' }
-  return status != null ? map[status] || '-' : '-'
+  const map: Record<string, string> = { 0: 'enums.empStatus.probation', 1: 'enums.empStatus.active', 2: 'enums.empStatus.left' }
+  return status != null ? t(map[status] || '-') : '-'
 }
 
 function statusColor(status: string | undefined): string {
@@ -280,7 +282,7 @@ function handleEdit(record: HrEmployee) {
 
 async function handleSave() {
   if (!form.empNo || !form.name) {
-    Message.warning('工号和姓名必填')
+    Message.warning(t('common.msg.empNoNameRequired'))
     return
   }
   saving.value = true
@@ -290,7 +292,7 @@ async function handleSave() {
     } else {
       await addEmployeeApi(form)
     }
-    Message.success('保存成功')
+    Message.success(t('common.saveSuccess'))
     editVisible.value = false
     loadData()
   } finally {
@@ -300,7 +302,7 @@ async function handleSave() {
 
 async function handleDelete(record: HrEmployee) {
   await deleteEmployeeApi(record.id)
-  Message.success('删除成功')
+  Message.success(t('common.deleteSuccess'))
   loadData()
 }
 

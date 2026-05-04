@@ -55,7 +55,7 @@
         <template v-else-if="tableData.length">
           <a-table :data="tableData" :pagination="false" row-key="id">
             <template #columns>
-              <a-table-column :title="$t('common.operate')" data-index="id" />
+              <a-table-column :title="$t('common.id')" data-index="id" />
               <a-table-column :title="$t('monitor.operLog.title')" data-index="title" />
               <a-table-column :title="$t('monitor.operLog.businessType')">
                 <template #cell="{ record }">
@@ -68,7 +68,7 @@
                 </template>
               </a-table-column>
               <a-table-column :title="$t('monitor.operLog.operName')" data-index="operUser" />
-              <a-table-column :title="$t('monitor.operLog.url')" data-index="operIp" />
+              <a-table-column :title="$t('monitor.operLog.operUrl')" data-index="operUrl" />
               <a-table-column :title="$t('common.status')">
                 <template #cell="{ record }">
                   <a-tag :color="tagColor(operStatusVariant(record.status))" :bordered="tagBordered(operStatusVariant(record.status))">{{ operStatusText(record.status) }}</a-tag>

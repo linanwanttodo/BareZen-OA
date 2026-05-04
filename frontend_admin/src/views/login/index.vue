@@ -180,7 +180,10 @@ async function onSubmit() {
     }
 
     Message.success(t('login.loginSuccess'))
-    const redirect = (route.query.redirect as string) || '/'
+    // 直接跳转真实存在的目标页：默认仪表盘（动态路由已由守卫加载），
+    // 不要 push 到 '/'——它带有登录态重定向，已登录场景会被 vue-router
+    // 判定为重复导航而卡在登录页
+    const redirect = (route.query.redirect as string) || '/dashboard'
     router.push(safeRedirect(redirect))
   } catch {
     refreshCaptcha()
