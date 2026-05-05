@@ -5,6 +5,7 @@ import com.linan.core.common.api.ResultCodeEnum;
 import com.linan.core.security.PermissionService;
 import com.linan.core.security.RequirePermission;
 import com.linan.core.security.interceptor.AuthInterceptor;
+import jakarta.servlet.http.HttpServletResponse;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
@@ -12,6 +13,8 @@ import org.aspectj.lang.annotation.Pointcut;
 import org.aspectj.lang.reflect.MethodSignature;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.util.Arrays;
 
@@ -74,6 +77,12 @@ public class RequirePermissionAspect {
         if (hasPermission) {
             return joinPoint.proceed();
         } else {
+            // 无权限返回真实 HTTP 403 状态码（body 仍为统一 Result 结构，code=403）
+            ServletRequestAttributes attrs =
+                    (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+            if (attrs != null && attrs.getResponse() != null) {
+                attrs.getResponse().setStatus(HttpServletResponse.SC_FORBIDDEN);
+            }
             return new Result<>(ResultCodeEnum.FORBIDDEN.getCode(), "没有访问权限，请联系管理员", null);
         }
     }
