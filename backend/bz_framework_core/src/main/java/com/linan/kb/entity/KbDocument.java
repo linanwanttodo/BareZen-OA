@@ -23,6 +23,9 @@ public class KbDocument extends BaseEntity {
     /** 分类：general=通用 manual=制度手册 process=流程规范 tech=技术资料 other=其他 */
     private String category;
 
+    /** 知识分类ID（V41：关联 kb_category，替代枚举字符串） */
+    private Long categoryId;
+
     /** 文档正文（HTML/富文本） */
     private String content;
 
