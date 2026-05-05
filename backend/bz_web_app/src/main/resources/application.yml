@@ -102,7 +102,7 @@ barezen:
 # ---- MyBatis-Plus 配置 ----
 mybatis-plus:
   mapper-locations: classpath*:mapper/**/*.xml
-  type-aliases-package: com.linan.system.entity,com.linan.article.entity
+  type-aliases-package: com.linan.system.entity
   configuration:
     map-underscore-to-camel-case: true
     # log-impl: SQL 日志请在对应环境配置文件中设置（dev 用 StdOutImpl，prod 用 Slf4jImpl）
