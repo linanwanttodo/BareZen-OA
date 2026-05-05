@@ -203,6 +203,13 @@ public class AttOvertimeRequestController {
     @RequirePermission("hr:overtime:delete")
     @DeleteMapping("/{id}")
     public Result<Void> delete(@PathVariable Long id) {
+        AttOvertimeRequest request = overtimeService.getById(id);
+        if (request == null) {
+            return Result.error("加班记录不存在");
+        }
+        if (!"0".equals(request.getStatus())) {
+            return Result.error("仅待审批状态的单据可删除");
+        }
         boolean ok = overtimeService.removeById(id);
         return ok ? Result.success(null) : Result.error("删除失败");
     }

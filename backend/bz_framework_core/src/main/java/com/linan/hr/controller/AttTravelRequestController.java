@@ -203,6 +203,13 @@ public class AttTravelRequestController {
     @RequirePermission("hr:travel:delete")
     @DeleteMapping("/{id}")
     public Result<Void> delete(@PathVariable Long id) {
+        AttTravelRequest request = travelService.getById(id);
+        if (request == null) {
+            return Result.error("出差记录不存在");
+        }
+        if (!"0".equals(request.getStatus())) {
+            return Result.error("仅待审批状态的单据可删除");
+        }
         boolean ok = travelService.removeById(id);
         return ok ? Result.success(null) : Result.error("删除失败");
     }

@@ -206,6 +206,13 @@ public class OfficeVehicleRequestController {
     @RequirePermission("office:vehicle:delete")
     @DeleteMapping("/{id}")
     public Result<Void> delete(@PathVariable Long id) {
+        OfficeVehicleRequest request = vehicleService.getById(id);
+        if (request == null) {
+            return Result.error("申请不存在");
+        }
+        if (!"0".equals(request.getStatus())) {
+            return Result.error("仅待审批状态的单据可删除");
+        }
         boolean ok = vehicleService.removeById(id);
         return ok ? Result.success(null) : Result.error("删除失败");
     }

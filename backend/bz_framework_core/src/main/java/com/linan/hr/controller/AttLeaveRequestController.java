@@ -218,6 +218,13 @@ public class AttLeaveRequestController {
     @RequirePermission("hr:leave:delete")
     @DeleteMapping("/{id}")
     public Result<Void> delete(@PathVariable Long id) {
+        AttLeaveRequest leave = leaveService.getById(id);
+        if (leave == null) {
+            return Result.error("请假记录不存在");
+        }
+        if (!"0".equals(leave.getStatus())) {
+            return Result.error("仅待审批状态的单据可删除");
+        }
         boolean ok = leaveService.removeById(id);
         return ok ? Result.success(null) : Result.error("删除失败");
     }

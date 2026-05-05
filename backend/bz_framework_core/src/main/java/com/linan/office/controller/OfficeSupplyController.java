@@ -159,6 +159,13 @@ public class OfficeSupplyController {
     @RequirePermission("office:supply:delete")
     @DeleteMapping("/requests/{id}")
     public Result<Void> deleteRequest(@PathVariable Long id) {
+        OfficeSupplyRequest request = requestService.getById(id);
+        if (request == null) {
+            return Result.error("申领记录不存在");
+        }
+        if (!"0".equals(request.getStatus())) {
+            return Result.error("仅待审批状态的单据可删除");
+        }
         boolean ok = requestService.removeById(id);
         return ok ? Result.success(null) : Result.error("删除失败");
     }
