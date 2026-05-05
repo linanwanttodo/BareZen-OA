@@ -51,32 +51,6 @@ service.interceptors.response.use(
       return response as any
     }
 
-    // 未登录或 Token 过期 — 清除 Token 并同步重置 Pinia 状态，
-    // 否则路由守卫读到的 userStore.token 仍为旧值，不会跳登录页
-    if (res.code === 401) {
-      removeToken()
-      // 动态导入避免 request.ts ↔ stores/user 循环依赖
-      import('@/stores/user').then(({ useUserStore }) => {
-        useUserStore().resetState()
-      }).finally(() => {
-        // 防重入：已有 401 在跳转中则跳过（页面即将整页刷新）
-        if (redirectingToLogin) return
-        // 已在登录页时不重复跳转
-        if (!window.location.pathname.startsWith('/login')) {
-          redirectingToLogin = true
-          const redirect = encodeURIComponent(window.location.pathname + window.location.search)
-          window.location.href = `/login?redirect=${redirect}`
-        }
-      })
-      return Promise.reject(new Error(res.msg || '未登录'))
-    }
-
-    // 无权限
-    if (res.code === 403) {
-      Toast.error('没有访问权限')
-      return Promise.reject(new Error(res.msg || '无权限'))
-    }
-
     // 参数校验失败
     if (res.code === 400) {
       Toast.warning(res.msg || '参数校验失败')
@@ -92,7 +66,36 @@ service.interceptors.response.use(
     return res as any
   },
   (error) => {
-    const msg = error.response?.data?.msg || error.message || '网络异常'
+    const status = error.response?.status
+    const res = error.response?.data
+
+    // 未登录或 Token 过期（HTTP 401）— 清除 Token 并同步重置 Pinia 状态，
+    // 否则路由守卫读到的 userStore.token 仍为旧值，不会跳登录页
+    if (status === 401) {
+      removeToken()
+      // 动态导入避免 request.ts ↔ stores/user 循环依赖
+      import('@/stores/user').then(({ useUserStore }) => {
+        useUserStore().resetState()
+      }).finally(() => {
+        // 防重入：已有 401 在跳转中则跳过（页面即将整页刷新）
+        if (redirectingToLogin) return
+        // 已在登录页时不重复跳转
+        if (!window.location.pathname.startsWith('/login')) {
+          redirectingToLogin = true
+          const redirect = encodeURIComponent(window.location.pathname + window.location.search)
+          window.location.href = `/login?redirect=${redirect}`
+        }
+      })
+      return Promise.reject(new Error(res?.msg || '未登录'))
+    }
+
+    // 无权限（HTTP 403）
+    if (status === 403) {
+      Toast.error(res?.msg || '没有访问权限')
+      return Promise.reject(new Error(res?.msg || '无权限'))
+    }
+
+    const msg = res?.msg || error.message || '网络异常'
     Toast.error(msg)
     return Promise.reject(error)
   }

@@ -23,7 +23,13 @@
     <!-- 表格 -->
     <a-card>
       <template #title>
-        <span>{{ $t('travel.title') }}</span>
+        <div class="flex items-center justify-between w-full">
+          <span>{{ $t('travel.title') }}</span>
+          <a-button v-permission="'hr:travel:add'" type="primary" @click="handleAdd">
+            <template #icon><icon-plus /></template>
+            {{ $t('travel.apply') }}
+          </a-button>
+        </div>
       </template>
 
       <a-spin :loading="loading">
@@ -94,6 +100,27 @@
       <a-empty v-else :description="$t('travel.flowEmpty')" />
     </a-modal>
 
+    <!-- 出差申请弹窗 -->
+    <a-modal v-model:visible="addVisible" :title="$t('travel.apply')" :width="560"
+             @ok="handleSubmit" @cancel="addVisible = false" :ok-loading="submitting">
+      <a-form :model="form" layout="vertical">
+        <a-form-item field="destination" :label="$t('travel.destination')" required>
+          <a-input v-model="form.destination" :placeholder="$t('common.inputPlaceholder')" :max-length="100" />
+        </a-form-item>
+        <a-form-item field="timeRange" :label="$t('travel.timeRange')" required>
+          <a-date-picker v-model="form.startTime" show-time style="width: 260px" :placeholder="$t('travel.startTime')" />
+          <span class="mx-2">~</span>
+          <a-date-picker v-model="form.endTime" show-time style="width: 260px" :placeholder="$t('travel.endTime')" />
+        </a-form-item>
+        <a-form-item field="days" :label="$t('travel.days')">
+          <a-input-number v-model="form.days" :min="0.5" :step="0.5" style="width: 100%" :placeholder="$t('travel.daysPlaceholder')" />
+        </a-form-item>
+        <a-form-item field="purpose" :label="$t('travel.purpose')" required>
+          <a-textarea v-model="form.purpose" :placeholder="$t('common.inputPlaceholder')" :max-length="500" show-word-limit />
+        </a-form-item>
+      </a-form>
+    </a-modal>
+
     <!-- 审批弹窗 -->
     <a-modal v-model:visible="approveVisible" :title="$t('travel.approve')" :width="480"
              @ok="handleApprove" @cancel="approveVisible = false" :ok-loading="approving">
@@ -115,18 +142,44 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { Message } from '@arco-design/web-vue'
-import { getTravelPageApi, approveTravelApi, revokeTravelApi, deleteTravelApi, type AttTravelRequest } from '@/api/travel'
+import { IconPlus } from '@arco-design/web-vue/es/icon'
+import { getTravelPageApi, submitTravelApi, approveTravelApi, revokeTravelApi, deleteTravelApi, type AttTravelRequest } from '@/api/travel'
 import { getFlowLogsApi, type ApprovalFlowNode } from '@/api/flowlog'
+import { useUserStore } from '@/stores/user'
 import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
+const userStore = useUserStore()
 const loading = ref(false)
+const submitting = ref(false)
 const approving = ref(false)
 const tableData = ref<AttTravelRequest[]>([])
+const addVisible = ref(false)
 const approveVisible = ref(false)
 
 const searchForm = reactive({ status: '' })
 const pagination = reactive({ current: 1, pageSize: 10, total: 0 })
+
+// 表单与接口类型分离：接口 AttTravelRequest.days 为 string（后端回显），
+// 表单内为 number（a-input-number 双向绑定），提交时再转字符串
+interface TravelForm {
+  destination: string
+  days: number
+  userName: string
+  startTime: string
+  endTime: string
+  purpose: string
+}
+
+const form = reactive<TravelForm>({
+  destination: '',
+  days: 1,
+  userName: userStore.userInfo?.nickName || '',
+  startTime: '',
+  endTime: '',
+  purpose: '',
+})
+
 const approveForm = reactive<{ id: string; action: 'pass' | 'reject'; remark: string }>({
   id: '', action: 'pass', remark: '',
 })
@@ -159,6 +212,28 @@ async function loadData() {
 
 function handleSearch() { pagination.current = 1; loadData() }
 function handleReset() { searchForm.status = ''; pagination.current = 1; loadData() }
+
+function handleAdd() {
+  form.destination = ''
+  form.days = 1
+  form.startTime = ''
+  form.endTime = ''
+  form.purpose = ''
+  addVisible.value = true
+}
+
+async function handleSubmit() {
+  submitting.value = true
+  try {
+    // days 表单内为 number（a-input-number），提交时转 string 与后端字段对齐
+    await submitTravelApi({ ...form, days: String(form.days) })
+    Message.success(t('common.msg.submitDone'))
+    addVisible.value = false
+    loadData()
+  } finally {
+    submitting.value = false
+  }
+}
 
 function openApprove(record: AttTravelRequest) {
   approveForm.id = record.id

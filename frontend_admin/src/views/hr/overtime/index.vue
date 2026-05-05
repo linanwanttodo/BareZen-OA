@@ -23,7 +23,13 @@
     <!-- 表格 -->
     <a-card>
       <template #title>
-        <span>{{ $t('overtime.title') }}</span>
+        <div class="flex items-center justify-between w-full">
+          <span>{{ $t('overtime.title') }}</span>
+          <a-button v-permission="'hr:overtime:add'" type="primary" @click="handleAdd">
+            <template #icon><icon-plus /></template>
+            {{ $t('overtime.apply') }}
+          </a-button>
+        </div>
       </template>
 
       <a-spin :loading="loading">
@@ -93,6 +99,24 @@
       <a-empty v-else :description="$t('overtime.flowEmpty')" />
     </a-modal>
 
+    <!-- 加班申请弹窗 -->
+    <a-modal v-model:visible="addVisible" :title="$t('overtime.apply')" :width="560"
+             @ok="handleSubmit" @cancel="addVisible = false" :ok-loading="submitting">
+      <a-form :model="form" layout="vertical">
+        <a-form-item field="timeRange" :label="$t('overtime.timeRange')" required>
+          <a-date-picker v-model="form.startTime" show-time style="width: 260px" :placeholder="$t('overtime.startTime')" />
+          <span class="mx-2">~</span>
+          <a-date-picker v-model="form.endTime" show-time style="width: 260px" :placeholder="$t('overtime.endTime')" />
+        </a-form-item>
+        <a-form-item field="durationHours" :label="$t('overtime.durationHours')">
+          <a-input-number v-model="form.durationHours" :min="0.5" :step="0.5" style="width: 100%" :placeholder="$t('overtime.durationHoursPlaceholder')" />
+        </a-form-item>
+        <a-form-item field="reason" :label="$t('overtime.reason')" required>
+          <a-textarea v-model="form.reason" :placeholder="$t('common.inputPlaceholder')" :max-length="500" show-word-limit />
+        </a-form-item>
+      </a-form>
+    </a-modal>
+
     <!-- 审批弹窗 -->
     <a-modal v-model:visible="approveVisible" :title="$t('overtime.approve')" :width="480"
              @ok="handleApprove" @cancel="approveVisible = false" :ok-loading="approving">
@@ -114,18 +138,42 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { Message } from '@arco-design/web-vue'
-import { getOvertimePageApi, approveOvertimeApi, revokeOvertimeApi, deleteOvertimeApi, type AttOvertimeRequest } from '@/api/overtime'
+import { IconPlus } from '@arco-design/web-vue/es/icon'
+import { getOvertimePageApi, submitOvertimeApi, approveOvertimeApi, revokeOvertimeApi, deleteOvertimeApi, type AttOvertimeRequest } from '@/api/overtime'
 import { getFlowLogsApi, type ApprovalFlowNode } from '@/api/flowlog'
+import { useUserStore } from '@/stores/user'
 import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
+const userStore = useUserStore()
 const loading = ref(false)
+const submitting = ref(false)
 const approving = ref(false)
 const tableData = ref<AttOvertimeRequest[]>([])
+const addVisible = ref(false)
 const approveVisible = ref(false)
 
 const searchForm = reactive({ status: '' })
 const pagination = reactive({ current: 1, pageSize: 10, total: 0 })
+
+// 表单与接口类型分离：接口 AttOvertimeRequest.durationHours 为 string（后端回显），
+// 表单内为 number（a-input-number 双向绑定），提交时再转字符串
+interface OvertimeForm {
+  durationHours: number
+  userName: string
+  startTime: string
+  endTime: string
+  reason: string
+}
+
+const form = reactive<OvertimeForm>({
+  durationHours: 1,
+  userName: userStore.userInfo?.nickName || '',
+  startTime: '',
+  endTime: '',
+  reason: '',
+})
+
 const approveForm = reactive<{ id: string; action: 'pass' | 'reject'; remark: string }>({
   id: '', action: 'pass', remark: '',
 })
@@ -158,6 +206,42 @@ async function loadData() {
 
 function handleSearch() { pagination.current = 1; loadData() }
 function handleReset() { searchForm.status = ''; pagination.current = 1; loadData() }
+
+// ============ 新增申请 ============
+function handleAdd() {
+  form.durationHours = 1
+  form.startTime = ''
+  form.endTime = ''
+  form.reason = ''
+  form.userName = userStore.userInfo?.nickName || ''
+  addVisible.value = true
+}
+
+async function handleSubmit() {
+  if (!form.startTime || !form.endTime) {
+    Message.warning(t('overtime.timeRequired'))
+    return
+  }
+  if (!form.reason) {
+    Message.warning(t('overtime.reasonRequired'))
+    return
+  }
+  submitting.value = true
+  try {
+    await submitOvertimeApi({
+      userName: form.userName,
+      startTime: form.startTime,
+      endTime: form.endTime,
+      durationHours: String(form.durationHours),
+      reason: form.reason,
+    })
+    Message.success(t('common.msg.submitSuccess'))
+    addVisible.value = false
+    loadData()
+  } finally {
+    submitting.value = false
+  }
+}
 
 function openApprove(record: AttOvertimeRequest) {
   approveForm.id = record.id

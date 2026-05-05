@@ -41,10 +41,22 @@
       <template #title>
         <div class="flex items-center justify-between w-full">
           <span>{{ $t('monitor.operLog.title') }}</span>
-          <a-button @click="loadTable">
-            <template #icon><icon-refresh /></template>
-            {{ $t('monitor.operLog.refresh') }}
-          </a-button>
+          <a-space>
+            <a-button @click="loadTable">
+              <template #icon><icon-refresh /></template>
+              {{ $t('monitor.operLog.refresh') }}
+            </a-button>
+            <a-button v-permission="'monitor:operlog:delete'" status="danger" :disabled="!selectedIds.length" @click="handleBatchDelete">
+              <template #icon><icon-delete /></template>
+              {{ $t('common.batchDelete') }}
+            </a-button>
+            <a-popconfirm v-permission="'monitor:operlog:delete'" :content="$t('monitor.operLog.cleanConfirm', { beforeDays: 30 })" @ok="handleClean">
+              <a-button status="danger">
+                <template #icon><icon-delete /></template>
+                {{ $t('monitor.operLog.clean') }}
+              </a-button>
+            </a-popconfirm>
+          </a-space>
         </div>
       </template>
       <a-card-content>
@@ -53,7 +65,13 @@
           <span class="ml-2 text-[var(--muted-foreground)]">{{ $t('common.loading') }}</span>
         </div>
         <template v-else-if="tableData.length">
-          <a-table :data="tableData" :pagination="false" row-key="id">
+          <a-table
+            :data="tableData"
+            :pagination="false"
+            row-key="id"
+            :row-selection="{ type: 'checkbox', selectedRowKeys: selectedIds }"
+            @selection-change="onSelectionChange"
+          >
             <template #columns>
               <a-table-column :title="$t('common.id')" data-index="id" />
               <a-table-column :title="$t('monitor.operLog.title')" data-index="title" />
@@ -82,7 +100,12 @@
               <a-table-column :title="$t('monitor.operLog.operTime')" data-index="operTime" />
               <a-table-column :title="$t('common.operate')" align="right">
                 <template #cell="{ record }">
-                  <a-button v-permission="'monitor:operlog:list'" type="text" size="small" @click="handleDetail(record)">{{ $t('monitor.operLog.detail') }}</a-button>
+                  <a-space>
+                    <a-popconfirm :content="$t('monitor.operLog.deleteConfirm')" @ok="handleDelete(record)">
+                      <a-button v-permission="'monitor:operlog:delete'" type="text" size="small" status="danger">{{ $t('common.delete') }}</a-button>
+                    </a-popconfirm>
+                    <a-button v-permission="'monitor:operlog:list'" type="text" size="small" @click="handleDetail(record)">{{ $t('monitor.operLog.detail') }}</a-button>
+                  </a-space>
                 </template>
               </a-table-column>
             </template>
@@ -177,11 +200,15 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { IconRefresh } from '@arco-design/web-vue/es/icon'
+import { Message } from '@arco-design/web-vue'
+import { IconRefresh, IconDelete } from '@arco-design/web-vue/es/icon'
 import { formatDateTime, businessTypeText, operStatusText, operStatusVariant, businessTypeVariant, methodVariant } from '@/utils/format'
 import {
   getOperLogPageApi,
   getOperLogApi,
+  deleteOperLogApi,
+  batchDeleteOperLogApi,
+  cleanOperLogApi,
   type SysOperLog,
   type OperLogListParams,
 } from '@/api/operLog'
@@ -236,6 +263,13 @@ function handleReset() {
 const loading = ref(false)
 const tableData = ref<SysOperLog[]>([])
 
+// 行选中（批量删除）
+const selectedIds = ref<string[]>([])
+
+function onSelectionChange(rowKeys: (string | number)[]) {
+  selectedIds.value = rowKeys.map(String)
+}
+
 const pagination = reactive({ current: 1, pageSize: 10, total: 0 })
 
 function onPageChange(page: number) {
@@ -284,6 +318,28 @@ async function handleDetail(row: SysOperLog) {
     detailData.value = row
   }
   detailVisible.value = true
+}
+
+// ============ 删除 / 批量删除 / 清空 ============
+async function handleDelete(row: SysOperLog) {
+  await deleteOperLogApi(String(row.id))
+  Message.success(t('monitor.operLog.deleteSuccess'))
+  loadTable()
+}
+
+async function handleBatchDelete() {
+  if (!selectedIds.value.length) return
+  await batchDeleteOperLogApi(selectedIds.value)
+  Message.success(t('monitor.operLog.batchDeleteSuccess', { count: selectedIds.value.length }))
+  selectedIds.value = []
+  loadTable()
+}
+
+async function handleClean() {
+  await cleanOperLogApi()
+  Message.success(t('monitor.operLog.cleanSuccess'))
+  selectedIds.value = []
+  loadTable()
 }
 
 // ============ 初始化 ============

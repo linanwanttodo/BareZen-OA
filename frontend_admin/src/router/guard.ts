@@ -59,6 +59,13 @@ router.beforeEach(async (to: RouteLocationNormalized, _from, next) => {
           next({ path: to.path, query: to.query, hash: to.hash, replace: true })
           return
         }
+        // 空菜单兜底：账号无任何菜单权限 → 登出并回登录页，
+        // 避免停留在无动态路由可跳的空白死区
+        if (menus && menus.length === 0) {
+          await userStore.logout()
+          next({ path: '/login', query: { redirect: to.path }, replace: true })
+          return
+        }
       } catch {
         // 菜单加载失败不影响导航
       }

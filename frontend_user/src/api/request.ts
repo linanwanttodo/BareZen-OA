@@ -45,11 +45,10 @@ service.interceptors.response.use(
       return response as unknown as AxiosResponse<Blob>
     }
 
-    if (res.code === 401) {
-      removeToken()
-      router.push('/auth/login')
-      Toast.warning('登录已过期，请重新登录')
-      return Promise.reject(new Error(res.msg || '未登录'))
+    // 参数校验失败
+    if (res.code === 400) {
+      Toast.warning(res.msg || '参数校验失败')
+      return Promise.reject(new Error(res.msg))
     }
 
     if (res.code !== 200) {
@@ -61,11 +60,30 @@ service.interceptors.response.use(
     return res as unknown as AxiosResponse
   },
   (error) => {
-    // 如果是 blob 请求且失败了，返回原始 error 让调用者处理
+    const status = error.response?.status
+    const res = error.response?.data
+
+    // 未登录或 Token 过期（HTTP 401）— 清除 Token 并跳转登录页。
+    // 必须先于 blob 提前返回分支处理：blob 请求 401 同样需要清理会话
+    if (status === 401) {
+      removeToken()
+      router.push('/auth/login')
+      Toast.warning('登录已过期，请重新登录')
+      return Promise.reject(new Error(res?.msg || '未登录'))
+    }
+
+    // 无权限（HTTP 403）
+    if (status === 403) {
+      Toast.error(res?.msg || '没有访问权限')
+      return Promise.reject(new Error(res?.msg || '无权限'))
+    }
+
+    // 非鉴权类失败：blob 请求返回原始 error 让调用者处理
     if (error.config?.responseType === 'blob') {
       return Promise.reject(error)
     }
-    Toast.error(error.message || '网络异常')
+
+    Toast.error(res?.msg || error.message || '网络异常')
     return Promise.reject(error)
   }
 )

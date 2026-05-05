@@ -39,6 +39,9 @@ export default {
     upcomingTodos: 'Upcoming Todos',
     latestNotices: 'Latest Notices',
     noUpcoming: 'No upcoming todos',
+    doneCount: 'Done',
+    urgent: 'Urgent Todos',
+    dateFormat: '{year}/{month}/{day} {weekday}',
   },
   notice: {
     title: 'Notices',
