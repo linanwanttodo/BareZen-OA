@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.Ordered;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.lang.NonNull;
 import org.springframework.util.StringUtils;
@@ -195,6 +196,26 @@ public class WebMvcConfig implements WebMvcConfigurer {
         });
         registration.addUrlPatterns("/*");
         registration.setOrder(1);
+        return registration;
+    }
+
+    /**
+     * 认证与开放接口 no-store 响应头过滤器
+     *
+     * <p>登录/刷新/登出（/api/auth/**）与开放平台接口（/api/open/**）响应可能携带
+     * Token 等敏感数据，统一输出 {@code Cache-Control: no-store} + {@code Pragma: no-cache}，
+     * 防止登出后浏览器缓存回退或登录态残留。</p>
+     *
+     * <p>order 取 HIGHEST_PRECEDENCE，确保先于 {@link #securityHeadersFilter()}（order=1）
+     * 等过滤器执行；urlPatterns 仅覆盖认证与开放路径（{@link AuthNoStoreFilter} 内部
+     * shouldNotFilter 再次兜底排除业务路径）。</p>
+     */
+    @Bean
+    public FilterRegistrationBean<AuthNoStoreFilter> authNoStoreFilter() {
+        FilterRegistrationBean<AuthNoStoreFilter> registration = new FilterRegistrationBean<>();
+        registration.setFilter(new AuthNoStoreFilter());
+        registration.addUrlPatterns("/api/auth/*", "/api/open/*");
+        registration.setOrder(Ordered.HIGHEST_PRECEDENCE);
         return registration;
     }
 }
