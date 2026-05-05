@@ -153,6 +153,7 @@ const dropdownGroups: { title: string; children: NavItem[] }[] = [
   {
     title: '考勤办公',
     children: [
+      { title: '打卡', path: '/attendance/clock' },
       { title: '我的申请', path: '/attendance' },
       { title: '工作日志', path: '/worklogs' },
       { title: '日程安排', path: '/schedules' },

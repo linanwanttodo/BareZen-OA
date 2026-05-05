@@ -242,3 +242,19 @@ export interface FlowLog {
   remark: string
   createTime: string
 }
+
+/** 考勤打卡记录（对应后端 AttClockRecord，同一用户同日仅一行） */
+export interface AttClockRecord {
+  id: string
+  userId: string
+  userName: string
+  deptName: string
+  clockDate: string // yyyy-MM-dd
+  clockInTime: string // 可空，未上班打卡时为 null
+  clockOutTime: string // 可空，未下班打卡时为 null
+  lateMinutes: number // 迟到分钟数，服务端计算
+  earlyMinutes: number // 早退分钟数，服务端计算
+  status: string // normal=正常 late=迟到 early=早退 absent=缺卡 abnormal=异常
+  createTime: string
+  updateTime: string
+}

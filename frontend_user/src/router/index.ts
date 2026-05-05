@@ -50,6 +50,12 @@ const router = createRouter({
           meta: { title: '我的申请', requiresAuth: true },
         },
         {
+          path: 'attendance/clock',
+          name: 'Clock',
+          component: () => import('@/pages/attendance/clock.vue'),
+          meta: { title: '考勤打卡', requiresAuth: true },
+        },
+        {
           path: 'worklogs',
           name: 'WorkLogs',
           component: () => import('@/pages/worklog/index.vue'),
