@@ -130,6 +130,10 @@ public class HrWorkLogController {
         if (reviewerId != null && reviewerId.equals(log.getUserId())) {
             return Result.error("不能批阅自己的日志");
         }
+        // 同一审批人重复批注拒绝：历史批注只增不改，避免静默覆盖
+        if (log.getReviewerId() != null && log.getReviewerId().equals(reviewerId)) {
+            return Result.error("该日志已批阅，不能重复批注");
+        }
         log.setReviewerId(reviewerId);
         log.setReviewerName(AuthInterceptor.getCurrentUsername());
         log.setReviewTime(LocalDateTime.now().format(FMT));
