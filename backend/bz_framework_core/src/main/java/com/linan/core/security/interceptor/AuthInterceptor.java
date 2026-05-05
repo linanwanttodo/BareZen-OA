@@ -4,6 +4,7 @@ import com.linan.core.common.api.Result;
 import com.linan.core.common.api.ResultCodeEnum;
 import com.linan.core.security.JwtUtil;
 import com.linan.core.security.PassAuth;
+import com.linan.core.security.util.AuthCookieUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.Claims;
 import org.springframework.beans.factory.annotation.Value;
@@ -198,6 +199,8 @@ public class AuthInterceptor implements HandlerInterceptor {
                 String username = claims.get("username", String.class);
                 String newToken = jwtUtil.createToken(userId, username);
                 response.setHeader("X-Access-Token", newToken);
+                // 同步刷新 httpOnly Cookie（bz_token），保证 Header/Cookie 双通道一致
+                AuthCookieUtil.setAuthCookie(response, newToken);
             }
 
             // 解析成功，存入 ThreadLocal（供全链路使用）和 request 属性
@@ -264,9 +267,9 @@ public class AuthInterceptor implements HandlerInterceptor {
         try {
             // 设置响应内容类型为 JSON
             response.setContentType("application/json;charset=UTF-8");
-            // 设置 HTTP 状态码为 200
-            // （与框架统一返回体约定保持一致，通过 code 字段区分错误类型）
-            response.setStatus(HttpServletResponse.SC_OK);
+            // 鉴权失败返回真实 HTTP 401 状态码（符合 HTTP 语义，便于网关/监控识别），
+            // body 仍保留统一 Result 结构（code=401），前端按 status 与 code 双重识别
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 
             // 构造错误返回体
             Result<Void> result = new Result<>(

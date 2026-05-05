@@ -8,6 +8,7 @@ import com.linan.core.security.JwtUtil;
 import com.linan.core.security.PassAuth;
 import com.linan.core.security.PasswordUtil;
 import com.linan.core.security.interceptor.AuthInterceptor;
+import com.linan.core.security.util.AuthCookieUtil;
 import com.linan.system.entity.SysLogininfor;
 import com.linan.system.entity.SysRole;
 import com.linan.system.entity.SysUser;
@@ -17,7 +18,6 @@ import com.linan.system.mapper.SysRoleMapper;
 import com.linan.system.mapper.SysUserMapper;
 import com.linan.system.monitor.OnlineUserService;
 import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -631,77 +631,32 @@ public class AuthController {
     }
 
     /**
-     * 设置 httpOnly Cookie 携带 JWT Token
+     * 设置 httpOnly Cookie 携带 JWT Token（委托 {@link AuthCookieUtil}，单头输出）
      *
-     * <p>Cookie 属性：</p>
-     * <ul>
-     *   <li>{@code httpOnly=true}：禁止 JS 读取，降低 XSS 窃取风险</li>
-     *   <li>{@code secure}：生产环境（HTTPS）启用，开发环境（HTTP）关闭</li>
-     *   <li>{@code SameSite=Strict}：防御跨站请求伪造（CSRF）</li>
-     *   <li>{@code path=/}、{@code maxAge} 与 JWT 过期时间一致</li>
-     * </ul>
+     * <p>Cookie 属性见 {@link AuthCookieUtil}：HttpOnly + Path=/ + Max-Age=86400 +
+     * HTTPS Secure + SameSite（secure → Strict，否则 → Lax）。</p>
      *
      * @param token JWT Token
      */
     private void setAuthCookie(String token) {
-        try {
-            ServletRequestAttributes attributes =
-                    (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-            if (attributes == null) {
-                return;
-            }
-            jakarta.servlet.http.HttpServletResponse response = attributes.getResponse();
-            if (response == null) {
-                return;
-            }
-            // 通过请求 scheme 判断是否 HTTPS，决定 secure 标志
-            HttpServletRequest req = attributes.getRequest();
-            boolean secure = "https".equalsIgnoreCase(req.getScheme())
-                    || "https".equalsIgnoreCase(req.getHeader("X-Forwarded-Proto"));
-            jakarta.servlet.http.Cookie cookie = new jakarta.servlet.http.Cookie("bz_token", token);
-            cookie.setHttpOnly(true);
-            cookie.setSecure(secure);
-            cookie.setPath("/");
-            // SameSite=Strict 需通过响应头手动设置（Servlet 6.0 前 Cookie API 不支持）
-            // maxAge 单位：秒；jwt 过期时间单位：毫秒
-            cookie.setMaxAge((int) java.util.concurrent.TimeUnit.MILLISECONDS.toSeconds(
-                    24L * 60 * 60 * 1000)); // 24 小时，与默认 JWT_EXPIRATION 对齐
-            response.addCookie(cookie);
-            // 显式补充 SameSite=Strict（兼容 Servlet 5/6）
-            String sameSite = secure ? "SameSite=Strict" : "SameSite=Lax";
-            // 已存在的 Set-Cookie 头由 addCookie 产生，此处再追加一条带 SameSite 的指令
-            response.addHeader("Set-Cookie",
-                    "bz_token=" + token + "; Path=/; Max-Age=86400; "
-                            + (secure ? "Secure; " : "") + "HttpOnly; " + sameSite);
-        } catch (Exception e) {
-            log.warn("设置 httpOnly Cookie 失败: {}", e.getMessage());
+        ServletRequestAttributes attributes =
+                (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        if (attributes == null || attributes.getResponse() == null) {
+            return;
         }
+        AuthCookieUtil.setAuthCookie(attributes.getResponse(), token);
     }
 
     /**
-     * 清除 httpOnly 认证 Cookie（登出 / 改密 时调用）
+     * 清除 httpOnly 认证 Cookie（登出 / 改密 时调用，委托 {@link AuthCookieUtil}）
      */
     private void clearAuthCookie() {
-        try {
-            ServletRequestAttributes attributes =
-                    (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-            if (attributes == null) {
-                return;
-            }
-            jakarta.servlet.http.HttpServletResponse response = attributes.getResponse();
-            if (response == null) {
-                return;
-            }
-            jakarta.servlet.http.Cookie cookie = new jakarta.servlet.http.Cookie("bz_token", "");
-            cookie.setHttpOnly(true);
-            cookie.setPath("/");
-            cookie.setMaxAge(0); // 立即删除
-            response.addCookie(cookie);
-            response.addHeader("Set-Cookie",
-                    "bz_token=; Path=/; Max-Age=0; HttpOnly; SameSite=Strict");
-        } catch (Exception e) {
-            log.warn("清除 httpOnly Cookie 失败: {}", e.getMessage());
+        ServletRequestAttributes attributes =
+                (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        if (attributes == null || attributes.getResponse() == null) {
+            return;
         }
+        AuthCookieUtil.clearAuthCookie(attributes.getResponse());
     }
 
     /**
