@@ -1,6 +1,8 @@
 package com.linan.hr.service;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.linan.hr.domain.AttClockMonthlyStat;
 import com.linan.hr.entity.AttClockRecord;
 
 import java.time.LocalDateTime;
@@ -43,4 +45,10 @@ public interface IAttClockRecordService extends IService<AttClockRecord> {
      * 用户今日打卡记录（可能为 null）
      */
     AttClockRecord today(Long userId, LocalDateTime now);
+
+    /**
+     * 月度考勤统计（按员工分组，分页）
+     */
+    IPage<AttClockMonthlyStat> pageMonthlyStat(long pageNum, long pageSize,
+                                               YearMonth month, String userName, Long deptId);
 }

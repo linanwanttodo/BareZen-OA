@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.linan.hr.mapper.AttClockRecordMapper">
+
+    <!--
+      月度考勤统计（按员工分组，分页由 MyBatis-Plus 分页插件处理）
+      口径：
+        work_days   = 该月有打卡记录的天数
+        late_count  = 迟到天数（status in late/abnormal）
+        early_count = 早退天数（status in early/abnormal）
+        absent_count= 缺卡天数（上班/下班仅打了一次）
+    -->
+    <select id="pageMonthlyStat" resultType="com.linan.hr.domain.AttClockMonthlyStat">
+        SELECT
+            cr.user_id,
+            cr.user_name,
+            MAX(d.dept_name) AS dept_name,
+            COUNT(DISTINCT cr.clock_date)                                  AS work_days,
+            COUNT(CASE WHEN cr.status IN ('late','abnormal') THEN 1 END)   AS late_count,
+            COUNT(CASE WHEN cr.status IN ('early','abnormal') THEN 1 END)  AS early_count,
+            COUNT(CASE WHEN (cr.clock_in_time IS NULL) XOR (cr.clock_out_time IS NULL) THEN 1 END) AS absent_count
+        FROM att_clock_record cr
+        LEFT JOIN sys_user_dept ud ON cr.user_id = ud.user_id
+        LEFT JOIN sys_dept d ON ud.dept_id = d.id
+        <where>
+            cr.del_flag = 0
+            AND cr.clock_date BETWEEN #{monthStart} AND #{monthEnd}
+            <if test="userName != null and userName != ''">
+                AND cr.user_name LIKE CONCAT('%', #{userName}, '%')
+            </if>
+            <if test="deptId != null">
+                AND ud.dept_id = #{deptId}
+            </if>
+        </where>
+        GROUP BY cr.user_id, cr.user_name
+        ORDER BY work_days DESC, cr.user_id
+    </select>
+
+</mapper>

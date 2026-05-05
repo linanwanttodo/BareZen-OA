@@ -2,8 +2,11 @@ package com.linan.hr.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.linan.core.common.exception.BusinessException;
+import com.linan.hr.domain.AttClockMonthlyStat;
 import com.linan.hr.entity.AttClockRecord;
 import com.linan.hr.mapper.AttClockRecordMapper;
 import com.linan.hr.service.IAttClockRecordService;
@@ -124,6 +127,13 @@ public class AttClockRecordServiceImpl extends ServiceImpl<AttClockRecordMapper,
     @Override
     public AttClockRecord today(Long userId, LocalDateTime now) {
         return getTodayRecord(userId, now.toLocalDate());
+    }
+
+    @Override
+    public IPage<AttClockMonthlyStat> pageMonthlyStat(long pageNum, long pageSize,
+                                                      YearMonth month, String userName, Long deptId) {
+        Page<AttClockMonthlyStat> page = new Page<>(pageNum, pageSize);
+        return baseMapper.pageMonthlyStat(page, month.atDay(1), month.atEndOfMonth(), userName, deptId);
     }
 
     // ==================== 内部方法 ====================
