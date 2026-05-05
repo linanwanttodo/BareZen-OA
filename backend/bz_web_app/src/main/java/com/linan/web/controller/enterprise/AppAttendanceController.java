@@ -1,8 +1,10 @@
 package com.linan.web.controller.enterprise;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.linan.core.common.annotation.OperLog;
 import com.linan.core.common.api.PageResult;
 import com.linan.core.common.api.Result;
 import com.linan.core.security.interceptor.AuthInterceptor;
@@ -96,7 +98,9 @@ public class AppAttendanceController {
             return Result.error("结束时间必须晚于开始时间");
         }
         try {
+            // 身份字段服务端强制覆盖，不信任请求体（防身份伪造）
             request.setUserId(userId);
+            request.setUserName(AuthInterceptor.getCurrentUsername());
             request.setStatus("0");
             boolean ok = overtimeService.save(request);
             if (ok) {
@@ -113,8 +117,12 @@ public class AppAttendanceController {
     /**
      * 撤销我的加班申请
      * PUT /api/app/v1/overtimes/{id}/revoke
+     *
+     * <p>原子条件更新：与审批并发（如管理员同时审批）时仅一个操作生效，
+     * 撤销或审批先到先得，避免状态被并发覆盖。</p>
      */
     @Operation(summary = "撤销加班申请")
+    @OperLog(title = "加班申请", businessType = 3)
     @PutMapping("/overtimes/{id}/revoke")
     public Result<Void> revokeOvertime(@PathVariable Long id) {
         Long userId = AuthInterceptor.getCurrentUserId();
@@ -128,16 +136,19 @@ public class AppAttendanceController {
         if (!userId.equals(request.getUserId())) {
             return Result.error("只能撤销自己的申请");
         }
-        if (!"0".equals(request.getStatus())) {
+        boolean ok = overtimeService.update(new LambdaUpdateWrapper<AttOvertimeRequest>()
+                .eq(AttOvertimeRequest::getId, id)
+                .eq(AttOvertimeRequest::getStatus, "0")
+                .set(AttOvertimeRequest::getStatus, "3"));
+        if (!ok) {
+            // 失败也留痕：记录单据当前实际状态（可能审批已把状态改走），保证撤销失败可审计
+            flowLogService.record("overtime", request.getId(), "撤销失败",
+                    request.getStatus(), userId, request.getUserName(), "仅待审批状态的申请可撤销");
             return Result.error("仅待审批状态的申请可撤销");
         }
-        request.setStatus("3");
-        boolean ok = overtimeService.updateById(request);
-        if (ok) {
-            flowLogService.record("overtime", request.getId(), "撤销申请", "3",
-                    userId, request.getUserName(), null);
-        }
-        return ok ? Result.success(null) : Result.error("撤销失败");
+        flowLogService.record("overtime", request.getId(), "撤销申请", "3",
+                userId, request.getUserName(), null);
+        return Result.success(null);
     }
 
     // ==================== 出差申请 ====================
@@ -190,7 +201,9 @@ public class AppAttendanceController {
             return Result.error("结束时间必须晚于开始时间");
         }
         try {
+            // 身份字段服务端强制覆盖，不信任请求体（防身份伪造）
             request.setUserId(userId);
+            request.setUserName(AuthInterceptor.getCurrentUsername());
             request.setStatus("0");
             boolean ok = travelService.save(request);
             if (ok) {
@@ -207,8 +220,11 @@ public class AppAttendanceController {
     /**
      * 撤销我的出差申请
      * PUT /api/app/v1/travels/{id}/revoke
+     *
+     * <p>原子条件更新：与审批并发时仅一个操作生效，避免状态被并发覆盖。</p>
      */
     @Operation(summary = "撤销出差申请")
+    @OperLog(title = "出差申请", businessType = 3)
     @PutMapping("/travels/{id}/revoke")
     public Result<Void> revokeTravel(@PathVariable Long id) {
         Long userId = AuthInterceptor.getCurrentUserId();
@@ -222,16 +238,19 @@ public class AppAttendanceController {
         if (!userId.equals(request.getUserId())) {
             return Result.error("只能撤销自己的申请");
         }
-        if (!"0".equals(request.getStatus())) {
+        boolean ok = travelService.update(new LambdaUpdateWrapper<AttTravelRequest>()
+                .eq(AttTravelRequest::getId, id)
+                .eq(AttTravelRequest::getStatus, "0")
+                .set(AttTravelRequest::getStatus, "3"));
+        if (!ok) {
+            // 失败也留痕：记录单据当前实际状态（可能审批已把状态改走），保证撤销失败可审计
+            flowLogService.record("travel", request.getId(), "撤销失败",
+                    request.getStatus(), userId, request.getUserName(), "仅待审批状态的申请可撤销");
             return Result.error("仅待审批状态的申请可撤销");
         }
-        request.setStatus("3");
-        boolean ok = travelService.updateById(request);
-        if (ok) {
-            flowLogService.record("travel", request.getId(), "撤销申请", "3",
-                    userId, request.getUserName(), null);
-        }
-        return ok ? Result.success(null) : Result.error("撤销失败");
+        flowLogService.record("travel", request.getId(), "撤销申请", "3",
+                userId, request.getUserName(), null);
+        return Result.success(null);
     }
 
     // ==================== 工作日志 ====================

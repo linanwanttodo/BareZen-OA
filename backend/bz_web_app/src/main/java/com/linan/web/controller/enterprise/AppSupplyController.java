@@ -1,8 +1,10 @@
 package com.linan.web.controller.enterprise;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.linan.core.common.annotation.OperLog;
 import com.linan.core.common.api.PageResult;
 import com.linan.core.common.api.Result;
 import com.linan.core.security.interceptor.AuthInterceptor;
@@ -123,7 +125,9 @@ public class AppSupplyController {
         }
         try {
             request.setSupplyName(supply.getSupplyName());
+            // 身份字段服务端强制覆盖，不信任请求体（防身份伪造）
             request.setUserId(userId);
+            request.setUserName(AuthInterceptor.getCurrentUsername());
             request.setStatus("0");
             boolean ok = requestService.save(request);
             if (ok) {
@@ -140,8 +144,11 @@ public class AppSupplyController {
     /**
      * 撤销我的申领
      * PUT /api/app/v1/supplies/requests/{id}/revoke
+     *
+     * <p>原子条件更新：与审批并发时仅一个操作生效，避免状态被并发覆盖。</p>
      */
     @Operation(summary = "撤销申领")
+    @OperLog(title = "用品申领", businessType = 3)
     @PutMapping("/requests/{id}/revoke")
     public Result<Void> revokeRequest(@PathVariable Long id) {
         Long userId = AuthInterceptor.getCurrentUserId();
@@ -155,15 +162,18 @@ public class AppSupplyController {
         if (!userId.equals(request.getUserId())) {
             return Result.error("只能撤销自己的申领");
         }
-        if (!"0".equals(request.getStatus())) {
+        boolean ok = requestService.update(new LambdaUpdateWrapper<OfficeSupplyRequest>()
+                .eq(OfficeSupplyRequest::getId, id)
+                .eq(OfficeSupplyRequest::getStatus, "0")
+                .set(OfficeSupplyRequest::getStatus, "3"));
+        if (!ok) {
+            // 失败也留痕：记录单据当前实际状态（可能审批已把状态改走），保证撤销失败可审计
+            flowLogService.record("supply", request.getId(), "撤销失败",
+                    request.getStatus(), userId, request.getUserName(), "仅待审批状态的申领可撤销");
             return Result.error("仅待审批状态的申领可撤销");
         }
-        request.setStatus("3");
-        boolean ok = requestService.updateById(request);
-        if (ok) {
-            flowLogService.record("supply", request.getId(), "撤销申请", "3",
-                    userId, request.getUserName(), null);
-        }
-        return ok ? Result.success(null) : Result.error("撤销失败");
+        flowLogService.record("supply", request.getId(), "撤销申请", "3",
+                userId, request.getUserName(), null);
+        return Result.success(null);
     }
 }
