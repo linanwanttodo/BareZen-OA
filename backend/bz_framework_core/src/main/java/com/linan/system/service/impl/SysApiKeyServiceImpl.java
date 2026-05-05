@@ -14,6 +14,7 @@ import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
@@ -61,6 +62,20 @@ public class SysApiKeyServiceImpl extends ServiceImpl<SysApiKeyMapper, SysApiKey
                 .filter(s -> !s.isEmpty())
                 .collect(Collectors.toSet());
         return scopes.contains(scope) || scopes.contains("*");
+    }
+
+    @Override
+    public SysApiKeyCreated createApiKey(String keyName, String scopes, LocalDateTime expireTime) {
+        // 明文 Key：固定前缀 + 32 位随机十六进制（足够熵，无连字符便于复制）
+        String plain = "bz_" + UUID.randomUUID().toString().replace("-", "");
+        SysApiKey key = new SysApiKey();
+        key.setKeyName(keyName);
+        key.setApiKeyHash(sha256(plain));
+        key.setScopes(scopes);
+        key.setStatus("0");
+        key.setExpireTime(expireTime);
+        save(key);
+        return new SysApiKeyCreated(key.getId(), plain, keyName, scopes, "0", expireTime);
     }
 
     /**
