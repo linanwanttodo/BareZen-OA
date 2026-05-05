@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.linan.core.common.annotation.OperLog;
 import com.linan.core.common.api.PageResult;
 import com.linan.core.common.api.Result;
+import com.linan.core.security.PermissionService;
 import com.linan.core.security.RequirePermission;
 import com.linan.core.security.interceptor.AuthInterceptor;
 import com.linan.kb.entity.KbDocument;
@@ -31,6 +32,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 public class KbDocumentController {
 
     private final IKbDocumentService documentService;
+
+    private final PermissionService permissionService;
 
     /**
      * 条件分页查询
@@ -99,13 +102,28 @@ public class KbDocumentController {
     }
 
     /**
-     * 删除文档
+     * 删除文档（作者本人 OR 持删除权限，双轨校验）
+     *
+     * <p>移除方法级 @RequirePermission：否则作者本人（无删除按钮权限）会被切面先行拦截，
+     * 无法删除自己的文档；改为方法内 isOwner || hasPermission 双轨放行。</p>
      */
     @Operation(summary = "删除知识文档")
     @OperLog(title = "知识文档", businessType = 3)
-    @RequirePermission("kb:document:delete")
     @DeleteMapping("/{id}")
     public Result<Void> delete(@PathVariable Long id) {
+        Long userId = AuthInterceptor.getCurrentUserId();
+        if (userId == null) {
+            return Result.error("请先登录");
+        }
+        KbDocument doc = documentService.getById(id);
+        if (doc == null) {
+            return Result.error("文档不存在");
+        }
+        boolean isOwner = userId.equals(doc.getAuthorId());
+        boolean isAdmin = permissionService.hasPermission(userId, "kb:document:delete");
+        if (!isOwner && !isAdmin) {
+            return Result.error("无权限删除该文档");
+        }
         boolean ok = documentService.removeById(id);
         return ok ? Result.success(null) : Result.error("删除失败");
     }

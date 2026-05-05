@@ -1,7 +1,10 @@
 package com.linan.office.controller;
 
+import com.linan.core.common.annotation.OperLog;
 import com.linan.core.common.api.Result;
 import com.linan.core.common.exception.BusinessException;
+import com.linan.core.security.PermissionService;
+import com.linan.core.security.RequirePermission;
 import com.linan.core.security.interceptor.AuthInterceptor;
 import com.linan.office.entity.OfficeMeetingBooking;
 import com.linan.office.service.IOfficeMeetingBookingService;
@@ -32,6 +35,9 @@ class OfficeMeetingBookingControllerTest {
 
     @Mock
     private IOfficeMeetingBookingService bookingService;
+
+    @Mock
+    private PermissionService permissionService;
 
     @InjectMocks
     private OfficeMeetingBookingController controller;
@@ -110,5 +116,75 @@ class OfficeMeetingBookingControllerTest {
 
         BusinessException ex = assertThrows(BusinessException.class, () -> controller.save(booking));
         assertTrue(ex.getMessage().contains("会议室不存在"));
+    }
+
+    // ==================== T13：删除所有权双轨 ====================
+
+    @Test
+    @DisplayName("预订人本人删除自己的预订放行")
+    void delete_bookerOwner_allowed() {
+        OfficeMeetingBooking booking = new OfficeMeetingBooking();
+        booking.setId(1L);
+        booking.setBookerId(1L);
+        when(bookingService.getById(1L)).thenReturn(booking);
+        when(bookingService.removeById(1L)).thenReturn(true);
+
+        Result<Void> result = controller.delete(1L);
+
+        assertEquals(200, result.getCode());
+        verify(bookingService).removeById(1L);
+    }
+
+    @Test
+    @DisplayName("非预订人且无权限：拒绝且不触库")
+    void delete_notOwnerNoPermission_rejected() throws Exception {
+        setCurrentUser(2L);
+        OfficeMeetingBooking booking = new OfficeMeetingBooking();
+        booking.setId(2L);
+        booking.setBookerId(1L);
+        when(bookingService.getById(2L)).thenReturn(booking);
+        when(permissionService.hasPermission(2L, "office:meeting:delete")).thenReturn(false);
+
+        Result<Void> result = controller.delete(2L);
+
+        assertEquals(500, result.getCode());
+        assertTrue(result.getMsg().contains("无权限"));
+        verify(bookingService, never()).removeById(2L);
+    }
+
+    @Test
+    @DisplayName("非预订人但持删除权限（管理员旁路）：放行")
+    void delete_notOwnerWithPermission_allowed() throws Exception {
+        setCurrentUser(2L);
+        OfficeMeetingBooking booking = new OfficeMeetingBooking();
+        booking.setId(3L);
+        booking.setBookerId(1L);
+        when(bookingService.getById(3L)).thenReturn(booking);
+        when(permissionService.hasPermission(2L, "office:meeting:delete")).thenReturn(true);
+        when(bookingService.removeById(3L)).thenReturn(true);
+
+        Result<Void> result = controller.delete(3L);
+
+        assertEquals(200, result.getCode());
+        verify(bookingService).removeById(3L);
+    }
+
+    @Test
+    @DisplayName("方法级 @RequirePermission 已移除，@OperLog 保留")
+    void delete_annotationContract() throws Exception {
+        java.lang.reflect.Method method =
+                OfficeMeetingBookingController.class.getMethod("delete", Long.class);
+        assertNull(method.getAnnotation(RequirePermission.class),
+                "delete 必须移除方法级 @RequirePermission，否则预订人本人被切面先行拦截");
+        assertNotNull(method.getAnnotation(OperLog.class), "delete 必须保留 @OperLog");
+    }
+
+    /** 反射覆盖当前登录用户（已有测试默认 1L，此处用于非本人场景） */
+    private void setCurrentUser(Long userId) throws Exception {
+        Field field = AuthInterceptor.class.getDeclaredField("currentUserIdHolder");
+        field.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        ThreadLocal<Object> tl = (ThreadLocal<Object>) field.get(null);
+        tl.set(userId);
     }
 }

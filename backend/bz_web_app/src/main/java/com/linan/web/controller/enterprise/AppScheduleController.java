@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.linan.core.common.api.PageResult;
 import com.linan.core.common.api.Result;
+import com.linan.core.security.PermissionService;
 import com.linan.core.security.interceptor.AuthInterceptor;
 import com.linan.hr.entity.HrSchedule;
 import com.linan.hr.service.IHrScheduleService;
@@ -32,6 +33,8 @@ public class AppScheduleController {
     private static final Logger log = LoggerFactory.getLogger(AppScheduleController.class);
 
     private final IHrScheduleService scheduleService;
+
+    private final PermissionService permissionService;
 
     /**
      * 我的日程列表
@@ -128,7 +131,7 @@ public class AppScheduleController {
     }
 
     /**
-     * 删除日程
+     * 删除日程（本人 OR 持日程删除权限的管理员，双轨校验）
      * DELETE /api/app/v1/schedules/{id}
      */
     @Operation(summary = "删除日程")
@@ -142,8 +145,10 @@ public class AppScheduleController {
         if (existing == null) {
             return Result.error("日程不存在");
         }
-        if (!userId.equals(existing.getUserId())) {
-            return Result.error("只能操作自己的日程");
+        boolean isOwner = userId.equals(existing.getUserId());
+        boolean isAdmin = permissionService.hasPermission(userId, "hr:schedule:delete");
+        if (!isOwner && !isAdmin) {
+            return Result.error("无权限删除该日程");
         }
         boolean ok = scheduleService.removeById(id);
         return ok ? Result.success(null) : Result.error("删除失败");

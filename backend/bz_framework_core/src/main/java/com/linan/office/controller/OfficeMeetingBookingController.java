@@ -6,7 +6,9 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.linan.core.common.annotation.OperLog;
 import com.linan.core.common.api.PageResult;
 import com.linan.core.common.api.Result;
+import com.linan.core.security.PermissionService;
 import com.linan.core.security.RequirePermission;
+import com.linan.core.security.interceptor.AuthInterceptor;
 import com.linan.office.entity.OfficeMeetingBooking;
 import com.linan.office.service.IOfficeMeetingBookingService;
 import jakarta.validation.Valid;
@@ -29,8 +31,12 @@ public class OfficeMeetingBookingController {
 
     private final IOfficeMeetingBookingService bookingService;
 
-    public OfficeMeetingBookingController(IOfficeMeetingBookingService bookingService) {
+    private final PermissionService permissionService;
+
+    public OfficeMeetingBookingController(IOfficeMeetingBookingService bookingService,
+                                          PermissionService permissionService) {
         this.bookingService = bookingService;
+        this.permissionService = permissionService;
     }
 
     /**
@@ -81,13 +87,28 @@ public class OfficeMeetingBookingController {
     }
 
     /**
-     * 删除会议预订
+     * 删除会议预订（预订人本人 OR 持删除权限，双轨校验）
+     *
+     * <p>移除方法级 @RequirePermission：否则预订人本人（无删除按钮权限）会被切面先行拦截，
+     * 无法删除自己的预订；改为方法内 isOwner || hasPermission 双轨放行。</p>
      */
     @Operation(summary = "删除会议预订")
     @OperLog(title = "会议预订", businessType = 3)
-    @RequirePermission("office:meeting:delete")
     @DeleteMapping("/{id}")
     public Result<Void> delete(@PathVariable Long id) {
+        Long userId = AuthInterceptor.getCurrentUserId();
+        if (userId == null) {
+            return Result.error("请先登录");
+        }
+        OfficeMeetingBooking booking = bookingService.getById(id);
+        if (booking == null) {
+            return Result.error("预订不存在");
+        }
+        boolean isOwner = userId.equals(booking.getBookerId());
+        boolean isAdmin = permissionService.hasPermission(userId, "office:meeting:delete");
+        if (!isOwner && !isAdmin) {
+            return Result.error("无权限删除该预订");
+        }
         boolean ok = bookingService.removeById(id);
         return ok ? Result.success(null) : Result.error("删除失败");
     }
