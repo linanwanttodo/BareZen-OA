@@ -530,6 +530,17 @@ export default {
     addLog: 'Add Log',
     editLog: 'Edit Log',
   },
+  attendanceStat: {
+    title: 'Attendance Statistics',
+    month: 'Month',
+    dept: 'Department',
+    userName: 'Employee',
+    userNamePlaceholder: 'Enter employee name',
+    workDays: 'Work Days',
+    lateCount: 'Late',
+    earlyCount: 'Early Leave',
+    absentCount: 'Absent',
+  },
   schedule: {
     title: 'Schedule Management',
     userName: 'User',

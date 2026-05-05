@@ -532,6 +532,17 @@ export default {
     addLog: '新增日志',
     editLog: '编辑日志',
   },
+  attendanceStat: {
+    title: '考勤统计',
+    month: '月份',
+    dept: '部门',
+    userName: '员工姓名',
+    userNamePlaceholder: '请输入员工姓名',
+    workDays: '出勤天数',
+    lateCount: '迟到次数',
+    earlyCount: '早退次数',
+    absentCount: '缺卡天数',
+  },
   schedule: {
     title: '日程管理',
     userName: '所属用户',
