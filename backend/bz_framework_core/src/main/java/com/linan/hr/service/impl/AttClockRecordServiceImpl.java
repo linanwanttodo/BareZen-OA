@@ -8,8 +8,12 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.linan.core.common.exception.BusinessException;
 import com.linan.hr.domain.AttClockMonthlyStat;
 import com.linan.hr.entity.AttClockRecord;
+import com.linan.hr.entity.AttLeaveRequest;
+import com.linan.hr.entity.AttOvertimeRequest;
 import com.linan.hr.mapper.AttClockRecordMapper;
 import com.linan.hr.service.IAttClockRecordService;
+import com.linan.hr.service.IAttLeaveRequestService;
+import com.linan.hr.service.IAttOvertimeRequestService;
 import com.linan.system.service.ISysConfigService;
 import org.springframework.stereotype.Service;
 
@@ -27,7 +31,10 @@ import java.util.List;
  * <p>打卡规则（上班/下班时间、迟到宽容分钟）全部读取 sys_config，
  * 配置缺失或异常时回退默认值（09:00 / 18:00 / 0），不阻断打卡。
  * 同一用户同日一条记录：上班打卡新建、下班打卡条件更新
- * （clock_out_time IS NULL 兜底并发重复），重复打卡由业务校验拒绝。</p>
+ * （clock_out_time IS NULL 兜底并发重复），重复打卡由业务校验拒绝。
+ *
+ * <p>审批联动：当日存在已批准（status=1）的请假单覆盖打卡时刻，或加班单覆盖下班打卡时刻时，
+ * 豁免迟到/早退判定（T1.6）。判断只读不写，无侵入。</p>
  *
  * @author BareZen Team
  */
@@ -36,6 +43,8 @@ public class AttClockRecordServiceImpl extends ServiceImpl<AttClockRecordMapper,
         implements IAttClockRecordService {
 
     private static final DateTimeFormatter HHMM = DateTimeFormatter.ofPattern("HH:mm");
+    /** 请假/加班单时间字段为 yyyy-MM-dd HH:mm 字符串，比较时统一格式避免 'T' 分隔符字典序陷阱 */
+    private static final DateTimeFormatter DT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
     /** sys_config 键：上班时间（HH:mm） */
     private static final String KEY_WORK_START = "hr.attendance.work_start_time";
@@ -44,13 +53,22 @@ public class AttClockRecordServiceImpl extends ServiceImpl<AttClockRecordMapper,
     /** sys_config 键：迟到宽容分钟 */
     private static final String KEY_LATE_GRACE = "hr.attendance.late_grace_minutes";
 
+    /** 请假/加班单已通过状态 */
+    private static final String APPROVED = "1";
+
     private static final LocalTime DEFAULT_WORK_START = LocalTime.of(9, 0);
     private static final LocalTime DEFAULT_WORK_END = LocalTime.of(18, 0);
 
     private final ISysConfigService configService;
+    private final IAttLeaveRequestService leaveService;
+    private final IAttOvertimeRequestService overtimeService;
 
-    public AttClockRecordServiceImpl(ISysConfigService configService) {
+    public AttClockRecordServiceImpl(ISysConfigService configService,
+                                     IAttLeaveRequestService leaveService,
+                                     IAttOvertimeRequestService overtimeService) {
         this.configService = configService;
+        this.leaveService = leaveService;
+        this.overtimeService = overtimeService;
     }
 
     @Override
@@ -65,6 +83,10 @@ public class AttClockRecordServiceImpl extends ServiceImpl<AttClockRecordMapper,
         LocalTime workStart = parseRuleTime(KEY_WORK_START, DEFAULT_WORK_START);
         int grace = parseRuleInt(KEY_LATE_GRACE, 0);
         int late = computeLateMinutes(now.toLocalTime(), workStart, grace);
+        // 当日已批准请假覆盖上班时刻 → 豁免迟到
+        if (late > 0 && isCoveredByApprovedLeave(userId, now)) {
+            late = 0;
+        }
 
         AttClockRecord record = new AttClockRecord();
         record.setUserId(userId);
@@ -94,6 +116,11 @@ public class AttClockRecordServiceImpl extends ServiceImpl<AttClockRecordMapper,
 
         LocalTime workEnd = parseRuleTime(KEY_WORK_END, DEFAULT_WORK_END);
         int early = computeEarlyMinutes(now.toLocalTime(), workEnd);
+        // 已批准请假/加班单覆盖下班时刻 → 豁免早退（加班单按加班日期 + 时段覆盖判定）
+        if (early > 0 && (isCoveredByApprovedLeave(userId, now)
+                || isCoveredByApprovedOvertime(userId, date, now))) {
+            early = 0;
+        }
         String status = existing.getStatus();
         if (early > 0) {
             // 迟到且早退 → 异常；仅早退 → early
@@ -149,6 +176,27 @@ public class AttClockRecordServiceImpl extends ServiceImpl<AttClockRecordMapper,
         return getOne(new LambdaQueryWrapper<AttClockRecord>()
                 .eq(AttClockRecord::getUserId, userId)
                 .eq(AttClockRecord::getClockDate, date));
+    }
+
+    /** 当日存在已批准请假单且时段覆盖打卡时刻（含跨天请假） */
+    private boolean isCoveredByApprovedLeave(Long userId, LocalDateTime clockTime) {
+        String t = clockTime.format(DT);
+        return leaveService.count(new LambdaQueryWrapper<AttLeaveRequest>()
+                .eq(AttLeaveRequest::getUserId, userId)
+                .eq(AttLeaveRequest::getStatus, APPROVED)
+                .le(AttLeaveRequest::getStartTime, t)
+                .ge(AttLeaveRequest::getEndTime, t)) > 0;
+    }
+
+    /** 当日存在已批准加班单（加班日期=打卡日）且时段覆盖下班打卡时刻 */
+    private boolean isCoveredByApprovedOvertime(Long userId, LocalDate date, LocalDateTime clockTime) {
+        String t = clockTime.format(DT);
+        return overtimeService.count(new LambdaQueryWrapper<AttOvertimeRequest>()
+                .eq(AttOvertimeRequest::getUserId, userId)
+                .eq(AttOvertimeRequest::getStatus, APPROVED)
+                .eq(AttOvertimeRequest::getOvertimeDate, date.toString())
+                .le(AttOvertimeRequest::getStartTime, t)
+                .ge(AttOvertimeRequest::getEndTime, t)) > 0;
     }
 
     /** 迟到分钟 = 实际打卡时间 - (上班时间 + 宽容分钟)，未超过为 0 */

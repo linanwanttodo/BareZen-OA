@@ -35,7 +35,8 @@ import static org.mockito.Mockito.when;
  * AttClockRecordServiceImpl 单元测试
  *
  * <p>覆盖：上班打卡新建/迟到计算/宽容分钟/重复拒绝；下班打卡条件更新/早退计算/
- * 迟到早退合并异常/未上班拒绝/重复拒绝；规则缺失回退默认值；当月与今日查询。</p>
+ * 迟到早退合并异常/未上班拒绝/重复拒绝；规则缺失回退默认值；当月与今日查询；
+ * 已批准请假/加班单覆盖时段豁免迟到早退（T1.6）。</p>
  *
  * @author BareZen Team
  */
@@ -51,6 +52,12 @@ class AttClockRecordServiceImplTest {
     @Mock
     private ISysConfigService configService;
 
+    @Mock
+    private IAttLeaveRequestService leaveService;
+
+    @Mock
+    private IAttOvertimeRequestService overtimeService;
+
     private AttClockRecordServiceImpl clockService;
 
     @BeforeAll
@@ -62,7 +69,7 @@ class AttClockRecordServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        clockService = new AttClockRecordServiceImpl(configService);
+        clockService = new AttClockRecordServiceImpl(configService, leaveService, overtimeService);
         ReflectionTestUtils.setField(clockService, "baseMapper", clockMapper);
     }
 
@@ -176,6 +183,39 @@ class AttClockRecordServiceImplTest {
             assertEquals(10, result.getLateMinutes(), "无配置时按 09:00 基准计算");
             assertEquals("late", result.getStatus());
         }
+
+        @Test
+        @DisplayName("当日已批准请假覆盖上班时刻 → 迟到豁免")
+        void approvedLeave_coversClockIn_lateExempted() {
+            when(clockMapper.selectOne(any(), anyBoolean())).thenReturn(null);
+            when(configService.selectConfigByKey("hr.attendance.work_start_time")).thenReturn("09:00");
+            when(configService.selectConfigByKey("hr.attendance.late_grace_minutes")).thenReturn("0");
+            when(leaveService.count(any())).thenReturn(1L);
+            when(clockMapper.insert(any(AttClockRecord.class))).thenReturn(1);
+
+            AttClockRecord result = clockService.clockIn(USER_ID, USER_NAME,
+                    LocalDateTime.of(2026, 3, 14, 10, 0));
+
+            assertEquals(0, result.getLateMinutes(), "请假覆盖时段不记迟到");
+            assertEquals("normal", result.getStatus());
+        }
+
+        @Test
+        @DisplayName("无已批准请假单 → 迟到正常记录")
+        void noApprovedLeave_lateRecorded() {
+            when(clockMapper.selectOne(any(), anyBoolean())).thenReturn(null);
+            when(configService.selectConfigByKey("hr.attendance.work_start_time")).thenReturn("09:00");
+            when(configService.selectConfigByKey("hr.attendance.late_grace_minutes")).thenReturn("0");
+            when(clockMapper.insert(any(AttClockRecord.class))).thenReturn(1);
+
+            AttClockRecord result = clockService.clockIn(USER_ID, USER_NAME,
+                    LocalDateTime.of(2026, 3, 14, 10, 0));
+
+            assertEquals(60, result.getLateMinutes());
+            assertEquals("late", result.getStatus());
+            // 豁免查询确实执行过且返回 0
+            verify(leaveService).count(any());
+        }
     }
 
     @Nested
@@ -252,6 +292,58 @@ class AttClockRecordServiceImplTest {
             BusinessException ex = assertThrows(BusinessException.class,
                     () -> clockService.clockOut(USER_ID, USER_NAME, LocalDateTime.of(2026, 3, 14, 19, 0)));
             assertTrue(ex.getMessage().contains("重复"));
+        }
+
+        @Test
+        @DisplayName("已批准加班单覆盖下班时刻 → 早退豁免")
+        void approvedOvertime_coversClockOut_earlyExempted() {
+            AttClockRecord existing = existingRecord(
+                    LocalDateTime.of(2026, 3, 14, 8, 55), null, "normal");
+            when(clockMapper.selectOne(any(), anyBoolean())).thenReturn(existing);
+            when(configService.selectConfigByKey("hr.attendance.work_end_time")).thenReturn("18:00");
+            when(overtimeService.count(any())).thenReturn(1L);
+            when(clockMapper.update(any(), any())).thenReturn(1);
+
+            AttClockRecord result = clockService.clockOut(USER_ID, USER_NAME,
+                    LocalDateTime.of(2026, 3, 14, 17, 30));
+
+            assertEquals(0, result.getEarlyMinutes(), "加班时段内打卡下班不记早退");
+            assertEquals("normal", result.getStatus());
+        }
+
+        @Test
+        @DisplayName("已批准请假覆盖下班时刻 → 早退豁免")
+        void approvedLeave_coversClockOut_earlyExempted() {
+            AttClockRecord existing = existingRecord(
+                    LocalDateTime.of(2026, 3, 14, 8, 55), null, "normal");
+            when(clockMapper.selectOne(any(), anyBoolean())).thenReturn(existing);
+            when(configService.selectConfigByKey("hr.attendance.work_end_time")).thenReturn("18:00");
+            when(leaveService.count(any())).thenReturn(1L);
+            when(clockMapper.update(any(), any())).thenReturn(1);
+
+            AttClockRecord result = clockService.clockOut(USER_ID, USER_NAME,
+                    LocalDateTime.of(2026, 3, 14, 17, 30));
+
+            assertEquals(0, result.getEarlyMinutes(), "请假覆盖时段不记早退");
+            assertEquals("normal", result.getStatus());
+        }
+
+        @Test
+        @DisplayName("无批准单据覆盖 → 早退正常记录")
+        void noApproval_earlyRecorded() {
+            AttClockRecord existing = existingRecord(
+                    LocalDateTime.of(2026, 3, 14, 8, 55), null, "normal");
+            when(clockMapper.selectOne(any(), anyBoolean())).thenReturn(existing);
+            when(configService.selectConfigByKey("hr.attendance.work_end_time")).thenReturn("18:00");
+            when(clockMapper.update(any(), any())).thenReturn(1);
+
+            AttClockRecord result = clockService.clockOut(USER_ID, USER_NAME,
+                    LocalDateTime.of(2026, 3, 14, 17, 30));
+
+            assertEquals(30, result.getEarlyMinutes());
+            assertEquals("early", result.getStatus());
+            verify(leaveService).count(any());
+            verify(overtimeService).count(any());
         }
 
         @Test
