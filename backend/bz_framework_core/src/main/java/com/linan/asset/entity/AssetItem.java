@@ -29,6 +29,9 @@ public class AssetItem extends BaseEntity {
     /** 资产分类：computer=电脑办公 equipment=设备 furniture=家具 vehicle=车辆 other=其他 */
     private String category;
 
+    /** 资产分类ID（V39：关联 asset_category，替代枚举字符串） */
+    private Long categoryId;
+
     /** 品牌 */
     private String brand;
 
