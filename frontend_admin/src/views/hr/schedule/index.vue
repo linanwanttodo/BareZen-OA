@@ -30,6 +30,9 @@
     <a-card>
       <template #title>
         <span>{{ $t('schedule.title') }}</span>
+        <a-button v-permission="'hr:schedule:add'" class="ml-4" type="primary" size="small" @click="openAdd">
+          {{ $t('common.add') }}
+        </a-button>
       </template>
 
       <a-spin :loading="loading">
@@ -50,6 +53,9 @@
             <a-table-column :title="$t('common.operate')" :width="120" align="right">
               <template #cell="{ record }">
                 <a-space>
+                  <a-button v-permission="'hr:schedule:edit'" size="small" @click="openEdit(record)">
+                    {{ $t('common.edit') }}
+                  </a-button>
                   <a-button v-permission="'hr:schedule:delete'" size="small" status="danger" @click="handleDelete(record)">
                     {{ $t('common.delete') }}
                   </a-button>
@@ -70,6 +76,37 @@
         </div>
       </a-spin>
     </a-card>
+
+    <!-- 新增/编辑弹窗 -->
+    <a-modal v-model:visible="dialogVisible" :title="isEdit ? $t('common.edit') : $t('common.add')" :width="560" :unmount-on-close="true" @before-ok="handleSave">
+      <a-form :model="form" layout="vertical">
+        <a-form-item field="title" :label="$t('schedule.title')" required>
+          <a-input v-model="form.title" :placeholder="$t('common.inputPlaceholder')" />
+        </a-form-item>
+        <a-form-item field="userName" :label="$t('schedule.userName')">
+          <a-input v-model="form.userName" :placeholder="$t('schedule.userNamePlaceholder')" />
+        </a-form-item>
+        <a-form-item field="timeRange" :label="$t('schedule.timeRange')" required>
+          <a-date-picker v-model="form.startTime" show-time style="width: calc(50% - 12px)" :placeholder="$t('schedule.startTime')" />
+          <span class="mx-2">~</span>
+          <a-date-picker v-model="form.endTime" show-time style="width: calc(50% - 12px)" :placeholder="$t('schedule.endTime')" />
+        </a-form-item>
+        <a-form-item field="location" :label="$t('schedule.location')">
+          <a-input v-model="form.location" :placeholder="$t('common.inputPlaceholder')" />
+        </a-form-item>
+        <a-form-item field="status" :label="$t('schedule.status')">
+          <a-select v-model="form.status">
+            <a-option value="0">{{ $t('schedule.statusTodo') }}</a-option>
+            <a-option value="1">{{ $t('schedule.statusDoing') }}</a-option>
+            <a-option value="2">{{ $t('schedule.statusDone') }}</a-option>
+            <a-option value="3">{{ $t('schedule.statusCancelled') }}</a-option>
+          </a-select>
+        </a-form-item>
+        <a-form-item field="description" :label="$t('schedule.description')">
+          <a-textarea v-model="form.description" :placeholder="$t('common.inputPlaceholder')" :max-length="1000" show-word-limit />
+        </a-form-item>
+      </a-form>
+    </a-modal>
   </div>
 </template>
 
@@ -77,11 +114,15 @@
 import { ref, reactive, onMounted } from 'vue'
 import { Message } from '@arco-design/web-vue'
 import { useI18n } from 'vue-i18n'
-import { getSchedulePageApi, deleteScheduleApi, type HrSchedule } from '@/api/schedule'
+import { getSchedulePageApi, addScheduleApi, updateScheduleApi, deleteScheduleApi, type HrSchedule } from '@/api/schedule'
 
 const { t } = useI18n()
 const loading = ref(false)
 const tableData = ref<HrSchedule[]>([])
+const dialogVisible = ref(false)
+const isEdit = ref(false)
+const form = reactive<Partial<HrSchedule>>({})
+const saving = ref(false)
 // Arco DatePicker 类型声明未建模 daterange（update:modelValue 声明为单值），
 // 实际运行时返回数组，故字段声明为单值并用 Array.isArray 做运行时防护
 const searchForm = reactive<{
@@ -137,6 +178,48 @@ function handleReset() {
   searchForm.dateRange = undefined
   pagination.current = 1
   loadData()
+}
+
+function openAdd() {
+  isEdit.value = false
+  Object.keys(form).forEach((k) => delete (form as Record<string, unknown>)[k])
+  form.status = '0'
+  dialogVisible.value = true
+}
+
+function openEdit(record: HrSchedule) {
+  isEdit.value = true
+  Object.assign(form, record)
+  dialogVisible.value = true
+}
+
+async function handleSave(done: (closed: boolean) => void) {
+  if (!form.title) {
+    Message.warning(t('schedule.titleRequired'))
+    done(false)
+    return
+  }
+  if (!form.startTime || !form.endTime) {
+    Message.warning(t('schedule.timeRequired'))
+    done(false)
+    return
+  }
+  saving.value = true
+  try {
+    if (isEdit.value) {
+      await updateScheduleApi(form)
+    } else {
+      await addScheduleApi(form)
+    }
+    Message.success(t('common.saveSuccess'))
+    loadData()
+    done(true)
+  } catch (e) {
+    Message.error((e as Error)?.message || t('common.failed'))
+    done(false)
+  } finally {
+    saving.value = false
+  }
 }
 
 async function handleDelete(record: HrSchedule) {

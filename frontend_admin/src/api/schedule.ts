@@ -29,6 +29,16 @@ export function getSchedulePageApi(params: ScheduleListParams) {
   return request.get<PageData<HrSchedule>>('/hr/v1/schedules/page', { params })
 }
 
+/** 新增日程（管理端代建，可指定 userId/userName） */
+export function addScheduleApi(data: Partial<HrSchedule>) {
+  return request.post<void>('/hr/v1/schedules', data)
+}
+
+/** 修改日程（管理端） */
+export function updateScheduleApi(data: Partial<HrSchedule>) {
+  return request.put<void>(`/hr/v1/schedules/${data.id}`, data)
+}
+
 /** 删除日程（管理端） */
 export function deleteScheduleApi(id: string) {
   return request.delete<void>(`/hr/v1/schedules/${id}`)

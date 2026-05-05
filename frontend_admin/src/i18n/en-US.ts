@@ -545,6 +545,7 @@ export default {
   schedule: {
     title: 'Schedule Management',
     userName: 'User',
+    userNamePlaceholder: 'Enter employee name',
     status: 'Status',
     statusTodo: 'Upcoming',
     statusDoing: 'In Progress',
@@ -552,6 +553,9 @@ export default {
     statusCancelled: 'Cancelled',
     startTime: 'Start Time',
     endTime: 'End Time',
+    timeRange: 'Time Range',
+    titleRequired: 'Please enter schedule title',
+    timeRequired: 'Please select schedule time range',
     location: 'Location',
     description: 'Description',
     dateRange: 'Date Range',

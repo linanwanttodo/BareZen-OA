@@ -547,6 +547,7 @@ export default {
   schedule: {
     title: '日程管理',
     userName: '所属用户',
+    userNamePlaceholder: '请输入员工姓名',
     status: '状态',
     statusTodo: '未开始',
     statusDoing: '进行中',
@@ -554,6 +555,9 @@ export default {
     statusCancelled: '已取消',
     startTime: '开始时间',
     endTime: '结束时间',
+    timeRange: '日程时间',
+    titleRequired: '请输入日程标题',
+    timeRequired: '请选择日程时间范围',
     location: '地点',
     description: '描述',
     dateRange: '日期范围',

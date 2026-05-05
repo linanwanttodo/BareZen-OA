@@ -7,10 +7,12 @@ import com.linan.core.common.annotation.OperLog;
 import com.linan.core.common.api.PageResult;
 import com.linan.core.common.api.Result;
 import com.linan.core.security.RequirePermission;
+import com.linan.core.security.interceptor.AuthInterceptor;
 import com.linan.hr.entity.HrSchedule;
 import com.linan.hr.service.IHrScheduleService;
 import com.linan.system.entity.SysUser;
 import com.linan.system.service.ISysUserService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -92,6 +94,67 @@ public class HrScheduleController {
             }
         }
         return Result.page(result);
+    }
+
+    /**
+     * 新增日程（管理端代建）
+     *
+     * <p>userId 缺省时按 userName 关联 sys_user 回填（联 sys_user 回填逻辑与 list 一致），
+     * userName 也缺省时默认当前登录用户。</p>
+     */
+    @Operation(summary = "新增日程")
+    @OperLog(title = "日程管理", businessType = 1)
+    @RequirePermission("hr:schedule:add")
+    @PostMapping
+    public Result<Void> save(@Valid @RequestBody HrSchedule schedule) {
+        if (schedule.getStartTime() == null || schedule.getStartTime().isEmpty()) {
+            return Result.error("开始时间不能为空");
+        }
+        if (schedule.getEndTime() == null || schedule.getEndTime().isEmpty()) {
+            return Result.error("结束时间不能为空");
+        }
+        if (schedule.getStartTime().compareTo(schedule.getEndTime()) >= 0) {
+            return Result.error("结束时间必须晚于开始时间");
+        }
+        if (schedule.getStatus() == null || schedule.getStatus().isEmpty()) {
+            schedule.setStatus("0");
+        }
+        // userId 缺省：按 userName 回填；userName 也缺省：默认当前登录用户
+        if (schedule.getUserId() == null) {
+            Long userId = null;
+            if (schedule.getUserName() != null && !schedule.getUserName().isEmpty()) {
+                List<SysUser> users = userService.list(new LambdaQueryWrapper<SysUser>()
+                        .eq(SysUser::getUserName, schedule.getUserName())
+                        .or().eq(SysUser::getNickName, schedule.getUserName())
+                        .last("LIMIT 1"));
+                if (!users.isEmpty()) {
+                    userId = users.get(0).getId();
+                }
+            }
+            if (userId == null) {
+                userId = AuthInterceptor.getCurrentUserId();
+            }
+            schedule.setUserId(userId);
+        }
+        boolean ok = scheduleService.save(schedule);
+        return ok ? Result.success(null) : Result.error("新增失败");
+    }
+
+    /**
+     * 修改日程
+     */
+    @Operation(summary = "修改日程")
+    @OperLog(title = "日程管理", businessType = 2)
+    @RequirePermission("hr:schedule:edit")
+    @PutMapping("/{id}")
+    public Result<Void> update(@PathVariable Long id, @Valid @RequestBody HrSchedule schedule) {
+        HrSchedule exists = scheduleService.getById(id);
+        if (exists == null) {
+            return Result.error("日程不存在或已删除");
+        }
+        schedule.setId(id);
+        boolean ok = scheduleService.updateById(schedule);
+        return ok ? Result.success(null) : Result.error("更新失败");
     }
 
     /**
