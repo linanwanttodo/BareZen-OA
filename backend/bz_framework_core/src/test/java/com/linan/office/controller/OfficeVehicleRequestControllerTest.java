@@ -5,9 +5,11 @@ import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
 import com.linan.core.common.api.Result;
+import com.linan.core.common.exception.BusinessException;
 import com.linan.core.security.interceptor.AuthInterceptor;
 import com.linan.office.entity.OfficeVehicleRequest;
 import com.linan.office.service.IOfficeVehicleRequestService;
+import com.linan.system.service.ApprovalFlowEngineService;
 import org.apache.ibatis.builder.MapperBuilderAssistant;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -43,6 +45,9 @@ class OfficeVehicleRequestControllerTest {
 
     @Mock
     private com.linan.system.service.IApprovalFlowLogService flowLogService;
+
+    @Mock
+    private ApprovalFlowEngineService flowEngine;
 
     @InjectMocks
     private OfficeVehicleRequestController controller;
@@ -89,6 +94,9 @@ class OfficeVehicleRequestControllerTest {
         request.setApplicantId(applicantId);
         request.setStatus("0");
         when(vehicleService.getById(20L)).thenReturn(request);
+        // 引擎：末节点通过 = 终态，业务侧负责更新业务表
+        when(flowEngine.approve("vehicle", 20L, approverId, "admin", "pass", "同意出车"))
+                .thenReturn(new ApprovalFlowEngineService.ApprovalResult(true, true, 1, "车辆管理员审批"));
         when(vehicleService.update(any())).thenReturn(true);
 
         Result<Void> result = controller.approve(20L, "pass", "同意出车");
@@ -148,20 +156,21 @@ class OfficeVehicleRequestControllerTest {
     }
 
     @Test
-    @DisplayName("已审批的申请不能重复审批")
+    @DisplayName("已审批的申请不能重复审批（引擎无待审节点抛业务异常）")
     void approve_alreadyApproved_rejected() {
         OfficeVehicleRequest request = new OfficeVehicleRequest();
         request.setId(23L);
         request.setApplicantId(applicantId);
         request.setStatus("1");
         when(vehicleService.getById(23L)).thenReturn(request);
-        // 模拟原子条件更新受影响行数为 0（WHERE status='0' 不匹配，返回 false）
-        when(vehicleService.update(any())).thenReturn(false);
+        // 引擎侧：无待审节点（已处理过）抛业务异常，由全局异常处理器统一转 500
+        when(flowEngine.approve("vehicle", 23L, approverId, "admin", "pass", null))
+                .thenThrow(new BusinessException("无待审批节点，可能已处理"));
 
-        Result<Void> result = controller.approve(23L, "pass", null);
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> controller.approve(23L, "pass", null));
 
-        assertEquals(500, result.getCode());
-        assertTrue(result.getMsg().contains("已审批"));
+        assertTrue(ex.getMessage().contains("无待审批节点"));
         // 不应写审批流程日志
         verify(flowLogService, never()).record(any(), any(), any(), any(), any(), any(), any());
     }

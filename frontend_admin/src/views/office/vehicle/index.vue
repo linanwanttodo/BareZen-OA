@@ -92,9 +92,18 @@
       </a-spin>
     </a-card>
 
-    <!-- 流程进度弹窗 -->
+    <!-- 流程进度弹窗：优先渲染引擎节点链（任务态），未接入引擎回退事件流 -->
     <a-modal v-model:visible="flowVisible" :title="$t('office.flow')" :width="520" footer-only>
-      <a-steps v-if="flowNodes.length" direction="vertical" :current="currentStep">
+      <a-steps v-if="flowTasks.length" direction="vertical" :current="taskCurrent">
+        <a-step
+          v-for="task in flowTasks"
+          :key="task.id"
+          :status="taskStepStatus(task.status)"
+          :title="task.nodeName"
+          :description="taskStepDesc(task)"
+        />
+      </a-steps>
+      <a-steps v-else-if="flowNodes.length" direction="vertical" :current="currentStep">
         <a-step
           v-for="node in flowNodes"
           :key="node.id"
@@ -159,7 +168,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { Message } from '@arco-design/web-vue'
 import { getVehiclePageApi, submitVehicleApi, approveVehicleApi, cancelVehicleApi, deleteVehicleApi, type OfficeVehicleRequest } from '@/api/office'
-import { getFlowLogsApi, type ApprovalFlowNode } from '@/api/flowlog'
+import { getFlowLogsApi, getFlowTasksApi, type ApprovalFlowNode, type ApprovalFlowTask } from '@/api/flowlog'
 import { useUserStore } from '@/stores/user'
 import { useI18n } from 'vue-i18n'
 
@@ -313,12 +322,37 @@ function showRemark(record: OfficeVehicleRequest) {
 // ============ 流程进度 ============
 const flowVisible = ref(false)
 const flowNodes = ref<ApprovalFlowNode[]>([])
+const flowTasks = ref<ApprovalFlowTask[]>([])
 const currentStep = ref(0)
+const taskCurrent = ref(0)
+
+/** 节点任务态 → 步骤状态：待审批=process，通过=finish，驳回=error，取消=wait */
+function taskStepStatus(status: string | undefined): 'process' | 'finish' | 'error' | 'wait' {
+  if (status === '1') return 'finish'
+  if (status === '2') return 'error'
+  if (status === '0') return 'process'
+  return 'wait'
+}
+
+/** 节点任务描述：审批人 · 时间 · 意见（未审批节点展示待审批） */
+function taskStepDesc(task: ApprovalFlowTask): string {
+  const who = task.status === '0'
+    ? t('common.waitingApproval')
+    : (task.approverName || '-')
+  const when = task.approveTime || task.createTime || ''
+  return `${who} · ${when}${task.approveRemark ? ' · ' + task.approveRemark : ''}`
+}
 
 async function openFlow(record: OfficeVehicleRequest) {
   try {
-    const res = await getFlowLogsApi('vehicle', record.id)
-    flowNodes.value = res.data || []
+    const [taskRes, logRes] = await Promise.all([
+      getFlowTasksApi('vehicle', record.id),
+      getFlowLogsApi('vehicle', record.id),
+    ])
+    flowTasks.value = taskRes.data || []
+    flowNodes.value = logRes.data || []
+    const pendingIdx = flowTasks.value.findIndex((task) => task.status === '0')
+    taskCurrent.value = pendingIdx >= 0 ? pendingIdx : Math.max(0, flowTasks.value.length - 1)
     currentStep.value = Math.max(0, flowNodes.value.length - 1)
     flowVisible.value = true
   } catch (err) {

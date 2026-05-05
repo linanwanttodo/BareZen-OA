@@ -1,8 +1,8 @@
 import request from './request'
-import type { ApiResult, DashboardData, Notice, Contact, TodoItem, CreateTodoDTO, UpdateTodoDTO, PageData, OvertimeRequest, TravelRequest, WorkLog, Schedule, Supply, SupplyRequest, FlowLog } from '@/types/api'
+import type { ApiResult, DashboardData, Notice, Contact, TodoItem, CreateTodoDTO, UpdateTodoDTO, PageData, OvertimeRequest, TravelRequest, WorkLog, Schedule, Supply, SupplyRequest, FlowLog, FlowTask } from '@/types/api'
 
 // 页面组件从 @/api/enterprise 导入业务实体类型，此处 re-export 保持入口统一
-export type { OvertimeRequest, TravelRequest, WorkLog, Schedule, Supply, SupplyRequest, FlowLog } from '@/types/api'
+export type { OvertimeRequest, TravelRequest, WorkLog, Schedule, Supply, SupplyRequest, FlowLog, FlowTask } from '@/types/api'
 
 // ==================== 工作台 ====================
 
@@ -154,6 +154,13 @@ export function revokeSupplyRequestApi(id: string) {
 /** 查询我的申请流程节点 */
 export function getFlowLogsApi(bizType: string, bizId: string) {
   return request.get<any, ApiResult<FlowLog[]>>('/app/v1/flow-logs', {
+    params: { bizType, bizId },
+  })
+}
+
+/** 查询我的申请审批节点链（V36 多级审批引擎） */
+export function getFlowTasksApi(bizType: string, bizId: string) {
+  return request.get<any, ApiResult<FlowTask[]>>('/app/v1/flow-logs/flow-tasks', {
     params: { bizType, bizId },
   })
 }

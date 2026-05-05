@@ -14,6 +14,7 @@ import com.linan.hr.entity.HrWorkLog;
 import com.linan.hr.service.IAttOvertimeRequestService;
 import com.linan.hr.service.IAttTravelRequestService;
 import com.linan.hr.service.IHrWorkLogService;
+import com.linan.system.service.ApprovalFlowEngineService;
 import com.linan.system.service.IApprovalFlowLogService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,6 +48,9 @@ public class AppAttendanceController {
     private final IHrWorkLogService workLogService;
 
     private final IApprovalFlowLogService flowLogService;
+
+    /** 多级审批引擎（V36：模板驱动节点链） */
+    private final ApprovalFlowEngineService flowEngine;
 
     // ==================== 加班申请 ====================
 
@@ -104,6 +108,8 @@ public class AppAttendanceController {
             request.setStatus("0");
             boolean ok = overtimeService.save(request);
             if (ok) {
+                // 多级审批引擎：按模板生成首节点任务
+                flowEngine.start("overtime", request.getId(), request.getAssigneeId(), request.getAssigneeName());
                 flowLogService.record("overtime", request.getId(), "提交申请", "0",
                         userId, request.getUserName(), null);
             }
@@ -146,6 +152,8 @@ public class AppAttendanceController {
                     request.getStatus(), userId, request.getUserName(), "仅待审批状态的申请可撤销");
             return Result.error("仅待审批状态的申请可撤销");
         }
+        // 引擎：待审节点置取消（与业务表状态联动）
+        flowEngine.revoke("overtime", request.getId());
         flowLogService.record("overtime", request.getId(), "撤销申请", "3",
                 userId, request.getUserName(), null);
         return Result.success(null);
@@ -207,6 +215,8 @@ public class AppAttendanceController {
             request.setStatus("0");
             boolean ok = travelService.save(request);
             if (ok) {
+                // 多级审批引擎：按模板生成首节点任务
+                flowEngine.start("travel", request.getId(), request.getAssigneeId(), request.getAssigneeName());
                 flowLogService.record("travel", request.getId(), "提交申请", "0",
                         userId, request.getUserName(), null);
             }
@@ -248,6 +258,8 @@ public class AppAttendanceController {
                     request.getStatus(), userId, request.getUserName(), "仅待审批状态的申请可撤销");
             return Result.error("仅待审批状态的申请可撤销");
         }
+        // 引擎：待审节点置取消（与业务表状态联动）
+        flowEngine.revoke("travel", request.getId());
         flowLogService.record("travel", request.getId(), "撤销申请", "3",
                 userId, request.getUserName(), null);
         return Result.success(null);

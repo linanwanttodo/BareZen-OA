@@ -5,9 +5,11 @@ import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
 import com.linan.core.common.api.Result;
+import com.linan.core.common.exception.BusinessException;
 import com.linan.core.security.interceptor.AuthInterceptor;
 import com.linan.hr.entity.AttLeaveRequest;
 import com.linan.hr.service.IAttLeaveRequestService;
+import com.linan.system.service.ApprovalFlowEngineService;
 import org.apache.ibatis.builder.MapperBuilderAssistant;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -43,6 +45,9 @@ class AttLeaveRequestControllerTest {
 
     @Mock
     private com.linan.system.service.IApprovalFlowLogService flowLogService;
+
+    @Mock
+    private ApprovalFlowEngineService flowEngine;
 
     @InjectMocks
     private AttLeaveRequestController controller;
@@ -92,6 +97,9 @@ class AttLeaveRequestControllerTest {
         leave.setUserId(applicantId); // 申请人不是当前审批人
         leave.setStatus("0");
         when(leaveService.getById(10L)).thenReturn(leave);
+        // 引擎：末节点通过 = 终态，业务侧负责更新业务表
+        when(flowEngine.approve("leave", 10L, approverId, "admin", "pass", "同意"))
+                .thenReturn(new ApprovalFlowEngineService.ApprovalResult(true, true, 1, "部门负责人审批"));
         when(leaveService.update(any())).thenReturn(true);
 
         Result<Void> result = controller.approve(10L, "pass", "同意");
@@ -138,20 +146,21 @@ class AttLeaveRequestControllerTest {
     }
 
     @Test
-    @DisplayName("重复审批被拒绝")
+    @DisplayName("重复审批被拒绝（引擎无待审节点抛业务异常）")
     void approve_alreadyApproved_rejected() {
         AttLeaveRequest leave = new AttLeaveRequest();
         leave.setId(12L);
         leave.setUserId(applicantId);
         leave.setStatus("1"); // 已审批
         when(leaveService.getById(12L)).thenReturn(leave);
-        // 模拟原子条件更新受影响行数为 0（WHERE status='0' 不匹配，返回 false）
-        when(leaveService.update(any())).thenReturn(false);
+        // 引擎侧：无待审节点（已处理过）抛业务异常，由全局异常处理器统一转 500
+        when(flowEngine.approve("leave", 12L, approverId, "admin", "pass", null))
+                .thenThrow(new BusinessException("无待审批节点，可能已处理"));
 
-        Result<Void> result = controller.approve(12L, "pass", null);
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> controller.approve(12L, "pass", null));
 
-        assertEquals(500, result.getCode());
-        assertTrue(result.getMsg().contains("已审批"));
+        assertTrue(ex.getMessage().contains("无待审批节点"));
         // 不应写审批流程日志
         verify(flowLogService, never()).record(any(), any(), any(), any(), any(), any(), any());
     }
@@ -164,6 +173,9 @@ class AttLeaveRequestControllerTest {
         leave.setUserId(applicantId);
         leave.setStatus("0");
         when(leaveService.getById(13L)).thenReturn(leave);
+        // 引擎：驳回即终态
+        when(flowEngine.approve("leave", 13L, approverId, "admin", "reject", "事由不充分"))
+                .thenReturn(new ApprovalFlowEngineService.ApprovalResult(false, true, 1, "部门负责人审批"));
         when(leaveService.update(any())).thenReturn(true);
 
         Result<Void> result = controller.approve(13L, "reject", "事由不充分");
@@ -175,18 +187,20 @@ class AttLeaveRequestControllerTest {
     }
 
     @Test
-    @DisplayName("无效审批动作被拒绝")
+    @DisplayName("无效审批动作被拒绝（引擎校验）")
     void approve_invalidAction_rejected() {
         AttLeaveRequest leave = new AttLeaveRequest();
         leave.setId(14L);
         leave.setUserId(applicantId);
         leave.setStatus("0");
         when(leaveService.getById(14L)).thenReturn(leave);
+        when(flowEngine.approve("leave", 14L, approverId, "admin", "unknown", null))
+                .thenThrow(new BusinessException("无效的审批动作"));
 
-        Result<Void> result = controller.approve(14L, "unknown", null);
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> controller.approve(14L, "unknown", null));
 
-        assertEquals(500, result.getCode());
-        assertTrue(result.getMsg().contains("无效的审批动作"));
+        assertTrue(ex.getMessage().contains("无效的审批动作"));
         verify(leaveService, never()).update(any());
     }
 

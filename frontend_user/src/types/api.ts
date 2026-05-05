@@ -243,6 +243,21 @@ export interface FlowLog {
   createTime: string
 }
 
+/** 审批节点任务（V36 多级审批引擎） */
+export interface FlowTask {
+  id: string
+  bizType: string
+  bizId: string
+  nodeSeq: number
+  nodeName: string
+  status: string
+  approverId: string
+  approverName: string
+  approveRemark: string
+  approveTime: string
+  createTime: string
+}
+
 /** 考勤打卡记录（对应后端 AttClockRecord，同一用户同日仅一行） */
 export interface AttClockRecord {
   id: string

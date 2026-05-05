@@ -9,6 +9,7 @@ import com.linan.hr.entity.AttTravelRequest;
 import com.linan.hr.service.IAttOvertimeRequestService;
 import com.linan.hr.service.IAttTravelRequestService;
 import com.linan.hr.service.IHrWorkLogService;
+import com.linan.system.service.ApprovalFlowEngineService;
 import com.linan.system.service.IApprovalFlowLogService;
 import org.apache.ibatis.builder.MapperBuilderAssistant;
 import org.junit.jupiter.api.AfterEach;
@@ -55,6 +56,9 @@ class AppAttendanceControllerTest {
     @Mock
     private IApprovalFlowLogService flowLogService;
 
+    @Mock
+    private ApprovalFlowEngineService flowEngine;
+
     private AppAttendanceController controller;
 
     /**
@@ -70,7 +74,7 @@ class AppAttendanceControllerTest {
 
     @BeforeEach
     void setUp() {
-        controller = new AppAttendanceController(overtimeService, travelService, workLogService, flowLogService);
+        controller = new AppAttendanceController(overtimeService, travelService, workLogService, flowLogService, flowEngine);
     }
 
     @AfterEach

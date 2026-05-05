@@ -62,6 +62,7 @@ export default {
     close: '关闭',
     detail: '详情',
     download: '下载',
+    waitingApproval: '待审批',
     upload: '上传',
     all: '全部',
     viewAll: '查看全部',

@@ -131,9 +131,18 @@
       </a-card>
     </div>
 
-    <!-- 流程进度弹窗 -->
+    <!-- 流程进度弹窗：优先渲染引擎节点链（任务态），未接入引擎回退事件流 -->
     <a-modal v-model:visible="flowVisible" :title="$t('attendance.flow')" :width="520" footer-only>
-      <a-steps v-if="flowNodes.length" direction="vertical" :current="currentStep">
+      <a-steps v-if="flowTasks.length" direction="vertical" :current="taskCurrent">
+        <a-step
+          v-for="task in flowTasks"
+          :key="task.id"
+          :status="taskStepStatus(task.status)"
+          :title="task.nodeName"
+          :description="taskStepDesc(task)"
+        />
+      </a-steps>
+      <a-steps v-else-if="flowNodes.length" direction="vertical" :current="currentStep">
         <a-step
           v-for="node in flowNodes"
           :key="node.id"
@@ -152,8 +161,8 @@ import { Message } from '@arco-design/web-vue'
 import {
   getMyOvertimesApi, submitOvertimeApi, revokeOvertimeApi,
   getMyTravelsApi, submitTravelApi, revokeTravelApi,
-  getFlowLogsApi,
-  type OvertimeRequest, type TravelRequest, type FlowLog,
+  getFlowLogsApi, getFlowTasksApi,
+  type OvertimeRequest, type TravelRequest, type FlowLog, type FlowTask,
 } from '@/api/enterprise'
 import { useUserStore } from '@/stores/user'
 
@@ -289,12 +298,35 @@ async function handleRevokeTravel(item: TravelRequest) {
 // ============ 流程进度 ============
 const flowVisible = ref(false)
 const flowNodes = ref<FlowLog[]>([])
+const flowTasks = ref<FlowTask[]>([])
 const currentStep = ref(0)
+const taskCurrent = ref(0)
+
+/** 节点任务态 → 步骤状态：待审批=process，通过=finish，驳回=error，取消=wait */
+function taskStepStatus(status: string | undefined): 'process' | 'finish' | 'error' | 'wait' {
+  if (status === '1') return 'finish'
+  if (status === '2') return 'error'
+  if (status === '0') return 'process'
+  return 'wait'
+}
+
+/** 节点任务描述：审批人 · 时间 · 意见（未审批节点展示待审批） */
+function taskStepDesc(task: FlowTask): string {
+  const who = task.status === '0' ? '待审批' : (task.approverName || '-')
+  const when = task.approveTime || task.createTime || ''
+  return `${who} · ${when}${task.approveRemark ? ' · ' + task.approveRemark : ''}`
+}
 
 async function openFlow(bizType: string, bizId: string) {
   try {
-    const res = await getFlowLogsApi(bizType, bizId)
-    flowNodes.value = res.data || []
+    const [taskRes, logRes] = await Promise.all([
+      getFlowTasksApi(bizType, bizId),
+      getFlowLogsApi(bizType, bizId),
+    ])
+    flowTasks.value = taskRes.data || []
+    flowNodes.value = logRes.data || []
+    const pendingIdx = flowTasks.value.findIndex((task) => task.status === '0')
+    taskCurrent.value = pendingIdx >= 0 ? pendingIdx : Math.max(0, flowTasks.value.length - 1)
     currentStep.value = Math.max(0, flowNodes.value.length - 1)
     flowVisible.value = true
   } catch (err) {

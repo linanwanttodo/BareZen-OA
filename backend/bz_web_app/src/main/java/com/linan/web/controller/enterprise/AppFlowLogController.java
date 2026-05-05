@@ -10,6 +10,8 @@ import com.linan.hr.service.IAttTravelRequestService;
 import com.linan.office.entity.OfficeSupplyRequest;
 import com.linan.office.service.IOfficeSupplyRequestService;
 import com.linan.system.entity.ApprovalFlowLog;
+import com.linan.system.entity.ApprovalFlowTask;
+import com.linan.system.service.ApprovalFlowEngineService;
 import com.linan.system.service.IApprovalFlowLogService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -43,6 +45,9 @@ public class AppFlowLogController {
     private final IAttTravelRequestService travelService;
 
     private final IOfficeSupplyRequestService supplyRequestService;
+
+    /** 多级审批引擎（V36） */
+    private final ApprovalFlowEngineService flowEngine;
 
     /**
      * 查询我的申请单流程节点
@@ -84,5 +89,41 @@ public class AppFlowLogController {
                 .eq(ApprovalFlowLog::getBizId, bizId)
                 .orderByAsc(ApprovalFlowLog::getCreateTime);
         return Result.success(flowLogService.list(wrapper));
+    }
+
+    /**
+     * 查询我的申请单审批节点链（V36 多级审批引擎）
+     * GET /api/app/v1/flow-tasks?bizType=overtime&bizId=1
+     *
+     * <p>归属校验同 flow-logs：仅允许查询本人提交的申请。</p>
+     */
+    @Operation(summary = "查询我的申请审批节点链")
+    @GetMapping("/flow-tasks")
+    public Result<List<ApprovalFlowTask>> tasks(
+            @RequestParam String bizType,
+            @RequestParam Long bizId) {
+
+        Long userId = AuthInterceptor.getCurrentUserId();
+        if (userId == null) {
+            return Result.error("请先登录");
+        }
+
+        // 归属校验：仅允许查询本人提交的申请
+        boolean owned = switch (bizType) {
+            case "overtime" -> {
+                AttOvertimeRequest r = overtimeService.getById(bizId);
+                yield r != null && userId.equals(r.getUserId());
+            }
+            case "travel" -> {
+                AttTravelRequest r = travelService.getById(bizId);
+                yield r != null && userId.equals(r.getUserId());
+            }
+            default -> false;
+        };
+        if (!owned) {
+            return Result.error("无权查看该申请");
+        }
+
+        return Result.success(flowEngine.listTasks(bizType, bizId));
     }
 }

@@ -17,6 +17,8 @@ import com.linan.office.entity.OfficeSupplyRequest;
 import com.linan.office.entity.OfficeVehicleRequest;
 import com.linan.office.service.IOfficeSupplyRequestService;
 import com.linan.office.service.IOfficeVehicleRequestService;
+import com.linan.system.entity.ApprovalFlowTask;
+import com.linan.system.service.IApprovalFlowTaskService;
 import org.apache.ibatis.builder.MapperBuilderAssistant;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -62,6 +64,9 @@ class TodoCenterControllerTest {
     @Mock
     private IOfficeSupplyRequestService supplyRequestService;
 
+    @Mock
+    private IApprovalFlowTaskService taskService;
+
     private TodoCenterController controller;
 
     /**
@@ -79,11 +84,13 @@ class TodoCenterControllerTest {
                 new MapperBuilderAssistant(new MybatisConfiguration(), ""), OfficeVehicleRequest.class);
         TableInfoHelper.initTableInfo(
                 new MapperBuilderAssistant(new MybatisConfiguration(), ""), OfficeSupplyRequest.class);
+        TableInfoHelper.initTableInfo(
+                new MapperBuilderAssistant(new MybatisConfiguration(), ""), ApprovalFlowTask.class);
     }
 
     @BeforeEach
     void setUp() {
-        controller = new TodoCenterController(leaveService, overtimeService, travelService, vehicleService, supplyRequestService);
+        controller = new TodoCenterController(leaveService, overtimeService, travelService, vehicleService, supplyRequestService, taskService);
     }
 
     @Test
@@ -121,26 +128,15 @@ class TodoCenterControllerTest {
     void list_validParams_queriesLimited() {
         // lambdaQuery() 是 IService 默认方法，Mockito 会拦截返回 null，
         // 因此用真实 LambdaQueryChainWrapper（底层挂 mock BaseMapper）替换
-        BaseMapper<AttLeaveRequest> leaveMapper = mock(BaseMapper.class);
-        BaseMapper<AttOvertimeRequest> overtimeMapper = mock(BaseMapper.class);
-        BaseMapper<AttTravelRequest> travelMapper = mock(BaseMapper.class);
-        BaseMapper<OfficeVehicleRequest> vehicleMapper = mock(BaseMapper.class);
         BaseMapper<OfficeSupplyRequest> supplyMapper = mock(BaseMapper.class);
-        when(leaveMapper.selectList(any())).thenReturn(List.of());
-        when(overtimeMapper.selectList(any())).thenReturn(List.of());
-        when(travelMapper.selectList(any())).thenReturn(List.of());
-        when(vehicleMapper.selectList(any())).thenReturn(List.of());
+        BaseMapper<ApprovalFlowTask> taskMapper = mock(BaseMapper.class);
         when(supplyMapper.selectList(any())).thenReturn(List.of());
-        when(leaveService.lambdaQuery())
-                .thenReturn(new LambdaQueryChainWrapper<>(leaveMapper));
-        when(overtimeService.lambdaQuery())
-                .thenReturn(new LambdaQueryChainWrapper<>(overtimeMapper));
-        when(travelService.lambdaQuery())
-                .thenReturn(new LambdaQueryChainWrapper<>(travelMapper));
-        when(vehicleService.lambdaQuery())
-                .thenReturn(new LambdaQueryChainWrapper<>(vehicleMapper));
+        // 引擎当前待审节点聚合（V36）：空任务列表，不触达四个业务表查询
+        when(taskMapper.selectList(any())).thenReturn(List.of());
         when(supplyRequestService.lambdaQuery())
                 .thenReturn(new LambdaQueryChainWrapper<>(supplyMapper));
+        when(taskService.lambdaQuery())
+                .thenReturn(new LambdaQueryChainWrapper<>(taskMapper));
 
         Result<PageResult<TodoCenterController.TodoItem>> result = controller.list(1, 10);
 
@@ -148,11 +144,8 @@ class TodoCenterControllerTest {
         assertNotNull(result.getData());
         assertEquals(0, result.getData().getTotal());
 
-        // 五个待办查询都必须携带 LIMIT 1000
-        assertCapturedHasLimit(leaveMapper);
-        assertCapturedHasLimit(overtimeMapper);
-        assertCapturedHasLimit(travelMapper);
-        assertCapturedHasLimit(vehicleMapper);
+        // 待审节点为空时业务表查询不触发：仅引擎任务查询与用品聚合须携带 LIMIT 1000
+        assertCapturedHasLimit(taskMapper);
         assertCapturedHasLimit(supplyMapper);
     }
 

@@ -12,6 +12,8 @@ import com.linan.core.security.RequirePermission;
 import com.linan.core.security.interceptor.AuthInterceptor;
 import com.linan.hr.entity.AttOvertimeRequest;
 import com.linan.hr.service.IAttOvertimeRequestService;
+import com.linan.system.entity.ApprovalFlowTask;
+import com.linan.system.service.ApprovalFlowEngineService;
 import com.linan.system.service.IApprovalFlowLogService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -45,6 +47,9 @@ public class AttOvertimeRequestController {
     private final ApplicationEventPublisher eventPublisher;
 
     private final IApprovalFlowLogService flowLogService;
+
+    /** 多级审批引擎（V36：模板驱动节点链） */
+    private final ApprovalFlowEngineService flowEngine;
 
     /**
      * 分页查询加班记录
@@ -99,6 +104,8 @@ public class AttOvertimeRequestController {
         request.setStatus("0");
         boolean ok = overtimeService.save(request);
         if (ok) {
+            // 多级审批引擎：按模板生成首节点任务（无模板时仅记录流程，保持原逻辑）
+            flowEngine.start("overtime", request.getId(), request.getAssigneeId(), request.getAssigneeName());
             flowLogService.record("overtime", request.getId(), "提交申请", "0",
                     request.getUserId(), request.getUserName(), null);
         }
@@ -131,37 +138,52 @@ public class AttOvertimeRequestController {
                 && (approverId == null || !approverId.equals(request.getAssigneeId()))) {
             return Result.error("该申请已指定审批人（" + request.getAssigneeName() + "），仅其可审批");
         }
-        String targetStatus;
-        if ("pass".equals(action)) {
-            targetStatus = "1";
-        } else if ("reject".equals(action)) {
-            targetStatus = "2";
+
+        String approverName = AuthInterceptor.getCurrentUsername();
+
+        // 多级审批引擎（V36）：推进当前节点（含节点级指定审批人校验与并发原子更新，
+        // 无效动作/无待审节点/重复审批抛 BusinessException 统一处理）
+        ApprovalFlowEngineService.ApprovalResult result = flowEngine.approve(
+                "overtime", id, approverId, approverName, action, remark);
+
+        if (result.isFinished()) {
+            // 终态：驳回或末节点通过，原子更新业务表（并发兜底：后到者受影响行数为 0）
+            String targetStatus = result.isApproved() ? "1" : "2";
+            boolean ok = overtimeService.update(new LambdaUpdateWrapper<AttOvertimeRequest>()
+                    .eq(AttOvertimeRequest::getId, id)
+                    .eq(AttOvertimeRequest::getStatus, "0")
+                    .set(AttOvertimeRequest::getStatus, targetStatus)
+                    .set(AttOvertimeRequest::getApproverId, approverId)
+                    .set(AttOvertimeRequest::getApproverName, approverName)
+                    .set(AttOvertimeRequest::getApproveTime, LocalDateTime.now().format(FMT))
+                    .set(AttOvertimeRequest::getApproveRemark, remark));
+            if (!ok) {
+                return Result.error("该记录已审批，不能重复操作");
+            }
+
+            // 记录流程节点：审批通过/驳回
+            String node = result.isApproved() ? "审批通过" : "审批驳回";
+            flowLogService.record("overtime", id, node, targetStatus,
+                    approverId, approverName, remark);
+            // 审批结果通知申请人（通过/驳回均推送）
+            String res = result.isApproved() ? "已通过" : "已驳回";
+            eventPublisher.publishEvent(new ApprovalCompletedEvent(
+                    request.getUserId(),
+                    "加班审批" + res,
+                    "您的加班申请（" + request.getStartTime() + " ~ " + request.getEndTime() + "）" + res
+                            + (remark != null && !remark.isEmpty() ? "，审批意见：" + remark : "")));
         } else {
-            return Result.error("无效的审批动作");
+            // 中间节点通过：业务表保持待审批，若下一节点指定了审批人则通知其办理
+            for (ApprovalFlowTask task : flowEngine.currentTasks("overtime", id)) {
+                if (task.getApproverId() != null) {
+                    eventPublisher.publishEvent(new ApprovalCompletedEvent(
+                            task.getApproverId(),
+                            "新的待审批申请",
+                            "有新的加班申请（" + request.getStartTime() + " ~ " + request.getEndTime()
+                                    + "）待您审批"));
+                }
+            }
         }
-
-        // 原子条件更新：仅当仍为待审批（status='0'）时生效，并发重复审批后到者受影响行数为 0
-        boolean ok = overtimeService.update(new LambdaUpdateWrapper<AttOvertimeRequest>()
-                .eq(AttOvertimeRequest::getId, id)
-                .eq(AttOvertimeRequest::getStatus, "0")
-                .set(AttOvertimeRequest::getStatus, targetStatus)
-                .set(AttOvertimeRequest::getApproverId, approverId)
-                .set(AttOvertimeRequest::getApproverName, AuthInterceptor.getCurrentUsername())
-                .set(AttOvertimeRequest::getApproveTime, LocalDateTime.now().format(FMT))
-                .set(AttOvertimeRequest::getApproveRemark, remark));
-        if (!ok) {
-            return Result.error("该记录已审批，不能重复操作");
-        }
-
-        String node = "pass".equals(action) ? "审批通过" : "审批驳回";
-        flowLogService.record("overtime", id, node, targetStatus,
-                approverId, AuthInterceptor.getCurrentUsername(), remark);
-        String result = "pass".equals(action) ? "已通过" : "已驳回";
-        eventPublisher.publishEvent(new ApprovalCompletedEvent(
-                request.getUserId(),
-                "加班审批" + result,
-                "您的加班申请（" + request.getStartTime() + " ~ " + request.getEndTime() + "）" + result
-                        + (remark != null && !remark.isEmpty() ? "，审批意见：" + remark : "")));
         return Result.success(null);
     }
 
@@ -190,6 +212,8 @@ public class AttOvertimeRequestController {
         if (!ok) {
             return Result.error("仅待审批状态的申请可撤销");
         }
+        // 引擎：待审节点置取消（与业务表状态联动）
+        flowEngine.revoke("overtime", id);
         flowLogService.record("overtime", id, "撤销申请", "3",
                 userId, AuthInterceptor.getCurrentUsername(), null);
         return Result.success(null);

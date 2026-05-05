@@ -62,6 +62,7 @@ export default {
     close: 'Close',
     detail: 'Details',
     download: 'Download',
+    waitingApproval: 'Pending Approval',
     upload: 'Upload',
     all: 'All',
     viewAll: 'View All',
