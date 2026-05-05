@@ -6,6 +6,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.linan.core.common.annotation.OperLog;
+import com.linan.core.common.api.Result;
+import com.linan.core.common.api.ResultCodeEnum;
 import com.linan.core.common.util.IpUtil;
 import com.linan.core.security.interceptor.AuthInterceptor;
 import com.linan.system.entity.SysOperLog;
@@ -97,9 +99,19 @@ public class OperLogAspect {
         Object result = null;
         try {
             result = joinPoint.proceed();
-            logEntity.setStatus(0);
             // 记录响应结果（截断避免日志过大）
-            logEntity.setJsonResult(truncate(toJsonString(result), 2000));
+            String jsonResult = truncate(toJsonString(result), 2000);
+            if (result instanceof Result<?> r
+                    && r.getCode() != ResultCodeEnum.SUCCESS.getCode()) {
+                // 业务失败（Result.error）：方法调用正常结束但业务被拒绝，
+                // 必须记为 status=1 并保留错误信息与响应结果，确保拒绝路径留痕
+                logEntity.setStatus(1);
+                logEntity.setErrorMsg(truncate(r.getMsg(), 2000));
+                logEntity.setJsonResult(jsonResult);
+            } else {
+                logEntity.setStatus(0);
+                logEntity.setJsonResult(jsonResult);
+            }
         } catch (Exception e) {
             logEntity.setStatus(1);
             logEntity.setErrorMsg(truncate(e.getMessage(), 2000));
