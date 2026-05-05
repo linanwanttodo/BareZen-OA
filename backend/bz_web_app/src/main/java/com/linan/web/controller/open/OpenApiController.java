@@ -1,6 +1,7 @@
 package com.linan.web.controller.open;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.linan.core.common.annotation.RateLimit;
 import com.linan.core.common.api.Result;
 import com.linan.core.security.OpenScope;
 import com.linan.hr.entity.AttLeaveRequest;
@@ -13,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import java.time.LocalDateTime;
@@ -64,17 +66,23 @@ public class OpenApiController {
 
     /**
      * 查询指定用户待审批的请假单（供外部系统聚合待办）
+     *
+     * <p>userId 必填：仅允许按用户维度拉取本人待办，杜绝不传参数拉全量数据；
+     * 接口限流防外部系统异常调用打爆数据库；响应不携带请假事由等敏感字段。</p>
      */
     @OpenScope("open:approval:read")
+    @RateLimit(key = "open:approval:leave", limit = 30, window = 60)
     @Operation(summary = "查询用户待审批请假单")
     @GetMapping("/approvals/leave/pending")
     public Result<List<Map<String, Object>>> pendingLeaves(
-            @RequestParam(required = false) Long userId,
+            @Parameter(description = "用户ID", required = true)
+            @RequestParam(required = true) Long userId,
+            @Parameter(description = "返回条数上限，默认 20，最大 100")
             @RequestParam(defaultValue = "20") Integer limit) {
 
         List<AttLeaveRequest> list = leaveService.list(new LambdaQueryWrapper<AttLeaveRequest>()
                 .eq(AttLeaveRequest::getStatus, "0")
-                .eq(userId != null, AttLeaveRequest::getUserId, userId)
+                .eq(AttLeaveRequest::getUserId, userId)
                 .orderByAsc(AttLeaveRequest::getCreateTime)
                 .last("LIMIT " + Math.min(Math.max(limit, 1), 100)));
 
@@ -86,7 +94,6 @@ public class OpenApiController {
             m.put("startTime", r.getStartTime());
             m.put("endTime", r.getEndTime());
             m.put("leaveDays", r.getLeaveDays());
-            m.put("reason", r.getReason());
             m.put("createTime", r.getCreateTime() != null ? r.getCreateTime().format(FMT) : null);
             return m;
         }).collect(Collectors.toList());
