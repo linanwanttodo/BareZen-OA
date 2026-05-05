@@ -4,8 +4,10 @@ import com.baomidou.mybatisplus.core.MybatisConfiguration;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
 import com.linan.core.security.interceptor.AuthInterceptor;
+import com.linan.hr.entity.AttLeaveRequest;
 import com.linan.hr.entity.AttOvertimeRequest;
 import com.linan.hr.entity.AttTravelRequest;
+import com.linan.hr.service.IAttLeaveRequestService;
 import com.linan.hr.service.IAttOvertimeRequestService;
 import com.linan.hr.service.IAttTravelRequestService;
 import com.linan.hr.service.IHrWorkLogService;
@@ -30,6 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -51,6 +54,9 @@ class AppAttendanceControllerTest {
     private IAttTravelRequestService travelService;
 
     @Mock
+    private IAttLeaveRequestService leaveService;
+
+    @Mock
     private IHrWorkLogService workLogService;
 
     @Mock
@@ -70,11 +76,14 @@ class AppAttendanceControllerTest {
                 new MapperBuilderAssistant(new MybatisConfiguration(), ""), AttOvertimeRequest.class);
         TableInfoHelper.initTableInfo(
                 new MapperBuilderAssistant(new MybatisConfiguration(), ""), AttTravelRequest.class);
+        TableInfoHelper.initTableInfo(
+                new MapperBuilderAssistant(new MybatisConfiguration(), ""), AttLeaveRequest.class);
     }
 
     @BeforeEach
     void setUp() {
-        controller = new AppAttendanceController(overtimeService, travelService, workLogService, flowLogService, flowEngine);
+        controller = new AppAttendanceController(overtimeService, travelService, leaveService,
+                workLogService, flowLogService, flowEngine);
     }
 
     @AfterEach
@@ -251,5 +260,102 @@ class AppAttendanceControllerTest {
         ArgumentCaptor<String> operatorName = ArgumentCaptor.forClass(String.class);
         verify(flowLogService).record(any(), any(), any(), any(), any(), operatorName.capture(), any());
         assertEquals("travelUser", operatorName.getValue());
+    }
+
+    // ==================== 请假申请 ====================
+
+    @Test
+    @DisplayName("提交请假申请：伪造身份字段被服务端强制覆盖并走审批引擎")
+    void submitLeave_forgedIdentity_overridden() throws Exception {
+        setThreadLocal("currentUserIdHolder", 9L);
+        setThreadLocal("currentUsernameHolder", "leaveUser");
+        AttLeaveRequest request = new AttLeaveRequest();
+        request.setLeaveType("annual");
+        request.setStartTime("2026-08-12 09:00");
+        request.setEndTime("2026-08-12 18:00");
+        request.setUserId(999L);
+        request.setUserName("伪造者");
+        request.setStatus("2");
+        when(leaveService.save(any(AttLeaveRequest.class))).thenReturn(true);
+
+        var result = controller.submitLeave(request);
+
+        assertEquals(200, result.getCode());
+        assertEquals(9L, request.getUserId(), "userId 必须为服务端当前登录用户");
+        assertEquals("leaveUser", request.getUserName(), "userName 必须为服务端真实用户名");
+        assertEquals("0", request.getStatus(), "status 必须强制为待审批");
+        // 提交后按模板生成首节点任务
+        verify(flowEngine).start(eq("leave"), any(), any(), any());
+        // flowLog 记录使用的 userName 是覆盖后的真实值
+        ArgumentCaptor<String> operatorName = ArgumentCaptor.forClass(String.class);
+        verify(flowLogService).record(eq("leave"), any(), eq("提交申请"), eq("0"),
+                any(), operatorName.capture(), any());
+        assertEquals("leaveUser", operatorName.getValue());
+    }
+
+    @Test
+    @DisplayName("提交请假申请：缺少请假类型被拒绝")
+    void submitLeave_missingLeaveType_rejected() throws Exception {
+        setCurrentUser(9L);
+        AttLeaveRequest request = new AttLeaveRequest();
+        request.setStartTime("2026-08-12 09:00");
+        request.setEndTime("2026-08-12 18:00");
+
+        var result = controller.submitLeave(request);
+
+        assertEquals(500, result.getCode());
+        assertTrue(result.getMsg().contains("请假类型"));
+        verify(leaveService, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("撤销请假申请：原子条件更新 + 引擎节点取消 + 流程留痕")
+    void revokeLeave_success_conditionalUpdateAndFlowLog() throws Exception {
+        setCurrentUser(1L);
+        AttLeaveRequest request = new AttLeaveRequest();
+        request.setId(1L);
+        request.setUserId(1L);
+        request.setUserName("张三");
+        request.setStatus("0");
+        when(leaveService.getById(1L)).thenReturn(request);
+        when(leaveService.update(any(LambdaUpdateWrapper.class))).thenReturn(true);
+
+        var result = controller.revokeLeave(1L);
+
+        assertEquals(200, result.getCode());
+        verify(leaveService).update(any(LambdaUpdateWrapper.class));
+        verify(leaveService, never()).updateById(any(AttLeaveRequest.class));
+        // 引擎节点置取消
+        verify(flowEngine).revoke(eq("leave"), eq(1L));
+        // 撤销结果状态 3
+        ArgumentCaptor<String> bizType = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> status = ArgumentCaptor.forClass(String.class);
+        verify(flowLogService).record(bizType.capture(), any(), any(), status.capture(), any(), any(), any());
+        assertEquals("leave", bizType.getValue());
+        assertEquals("3", status.getValue());
+    }
+
+    @Test
+    @DisplayName("撤销请假申请：状态已变更时返回业务错误且写失败留痕（含实际状态）")
+    void revokeLeave_conditionalUpdateFailed_flowLogWithActualStatus() throws Exception {
+        setCurrentUser(1L);
+        AttLeaveRequest request = new AttLeaveRequest();
+        request.setId(1L);
+        request.setUserId(1L);
+        request.setUserName("张三");
+        request.setStatus("1"); // 模拟并发审批已把状态改走
+        when(leaveService.getById(1L)).thenReturn(request);
+        when(leaveService.update(any(LambdaUpdateWrapper.class))).thenReturn(false);
+
+        var result = controller.revokeLeave(1L);
+
+        assertEquals(500, result.getCode());
+        assertTrue(result.getMsg().contains("仅待审批"));
+        // 失败路径必须留痕：节点=撤销失败，状态=单据当前实际状态
+        ArgumentCaptor<String> node = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> status = ArgumentCaptor.forClass(String.class);
+        verify(flowLogService).record(eq("leave"), any(), node.capture(), status.capture(), any(), any(), any());
+        assertEquals("撤销失败", node.getValue());
+        assertEquals("1", status.getValue());
     }
 }

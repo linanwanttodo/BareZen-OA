@@ -1,8 +1,8 @@
 import request from './request'
-import type { ApiResult, DashboardData, Notice, Contact, TodoItem, CreateTodoDTO, UpdateTodoDTO, PageData, OvertimeRequest, TravelRequest, WorkLog, Schedule, Supply, SupplyRequest, FlowLog, FlowTask } from '@/types/api'
+import type { ApiResult, DashboardData, Notice, Contact, TodoItem, CreateTodoDTO, UpdateTodoDTO, PageData, OvertimeRequest, TravelRequest, LeaveRequest, WorkLog, Schedule, Supply, SupplyRequest, FlowLog, FlowTask } from '@/types/api'
 
 // 页面组件从 @/api/enterprise 导入业务实体类型，此处 re-export 保持入口统一
-export type { OvertimeRequest, TravelRequest, WorkLog, Schedule, Supply, SupplyRequest, FlowLog, FlowTask } from '@/types/api'
+export type { OvertimeRequest, TravelRequest, LeaveRequest, WorkLog, Schedule, Supply, SupplyRequest, FlowLog, FlowTask } from '@/types/api'
 
 // ==================== 工作台 ====================
 
@@ -74,6 +74,23 @@ export function submitOvertimeApi(data: Partial<OvertimeRequest>) {
 /** 撤销加班申请 */
 export function revokeOvertimeApi(id: string) {
   return request.put<any, ApiResult<void>>(`/app/v1/overtimes/${encodeURIComponent(id)}/revoke`)
+}
+
+// ==================== 请假申请 ====================
+
+/** 我的请假申请列表 */
+export function getMyLeavesApi(params: { page?: number; pageSize?: number; status?: string }) {
+  return request.get<any, ApiResult<PageData<LeaveRequest>>>('/app/v1/leaves', { params })
+}
+
+/** 提交请假申请 */
+export function submitLeaveApi(data: Partial<LeaveRequest>) {
+  return request.post<any, ApiResult<void>>('/app/v1/leaves', data)
+}
+
+/** 撤销请假申请 */
+export function revokeLeaveApi(id: string) {
+  return request.put<any, ApiResult<void>>(`/app/v1/leaves/${encodeURIComponent(id)}/revoke`)
 }
 
 // ==================== 出差申请 ====================

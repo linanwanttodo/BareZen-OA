@@ -9,9 +9,72 @@
 
     <!-- Tab 切换 -->
     <a-tabs v-model:active-key="activeTab" class="mb-6" @change="onTabChange">
+      <a-tab-pane key="leave" :title="$t('attendance.leave')" />
       <a-tab-pane key="overtime" :title="$t('attendance.overtime')" />
       <a-tab-pane key="travel" :title="$t('attendance.travel')" />
     </a-tabs>
+
+    <div v-if="activeTab === 'leave'">
+      <!-- 请假申请表单 -->
+      <a-card class="mb-6" :title="$t('attendance.applyLeave')">
+        <a-form :model="leaveForm" layout="vertical">
+          <a-row :gutter="16">
+            <a-col :span="8">
+              <a-form-item :label="$t('attendance.leaveType')" required>
+                <a-select v-model="leaveForm.leaveType" :placeholder="$t('common.selectPlaceholder')">
+                  <a-option value="annual">{{ $t('attendance.leaveTypeAnnual') }}</a-option>
+                  <a-option value="sick">{{ $t('attendance.leaveTypeSick') }}</a-option>
+                  <a-option value="personal">{{ $t('attendance.leaveTypePersonal') }}</a-option>
+                  <a-option value="overtime">{{ $t('attendance.leaveTypeOvertime') }}</a-option>
+                  <a-option value="marriage">{{ $t('attendance.leaveTypeMarriage') }}</a-option>
+                  <a-option value="maternity">{{ $t('attendance.leaveTypeMaternity') }}</a-option>
+                  <a-option value="other">{{ $t('attendance.leaveTypeOther') }}</a-option>
+                </a-select>
+              </a-form-item>
+            </a-col>
+            <a-col :span="16">
+              <a-form-item :label="$t('attendance.timeRange')" required>
+                <a-date-picker v-model="leaveForm.startTime" show-time style="width: 100%; max-width: " :placeholder="$t('attendance.startTime')" />
+                <span class="mx-2">~</span>
+                <a-date-picker v-model="leaveForm.endTime" show-time style="width: 100%; max-width: " :placeholder="$t('attendance.endTime')" />
+              </a-form-item>
+            </a-col>
+          </a-row>
+          <a-form-item :label="$t('attendance.reason')" required>
+            <a-textarea v-model="leaveForm.reason" :placeholder="$t('common.inputPlaceholder')" :max-length="500" show-word-limit />
+          </a-form-item>
+          <a-button type="primary" :loading="submitting" @click="handleSubmitLeave">
+            {{ $t('attendance.submit') }}
+          </a-button>
+        </a-form>
+      </a-card>
+
+      <!-- 我的请假申请列表 -->
+      <a-card :title="$t('attendance.myLeaves')">
+        <a-spin :loading="leaveLoading">
+          <div v-if="leaves.length" class="space-y-3">
+            <div v-for="item in leaves" :key="item.id" class="flex items-start gap-4 rounded-lg border border-[var(--border)] bg-[var(--card)] p-5">
+              <div class="min-w-0 flex-1">
+                <div class="mb-1 flex items-center gap-2">
+                  <a-tag :color="statusColor(item.status)">{{ statusText(item.status) }}</a-tag>
+                  <span class="font-medium text-[var(--foreground)]">{{ leaveTypeText(item.leaveType) }}</span>
+                  <span class="text-sm text-[var(--muted-foreground)]">{{ item.startTime }} ~ {{ item.endTime }}</span>
+                </div>
+                <p class="text-sm text-[var(--foreground)]">{{ item.reason || '-' }}</p>
+                <p v-if="item.approveRemark" class="mt-1 text-xs text-[var(--muted-foreground)]">
+                  {{ $t('attendance.approveRemark') }}：{{ item.approveRemark }}
+                </p>
+              </div>
+              <a-button v-if="item.status === '0'" size="small" status="danger" @click="handleRevokeLeave(item)">
+                {{ $t('attendance.revoke') }}
+              </a-button>
+              <a-button size="small" @click="openFlow('leave', item.id)">{{ $t('attendance.flow') }}</a-button>
+            </div>
+          </div>
+          <a-empty v-else :description="$t('attendance.noData')" />
+        </a-spin>
+      </a-card>
+    </div>
 
     <div v-if="activeTab === 'overtime'">
       <!-- 加班申请表单 -->
@@ -72,7 +135,7 @@
       </a-card>
     </div>
 
-    <div v-else>
+    <div v-else-if="activeTab === 'travel'">
       <!-- 出差申请表单 -->
       <a-card class="mb-6" :title="$t('attendance.applyTravel')">
         <a-form :model="travelForm" layout="vertical">
@@ -159,21 +222,27 @@
 import { ref, reactive, onMounted } from 'vue'
 import { Message } from '@arco-design/web-vue'
 import {
+  getMyLeavesApi, submitLeaveApi, revokeLeaveApi,
   getMyOvertimesApi, submitOvertimeApi, revokeOvertimeApi,
   getMyTravelsApi, submitTravelApi, revokeTravelApi,
   getFlowLogsApi, getFlowTasksApi,
-  type OvertimeRequest, type TravelRequest, type FlowLog, type FlowTask,
+  type LeaveRequest, type OvertimeRequest, type TravelRequest, type FlowLog, type FlowTask,
 } from '@/api/enterprise'
 import { useUserStore } from '@/stores/user'
 
 const userStore = useUserStore()
-const activeTab = ref('overtime')
+const activeTab = ref('leave')
 const submitting = ref(false)
+const leaveLoading = ref(false)
 const overtimeLoading = ref(false)
 const travelLoading = ref(false)
+const leaves = ref<LeaveRequest[]>([])
 const overtimes = ref<OvertimeRequest[]>([])
 const travels = ref<TravelRequest[]>([])
 
+const leaveForm = reactive<Partial<LeaveRequest>>({
+  userName: userStore.userInfo?.nickName || '',
+})
 const overtimeForm = reactive<Partial<OvertimeRequest>>({
   userName: userStore.userInfo?.nickName || '',
   durationHours: 1,
@@ -182,6 +251,14 @@ const travelForm = reactive<Partial<TravelRequest>>({
   userName: userStore.userInfo?.nickName || '',
   days: 1,
 })
+
+const LEAVE_TYPE_TEXT: Record<string, string> = {
+  annual: '年假', sick: '病假', personal: '事假', overtime: '调休',
+  marriage: '婚假', maternity: '产假', other: '其他',
+}
+function leaveTypeText(type: string | undefined): string {
+  return type != null ? LEAVE_TYPE_TEXT[type] || type : '-'
+}
 
 function statusText(status: string | undefined): string {
   const map: Record<string, string> = { 0: '待审批', 1: '已通过', 2: '已驳回', 3: '已撤销' }
@@ -192,6 +269,16 @@ function statusColor(status: string | undefined): string {
   if (status === '1') return 'green'
   if (status === '2') return 'red'
   return 'default'
+}
+
+async function loadLeaves() {
+  leaveLoading.value = true
+  try {
+    const res = await getMyLeavesApi({ page: 1, pageSize: 20 })
+    leaves.value = res.data.list || []
+  } finally {
+    leaveLoading.value = false
+  }
 }
 
 async function loadOvertimes() {
@@ -215,8 +302,42 @@ async function loadTravels() {
 }
 
 function onTabChange(key: string | number) {
-  if (key === 'overtime') loadOvertimes()
+  if (key === 'leave') loadLeaves()
+  else if (key === 'overtime') loadOvertimes()
   else loadTravels()
+}
+
+async function handleSubmitLeave() {
+  if (!leaveForm.leaveType) {
+    Message.warning('请选择请假类型')
+    return
+  }
+  if (!leaveForm.startTime || !leaveForm.endTime) {
+    Message.warning('请选择请假时间')
+    return
+  }
+  if (!leaveForm.reason) {
+    Message.warning('请填写请假事由')
+    return
+  }
+  submitting.value = true
+  try {
+    await submitLeaveApi({
+      userName: leaveForm.userName,
+      leaveType: leaveForm.leaveType,
+      startTime: leaveForm.startTime,
+      endTime: leaveForm.endTime,
+      reason: leaveForm.reason,
+    })
+    Message.success('提交成功，等待审批')
+    leaveForm.leaveType = ''
+    leaveForm.startTime = ''
+    leaveForm.endTime = ''
+    leaveForm.reason = ''
+    loadLeaves()
+  } finally {
+    submitting.value = false
+  }
 }
 
 async function handleSubmitOvertime() {
@@ -283,6 +404,12 @@ async function handleSubmitTravel() {
   }
 }
 
+async function handleRevokeLeave(item: LeaveRequest) {
+  await revokeLeaveApi(item.id)
+  Message.success('已撤销')
+  loadLeaves()
+}
+
 async function handleRevokeOvertime(item: OvertimeRequest) {
   await revokeOvertimeApi(item.id)
   Message.success('已撤销')
@@ -334,5 +461,5 @@ async function openFlow(bizType: string, bizId: string) {
   }
 }
 
-onMounted(loadOvertimes)
+onMounted(loadLeaves)
 </script>

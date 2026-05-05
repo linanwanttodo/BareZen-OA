@@ -169,6 +169,24 @@ export interface TravelRequest {
   createTime: string
 }
 
+/** 请假申请 */
+export interface LeaveRequest {
+  id: string
+  userId: string
+  userName: string
+  deptName: string
+  leaveType: string // annual=年假 sick=病假 personal=事假 overtime=调休 marriage=婚假 maternity=产假 other=其他
+  startTime: string
+  endTime: string
+  leaveDays: number // 后端 BigDecimal
+  reason: string
+  status: string
+  approverName: string
+  approveTime: string
+  approveRemark: string
+  createTime: string
+}
+
 /** 工作日志 */
 export interface WorkLog {
   id: string

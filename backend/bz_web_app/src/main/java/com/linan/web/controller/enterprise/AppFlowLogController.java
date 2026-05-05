@@ -3,8 +3,10 @@ package com.linan.web.controller.enterprise;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.linan.core.common.api.Result;
 import com.linan.core.security.interceptor.AuthInterceptor;
+import com.linan.hr.entity.AttLeaveRequest;
 import com.linan.hr.entity.AttOvertimeRequest;
 import com.linan.hr.entity.AttTravelRequest;
+import com.linan.hr.service.IAttLeaveRequestService;
 import com.linan.hr.service.IAttOvertimeRequestService;
 import com.linan.hr.service.IAttTravelRequestService;
 import com.linan.office.entity.OfficeSupplyRequest;
@@ -44,6 +46,8 @@ public class AppFlowLogController {
 
     private final IAttTravelRequestService travelService;
 
+    private final IAttLeaveRequestService leaveService;
+
     private final IOfficeSupplyRequestService supplyRequestService;
 
     /** 多级审批引擎（V36） */
@@ -72,6 +76,10 @@ public class AppFlowLogController {
             }
             case "travel" -> {
                 AttTravelRequest r = travelService.getById(bizId);
+                yield r != null && userId.equals(r.getUserId());
+            }
+            case "leave" -> {
+                AttLeaveRequest r = leaveService.getById(bizId);
                 yield r != null && userId.equals(r.getUserId());
             }
             case "supply" -> {
@@ -116,6 +124,10 @@ public class AppFlowLogController {
             }
             case "travel" -> {
                 AttTravelRequest r = travelService.getById(bizId);
+                yield r != null && userId.equals(r.getUserId());
+            }
+            case "leave" -> {
+                AttLeaveRequest r = leaveService.getById(bizId);
                 yield r != null && userId.equals(r.getUserId());
             }
             default -> false;
