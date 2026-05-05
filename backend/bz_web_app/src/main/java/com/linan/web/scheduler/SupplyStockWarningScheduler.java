@@ -1,18 +1,17 @@
 package com.linan.web.scheduler;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.linan.core.common.lock.SchedulerLockUtil;
 import com.linan.office.entity.OfficeSupply;
 import com.linan.office.service.IOfficeSupplyService;
 import com.linan.system.service.ISysConfigService;
 import com.linan.web.websocket.NotificationService;
 import lombok.extern.slf4j.Slf4j;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -46,42 +45,42 @@ public class SupplyStockWarningScheduler {
 
     private final NotificationService notificationService;
 
-    private final RedisTemplate<String, Object> redisTemplate;
+    private final SchedulerLockUtil lockUtil;
 
     /**
      * 每天 09:00 执行库存检查
      */
     @Scheduled(cron = "0 0 9 * * ?")
     public void checkLowStock() {
-        // 原子抢占（SET NX EX）：多实例部署时同一时刻只有一个实例执行本次扫描，
-        // 其余实例直接跳过，避免库存预警重复广播。
-        // 不做手动释放：锁带 30s TTL，任务秒级完成，无需处理「误删他人新锁」的复杂度
-        Boolean acquired = redisTemplate.opsForValue()
-                .setIfAbsent(WARN_LOCK_KEY, "1", LOCK_EXPIRE_SECONDS, TimeUnit.SECONDS);
-        if (!Boolean.TRUE.equals(acquired)) {
+        // SchedulerLockUtil 分布式锁（SET NX EX + Lua 原子释放）：多实例部署时同一时刻仅一个实例执行扫描
+        String token = lockUtil.tryLock(WARN_LOCK_KEY, LOCK_EXPIRE_SECONDS);
+        if (token == null) {
             log.debug("库存预警任务已被其他实例抢占，跳过本次执行");
             return;
         }
+        try {
+            int threshold = readThreshold();
+            LambdaQueryWrapper<OfficeSupply> wrapper = new LambdaQueryWrapper<OfficeSupply>()
+                    .eq(OfficeSupply::getStatus, "0")
+                    .le(OfficeSupply::getStock, threshold)
+                    .orderByAsc(OfficeSupply::getStock);
 
-        int threshold = readThreshold();
-        LambdaQueryWrapper<OfficeSupply> wrapper = new LambdaQueryWrapper<OfficeSupply>()
-                .eq(OfficeSupply::getStatus, "0")
-                .le(OfficeSupply::getStock, threshold)
-                .orderByAsc(OfficeSupply::getStock);
+            List<OfficeSupply> lowStock = supplyService.list(wrapper);
+            if (lowStock.isEmpty()) {
+                return;
+            }
 
-        List<OfficeSupply> lowStock = supplyService.list(wrapper);
-        if (lowStock.isEmpty()) {
-            return;
+            String detail = lowStock.stream()
+                    .map(s -> s.getSupplyName() + "（剩余 " + s.getStock() + " " + (s.getUnit() != null ? s.getUnit() : "个") + "）")
+                    .collect(Collectors.joining("、"));
+            String title = "库存预警：" + lowStock.size() + " 种用品库存不足";
+            String content = "以下用品库存低于阈值（" + threshold + "），请及时补货：" + detail;
+
+            notificationService.broadcast(title, content);
+            log.info("库存预警已广播：{}", content);
+        } finally {
+            lockUtil.release(WARN_LOCK_KEY, token);
         }
-
-        String detail = lowStock.stream()
-                .map(s -> s.getSupplyName() + "（剩余 " + s.getStock() + " " + (s.getUnit() != null ? s.getUnit() : "个") + "）")
-                .collect(Collectors.joining("、"));
-        String title = "库存预警：" + lowStock.size() + " 种用品库存不足";
-        String content = "以下用品库存低于阈值（" + threshold + "），请及时补货：" + detail;
-
-        notificationService.broadcast(title, content);
-        log.info("库存预警已广播：{}", content);
     }
 
     /**

@@ -45,13 +45,22 @@ public class NotificationService {
      * @param userId  用户ID
      * @param title   通知标题
      * @param content 通知内容
+     * @return 在线且已发出返回 true；用户离线或推送失败返回 false（不抛异常）
      */
-    public void notifyUser(Long userId, String title, String content) {
+    public boolean notifyUser(Long userId, String title, String content) {
         String message = buildMessage(title, content, "user");
-        boolean sent = handler.sendToUser(userId, message);
+        boolean sent;
+        try {
+            sent = handler.sendToUser(userId, message);
+        } catch (Exception e) {
+            // 推送异常不向上抛：由调用方决定是否重试
+            log.warn("向用户 {} 推送通知异常: {}", userId, e.getMessage());
+            return false;
+        }
         if (!sent) {
             log.debug("用户 {} 不在线，通知未送达: {}", userId, title);
         }
+        return sent;
     }
 
     /**

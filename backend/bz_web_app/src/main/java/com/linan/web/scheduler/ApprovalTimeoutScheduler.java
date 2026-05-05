@@ -11,18 +11,17 @@ import com.linan.office.entity.OfficeSupplyRequest;
 import com.linan.office.entity.OfficeVehicleRequest;
 import com.linan.office.service.IOfficeSupplyRequestService;
 import com.linan.office.service.IOfficeVehicleRequestService;
+import com.linan.core.common.lock.SchedulerLockUtil;
 import com.linan.system.service.ISysConfigService;
 import com.linan.web.websocket.NotificationService;
 import lombok.extern.slf4j.Slf4j;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import java.util.function.LongSupplier;
 
 /**
@@ -68,47 +67,49 @@ public class ApprovalTimeoutScheduler {
 
     private final NotificationService notificationService;
 
-    private final RedisTemplate<String, Object> redisTemplate;
+    private final SchedulerLockUtil lockUtil;
 
     /**
      * 每天 09:30 执行待办超时扫描
      */
     @Scheduled(cron = "0 30 9 * * ?")
     public void checkTimeoutApprovals() {
-        // 原子抢占（SET NX EX）：多实例部署时同一时刻只有一个实例执行本次扫描
-        Boolean acquired = redisTemplate.opsForValue()
-                .setIfAbsent(TIMEOUT_LOCK_KEY, "1", LOCK_EXPIRE_SECONDS, TimeUnit.SECONDS);
-        if (!Boolean.TRUE.equals(acquired)) {
+        // SchedulerLockUtil 分布式锁（SET NX EX + Lua 原子释放）：多实例部署时同一时刻仅一个实例执行扫描
+        String token = lockUtil.tryLock(TIMEOUT_LOCK_KEY, LOCK_EXPIRE_SECONDS);
+        if (token == null) {
             log.debug("审批超时提醒任务已被其他实例抢占，跳过本次执行");
             return;
         }
+        try {
+            int timeoutHours = readTimeoutHours();
+            LocalDateTime deadline = LocalDateTime.now().minusHours(timeoutHours);
 
-        int timeoutHours = readTimeoutHours();
-        LocalDateTime deadline = LocalDateTime.now().minusHours(timeoutHours);
+            // 各审批流待审批超时数量
+            List<String> items = new ArrayList<>();
+            addIfOverdue(items, "请假", leaveService.count(new LambdaQueryWrapper<AttLeaveRequest>()
+                    .eq(AttLeaveRequest::getStatus, "0").lt(AttLeaveRequest::getCreateTime, deadline)));
+            addIfOverdue(items, "加班", overtimeService.count(new LambdaQueryWrapper<AttOvertimeRequest>()
+                    .eq(AttOvertimeRequest::getStatus, "0").lt(AttOvertimeRequest::getCreateTime, deadline)));
+            addIfOverdue(items, "出差", travelService.count(new LambdaQueryWrapper<AttTravelRequest>()
+                    .eq(AttTravelRequest::getStatus, "0").lt(AttTravelRequest::getCreateTime, deadline)));
+            addIfOverdue(items, "用车", vehicleService.count(new LambdaQueryWrapper<OfficeVehicleRequest>()
+                    .eq(OfficeVehicleRequest::getStatus, "0").lt(OfficeVehicleRequest::getCreateTime, deadline)));
+            addIfOverdue(items, "用品申领", supplyRequestService.count(new LambdaQueryWrapper<OfficeSupplyRequest>()
+                    .eq(OfficeSupplyRequest::getStatus, "0").lt(OfficeSupplyRequest::getCreateTime, deadline)));
 
-        // 各审批流待审批超时数量
-        List<String> items = new ArrayList<>();
-        addIfOverdue(items, "请假", leaveService.count(new LambdaQueryWrapper<AttLeaveRequest>()
-                .eq(AttLeaveRequest::getStatus, "0").lt(AttLeaveRequest::getCreateTime, deadline)));
-        addIfOverdue(items, "加班", overtimeService.count(new LambdaQueryWrapper<AttOvertimeRequest>()
-                .eq(AttOvertimeRequest::getStatus, "0").lt(AttOvertimeRequest::getCreateTime, deadline)));
-        addIfOverdue(items, "出差", travelService.count(new LambdaQueryWrapper<AttTravelRequest>()
-                .eq(AttTravelRequest::getStatus, "0").lt(AttTravelRequest::getCreateTime, deadline)));
-        addIfOverdue(items, "用车", vehicleService.count(new LambdaQueryWrapper<OfficeVehicleRequest>()
-                .eq(OfficeVehicleRequest::getStatus, "0").lt(OfficeVehicleRequest::getCreateTime, deadline)));
-        addIfOverdue(items, "用品申领", supplyRequestService.count(new LambdaQueryWrapper<OfficeSupplyRequest>()
-                .eq(OfficeSupplyRequest::getStatus, "0").lt(OfficeSupplyRequest::getCreateTime, deadline)));
+            if (items.isEmpty()) {
+                return;
+            }
 
-        if (items.isEmpty()) {
-            return;
+            String detail = String.join("、", items);
+            String title = "审批超时提醒：" + items.size() + " 类待办积压超 " + timeoutHours + " 小时";
+            String content = "以下审批流程有待办超过 " + timeoutHours + " 小时未处理，请及时审批：" + detail;
+
+            notificationService.broadcast(title, content);
+            log.info("审批超时提醒已广播：{}", content);
+        } finally {
+            lockUtil.release(TIMEOUT_LOCK_KEY, token);
         }
-
-        String detail = String.join("、", items);
-        String title = "审批超时提醒：" + items.size() + " 类待办积压超 " + timeoutHours + " 小时";
-        String content = "以下审批流程有待办超过 " + timeoutHours + " 小时未处理，请及时审批：" + detail;
-
-        notificationService.broadcast(title, content);
-        log.info("审批超时提醒已广播：{}", content);
     }
 
     /**
