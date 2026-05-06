@@ -9,6 +9,7 @@ export interface SysNotice {
   status: string
   scope: string
   requireRead: string
+  sendEmail: string
   createTime: string
   updateTime: string
 }

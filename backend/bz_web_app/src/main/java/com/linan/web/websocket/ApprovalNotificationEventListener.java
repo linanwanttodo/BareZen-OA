@@ -15,12 +15,14 @@ import org.springframework.util.StringUtils;
  * 审批完成事件监听器
  *
  * <p>监听 {@link ApprovalCompletedEvent}（请假/加班/出差/用车/用品申领审批结果
- * 与新的待审批节点通知），按三条渠道分发：</p>
+ * 与新的待审批节点通知），按渠道分发：</p>
  * <ol>
  *   <li>WebSocket 在线推送（实时）</li>
  *   <li>站内信离线兜底：WS 推送失败（用户离线）时写入 {@code sys_message}，
  *       用户登录后通过消息中心查看</li>
- *   <li>邮件通知：SMTP 已配置（spring.mail.*）时异步发送到用户邮箱，未配置自动跳过</li>
+ *   <li>邮件通知：<strong>可选增强渠道</strong>，仅当事件 {@code mail=true}
+ *       （发布方显式选择，如工资发放、放假通知等需要邮箱留痕的场景）时发送；
+ *       普通审批通知默认不发送邮件</li>
  * </ol>
  *
  * @author BareZen Team
@@ -45,7 +47,8 @@ public class ApprovalNotificationEventListener {
     }
 
     /**
-     * 异步处理审批完成事件：WS 推送，离线时站内信 + 邮件兜底，不阻塞审批请求
+     * 异步处理审批完成事件：WS 推送，离线时站内信兜底；仅当事件 mail=true
+     * （发布方显式选择邮件渠道）时再发邮件，不阻塞审批请求
      */
     @Async
     @EventListener
@@ -63,8 +66,10 @@ public class ApprovalNotificationEventListener {
             log.info("用户 {} 离线，审批通知已落站内信: {}", event.getUserId(), title);
         }
 
-        // 2. 邮件通知（SMTP 未配置时 MailService 内部静默跳过）
-        sendMail(event.getUserId(), title, content);
+        // 2. 邮件是可选渠道：仅发布方显式选择（mail=true）时才发送
+        if (event.isMail()) {
+            sendMail(event.getUserId(), title, content);
+        }
         log.info("审批结果已处理用户 {}: {}", event.getUserId(), title);
     }
 

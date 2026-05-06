@@ -25,9 +25,17 @@ public class NoticePublishEvent {
     /** 发布时间 */
     private final LocalDateTime publishTime;
 
+    /** 发布时是否同步发送邮件（发布方在公告上选择 sendEmail=Y） */
+    private final boolean mail;
+
     public NoticePublishEvent(String title, String content) {
+        this(title, content, false);
+    }
+
+    public NoticePublishEvent(String title, String content, boolean mail) {
         this.title = title;
         this.content = content;
         this.publishTime = LocalDateTime.now();
+        this.mail = mail;
     }
 }

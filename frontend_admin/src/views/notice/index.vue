@@ -60,6 +60,12 @@
                   <a-tag v-else bordered>{{ $t('notice.requireReadNo') }}</a-tag>
                 </template>
               </a-table-column>
+              <a-table-column :title="$t('notice.sendEmail')" :width="110">
+                <template #cell="{ record }">
+                  <a-tag v-if="record.sendEmail === 'Y'" color="arcoblue">{{ $t('notice.sendEmailYes') }}</a-tag>
+                  <a-tag v-else bordered>{{ $t('notice.sendEmailNo') }}</a-tag>
+                </template>
+              </a-table-column>
               <a-table-column :title="$t('common.status')" :width="100">
                 <template #cell="{ record }">
                   <a-tag v-if="record.status === '1'" color="arcoblue">{{ noticeStatusText(record.status) }}</a-tag>
@@ -126,6 +132,11 @@
           <span class="text-sm text-[var(--foreground)]">{{ $t('notice.requireRead') }}</span>
           <a-switch v-model="formData.requireRead" :checked-value="'Y'" :unchecked-value="'N'" />
           <span class="text-xs text-[var(--muted-foreground)]">{{ $t('notice.requireReadTip') }}</span>
+        </div>
+        <div class="flex flex-col gap-1.5">
+          <span class="text-sm text-[var(--foreground)]">{{ $t('notice.sendEmail') }}</span>
+          <a-switch v-model="formData.sendEmail" :checked-value="'Y'" :unchecked-value="'N'" />
+          <span class="text-xs text-[var(--muted-foreground)]">{{ $t('notice.sendEmailTip') }}</span>
         </div>
       </div>
       <template #footer>
@@ -321,6 +332,7 @@ const defaultFormData = {
   noticeContent: '',
   scope: 'public',
   requireRead: 'N',
+  sendEmail: 'N',
   status: '0',
 }
 
@@ -341,6 +353,7 @@ function handleEdit(row: SysNotice) {
     noticeContent: row.noticeContent,
     scope: row.scope,
     requireRead: row.requireRead || 'N',
+    sendEmail: row.sendEmail || 'N',
     status: row.status,
   })
   formDialogVisible.value = true

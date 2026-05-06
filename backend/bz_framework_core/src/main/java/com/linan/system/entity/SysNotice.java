@@ -17,6 +17,8 @@ public class SysNotice extends BaseEntity {
     private String scope;
     /** 是否强制阅读（Y=是 N=否） */
     private String requireRead;
+    /** 发布时是否同步发送邮件（Y=是 N=否，默认 N） */
+    private String sendEmail;
     /** 当前用户是否已读（非持久化，接口返回用） */
     @com.baomidou.mybatisplus.annotation.TableField(exist = false)
     private Boolean isRead;

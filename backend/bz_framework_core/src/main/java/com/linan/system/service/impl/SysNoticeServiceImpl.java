@@ -36,8 +36,10 @@ public class SysNoticeServiceImpl extends ServiceImpl<SysNoticeMapper, SysNotice
         notice.setStatus("1");
         boolean updated = updateById(notice);
         if (updated) {
-            // 发布成功后发布领域事件，由 Web 模块监听并推送 WebSocket 实时通知
-            eventPublisher.publishEvent(new NoticePublishEvent(notice.getNoticeTitle(), notice.getNoticeContent()));
+            // 发布成功后发布领域事件，由 Web 模块监听并推送 WebSocket 实时通知；
+            // 邮件为可选渠道：仅当公告选择 sendEmail=Y 时携带 mail=true
+            eventPublisher.publishEvent(new NoticePublishEvent(
+                    notice.getNoticeTitle(), notice.getNoticeContent(), "Y".equals(notice.getSendEmail())));
         }
         return updated;
     }
