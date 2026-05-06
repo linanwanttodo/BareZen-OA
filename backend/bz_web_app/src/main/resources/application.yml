@@ -110,6 +110,9 @@ spring:
 # ---- 自定义应用配置 ----
 barezen:
   upload-path: ${BAREZEN_UPLOAD_PATH:./uploads}  # 本地存储根路径（barezen.storage.type=local 时生效），可通过环境变量覆盖
+  # 实例唯一标识（3.3 多实例部署）：多实例时务必显式配置，用于 WebSocket 跨实例广播去重；
+  # 留空则每次启动随机生成（单实例下等价，但滚动重启会导致 Redis 消息去重失效）
+  instance-id: ${BAREZEN_INSTANCE_ID:}
   storage:
     type: ${BAREZEN_STORAGE_TYPE:local}  # 文件存储实现：local=本地磁盘（默认）/ s3=S3 兼容对象存储（MinIO/OSS/COS）
     s3:
