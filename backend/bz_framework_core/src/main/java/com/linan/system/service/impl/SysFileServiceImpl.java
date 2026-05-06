@@ -4,14 +4,14 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.linan.core.storage.FileStorage;
 import com.linan.system.entity.SysFile;
 import com.linan.system.mapper.SysFileMapper;
 import com.linan.system.service.ISysFileService;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
 import org.apache.commons.io.FilenameUtils;
+import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -24,7 +24,6 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -35,8 +34,8 @@ import java.util.UUID;
 @Service
 public class SysFileServiceImpl extends ServiceImpl<SysFileMapper, SysFile> implements ISysFileService {
 
-    /** 文件存储根路径，默认 <user.dir>/uploads，可通过 barezen.upload-path 或环境变量 BAREZEN_UPLOAD_PATH 覆盖 */
-    private final String basePath;
+    /** 文件存储抽象（local=本地磁盘 / s3=对象存储），由 barezen.storage.type 决定 */
+    private final FileStorage storage;
 
     /** 允许上传的文件后缀白名单（空=不限制） */
     private static final Set<String> ALLOWED_EXTENSIONS = Set.of(
@@ -51,15 +50,8 @@ public class SysFileServiceImpl extends ServiceImpl<SysFileMapper, SysFile> impl
     /** 允许上传的最大文件大小（100 MB） */
     private static final long MAX_FILE_SIZE = 100 * 1024 * 1024L;
 
-    public SysFileServiceImpl(@Value("${barezen.upload-path:#{systemProperties['user.dir'] + '/uploads'}}") String uploadPath) {
-        // 如果配置的是相对路径，基于 user.dir 解析
-        if (uploadPath.startsWith("./") || uploadPath.startsWith("../") || uploadPath.equals(".")) {
-            this.basePath = new File(System.getProperty("user.dir"), uploadPath).getAbsolutePath() + "/";
-        } else if (!uploadPath.endsWith("/")) {
-            this.basePath = uploadPath + "/";
-        } else {
-            this.basePath = uploadPath;
-        }
+    public SysFileServiceImpl(FileStorage storage) {
+        this.storage = storage;
     }
 
     @Override
@@ -115,17 +107,12 @@ public class SysFileServiceImpl extends ServiceImpl<SysFileMapper, SysFile> impl
             String fileName = UUID.randomUUID().toString().replace("-", "") + ext;
 
             String datePath = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy/MM/dd"));
-            String dirPath = basePath + datePath;
-            File dir = new File(dirPath);
-            if (!dir.exists() && !dir.mkdirs()) {
-                throw new IOException("创建上传目录失败: " + dirPath);
-            }
-
-            File dest = new File(dirPath + "/" + fileName);
-            Files.move(tempFile, dest.toPath(), StandardCopyOption.REPLACE_EXISTING);
-
-            // 存储相对路径，避免项目迁移或部署路径变化导致文件无法访问
+            // 存储相对路径，避免项目迁移或部署路径变化导致文件无法访问；
+            // 物理写入由 FileStorage 抽象完成（local 本地磁盘 / s3 对象存储）
             String relativePath = datePath + "/" + fileName;
+            try (InputStream is = new FileInputStream(tempFile.toFile())) {
+                storage.store(is, file.getSize(), relativePath);
+            }
 
             SysFile sysFile = new SysFile();
             sysFile.setFileName(fileName);
@@ -133,7 +120,7 @@ public class SysFileServiceImpl extends ServiceImpl<SysFileMapper, SysFile> impl
             sysFile.setFilePath(relativePath);
             sysFile.setFileSize(file.getSize());
             sysFile.setFileType(detectFileType(suffix));
-            sysFile.setStorageType("local");
+            sysFile.setStorageType(storage.getType());
             sysFile.setIsFolder(0);
             sysFile.setFolderId(folderId != null ? folderId : 0L);
             sysFile.setScope(StringUtils.hasText(scope) ? scope : "admin");
@@ -171,13 +158,7 @@ public class SysFileServiceImpl extends ServiceImpl<SysFileMapper, SysFile> impl
             throw new RuntimeException("非法文件路径");
         }
 
-        // 用 basePath 拼出完整磁盘路径
-        File file = new File(basePath + relativePath);
-        if (!file.exists()) {
-            throw new RuntimeException("文件已丢失");
-        }
-
-        try (InputStream is = new FileInputStream(file);
+        try (InputStream is = storage.load(relativePath);
              OutputStream os = response.getOutputStream()) {
 
             response.setContentType("application/octet-stream");
@@ -216,10 +197,7 @@ public class SysFileServiceImpl extends ServiceImpl<SysFileMapper, SysFile> impl
         // 删除物理文件（仅文件）
         if ((sysFile.getIsFolder() == null || sysFile.getIsFolder() == 0)
                 && StringUtils.hasText(sysFile.getFilePath())) {
-            File file = new File(basePath + sysFile.getFilePath());
-            if (file.exists() && !file.delete()) {
-                log.warn("物理文件删除失败: {}", file.getAbsolutePath());
-            }
+            storage.delete(sysFile.getFilePath());
         }
 
         return this.removeById(id);
@@ -334,10 +312,7 @@ public class SysFileServiceImpl extends ServiceImpl<SysFileMapper, SysFile> impl
             // 删除物理文件
             if ((child.getIsFolder() == null || child.getIsFolder() == 0)
                     && StringUtils.hasText(child.getFilePath())) {
-                File file = new File(basePath + child.getFilePath());
-                if (file.exists()) {
-                    file.delete();
-                }
+                storage.delete(child.getFilePath());
             }
             this.removeById(child.getId());
         }

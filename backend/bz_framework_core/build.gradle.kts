@@ -38,6 +38,11 @@ dependencies {
     // MyBatis-Plus 持久层框架（版本由根构建脚本的 BOM 管理）
     implementation("com.baomidou:mybatis-plus-spring-boot3-starter:3.5.7")
 
+    // AWS SDK S3（对象存储抽象实现，S3 协议兼容 MinIO / 阿里云 OSS / 腾讯 COS）
+    implementation("software.amazon.awssdk:s3:2.25.61")
+    // 轻量 HTTP 客户端（避免引入 Netty，减小依赖体积）
+    implementation("software.amazon.awssdk:url-connection-client:2.25.61")
+
     // MySQL 数据库驱动
     runtimeOnly("com.mysql:mysql-connector-j")
 
