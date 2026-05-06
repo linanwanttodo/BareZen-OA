@@ -1,8 +1,6 @@
 package com.linan.core.quartz;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.linan.system.entity.SysOperLog;
-import com.linan.system.service.ISysOperLogService;
+import com.linan.core.spi.audit.OperLogSink;
 import lombok.extern.slf4j.Slf4j;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -22,7 +20,7 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 public class CleanTask {
 
-    private final ISysOperLogService operLogService;
+    private final OperLogSink operLogSink;
 
     /**
      * 清理操作日志
@@ -33,14 +31,10 @@ public class CleanTask {
         try {
             LocalDateTime deadline = LocalDateTime.now().minusDays(30);
 
-            long count = operLogService.count(
-                    new LambdaQueryWrapper<SysOperLog>()
-                            .lt(SysOperLog::getCreateTime, deadline));
+            long count = operLogSink.countBefore(deadline);
 
             if (count > 0) {
-                operLogService.remove(
-                        new LambdaQueryWrapper<SysOperLog>()
-                                .lt(SysOperLog::getCreateTime, deadline));
+                operLogSink.removeBefore(deadline);
                 log.info("系统清理任务：已清理 {} 条操作日志（30 天前）", count);
             } else {
                 log.info("系统清理任务：无 30 天前操作日志需要清理");

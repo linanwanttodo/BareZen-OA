@@ -1,7 +1,7 @@
 package com.linan.core.common.aspect;
 
-import com.linan.system.entity.SysOperLog;
-import com.linan.system.service.ISysOperLogService;
+import com.linan.core.spi.audit.OperLogSink;
+import com.linan.core.spi.audit.OperationLog;
 import lombok.extern.slf4j.Slf4j;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Async;
@@ -18,17 +18,17 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class OperLogAsyncService {
 
-    private final ISysOperLogService operLogService;
+    private final OperLogSink operLogSink;
 
     /**
      * 异步保存操作日志
      *
-     * @param logEntity 操作日志实体
+     * @param logEntity 操作日志模型
      */
     @Async
-    public void saveOperLog(SysOperLog logEntity) {
+    public void saveOperLog(OperationLog logEntity) {
         try {
-            operLogService.save(logEntity);
+            operLogSink.save(logEntity);
         } catch (Exception e) {
             log.error("异步保存操作日志失败", e);
         }

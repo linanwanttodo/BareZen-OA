@@ -1,9 +1,6 @@
 package com.linan.core.security;
 
-import com.linan.system.entity.SysRole;
-import com.linan.system.mapper.SysMenuMapper;
-import com.linan.system.mapper.SysRoleMapper;
-import org.junit.jupiter.api.BeforeEach;
+import com.linan.core.spi.permission.PermissionGateway;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -12,41 +9,22 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.List;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
 /**
- * PermissionService 单元测试
+ * PermissionService 单元测试（经 PermissionGateway SPI 隔离系统查询）
  */
 @ExtendWith(MockitoExtension.class)
 class PermissionServiceTest {
 
     @Mock
-    private SysRoleMapper roleMapper;
-
-    @Mock
-    private SysMenuMapper menuMapper;
+    private PermissionGateway permissionGateway;
 
     @InjectMocks
     private PermissionService permissionService;
-
-    private SysRole adminRole;
-    private SysRole normalRole;
-
-    @BeforeEach
-    void setUp() {
-        adminRole = new SysRole();
-        adminRole.setId(1L);
-        adminRole.setRoleKey("admin");
-
-        normalRole = new SysRole();
-        normalRole.setId(2L);
-        normalRole.setRoleKey("common");
-    }
 
     @Nested
     @DisplayName("getUserPermissions()")
@@ -57,25 +35,26 @@ class PermissionServiceTest {
         void nullUserId_returnsEmptySet() {
             Set<String> result = permissionService.getUserPermissions(null);
             assertTrue(result.isEmpty());
-            verifyNoInteractions(roleMapper, menuMapper);
+            verifyNoInteractions(permissionGateway);
         }
 
         @Test
         @DisplayName("admin 角色用户返回通配符权限")
         void adminUser_returnsWildcard() {
-            when(roleMapper.selectRolesByUserId(1L)).thenReturn(List.of(adminRole));
+            when(permissionGateway.isAdmin(1L)).thenReturn(true);
 
             Set<String> result = permissionService.getUserPermissions(1L);
 
             assertEquals(Set.of("*:*:*"), result);
-            verify(menuMapper, never()).selectPermsByRoleId(anyLong());
+            verify(permissionGateway, never()).collectRolePermissions(anyLong());
         }
 
         @Test
         @DisplayName("普通用户返回合并后的权限集合")
         void normalUser_returnsMergedPerms() {
-            when(roleMapper.selectRolesByUserId(2L)).thenReturn(List.of(normalRole));
-            when(menuMapper.selectPermsByRoleId(2L)).thenReturn(List.of("system:user:list", "system:role:list"));
+            when(permissionGateway.isAdmin(2L)).thenReturn(false);
+            when(permissionGateway.collectRolePermissions(2L))
+                    .thenReturn(Set.of("system:user:list", "system:role:list"));
 
             Set<String> result = permissionService.getUserPermissions(2L);
 
@@ -99,7 +78,7 @@ class PermissionServiceTest {
         @Test
         @DisplayName("admin 用户拥有所有权限")
         void adminUser_hasAllPermissions() {
-            when(roleMapper.selectRolesByUserId(1L)).thenReturn(List.of(adminRole));
+            when(permissionGateway.isAdmin(1L)).thenReturn(true);
 
             assertTrue(permissionService.hasPermission(1L, "any:perm"));
             assertTrue(permissionService.hasPermission(1L, "system:user:delete"));
@@ -108,8 +87,9 @@ class PermissionServiceTest {
         @Test
         @DisplayName("普通用户检查具体权限")
         void normalUser_checksSpecificPerm() {
-            when(roleMapper.selectRolesByUserId(2L)).thenReturn(List.of(normalRole));
-            when(menuMapper.selectPermsByRoleId(2L)).thenReturn(List.of("system:user:list"));
+            when(permissionGateway.isAdmin(2L)).thenReturn(false);
+            when(permissionGateway.collectRolePermissions(2L))
+                    .thenReturn(Set.of("system:user:list"));
 
             assertTrue(permissionService.hasPermission(2L, "system:user:list"));
             assertFalse(permissionService.hasPermission(2L, "system:user:delete"));
@@ -131,7 +111,7 @@ class PermissionServiceTest {
         @Test
         @DisplayName("admin 用户拥有所有权限组合")
         void adminUser_hasAllPerms() {
-            when(roleMapper.selectRolesByUserId(1L)).thenReturn(List.of(adminRole));
+            when(permissionGateway.isAdmin(1L)).thenReturn(true);
 
             assertTrue(permissionService.hasAllPermissions(1L, new String[]{"a:b:c", "d:e:f"}));
         }
@@ -139,8 +119,9 @@ class PermissionServiceTest {
         @Test
         @DisplayName("普通用户缺一不可")
         void normalUser_missingOnePerm_fails() {
-            when(roleMapper.selectRolesByUserId(3L)).thenReturn(List.of(normalRole));
-            when(menuMapper.selectPermsByRoleId(2L)).thenReturn(List.of("perm:a", "perm:b"));
+            when(permissionGateway.isAdmin(3L)).thenReturn(false);
+            when(permissionGateway.collectRolePermissions(3L))
+                    .thenReturn(Set.of("perm:a", "perm:b"));
 
             assertFalse(permissionService.hasAllPermissions(3L, new String[]{"perm:a", "perm:c"}));
         }

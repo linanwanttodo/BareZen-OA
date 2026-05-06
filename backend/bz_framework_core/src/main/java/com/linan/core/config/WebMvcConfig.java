@@ -3,7 +3,7 @@ package com.linan.core.config;
 import com.linan.core.security.JwtUtil;
 import com.linan.core.security.interceptor.AuthInterceptor;
 import com.linan.core.security.interceptor.OpenApiInterceptor;
-import com.linan.system.service.ISysApiKeyService;
+import com.linan.core.spi.permission.ApiKeyValidator;
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
@@ -48,11 +48,11 @@ public class WebMvcConfig implements WebMvcConfigurer {
      * 通过构造函数注入 RedisTemplate、JwtUtil 和 JWT 过期时间
      */
     public WebMvcConfig(RedisTemplate<String, Object> redisTemplate, JwtUtil jwtUtil,
-                        ISysApiKeyService apiKeyService,
+                        ApiKeyValidator apiKeyValidator,
                         @Value("${jwt.expiration:86400000}") long jwtExpiration) {
         this.redisTemplate = redisTemplate;
         this.authInterceptor = new AuthInterceptor(redisTemplate, jwtUtil, jwtExpiration);
-        this.openApiInterceptor = new OpenApiInterceptor(apiKeyService);
+        this.openApiInterceptor = new OpenApiInterceptor(apiKeyValidator);
     }
 
     /**

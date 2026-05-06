@@ -3,8 +3,7 @@ package com.linan.core.security.interceptor;
 import com.linan.core.common.api.Result;
 import com.linan.core.common.api.ResultCodeEnum;
 import com.linan.core.security.JwtUtil;
-import com.linan.system.entity.SysApiKey;
-import com.linan.system.service.ISysApiKeyService;
+import com.linan.core.spi.permission.ApiKeyValidator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -34,12 +33,12 @@ public class OpenApiInterceptor implements HandlerInterceptor {
     /** request 属性：校验通过的 API Key scopes */
     public static final String ATTR_SCOPES = "openApiScopes";
 
-    private final ISysApiKeyService apiKeyService;
+    private final ApiKeyValidator apiKeyValidator;
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
-    public OpenApiInterceptor(ISysApiKeyService apiKeyService) {
-        this.apiKeyService = apiKeyService;
+    public OpenApiInterceptor(ApiKeyValidator apiKeyValidator) {
+        this.apiKeyValidator = apiKeyValidator;
     }
 
     @Override
@@ -51,13 +50,13 @@ public class OpenApiInterceptor implements HandlerInterceptor {
         }
 
         String apiKey = request.getHeader(HEADER_API_KEY);
-        SysApiKey key = apiKeyService.validateApiKey(apiKey);
-        if (key == null) {
+        String scopes = apiKeyValidator.scopes(apiKey);
+        if (scopes == null) {
             writeUnauthorizedResponse(response, "API Key 无效、已禁用或已过期");
             return false;
         }
 
-        request.setAttribute(ATTR_SCOPES, key.getScopes());
+        request.setAttribute(ATTR_SCOPES, scopes);
         return true;
     }
 

@@ -1,16 +1,12 @@
 package com.linan.core.security;
 
-import com.linan.system.entity.SysRole;
-import com.linan.system.mapper.SysMenuMapper;
-import com.linan.system.mapper.SysRoleMapper;
+import com.linan.core.spi.permission.PermissionGateway;
 import lombok.extern.slf4j.Slf4j;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
-import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 /**
@@ -33,9 +29,7 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class PermissionService {
 
-    private final SysRoleMapper roleMapper;
-
-    private final SysMenuMapper menuMapper;
+    private final PermissionGateway permissionGateway;
 
     /**
      * 获取用户的所有权限标识，带 Redis 缓存
@@ -48,24 +42,11 @@ public class PermissionService {
         if (userId == null) {
             return Set.of();
         }
-
-        // 1. 查询用户角色
-        List<SysRole> roles = roleMapper.selectRolesByUserId(userId);
-
-        // 2. 如果是 admin 角色，直接返回通配符
-        boolean isAdmin = roles.stream().anyMatch(r -> "admin".equals(r.getRoleKey()));
-        if (isAdmin) {
+        // 超管直接返回通配符
+        if (permissionGateway.isAdmin(userId)) {
             return Set.of("*:*:*");
         }
-
-        // 3. 单次查询所有角色的权限（使用 JOIN，避免 N+1）
-        Set<String> perms = new HashSet<>();
-        for (SysRole role : roles) {
-            List<String> rolePerms = menuMapper.selectPermsByRoleId(role.getId());
-            perms.addAll(rolePerms);
-        }
-
-        return perms;
+        return permissionGateway.collectRolePermissions(userId);
     }
 
     /**

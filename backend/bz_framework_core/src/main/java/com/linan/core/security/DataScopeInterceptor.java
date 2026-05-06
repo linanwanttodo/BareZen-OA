@@ -2,10 +2,7 @@ package com.linan.core.security;
 
 import com.baomidou.mybatisplus.extension.plugins.inner.InnerInterceptor;
 import com.linan.core.security.interceptor.AuthInterceptor;
-import com.linan.system.entity.SysRole;
-import com.linan.system.mapper.SysDeptMapper;
-import com.linan.system.mapper.SysRoleMapper;
-import com.linan.system.mapper.SysUserDeptMapper;
+import com.linan.core.spi.permission.PermissionGateway;
 import lombok.extern.slf4j.Slf4j;
 import net.sf.jsqlparser.JSQLParserException;
 import net.sf.jsqlparser.expression.Expression;
@@ -24,7 +21,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 import org.apache.ibatis.mapping.ParameterMapping;
 
@@ -57,11 +53,7 @@ import org.apache.ibatis.mapping.ParameterMapping;
 @RequiredArgsConstructor
 public class DataScopeInterceptor implements InnerInterceptor {
 
-    private final SysRoleMapper roleMapper;
-
-    private final SysDeptMapper deptMapper;
-
-    private final SysUserDeptMapper userDeptMapper;
+    private final PermissionGateway permissionGateway;
 
     @Override
     public void beforeQuery(Executor executor, MappedStatement ms, Object parameter,
@@ -84,21 +76,13 @@ public class DataScopeInterceptor implements InnerInterceptor {
         }
 
         try {
-            // 获取当前用户的角色列表
-            List<SysRole> roles = roleMapper.selectRolesByUserId(userId);
-
-            // 如果包含 admin 角色（超级管理员），不限制数据权限
-            boolean isAdmin = roles.stream().anyMatch(r -> "admin".equals(r.getRoleKey()));
-            if (isAdmin) {
+            // 超管不限制数据权限
+            if (permissionGateway.isAdmin(userId)) {
                 return;
             }
 
-            // 收集所有角色的数据权限范围，取最小范围（最严格的那个）
-            int minScope = roles.stream()
-                    .filter(r -> r.getDataScope() != null)
-                    .mapToInt(SysRole::getDataScope)
-                    .min()
-                    .orElse(4); // 默认全部
+            // 所有角色数据权限取最严格范围
+            int minScope = permissionGateway.minDataScope(userId);
 
             // 构建过滤条件（使用参数化占位符替代字面量拼接）
             String whereSql = buildParametrizedWhereSql(minScope, userId, dataScope, boundSql, ms);
@@ -151,7 +135,7 @@ public class DataScopeInterceptor implements InnerInterceptor {
                 return " " + userAlias + ".create_by = ? ";
             }
             case 2: { // 本部门数据
-                List<Long> deptIds = userDeptMapper.selectDeptIdsByUserId(userId);
+                List<Long> deptIds = permissionGateway.selectDeptIdsByUserId(userId);
                 if (deptIds.isEmpty()) {
                     return " 1=0 "; // 无部门则查不到数据
                 }
@@ -211,7 +195,7 @@ public class DataScopeInterceptor implements InnerInterceptor {
      * 递归获取用户所在部门及其所有子部门 ID
      */
     private List<Long> getAllDeptIds(Long userId) {
-        List<Long> userDeptIds = userDeptMapper.selectDeptIdsByUserId(userId);
+        List<Long> userDeptIds = permissionGateway.selectDeptIdsByUserId(userId);
         Set<Long> result = new HashSet<>(userDeptIds);
 
         for (Long deptId : userDeptIds) {
@@ -224,7 +208,7 @@ public class DataScopeInterceptor implements InnerInterceptor {
      * 递归收集子部门 ID
      */
     private void collectChildDeptIds(Long parentId, Set<Long> result) {
-        List<Long> children = deptMapper.selectDeptIdsByParentId(parentId);
+        List<Long> children = permissionGateway.selectChildDeptIds(parentId);
         for (Long childId : children) {
             if (result.add(childId)) {
                 collectChildDeptIds(childId, result);

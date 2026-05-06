@@ -10,7 +10,7 @@ import com.linan.core.common.api.Result;
 import com.linan.core.common.api.ResultCodeEnum;
 import com.linan.core.common.util.IpUtil;
 import com.linan.core.security.interceptor.AuthInterceptor;
-import com.linan.system.entity.SysOperLog;
+import com.linan.core.spi.audit.OperationLog;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -75,7 +75,7 @@ public class OperLogAspect {
         Method method = signature.getMethod();
         OperLog operLog = method.getAnnotation(OperLog.class);
 
-        SysOperLog logEntity = new SysOperLog();
+        OperationLog logEntity = new OperationLog();
         logEntity.setTitle(operLog.title());
         logEntity.setBusinessType(operLog.businessType());
         logEntity.setClassName(joinPoint.getTarget().getClass().getName());

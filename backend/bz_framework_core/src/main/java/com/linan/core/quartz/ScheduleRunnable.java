@@ -1,8 +1,8 @@
 package com.linan.core.quartz;
 
 import com.linan.core.common.util.SpringContextHolder;
-import com.linan.system.entity.SysJobLog;
-import com.linan.system.mapper.SysJobLogMapper;
+import com.linan.core.spi.audit.JobExecutionLog;
+import com.linan.core.spi.audit.JobLogSink;
 import lombok.extern.slf4j.Slf4j;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
@@ -20,7 +20,7 @@ import java.util.List;
  * 从 JobDataMap 中读取 "invokeTarget" 参数，解析出 beanName 和 methodName，
  * 通过 SpringContextHolder 获取 Spring Bean 并反射调用目标方法。</p>
  *
- * <p>执行完成后自动记录 {@link SysJobLog} 到数据库。</p>
+ * <p>执行完成后自动记录 {@link JobExecutionLog} 到数据库（经 SPI 落库）。</p>
  *
  * <p>invokeTarget 格式：beanName.methodName（例如：cleanTask.cleanOperLog）</p>
  *
@@ -69,7 +69,7 @@ public class ScheduleRunnable implements Job {
         }
 
         long startTime = System.currentTimeMillis();
-        SysJobLog jobLog = new SysJobLog();
+        JobExecutionLog jobLog = new JobExecutionLog();
         jobLog.setJobId(parseJobIdFromKey(context));
         jobLog.setJobName(context.getJobDetail().getKey().getName());
         jobLog.setJobGroup(context.getJobDetail().getKey().getGroup());
@@ -182,12 +182,12 @@ public class ScheduleRunnable implements Job {
     }
 
     /**
-     * 异步保存任务执行日志
+     * 异步保存任务执行日志（经 SPI 交由系统模块落库）
      */
-    private void saveJobLog(SysJobLog jobLog) {
+    private void saveJobLog(JobExecutionLog jobLog) {
         try {
-            SysJobLogMapper mapper = SpringContextHolder.getBean(SysJobLogMapper.class);
-            mapper.insert(jobLog);
+            JobLogSink sink = SpringContextHolder.getBean(JobLogSink.class);
+            sink.save(jobLog);
         } catch (Exception e) {
             log.warn("保存任务执行日志失败", e);
         }

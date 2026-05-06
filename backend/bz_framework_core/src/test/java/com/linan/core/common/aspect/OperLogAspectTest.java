@@ -3,7 +3,7 @@ package com.linan.core.common.aspect;
 import com.linan.core.common.annotation.OperLog;
 import com.linan.core.common.api.Result;
 import com.linan.core.common.util.IpUtil;
-import com.linan.system.entity.SysOperLog;
+import com.linan.core.spi.audit.OperationLog;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.junit.jupiter.api.BeforeEach;
@@ -53,12 +53,12 @@ class OperLogAspectTest {
         when(joinPoint.getArgs()).thenReturn(new Object[0]);
     }
 
-    /** 执行 around 并捕获异步保存的日志实体 */
-    private SysOperLog invokeAndCapture(Object result) throws Throwable {
+    /** 执行 around 并捕获异步保存的日志模型 */
+    private OperationLog invokeAndCapture(Object result) throws Throwable {
         when(joinPoint.proceed()).thenReturn(result);
         aspect.around(joinPoint);
 
-        ArgumentCaptor<SysOperLog> captor = ArgumentCaptor.forClass(SysOperLog.class);
+        ArgumentCaptor<OperationLog> captor = ArgumentCaptor.forClass(OperationLog.class);
         verify(operLogAsyncService).saveOperLog(captor.capture());
         return captor.getValue();
     }
@@ -70,7 +70,7 @@ class OperLogAspectTest {
         @Test
         @DisplayName("Result.success 记 status=0")
         void successResult_status0() throws Throwable {
-            SysOperLog log = invokeAndCapture(Result.success("ok"));
+            OperationLog log = invokeAndCapture(Result.success("ok"));
 
             assertEquals(0, log.getStatus());
             assertNull(log.getErrorMsg());
@@ -79,7 +79,7 @@ class OperLogAspectTest {
         @Test
         @DisplayName("Result.error 业务失败记 status=1 且 errorMsg 留痕")
         void businessFailResult_status1() throws Throwable {
-            SysOperLog log = invokeAndCapture(Result.error("仅待审批状态的单据可删除"));
+            OperationLog log = invokeAndCapture(Result.error("仅待审批状态的单据可删除"));
 
             assertEquals(1, log.getStatus());
             assertEquals("仅待审批状态的单据可删除", log.getErrorMsg());
@@ -97,7 +97,7 @@ class OperLogAspectTest {
 
             assertThrows(RuntimeException.class, () -> aspect.around(joinPoint));
 
-            ArgumentCaptor<SysOperLog> captor = ArgumentCaptor.forClass(SysOperLog.class);
+            ArgumentCaptor<OperationLog> captor = ArgumentCaptor.forClass(OperationLog.class);
             verify(operLogAsyncService).saveOperLog(captor.capture());
             assertEquals(1, captor.getValue().getStatus());
             assertEquals("模拟异常", captor.getValue().getErrorMsg());
