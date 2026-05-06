@@ -3,6 +3,7 @@ package com.linan.web.controller.enterprise;
 import com.baomidou.mybatisplus.core.MybatisConfiguration;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
+import com.linan.core.common.enums.ApprovalStatus;
 import com.linan.core.security.interceptor.AuthInterceptor;
 import com.linan.hr.entity.AttLeaveRequest;
 import com.linan.hr.entity.AttOvertimeRequest;
@@ -11,8 +12,7 @@ import com.linan.hr.service.IAttLeaveRequestService;
 import com.linan.hr.service.IAttOvertimeRequestService;
 import com.linan.hr.service.IAttTravelRequestService;
 import com.linan.hr.service.IHrWorkLogService;
-import com.linan.system.service.ApprovalFlowEngineService;
-import com.linan.system.service.IApprovalFlowLogService;
+import com.linan.system.service.ApprovalFlowFacade;
 import org.apache.ibatis.builder.MapperBuilderAssistant;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -25,7 +25,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -40,8 +39,9 @@ import static org.mockito.Mockito.when;
 /**
  * AppAttendanceController 撤销/提交接口单元测试
  *
- * <p>覆盖 T4：撤销加班/出差申请改为原子条件更新（与审批并发先到先得），
- * 撤销成功写流程留痕，撤销失败（状态已变更）也必须写 flow_log 留痕（含实际状态）；</p>
+ * <p>审批编排已收口到 {@link ApprovalFlowFacade}：撤销的归属校验/引擎节点取消/
+ * 流程留痕、提交的引擎启动/提交留痕均在 Facade 中（见 ApprovalFlowFacadeImplTest）。</p>
+ *
  * <p>覆盖 T6：提交接口 userName/userId/status 服务端强制覆盖，不信任请求体身份字段。</p>
  */
 @ExtendWith(MockitoExtension.class)
@@ -60,16 +60,10 @@ class AppAttendanceControllerTest {
     private IHrWorkLogService workLogService;
 
     @Mock
-    private IApprovalFlowLogService flowLogService;
-
-    @Mock
-    private ApprovalFlowEngineService flowEngine;
+    private ApprovalFlowFacade flowFacade;
 
     private AppAttendanceController controller;
 
-    /**
-     * 初始化 MyBatis-Plus 实体表信息缓存，使控制器内构建的 LambdaUpdateWrapper 在纯 Mockito 环境下可用
-     */
     @BeforeAll
     static void initTableInfoCache() {
         TableInfoHelper.initTableInfo(
@@ -83,7 +77,7 @@ class AppAttendanceControllerTest {
     @BeforeEach
     void setUp() {
         controller = new AppAttendanceController(overtimeService, travelService, leaveService,
-                workLogService, flowLogService, flowEngine);
+                workLogService, flowFacade);
     }
 
     @AfterEach
@@ -91,7 +85,6 @@ class AppAttendanceControllerTest {
         AuthInterceptor.clearCurrentUser();
     }
 
-    /** 反射注入当前登录用户（AuthInterceptor 的 ThreadLocal 无公开 setter） */
     private static void setCurrentUser(Long userId) throws Exception {
         setThreadLocal("currentUserIdHolder", userId);
     }
@@ -109,112 +102,69 @@ class AppAttendanceControllerTest {
     void revokeOvertime_notLoggedIn_returnsLoginRequired() {
         assertFalse(controller.revokeOvertime(1L).getMsg().isEmpty());
         verify(overtimeService, never()).update(any());
+        verify(flowFacade, never()).revoke(any(), any(), any(), any(), any());
     }
 
     @Test
-    @DisplayName("撤销他人加班申请被拒绝")
-    void revokeOvertime_notOwner_rejected() throws Exception {
-        setCurrentUser(2L);
-        AttOvertimeRequest request = new AttOvertimeRequest();
-        request.setId(1L);
-        request.setUserId(1L);
-        when(overtimeService.getById(1L)).thenReturn(request);
-
-        var result = controller.revokeOvertime(1L);
-
-        assertEquals(500, result.getCode());
-        assertTrue(result.getMsg().contains("只能撤销自己"));
-        verify(overtimeService, never()).update(any());
-    }
-
-    @Test
-    @DisplayName("撤销成功：原子条件更新 + 流程留痕")
-    void revokeOvertime_success_conditionalUpdateAndFlowLog() throws Exception {
+    @DisplayName("撤销加班申请：委托 Facade，handler 携带真实申请人并做原子条件更新")
+    void revokeOvertime_delegatesToFacade() throws Exception {
         setCurrentUser(1L);
         AttOvertimeRequest request = new AttOvertimeRequest();
         request.setId(1L);
         request.setUserId(1L);
         request.setUserName("张三");
-        request.setStatus("0");
+        request.setStatus(ApprovalStatus.PENDING.getValue());
         when(overtimeService.getById(1L)).thenReturn(request);
         when(overtimeService.update(any(LambdaUpdateWrapper.class))).thenReturn(true);
 
         var result = controller.revokeOvertime(1L);
 
         assertEquals(200, result.getCode());
-        // 用条件更新（update wrapper）而非整单覆写（updateById），避免并发审批被覆盖
+        ArgumentCaptor<ApprovalFlowFacade.ApprovalBizHandler> captor =
+                ArgumentCaptor.forClass(ApprovalFlowFacade.ApprovalBizHandler.class);
+        verify(flowFacade).revoke(eq("overtime"), eq(1L), eq(1L), eq("张三"), captor.capture());
+        assertEquals(1L, captor.getValue().applicantId());
+        // 原子条件更新（update wrapper）而非整单覆写（updateById）
+        assertTrue(captor.getValue().cancel());
         verify(overtimeService).update(any(LambdaUpdateWrapper.class));
         verify(overtimeService, never()).updateById(any(AttOvertimeRequest.class));
-        // 撤销成功必须写审批流程留痕，状态 3=已撤销
-        ArgumentCaptor<String> bizType = ArgumentCaptor.forClass(String.class);
-        ArgumentCaptor<String> node = ArgumentCaptor.forClass(String.class);
-        ArgumentCaptor<String> status = ArgumentCaptor.forClass(String.class);
-        verify(flowLogService).record(bizType.capture(), any(), node.capture(), status.capture(), any(), any(), any());
-        assertEquals("overtime", bizType.getValue());
-        assertEquals("撤销申请", node.getValue());
-        assertEquals("3", status.getValue());
+        assertEquals(ApprovalStatus.PENDING.getValue(), captor.getValue().currentStatus());
     }
 
     @Test
-    @DisplayName("撤销失败（状态已变更）返回业务错误且写失败留痕（含实际状态）")
-    void revokeOvertime_conditionalUpdateFailed_flowLogWithActualStatus() throws Exception {
-        setCurrentUser(1L);
-        AttOvertimeRequest request = new AttOvertimeRequest();
-        request.setId(1L);
-        request.setUserId(1L);
-        request.setUserName("张三");
-        request.setStatus("1"); // 模拟并发审批已把状态改走（实际状态非待审批）
-        when(overtimeService.getById(1L)).thenReturn(request);
-        // 条件更新命中 0 行 → 撤销失败
-        when(overtimeService.update(any(LambdaUpdateWrapper.class))).thenReturn(false);
-
-        var result = controller.revokeOvertime(1L);
-
-        assertEquals(500, result.getCode());
-        assertTrue(result.getMsg().contains("仅待审批"));
-        // 失败路径也必须留痕：节点=撤销失败，状态=单据当前实际状态
-        ArgumentCaptor<String> bizType = ArgumentCaptor.forClass(String.class);
-        ArgumentCaptor<String> node = ArgumentCaptor.forClass(String.class);
-        ArgumentCaptor<String> status = ArgumentCaptor.forClass(String.class);
-        verify(flowLogService).record(bizType.capture(), any(), node.capture(), status.capture(), any(), any(), any());
-        assertEquals("overtime", bizType.getValue());
-        assertEquals("撤销失败", node.getValue());
-        assertEquals("1", status.getValue());
-    }
-
-    @Test
-    @DisplayName("撤销出差申请同样使用原子条件更新且失败留痕")
-    void revokeTravel_success_conditionalUpdate() throws Exception {
+    @DisplayName("撤销出差申请同样委托 Facade 使用原子条件更新")
+    void revokeTravel_delegatesToFacade() throws Exception {
         setCurrentUser(1L);
         AttTravelRequest request = new AttTravelRequest();
         request.setId(1L);
         request.setUserId(1L);
         request.setUserName("李四");
+        request.setStatus(ApprovalStatus.PENDING.getValue());
         when(travelService.getById(1L)).thenReturn(request);
         when(travelService.update(any(LambdaUpdateWrapper.class))).thenReturn(true);
 
         var result = controller.revokeTravel(1L);
 
         assertEquals(200, result.getCode());
+        ArgumentCaptor<ApprovalFlowFacade.ApprovalBizHandler> captor =
+                ArgumentCaptor.forClass(ApprovalFlowFacade.ApprovalBizHandler.class);
+        verify(flowFacade).revoke(eq("travel"), eq(1L), eq(1L), eq("李四"), captor.capture());
+        assertTrue(captor.getValue().cancel());
         verify(travelService).update(any(LambdaUpdateWrapper.class));
         verify(travelService, never()).updateById(any(AttTravelRequest.class));
-        // 撤销结果状态 3
-        ArgumentCaptor<String> status = ArgumentCaptor.forClass(String.class);
-        verify(flowLogService).record(any(), any(), any(), status.capture(), any(), any(), any());
-        assertEquals("3", status.getValue());
     }
 
     @Test
     @DisplayName("撤销接口声明 @OperLog 审计（businessType=3 删除）")
     void revokeMethods_haveOperLogAnnotation() throws Exception {
-        Method revokeOvertime = AppAttendanceController.class.getMethod("revokeOvertime", Long.class);
-        Method revokeTravel = AppAttendanceController.class.getMethod("revokeTravel", Long.class);
-        assertNotNull(revokeOvertime.getAnnotation(com.linan.core.common.annotation.OperLog.class));
-        assertNotNull(revokeTravel.getAnnotation(com.linan.core.common.annotation.OperLog.class));
+        var m = AppAttendanceController.class.getMethod("revokeOvertime", Long.class);
+        var t = AppAttendanceController.class.getMethod("revokeTravel", Long.class);
+        assertNotNull(m.getAnnotation(com.linan.core.common.annotation.OperLog.class));
+        assertNotNull(t.getAnnotation(com.linan.core.common.annotation.OperLog.class));
     }
 
     @Test
-    @DisplayName("提交加班申请：伪造 userName 被服务端强制覆盖")
+    @DisplayName("提交加班申请：伪造 userName 被服务端强制覆盖并委托 Facade")
     void submitOvertime_forgedIdentity_overridden() throws Exception {
         setThreadLocal("currentUserIdHolder", 7L);
         setThreadLocal("currentUsernameHolder", "realUser");
@@ -231,15 +181,14 @@ class AppAttendanceControllerTest {
         assertEquals(200, result.getCode());
         assertEquals(7L, request.getUserId(), "userId 必须为服务端当前登录用户");
         assertEquals("realUser", request.getUserName(), "userName 必须为服务端真实用户名");
-        assertEquals("0", request.getStatus(), "status 必须强制为待审批");
-        // flowLog 记录使用的 userName 是覆盖后的真实值
-        ArgumentCaptor<String> operatorName = ArgumentCaptor.forClass(String.class);
-        verify(flowLogService).record(any(), any(), any(), any(), any(), operatorName.capture(), any());
-        assertEquals("realUser", operatorName.getValue());
+        assertEquals(ApprovalStatus.PENDING.getValue(), request.getStatus(), "status 必须强制为待审批");
+        // 提交留痕操作符为真实用户名，由 Facade 统一编排
+        verify(flowFacade).submit(eq("overtime"), eq(request.getId()), eq(request.getAssigneeId()),
+                eq(request.getAssigneeName()), eq(7L), eq("realUser"));
     }
 
     @Test
-    @DisplayName("提交出差申请：伪造 userName 被服务端强制覆盖")
+    @DisplayName("提交出差申请：伪造 userName 被服务端强制覆盖并委托 Facade")
     void submitTravel_forgedIdentity_overridden() throws Exception {
         setThreadLocal("currentUserIdHolder", 8L);
         setThreadLocal("currentUsernameHolder", "travelUser");
@@ -256,16 +205,15 @@ class AppAttendanceControllerTest {
         assertEquals(200, result.getCode());
         assertEquals(8L, request.getUserId());
         assertEquals("travelUser", request.getUserName());
-        assertEquals("0", request.getStatus());
-        ArgumentCaptor<String> operatorName = ArgumentCaptor.forClass(String.class);
-        verify(flowLogService).record(any(), any(), any(), any(), any(), operatorName.capture(), any());
-        assertEquals("travelUser", operatorName.getValue());
+        assertEquals(ApprovalStatus.PENDING.getValue(), request.getStatus());
+        verify(flowFacade).submit(eq("travel"), eq(request.getId()), eq(request.getAssigneeId()),
+                eq(request.getAssigneeName()), eq(8L), eq("travelUser"));
     }
 
     // ==================== 请假申请 ====================
 
     @Test
-    @DisplayName("提交请假申请：伪造身份字段被服务端强制覆盖并走审批引擎")
+    @DisplayName("提交请假申请：伪造身份字段被服务端强制覆盖并委托 Facade")
     void submitLeave_forgedIdentity_overridden() throws Exception {
         setThreadLocal("currentUserIdHolder", 9L);
         setThreadLocal("currentUsernameHolder", "leaveUser");
@@ -283,14 +231,9 @@ class AppAttendanceControllerTest {
         assertEquals(200, result.getCode());
         assertEquals(9L, request.getUserId(), "userId 必须为服务端当前登录用户");
         assertEquals("leaveUser", request.getUserName(), "userName 必须为服务端真实用户名");
-        assertEquals("0", request.getStatus(), "status 必须强制为待审批");
-        // 提交后按模板生成首节点任务
-        verify(flowEngine).start(eq("leave"), any(), any(), any());
-        // flowLog 记录使用的 userName 是覆盖后的真实值
-        ArgumentCaptor<String> operatorName = ArgumentCaptor.forClass(String.class);
-        verify(flowLogService).record(eq("leave"), any(), eq("提交申请"), eq("0"),
-                any(), operatorName.capture(), any());
-        assertEquals("leaveUser", operatorName.getValue());
+        assertEquals(ApprovalStatus.PENDING.getValue(), request.getStatus(), "status 必须强制为待审批");
+        verify(flowFacade).submit(eq("leave"), eq(request.getId()), eq(request.getAssigneeId()),
+                eq(request.getAssigneeName()), eq(9L), eq("leaveUser"));
     }
 
     @Test
@@ -309,53 +252,27 @@ class AppAttendanceControllerTest {
     }
 
     @Test
-    @DisplayName("撤销请假申请：原子条件更新 + 引擎节点取消 + 流程留痕")
-    void revokeLeave_success_conditionalUpdateAndFlowLog() throws Exception {
+    @DisplayName("撤销请假申请：委托 Facade，handler 携带申请人并做原子条件更新")
+    void revokeLeave_delegatesToFacade() throws Exception {
         setCurrentUser(1L);
         AttLeaveRequest request = new AttLeaveRequest();
         request.setId(1L);
         request.setUserId(1L);
         request.setUserName("张三");
-        request.setStatus("0");
+        request.setStatus(ApprovalStatus.PENDING.getValue());
         when(leaveService.getById(1L)).thenReturn(request);
         when(leaveService.update(any(LambdaUpdateWrapper.class))).thenReturn(true);
 
         var result = controller.revokeLeave(1L);
 
         assertEquals(200, result.getCode());
+        ArgumentCaptor<ApprovalFlowFacade.ApprovalBizHandler> captor =
+                ArgumentCaptor.forClass(ApprovalFlowFacade.ApprovalBizHandler.class);
+        verify(flowFacade).revoke(eq("leave"), eq(1L), eq(1L), eq("张三"), captor.capture());
+        assertEquals(1L, captor.getValue().applicantId());
+        assertTrue(captor.getValue().cancel());
         verify(leaveService).update(any(LambdaUpdateWrapper.class));
         verify(leaveService, never()).updateById(any(AttLeaveRequest.class));
-        // 引擎节点置取消
-        verify(flowEngine).revoke(eq("leave"), eq(1L));
-        // 撤销结果状态 3
-        ArgumentCaptor<String> bizType = ArgumentCaptor.forClass(String.class);
-        ArgumentCaptor<String> status = ArgumentCaptor.forClass(String.class);
-        verify(flowLogService).record(bizType.capture(), any(), any(), status.capture(), any(), any(), any());
-        assertEquals("leave", bizType.getValue());
-        assertEquals("3", status.getValue());
-    }
-
-    @Test
-    @DisplayName("撤销请假申请：状态已变更时返回业务错误且写失败留痕（含实际状态）")
-    void revokeLeave_conditionalUpdateFailed_flowLogWithActualStatus() throws Exception {
-        setCurrentUser(1L);
-        AttLeaveRequest request = new AttLeaveRequest();
-        request.setId(1L);
-        request.setUserId(1L);
-        request.setUserName("张三");
-        request.setStatus("1"); // 模拟并发审批已把状态改走
-        when(leaveService.getById(1L)).thenReturn(request);
-        when(leaveService.update(any(LambdaUpdateWrapper.class))).thenReturn(false);
-
-        var result = controller.revokeLeave(1L);
-
-        assertEquals(500, result.getCode());
-        assertTrue(result.getMsg().contains("仅待审批"));
-        // 失败路径必须留痕：节点=撤销失败，状态=单据当前实际状态
-        ArgumentCaptor<String> node = ArgumentCaptor.forClass(String.class);
-        ArgumentCaptor<String> status = ArgumentCaptor.forClass(String.class);
-        verify(flowLogService).record(eq("leave"), any(), node.capture(), status.capture(), any(), any(), any());
-        assertEquals("撤销失败", node.getValue());
-        assertEquals("1", status.getValue());
+        assertEquals(ApprovalStatus.PENDING.getValue(), captor.getValue().currentStatus());
     }
 }

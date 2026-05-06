@@ -16,8 +16,7 @@ import com.linan.hr.service.IAttLeaveRequestService;
 import com.linan.hr.service.IAttOvertimeRequestService;
 import com.linan.hr.service.IAttTravelRequestService;
 import com.linan.hr.service.IHrWorkLogService;
-import com.linan.system.service.ApprovalFlowEngineService;
-import com.linan.system.service.IApprovalFlowLogService;
+import com.linan.system.service.ApprovalFlowFacade;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import lombok.RequiredArgsConstructor;
@@ -51,10 +50,8 @@ public class AppAttendanceController {
 
     private final IHrWorkLogService workLogService;
 
-    private final IApprovalFlowLogService flowLogService;
-
-    /** 多级审批引擎（V36：模板驱动节点链） */
-    private final ApprovalFlowEngineService flowEngine;
+    /** 审批流程编排门面（统一 submit/revoke 编排并保证事务一致） */
+    private final ApprovalFlowFacade flowFacade;
 
     // ==================== 请假申请 ====================
 
@@ -115,10 +112,9 @@ public class AppAttendanceController {
             request.setStatus("0");
             boolean ok = leaveService.save(request);
             if (ok) {
-                // 多级审批引擎：按模板生成首节点任务
-                flowEngine.start("leave", request.getId(), request.getAssigneeId(), request.getAssigneeName());
-                flowLogService.record("leave", request.getId(), "提交申请", "0",
-                        userId, request.getUserName(), null);
+                // 审批编排统一收口：启动引擎首节点 + 记录提交日志（同一事务）
+                flowFacade.submit("leave", request.getId(), request.getAssigneeId(), request.getAssigneeName(),
+                        userId, request.getUserName());
             }
             return ok ? Result.success(null) : Result.error("提交失败");
         } catch (Exception e) {
@@ -146,23 +142,27 @@ public class AppAttendanceController {
         if (request == null) {
             return Result.error("记录不存在");
         }
-        if (!userId.equals(request.getUserId())) {
-            return Result.error("只能撤销自己的申请");
-        }
-        boolean ok = leaveService.update(new LambdaUpdateWrapper<AttLeaveRequest>()
-                .eq(AttLeaveRequest::getId, id)
-                .eq(AttLeaveRequest::getStatus, "0")
-                .set(AttLeaveRequest::getStatus, "3"));
-        if (!ok) {
-            // 失败也留痕：记录单据当前实际状态（可能审批已把状态改走），保证撤销失败可审计
-            flowLogService.record("leave", request.getId(), "撤销失败",
-                    request.getStatus(), userId, request.getUserName(), "仅待审批状态的申请可撤销");
-            return Result.error("仅待审批状态的申请可撤销");
-        }
-        // 引擎：待审节点置取消（与业务表状态联动）
-        flowEngine.revoke("leave", request.getId());
-        flowLogService.record("leave", request.getId(), "撤销申请", "3",
-                userId, request.getUserName(), null);
+        // 审批编排统一收口：本人校验 / 业务表 0→3 原子更新 / 引擎节点取消 / 撤销日志（同一事务）
+        flowFacade.revoke("leave", id, userId, request.getUserName(),
+                new ApprovalFlowFacade.ApprovalBizHandler() {
+                    @Override
+                    public Long applicantId() {
+                        return request.getUserId();
+                    }
+
+                    @Override
+                    public boolean cancel() {
+                        return leaveService.update(new LambdaUpdateWrapper<AttLeaveRequest>()
+                                .eq(AttLeaveRequest::getId, id)
+                                .eq(AttLeaveRequest::getStatus, "0")
+                                .set(AttLeaveRequest::getStatus, "3"));
+                    }
+
+                    @Override
+                    public String currentStatus() {
+                        return request.getStatus();
+                    }
+                });
         return Result.success(null);
     }
 
@@ -222,10 +222,9 @@ public class AppAttendanceController {
             request.setStatus("0");
             boolean ok = overtimeService.save(request);
             if (ok) {
-                // 多级审批引擎：按模板生成首节点任务
-                flowEngine.start("overtime", request.getId(), request.getAssigneeId(), request.getAssigneeName());
-                flowLogService.record("overtime", request.getId(), "提交申请", "0",
-                        userId, request.getUserName(), null);
+                // 审批编排统一收口：启动引擎首节点 + 记录提交日志（同一事务）
+                flowFacade.submit("overtime", request.getId(), request.getAssigneeId(), request.getAssigneeName(),
+                        userId, request.getUserName());
             }
             return ok ? Result.success(null) : Result.error("提交失败");
         } catch (Exception e) {
@@ -253,23 +252,27 @@ public class AppAttendanceController {
         if (request == null) {
             return Result.error("记录不存在");
         }
-        if (!userId.equals(request.getUserId())) {
-            return Result.error("只能撤销自己的申请");
-        }
-        boolean ok = overtimeService.update(new LambdaUpdateWrapper<AttOvertimeRequest>()
-                .eq(AttOvertimeRequest::getId, id)
-                .eq(AttOvertimeRequest::getStatus, "0")
-                .set(AttOvertimeRequest::getStatus, "3"));
-        if (!ok) {
-            // 失败也留痕：记录单据当前实际状态（可能审批已把状态改走），保证撤销失败可审计
-            flowLogService.record("overtime", request.getId(), "撤销失败",
-                    request.getStatus(), userId, request.getUserName(), "仅待审批状态的申请可撤销");
-            return Result.error("仅待审批状态的申请可撤销");
-        }
-        // 引擎：待审节点置取消（与业务表状态联动）
-        flowEngine.revoke("overtime", request.getId());
-        flowLogService.record("overtime", request.getId(), "撤销申请", "3",
-                userId, request.getUserName(), null);
+        // 审批编排统一收口：本人校验 / 业务表 0→3 原子更新 / 引擎节点取消 / 撤销日志（同一事务）
+        flowFacade.revoke("overtime", id, userId, request.getUserName(),
+                new ApprovalFlowFacade.ApprovalBizHandler() {
+                    @Override
+                    public Long applicantId() {
+                        return request.getUserId();
+                    }
+
+                    @Override
+                    public boolean cancel() {
+                        return overtimeService.update(new LambdaUpdateWrapper<AttOvertimeRequest>()
+                                .eq(AttOvertimeRequest::getId, id)
+                                .eq(AttOvertimeRequest::getStatus, "0")
+                                .set(AttOvertimeRequest::getStatus, "3"));
+                    }
+
+                    @Override
+                    public String currentStatus() {
+                        return request.getStatus();
+                    }
+                });
         return Result.success(null);
     }
 
@@ -329,10 +332,9 @@ public class AppAttendanceController {
             request.setStatus("0");
             boolean ok = travelService.save(request);
             if (ok) {
-                // 多级审批引擎：按模板生成首节点任务
-                flowEngine.start("travel", request.getId(), request.getAssigneeId(), request.getAssigneeName());
-                flowLogService.record("travel", request.getId(), "提交申请", "0",
-                        userId, request.getUserName(), null);
+                // 审批编排统一收口：启动引擎首节点 + 记录提交日志（同一事务）
+                flowFacade.submit("travel", request.getId(), request.getAssigneeId(), request.getAssigneeName(),
+                        userId, request.getUserName());
             }
             return ok ? Result.success(null) : Result.error("提交失败");
         } catch (Exception e) {
@@ -359,23 +361,27 @@ public class AppAttendanceController {
         if (request == null) {
             return Result.error("记录不存在");
         }
-        if (!userId.equals(request.getUserId())) {
-            return Result.error("只能撤销自己的申请");
-        }
-        boolean ok = travelService.update(new LambdaUpdateWrapper<AttTravelRequest>()
-                .eq(AttTravelRequest::getId, id)
-                .eq(AttTravelRequest::getStatus, "0")
-                .set(AttTravelRequest::getStatus, "3"));
-        if (!ok) {
-            // 失败也留痕：记录单据当前实际状态（可能审批已把状态改走），保证撤销失败可审计
-            flowLogService.record("travel", request.getId(), "撤销失败",
-                    request.getStatus(), userId, request.getUserName(), "仅待审批状态的申请可撤销");
-            return Result.error("仅待审批状态的申请可撤销");
-        }
-        // 引擎：待审节点置取消（与业务表状态联动）
-        flowEngine.revoke("travel", request.getId());
-        flowLogService.record("travel", request.getId(), "撤销申请", "3",
-                userId, request.getUserName(), null);
+        // 审批编排统一收口：本人/ 业务表 0→3 原子更新 / 引擎节点取消 / 撤销日志（同一事务）
+        flowFacade.revoke("travel", id, userId, request.getUserName(),
+                new ApprovalFlowFacade.ApprovalBizHandler() {
+                    @Override
+                    public Long applicantId() {
+                        return request.getUserId();
+                    }
+
+                    @Override
+                    public boolean cancel() {
+                        return travelService.update(new LambdaUpdateWrapper<AttTravelRequest>()
+                                .eq(AttTravelRequest::getId, id)
+                                .eq(AttTravelRequest::getStatus, "0")
+                                .set(AttTravelRequest::getStatus, "3"));
+                    }
+
+                    @Override
+                    public String currentStatus() {
+                        return request.getStatus();
+                    }
+                });
         return Result.success(null);
     }
 

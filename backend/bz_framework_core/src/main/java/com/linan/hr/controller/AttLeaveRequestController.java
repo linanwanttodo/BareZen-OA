@@ -7,17 +7,14 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.linan.core.common.annotation.OperLog;
 import com.linan.core.common.api.PageResult;
 import com.linan.core.common.api.Result;
-import com.linan.core.common.event.ApprovalCompletedEvent;
+import com.linan.core.common.enums.ApprovalStatus;
 import com.linan.core.security.RequirePermission;
 import com.linan.core.security.interceptor.AuthInterceptor;
 import com.linan.hr.entity.AttLeaveRequest;
 import com.linan.hr.service.IAttLeaveRequestService;
-import com.linan.system.entity.ApprovalFlowTask;
-import com.linan.system.service.ApprovalFlowEngineService;
-import com.linan.system.service.IApprovalFlowLogService;
+import com.linan.system.service.ApprovalFlowFacade;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.web.bind.annotation.*;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -44,12 +41,8 @@ public class AttLeaveRequestController {
 
     private final IAttLeaveRequestService leaveService;
 
-    private final ApplicationEventPublisher eventPublisher;
-
-    private final IApprovalFlowLogService flowLogService;
-
-    /** 多级审批引擎（V36：模板驱动节点链） */
-    private final ApprovalFlowEngineService flowEngine;
+    /** 审批流程编排门面（V36+：统一事务/引擎/日志/通知） */
+    private final ApprovalFlowFacade flowFacade;
 
     /**
      * 分页查询请假记录
@@ -108,13 +101,12 @@ public class AttLeaveRequestController {
             String username = AuthInterceptor.getCurrentUsername();
             request.setUserName(username != null ? username : "用户" + userId);
         }
-        request.setStatus("0");
+        request.setStatus(ApprovalStatus.PENDING.getValue());
         boolean ok = leaveService.save(request);
         if (ok) {
-            // 多级审批引擎：按模板生成首节点任务（无模板时仅记录流程，保持原逻辑）
-            flowEngine.start("leave", request.getId(), request.getAssigneeId(), request.getAssigneeName());
-            flowLogService.record("leave", request.getId(), "提交申请", "0",
-                    request.getUserId(), request.getUserName(), null);
+            // 多级审批引擎门面：启动首节点 + 记录提交申请日志（同一事务）
+            flowFacade.submit("leave", request.getId(), request.getAssigneeId(), request.getAssigneeName(),
+                    request.getUserId(), request.getUserName());
         }
         return ok ? Result.success(null) : Result.error("提交失败");
     }
@@ -136,64 +128,51 @@ public class AttLeaveRequestController {
         if (leave == null) {
             return Result.error("请假记录不存在");
         }
-
-        // 禁止审批人审批自己的申请（避免自审自批）
         Long approverId = AuthInterceptor.getCurrentUserId();
-        if (approverId != null && approverId.equals(leave.getUserId())) {
-            return Result.error("不能审批自己的申请");
-        }
-
-        // 指定审批人校验（V31）：若申请指定了审批人，仅该审批人可操作
-        if (leave.getAssigneeId() != null
-                && (approverId == null || !approverId.equals(leave.getAssigneeId()))) {
-            return Result.error("该申请已指定审批人（" + leave.getAssigneeName() + "），仅其可审批");
-        }
-
         String approverName = AuthInterceptor.getCurrentUsername();
 
-        // 多级审批引擎（V36）：推进当前节点（含节点级指定审批人校验与并发原子更新，
-        // 无效动作/无待审节点/重复审批抛 BusinessException 统一处理）
-        ApprovalFlowEngineService.ApprovalResult result = flowEngine.approve(
-                "leave", id, approverId, approverName, action, remark);
-
-        if (result.isFinished()) {
-            // 终态：驳回或末节点通过，原子更新业务表（并发兜底：后到者受影响行数为 0）
-            String targetStatus = result.isApproved() ? "1" : "2";
-            boolean ok = leaveService.update(new LambdaUpdateWrapper<AttLeaveRequest>()
-                    .eq(AttLeaveRequest::getId, id)
-                    .eq(AttLeaveRequest::getStatus, "0")
-                    .set(AttLeaveRequest::getStatus, targetStatus)
-                    .set(AttLeaveRequest::getApproverId, approverId)
-                    .set(AttLeaveRequest::getApproverName, approverName)
-                    .set(AttLeaveRequest::getApproveTime, LocalDateTime.now().format(FMT))
-                    .set(AttLeaveRequest::getApproveRemark, remark));
-            if (!ok) {
-                return Result.error("该记录已审批，不能重复操作");
+        // 审批编排统一收口：自审校验 / 引擎推进 / 终态更新 / 日志 / 通知事件
+        // （业务差异经 handler 注入：原子状态更新与通知文案）
+        flowFacade.approve("leave", id, approverId, approverName, action, remark, new ApprovalFlowFacade.ApprovalBizHandler() {
+            @Override
+            public Long applicantId() {
+                return leave.getUserId();
             }
 
-            // 记录流程节点：审批通过/驳回
-            String node = result.isApproved() ? "审批通过" : "审批驳回";
-            flowLogService.record("leave", id, node, targetStatus,
-                    approverId, approverName, remark);
-            // 审批结果通知申请人（通过/驳回均推送）
-            String res = result.isApproved() ? "已通过" : "已驳回";
-            eventPublisher.publishEvent(new ApprovalCompletedEvent(
-                    leave.getUserId(),
-                    "请假审批" + res,
-                    "您的请假申请（" + leave.getStartTime() + " ~ " + leave.getEndTime() + "）" + res
-                            + (remark != null && !remark.isEmpty() ? "，审批意见：" + remark : "")));
-        } else {
-            // 中间节点通过：业务表保持待审批，若下一节点指定了审批人则通知其办理
-            for (ApprovalFlowTask task : flowEngine.currentTasks("leave", id)) {
-                if (task.getApproverId() != null) {
-                    eventPublisher.publishEvent(new ApprovalCompletedEvent(
-                            task.getApproverId(),
-                            "新的待审批申请",
-                            "有新的请假申请（" + leave.getStartTime() + " ~ " + leave.getEndTime()
-                                    + "）待您审批"));
-                }
+            @Override
+            public boolean finish(String targetStatus, Long approverId, String approverName, String remark) {
+                return leaveService.update(new LambdaUpdateWrapper<AttLeaveRequest>()
+                        .eq(AttLeaveRequest::getId, id)
+                        .eq(AttLeaveRequest::getStatus, ApprovalStatus.PENDING.getValue())
+                        .set(AttLeaveRequest::getStatus, targetStatus)
+                        .set(AttLeaveRequest::getApproverId, approverId)
+                        .set(AttLeaveRequest::getApproverName, approverName)
+                        .set(AttLeaveRequest::getApproveTime, LocalDateTime.now().format(FMT))
+                        .set(AttLeaveRequest::getApproveRemark, remark));
             }
-        }
+
+            @Override
+            public boolean cancel() {
+                return leaveService.update(new LambdaUpdateWrapper<AttLeaveRequest>()
+                        .eq(AttLeaveRequest::getId, id)
+                        .eq(AttLeaveRequest::getStatus, ApprovalStatus.PENDING.getValue())
+                        .set(AttLeaveRequest::getStatus, ApprovalStatus.CANCELED.getValue()));
+            }
+
+            @Override
+            public ApprovalFlowFacade.NotifyText resultNotify(boolean approved, String remark) {
+                String res = approved ? "已通过" : "已驳回";
+                String content = "您的请假申请（" + leave.getStartTime() + " ~ " + leave.getEndTime() + "）" + res
+                        + (remark != null && !remark.isEmpty() ? "，审批意见：" + remark : "");
+                return ApprovalFlowFacade.NotifyText.of("请假审批" + res, content);
+            }
+
+            @Override
+            public ApprovalFlowFacade.NotifyText nextNotify() {
+                return ApprovalFlowFacade.NotifyText.of("新的待审批申请",
+                        "有新的请假申请（" + leave.getStartTime() + " ~ " + leave.getEndTime() + "）待您审批");
+            }
+        });
         return Result.success(null);
     }
 
@@ -212,22 +191,24 @@ public class AttLeaveRequestController {
         if (leave == null) {
             return Result.error("请假记录不存在");
         }
-        // 仅本人可撤销自己的申请
         Long userId = AuthInterceptor.getCurrentUserId();
-        if (userId != null && !userId.equals(leave.getUserId())) {
-            return Result.error("只能撤销自己的申请");
-        }
-        boolean ok = leaveService.update(new LambdaUpdateWrapper<AttLeaveRequest>()
-                .eq(AttLeaveRequest::getId, id)
-                .eq(AttLeaveRequest::getStatus, "0")
-                .set(AttLeaveRequest::getStatus, "3"));
-        if (!ok) {
-            return Result.error("仅待审批状态的申请可撤销");
-        }
-        // 引擎：待审节点置取消（与业务表状态联动）
-        flowEngine.revoke("leave", id);
-        flowLogService.record("leave", id, "撤销申请", "3",
-                userId, AuthInterceptor.getCurrentUsername(), null);
+        String userName = AuthInterceptor.getCurrentUsername();
+
+        // 撤销编排统一收口：归属校验 / 业务表 0→3 / 引擎节点取消 / 日志（同一事务）
+        flowFacade.revoke("leave", id, userId, userName, new ApprovalFlowFacade.ApprovalBizHandler() {
+            @Override
+            public Long applicantId() {
+                return leave.getUserId();
+            }
+
+            @Override
+            public boolean cancel() {
+                return leaveService.update(new LambdaUpdateWrapper<AttLeaveRequest>()
+                        .eq(AttLeaveRequest::getId, id)
+                        .eq(AttLeaveRequest::getStatus, ApprovalStatus.PENDING.getValue())
+                        .set(AttLeaveRequest::getStatus, ApprovalStatus.CANCELED.getValue()));
+            }
+        });
         return Result.success(null);
     }
 

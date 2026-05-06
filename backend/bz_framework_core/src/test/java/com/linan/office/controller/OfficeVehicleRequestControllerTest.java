@@ -1,15 +1,14 @@
 package com.linan.office.controller;
 
 import com.baomidou.mybatisplus.core.MybatisConfiguration;
-import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
 import com.linan.core.common.api.Result;
-import com.linan.core.common.exception.BusinessException;
+import com.linan.core.common.enums.ApprovalStatus;
 import com.linan.core.security.interceptor.AuthInterceptor;
 import com.linan.office.entity.OfficeVehicleRequest;
 import com.linan.office.service.IOfficeVehicleRequestService;
-import com.linan.system.service.ApprovalFlowEngineService;
+import com.linan.system.service.ApprovalFlowFacade;
 import org.apache.ibatis.builder.MapperBuilderAssistant;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -27,12 +26,15 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 /**
  * 用车申请 Controller 单元测试
  *
- * <p>覆盖本次审查修复的关键业务规则：禁止自审自批、审批人姓名使用真实用户名、取消限制。</p>
+ * <p>审批编排已收口到 {@link ApprovalFlowFacade}，本测试聚焦 Controller 的
+ * 委托接线（submit/approve/cancel 均传入单据原子更新 handler）与编排外校验，
+ * 引擎推进/流程日志/通知事件断言迁移至 ApprovalFlowFacadeImplTest。</p>
  */
 @ExtendWith(MockitoExtension.class)
 class OfficeVehicleRequestControllerTest {
@@ -41,13 +43,7 @@ class OfficeVehicleRequestControllerTest {
     private IOfficeVehicleRequestService vehicleService;
 
     @Mock
-    private org.springframework.context.ApplicationEventPublisher eventPublisher;
-
-    @Mock
-    private com.linan.system.service.IApprovalFlowLogService flowLogService;
-
-    @Mock
-    private ApprovalFlowEngineService flowEngine;
+    private ApprovalFlowFacade flowFacade;
 
     @InjectMocks
     private OfficeVehicleRequestController controller;
@@ -55,10 +51,6 @@ class OfficeVehicleRequestControllerTest {
     private Long approverId;
     private Long applicantId;
 
-    /**
-     * 初始化 MyBatis-Plus 实体表信息缓存，使 LambdaUpdateWrapper 在纯 Mockito 环境下可构建
-     * （正常 Spring 启动时由 mybatis-plus 自动注册，单元测试无 Spring 上下文需手动初始化）
-     */
     @BeforeAll
     static void initTableInfoCache() {
         TableInfoHelper.initTableInfo(
@@ -87,96 +79,66 @@ class OfficeVehicleRequestControllerTest {
     }
 
     @Test
-    @DisplayName("审批通过：审批人姓名为当前用户名")
-    void approve_pass_usesRealUsername() {
+    @DisplayName("审批：委托 Facade，handler 携带申请人/终态原子更新/通知文案")
+    void approve_delegatesToFacade() {
         OfficeVehicleRequest request = new OfficeVehicleRequest();
         request.setId(20L);
         request.setApplicantId(applicantId);
-        request.setStatus("0");
+        request.setPurpose("拜访客户");
+        request.setStartTime("2026-08-11 09:00");
+        request.setEndTime("2026-08-11 18:00");
+        request.setStatus(ApprovalStatus.PENDING.getValue());
         when(vehicleService.getById(20L)).thenReturn(request);
-        // 引擎：末节点通过 = 终态，业务侧负责更新业务表
-        when(flowEngine.approve("vehicle", 20L, approverId, "admin", "pass", "同意出车"))
-                .thenReturn(new ApprovalFlowEngineService.ApprovalResult(true, true, 1, "车辆管理员审批"));
-        when(vehicleService.update(any())).thenReturn(true);
 
         Result<Void> result = controller.approve(20L, "pass", "同意出车");
 
         assertEquals(200, result.getCode());
-
-        // 原子条件更新：仅当 status='0' 时生效（WHERE 含状态条件，防并发/重复审批覆盖结果）
-        LambdaUpdateWrapper<OfficeVehicleRequest> wrapper = captureUpdateWrapper();
-        assertTrue(wrapper.getSqlSegment().contains("status"));
-        // SET 字段应包含状态、审批人ID/姓名、审批时间、审批意见
-        String sqlSet = wrapper.getSqlSet();
-        assertTrue(sqlSet.contains("status"));
-        assertTrue(sqlSet.contains("approver_id"));
-        assertTrue(sqlSet.contains("approver_name"));
-        assertTrue(sqlSet.contains("approve_time"));
-        assertTrue(sqlSet.contains("approve_remark"));
-        // 参数值：目标状态、审批人ID、真实用户名、审批意见、审批时间
-        Map<String, Object> params = wrapper.getParamNameValuePairs();
-        assertTrue(params.containsValue("1"));            // 已通过
-        assertTrue(params.containsValue(approverId));      // 审批人用户ID
-        assertTrue(params.containsValue("admin"));        // 真实用户名而非 userId 数字
-        assertTrue(params.containsValue("同意出车"));      // 审批意见
-        assertTrue(params.values().stream().anyMatch(v -> v instanceof String
-                && ((String) v).matches("\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}"))); // 审批时间
+        ArgumentCaptor<ApprovalFlowFacade.ApprovalBizHandler> h =
+                ArgumentCaptor.forClass(ApprovalFlowFacade.ApprovalBizHandler.class);
+        verify(flowFacade).approve(eq("vehicle"), eq(20L), eq(approverId), eq("admin"),
+                eq("pass"), eq("同意出车"), h.capture());
+        assertEquals(applicantId, h.getValue().applicantId(), "handler 携带真实申请人供 Facade 自审校验");
     }
 
     @Test
-    @DisplayName("禁止审批自己的用车申请")
-    void approve_ownApplication_rejected() {
-        OfficeVehicleRequest request = new OfficeVehicleRequest();
-        request.setId(21L);
-        request.setApplicantId(approverId);
-        request.setStatus("0");
-        when(vehicleService.getById(21L)).thenReturn(request);
+    @DisplayName("记录不存在返回错误，不触达 Facade")
+    void approve_notFound_rejected() {
+        when(vehicleService.getById(20L)).thenReturn(null);
 
-        Result<Void> result = controller.approve(21L, "pass", null);
+        Result<Void> result = controller.approve(20L, "pass", null);
 
         assertEquals(500, result.getCode());
-        assertTrue(result.getMsg().contains("不能审批自己的申请"));
-        verify(vehicleService, never()).update(any());
+        verify(flowFacade, never()).approve(any(), any(), any(), any(), any(), any(), any());
     }
 
     @Test
-    @DisplayName("取消：仅本人可取消自己的申请")
-    void cancel_otherUsersApplication_rejected() {
+    @DisplayName("取消：handler 携带真实申请人，由 Facade 做归属校验；原子更新使用枚举状态")
+    void cancel_delegatesToFacade() {
         OfficeVehicleRequest request = new OfficeVehicleRequest();
         request.setId(22L);
-        request.setApplicantId(99L);
-        request.setStatus("0");
+        request.setApplicantId(approverId); // 当前登录用户即申请人
+        request.setStatus(ApprovalStatus.PENDING.getValue());
         when(vehicleService.getById(22L)).thenReturn(request);
+        when(vehicleService.update(any())).thenReturn(true);
 
         Result<Void> result = controller.cancel(22L);
 
-        assertEquals(500, result.getCode());
-        assertTrue(result.getMsg().contains("只能取消自己的申请"));
-        verify(vehicleService, never()).update(any());
+        assertEquals(200, result.getCode());
+        ArgumentCaptor<ApprovalFlowFacade.ApprovalBizHandler> captor =
+                ArgumentCaptor.forClass(ApprovalFlowFacade.ApprovalBizHandler.class);
+        verify(flowFacade).revoke(eq("vehicle"), eq(22L), eq(approverId), eq("admin"), captor.capture());
+        assertEquals(approverId, captor.getValue().applicantId());
+        // handler.cancel 原子条件更新：仅待审批→已撤销
+        boolean ok = captor.getValue().cancel();
+        assertTrue(ok);
+        LambdaUpdateWrapper<OfficeVehicleRequest> wrapper = captureUpdateWrapper();
+        assertTrue(wrapper.getSqlSegment().contains("status"));
+        Map<String, Object> params = wrapper.getParamNameValuePairs();
+        assertTrue(params.containsValue(ApprovalStatus.CANCELED.getValue()));
     }
 
     @Test
-    @DisplayName("已审批的申请不能重复审批（引擎无待审节点抛业务异常）")
-    void approve_alreadyApproved_rejected() {
-        OfficeVehicleRequest request = new OfficeVehicleRequest();
-        request.setId(23L);
-        request.setApplicantId(applicantId);
-        request.setStatus("1");
-        when(vehicleService.getById(23L)).thenReturn(request);
-        // 引擎侧：无待审节点（已处理过）抛业务异常，由全局异常处理器统一转 500
-        when(flowEngine.approve("vehicle", 23L, approverId, "admin", "pass", null))
-                .thenThrow(new BusinessException("无待审批节点，可能已处理"));
-
-        BusinessException ex = assertThrows(BusinessException.class,
-                () -> controller.approve(23L, "pass", null));
-
-        assertTrue(ex.getMessage().contains("无待审批节点"));
-        // 不应写审批流程日志
-        verify(flowLogService, never()).record(any(), any(), any(), any(), any(), any(), any());
-    }
-
-    @Test
-    @DisplayName("提交申请：状态为待审批，申请人自动填充")
+    @DisplayName("提交申请：状态为待审批，申请人自动填充并委托 Facade 发起流程")
     void submit_setsStatusAndApplicant() {
         OfficeVehicleRequest request = new OfficeVehicleRequest();
         request.setStartTime("2026-08-11 09:00");
@@ -189,13 +151,15 @@ class OfficeVehicleRequestControllerTest {
 
         assertEquals(200, result.getCode());
         assertEquals(approverId, request.getApplicantId());
-        assertEquals("0", request.getStatus());
+        assertEquals(ApprovalStatus.PENDING.getValue(), request.getStatus());
+        verify(flowFacade).submit(eq("vehicle"), eq(request.getId()), eq(request.getAssigneeId()),
+                eq(request.getAssigneeName()), eq(approverId), eq("李四"));
     }
 
-    /** 捕获控制器调用 update(Wrapper) 时传入的原子条件更新包装器 */
     @SuppressWarnings("unchecked")
     private LambdaUpdateWrapper<OfficeVehicleRequest> captureUpdateWrapper() {
-        ArgumentCaptor<Wrapper<OfficeVehicleRequest>> captor = ArgumentCaptor.forClass(Wrapper.class);
+        ArgumentCaptor<com.baomidou.mybatisplus.core.conditions.Wrapper<OfficeVehicleRequest>> captor =
+                ArgumentCaptor.forClass(com.baomidou.mybatisplus.core.conditions.Wrapper.class);
         verify(vehicleService).update(captor.capture());
         return (LambdaUpdateWrapper<OfficeVehicleRequest>) captor.getValue();
     }

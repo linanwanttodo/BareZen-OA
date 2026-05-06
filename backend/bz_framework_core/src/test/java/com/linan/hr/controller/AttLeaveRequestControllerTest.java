@@ -1,15 +1,14 @@
 package com.linan.hr.controller;
 
 import com.baomidou.mybatisplus.core.MybatisConfiguration;
-import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
 import com.linan.core.common.api.Result;
-import com.linan.core.common.exception.BusinessException;
+import com.linan.core.common.enums.ApprovalStatus;
 import com.linan.core.security.interceptor.AuthInterceptor;
 import com.linan.hr.entity.AttLeaveRequest;
 import com.linan.hr.service.IAttLeaveRequestService;
-import com.linan.system.service.ApprovalFlowEngineService;
+import com.linan.system.service.ApprovalFlowFacade;
 import org.apache.ibatis.builder.MapperBuilderAssistant;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -27,12 +26,15 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 /**
  * 请假审批 Controller 单元测试
  *
- * <p>覆盖本次审查修复的关键业务规则：禁止自审自批、审批人姓名使用真实用户名。</p>
+ * <p>审批编排已收口到 {@link ApprovalFlowFacade}，本测试聚焦 Controller 的
+ * 委托接线（submitted/approve/revoke 均传入单据原子更新 handler）与编排外校验，
+ * 引擎推进/流程日志/通知事件的断言迁移至 ApprovalFlowFacadeImplTest。</p>
  */
 @ExtendWith(MockitoExtension.class)
 class AttLeaveRequestControllerTest {
@@ -41,13 +43,7 @@ class AttLeaveRequestControllerTest {
     private IAttLeaveRequestService leaveService;
 
     @Mock
-    private org.springframework.context.ApplicationEventPublisher eventPublisher;
-
-    @Mock
-    private com.linan.system.service.IApprovalFlowLogService flowLogService;
-
-    @Mock
-    private ApprovalFlowEngineService flowEngine;
+    private ApprovalFlowFacade flowFacade;
 
     @InjectMocks
     private AttLeaveRequestController controller;
@@ -55,12 +51,9 @@ class AttLeaveRequestControllerTest {
     private Long approverId;
     private Long applicantId;
 
-    /**
-     * 初始化 MyBatis-Plus 实体表信息缓存，使 LambdaUpdateWrapper 在纯 Mockito 环境下可构建
-     * （正常 Spring 启动时由 mybatis-plus 自动注册，单元测试无 Spring 上下文需手动初始化）
-     */
     @BeforeAll
     static void initTableInfoCache() {
+        // LambdaUpdateWrapper 在纯 Mockito 环境下需要实体列映射
         TableInfoHelper.initTableInfo(
                 new MapperBuilderAssistant(new MybatisConfiguration(), ""), AttLeaveRequest.class);
     }
@@ -69,8 +62,6 @@ class AttLeaveRequestControllerTest {
     void setUp() throws Exception {
         approverId = 1L;
         applicantId = 2L;
-
-        // 通过反射设置 ThreadLocal 模拟当前登录用户（审批人）
         setThreadLocal("currentUserIdHolder", approverId);
         setThreadLocal("currentUsernameHolder", "admin");
     }
@@ -80,7 +71,6 @@ class AttLeaveRequestControllerTest {
         AuthInterceptor.clearCurrentUser();
     }
 
-    /** 反射设置 AuthInterceptor 的私有 ThreadLocal */
     private void setThreadLocal(String fieldName, Object value) throws Exception {
         Field field = AuthInterceptor.class.getDeclaredField(fieldName);
         field.setAccessible(true);
@@ -90,133 +80,80 @@ class AttLeaveRequestControllerTest {
     }
 
     @Test
-    @DisplayName("审批通过：状态置为已通过，审批人姓名为当前用户名")
-    void approve_pass_usesRealUsername() {
+    @DisplayName("审批：委托 Facade，handler 携带申请人/终态原子更新/通知文案")
+    void approve_delegatesToFacade() {
         AttLeaveRequest leave = new AttLeaveRequest();
         leave.setId(10L);
-        leave.setUserId(applicantId); // 申请人不是当前审批人
-        leave.setStatus("0");
+        leave.setUserId(applicantId);
+        leave.setStartTime("2026-08-10 09:00");
+        leave.setEndTime("2026-08-10 18:00");
+        leave.setStatus(ApprovalStatus.PENDING.getValue());
         when(leaveService.getById(10L)).thenReturn(leave);
-        // 引擎：末节点通过 = 终态，业务侧负责更新业务表
-        when(flowEngine.approve("leave", 10L, approverId, "admin", "pass", "同意"))
-                .thenReturn(new ApprovalFlowEngineService.ApprovalResult(true, true, 1, "部门负责人审批"));
-        when(leaveService.update(any())).thenReturn(true);
 
         Result<Void> result = controller.approve(10L, "pass", "同意");
 
-        assertNotNull(result);
         assertEquals(200, result.getCode());
-
-        // 原子条件更新：仅当 status='0' 时生效（WHERE 含状态条件，防并发/重复审批覆盖结果）
-        LambdaUpdateWrapper<AttLeaveRequest> wrapper = captureUpdateWrapper();
-        assertTrue(wrapper.getSqlSegment().contains("status"));
-        // SET 字段应包含状态、审批人ID/姓名、审批时间、审批意见
-        String sqlSet = wrapper.getSqlSet();
-        assertTrue(sqlSet.contains("status"));
-        assertTrue(sqlSet.contains("approver_id"));
-        assertTrue(sqlSet.contains("approver_name"));
-        assertTrue(sqlSet.contains("approve_time"));
-        assertTrue(sqlSet.contains("approve_remark"));
-        // 参数值：目标状态、审批人ID、真实用户名、审批意见、审批时间
-        Map<String, Object> params = wrapper.getParamNameValuePairs();
-        assertTrue(params.containsValue("1"));            // 已通过
-        assertTrue(params.containsValue(approverId));      // 审批人用户ID
-        assertTrue(params.containsValue("admin"));        // 真实用户名而非 userId 数字
-        assertTrue(params.containsValue("同意"));          // 审批意见
-        assertTrue(params.values().stream().anyMatch(v -> v instanceof String
-                && ((String) v).matches("\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}"))); // 审批时间
+        ArgumentCaptor<ApprovalFlowFacade.ApprovalBizHandler> h =
+                ArgumentCaptor.forClass(ApprovalFlowFacade.ApprovalBizHandler.class);
+        verify(flowFacade).approve(eq("leave"), eq(10L), eq(approverId), eq("admin"),
+                eq("pass"), eq("同意"), h.capture());
+        assertEquals(applicantId, h.getValue().applicantId(), "handler 携带真实申请人供 Facade 自审校验");
     }
 
     @Test
-    @DisplayName("禁止审批自己的申请")
-    void approve_ownApplication_rejected() {
-        AttLeaveRequest leave = new AttLeaveRequest();
-        leave.setId(11L);
-        leave.setUserId(approverId); // 申请人与审批人相同
-        leave.setStatus("0");
-        when(leaveService.getById(11L)).thenReturn(leave);
+    @DisplayName("记录不存在返回错误，不触达 Facade")
+    void approve_notFound_rejected() {
+        when(leaveService.getById(10L)).thenReturn(null);
 
-        Result<Void> result = controller.approve(11L, "pass", null);
+        Result<Void> result = controller.approve(10L, "pass", null);
 
-        assertNotNull(result);
         assertEquals(500, result.getCode());
-        assertTrue(result.getMsg().contains("不能审批自己的申请"));
-        // 不允许更新
-        verify(leaveService, never()).update(any());
+        verify(flowFacade, never()).approve(any(), any(), any(), any(), any(), any(), any());
     }
 
     @Test
-    @DisplayName("重复审批被拒绝（引擎无待审节点抛业务异常）")
-    void approve_alreadyApproved_rejected() {
-        AttLeaveRequest leave = new AttLeaveRequest();
-        leave.setId(12L);
-        leave.setUserId(applicantId);
-        leave.setStatus("1"); // 已审批
-        when(leaveService.getById(12L)).thenReturn(leave);
-        // 引擎侧：无待审节点（已处理过）抛业务异常，由全局异常处理器统一转 500
-        when(flowEngine.approve("leave", 12L, approverId, "admin", "pass", null))
-                .thenThrow(new BusinessException("无待审批节点，可能已处理"));
-
-        BusinessException ex = assertThrows(BusinessException.class,
-                () -> controller.approve(12L, "pass", null));
-
-        assertTrue(ex.getMessage().contains("无待审批节点"));
-        // 不应写审批流程日志
-        verify(flowLogService, never()).record(any(), any(), any(), any(), any(), any(), any());
-    }
-
-    @Test
-    @DisplayName("驳回：状态置为已驳回")
-    void approve_reject_setsStatus() {
-        AttLeaveRequest leave = new AttLeaveRequest();
-        leave.setId(13L);
-        leave.setUserId(applicantId);
-        leave.setStatus("0");
-        when(leaveService.getById(13L)).thenReturn(leave);
-        // 引擎：驳回即终态
-        when(flowEngine.approve("leave", 13L, approverId, "admin", "reject", "事由不充分"))
-                .thenReturn(new ApprovalFlowEngineService.ApprovalResult(false, true, 1, "部门负责人审批"));
-        when(leaveService.update(any())).thenReturn(true);
-
-        Result<Void> result = controller.approve(13L, "reject", "事由不充分");
-
-        assertEquals(200, result.getCode());
-        Map<String, Object> params = captureUpdateWrapper().getParamNameValuePairs();
-        assertTrue(params.containsValue("2"));           // 已驳回
-        assertTrue(params.containsValue("事由不充分"));    // 审批意见
-    }
-
-    @Test
-    @DisplayName("无效审批动作被拒绝（引擎校验）")
-    void approve_invalidAction_rejected() {
-        AttLeaveRequest leave = new AttLeaveRequest();
-        leave.setId(14L);
-        leave.setUserId(applicantId);
-        leave.setStatus("0");
-        when(leaveService.getById(14L)).thenReturn(leave);
-        when(flowEngine.approve("leave", 14L, approverId, "admin", "unknown", null))
-                .thenThrow(new BusinessException("无效的审批动作"));
-
-        BusinessException ex = assertThrows(BusinessException.class,
-                () -> controller.approve(14L, "unknown", null));
-
-        assertTrue(ex.getMessage().contains("无效的审批动作"));
-        verify(leaveService, never()).update(any());
-    }
-
-    @Test
-    @DisplayName("撤销：仅本人可撤销自己的申请")
-    void revoke_otherUsersApplication_rejected() {
+    @DisplayName("撤销：仅本人可撤销，委托 Facade 的撤销 handler 做原子更新")
+    void revoke_delegatesToFacade() {
         AttLeaveRequest leave = new AttLeaveRequest();
         leave.setId(15L);
-        leave.setUserId(99L); // 不是当前用户
-        leave.setStatus("0");
+        leave.setUserId(approverId); // 当前登录用户即申请人
+        leave.setUserName("admin");
+        leave.setStatus(ApprovalStatus.PENDING.getValue());
+        when(leaveService.getById(15L)).thenReturn(leave);
+        when(leaveService.update(any())).thenReturn(true);
+
+        Result<Void> result = controller.revoke(15L);
+
+        assertEquals(200, result.getCode());
+        ArgumentCaptor<ApprovalFlowFacade.ApprovalBizHandler> captor =
+                ArgumentCaptor.forClass(ApprovalFlowFacade.ApprovalBizHandler.class);
+        verify(flowFacade).revoke(eq("leave"), eq(15L), eq(approverId), eq("admin"), captor.capture());
+
+        // handler.cancel 做原子条件更新：仅待审批→撤销
+        boolean ok = captor.getValue().cancel();
+        assertTrue(ok);
+        LambdaUpdateWrapper<AttLeaveRequest> wrapper = captureUpdateWrapper();
+        assertTrue(wrapper.getSqlSegment().contains("status"));
+        Map<String, Object> params = wrapper.getParamNameValuePairs();
+        assertTrue(params.containsValue(ApprovalStatus.CANCELED.getValue()));
+    }
+
+    @Test
+    @DisplayName("撤销他人申请：handler 携带真实申请人，由 Facade 拒绝（Controller 不越权判定）")
+    void revoke_otherUsersApplication_delegatedToFacade() {
+        AttLeaveRequest leave = new AttLeaveRequest();
+        leave.setId(15L);
+        leave.setUserId(99L);
+        leave.setStatus(ApprovalStatus.PENDING.getValue());
         when(leaveService.getById(15L)).thenReturn(leave);
 
         Result<Void> result = controller.revoke(15L);
 
-        assertEquals(500, result.getCode());
-        assertTrue(result.getMsg().contains("只能撤销自己的申请"));
+        assertEquals(200, result.getCode(), "归属校验收口到 Facade，此处仅验证委托接线");
+        ArgumentCaptor<ApprovalFlowFacade.ApprovalBizHandler> captor =
+                ArgumentCaptor.forClass(ApprovalFlowFacade.ApprovalBizHandler.class);
+        verify(flowFacade).revoke(eq("leave"), eq(15L), eq(approverId), eq("admin"), captor.capture());
+        assertEquals(99L, captor.getValue().applicantId());
         verify(leaveService, never()).update(any());
     }
 
@@ -233,13 +170,15 @@ class AttLeaveRequestControllerTest {
 
         assertEquals(200, result.getCode());
         assertEquals(approverId, request.getUserId());
-        assertEquals("0", request.getStatus());
+        assertEquals(ApprovalStatus.PENDING.getValue(), request.getStatus());
+        verify(flowFacade).submit(eq("leave"), eq(request.getId()), eq(request.getAssigneeId()),
+                eq(request.getAssigneeName()), eq(approverId), eq("张三"));
     }
 
-    /** 捕获控制器调用 update(Wrapper) 时传入的原子条件更新包装器 */
     @SuppressWarnings("unchecked")
     private LambdaUpdateWrapper<AttLeaveRequest> captureUpdateWrapper() {
-        ArgumentCaptor<Wrapper<AttLeaveRequest>> captor = ArgumentCaptor.forClass(Wrapper.class);
+        ArgumentCaptor<com.baomidou.mybatisplus.core.conditions.Wrapper<AttLeaveRequest>> captor =
+                ArgumentCaptor.forClass(com.baomidou.mybatisplus.core.conditions.Wrapper.class);
         verify(leaveService).update(captor.capture());
         return (LambdaUpdateWrapper<AttLeaveRequest>) captor.getValue();
     }
