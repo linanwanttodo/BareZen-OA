@@ -46,6 +46,15 @@ public interface ISysUserService extends IService<SysUser> {
     void changePassword(Long userId, String oldPassword, String newPassword);
 
     /**
+     * 重置用户密码（管理员操作，不走旧密码校验）
+     *
+     * @param id       用户ID
+     * @param password 新密码（明文）
+     * @return 成功返回 null，失败返回错误消息
+     */
+    String resetPassword(Long id, String password);
+
+    /**
      * 获取用户已分配的角色ID列表
      */
     List<Long> getUserRoleIds(Long userId);

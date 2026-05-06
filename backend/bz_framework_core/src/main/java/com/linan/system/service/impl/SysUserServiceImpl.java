@@ -187,6 +187,24 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
+    public String resetPassword(Long id, String password) {
+        if (password == null || password.isEmpty()) {
+            return "新密码不能为空";
+        }
+        String policyMsg = PasswordUtil.validatePasswordPolicy(password);
+        if (policyMsg != null) {
+            return policyMsg;
+        }
+        SysUser user = baseMapper.selectById(id);
+        if (user == null) {
+            return "用户不存在";
+        }
+        user.setPassword(PasswordUtil.encode(password));
+        return updateById(user) ? null : "重置失败";
+    }
+
+    @Override
     public List<Long> getUserRoleIds(Long userId) {
         if (userId == null) {
             return Collections.emptyList();

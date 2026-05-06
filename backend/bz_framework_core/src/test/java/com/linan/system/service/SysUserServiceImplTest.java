@@ -12,6 +12,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -112,6 +113,54 @@ class SysUserServiceImplTest {
         void duplicateUserName_throwsException() {
             when(userMapper.selectCount(any())).thenReturn(1L);
             assertThrows(BusinessException.class, () -> userService.addUser(validUser));
+        }
+    }
+
+    @Nested
+    @DisplayName("resetPassword()")
+    class ResetPassword {
+
+        @Test
+        @DisplayName("空密码返回错误消息，不触达数据库")
+        void blankPassword_rejected() {
+            assertEquals("新密码不能为空", userService.resetPassword(1L, null));
+            assertEquals("新密码不能为空", userService.resetPassword(1L, ""));
+            verifyNoInteractions(userMapper);
+        }
+
+        @Test
+        @DisplayName("弱密码返回策略消息")
+        void weakPassword_rejected() {
+            assertNotNull(userService.resetPassword(1L, "abc"));
+            verifyNoInteractions(userMapper);
+        }
+
+        @Test
+        @DisplayName("用户不存在返回错误消息")
+        void missingUser_rejected() {
+            when(userMapper.selectById(1L)).thenReturn(null);
+
+            assertEquals("用户不存在", userService.resetPassword(1L, "Strong#Pass1"));
+        }
+
+        @Test
+        @DisplayName("重置成功返回 null 并更新加密密码（不覆盖其他字段）")
+        void success_returnsNull() {
+            SysUser existing = new SysUser();
+            existing.setId(1L);
+            existing.setUserName("admin");
+            existing.setPassword("$2a$10$old");
+            when(userMapper.selectById(1L)).thenReturn(existing);
+            when(userMapper.updateById(any(SysUser.class))).thenReturn(1);
+
+            assertNull(userService.resetPassword(1L, "Strong#Pass1"));
+
+            ArgumentCaptor<SysUser> captor = ArgumentCaptor.forClass(SysUser.class);
+            verify(userMapper).updateById(captor.capture());
+            // 密码已加密且不覆盖用户名等业务字段
+            assertEquals(1L, captor.getValue().getId());
+            assertTrue(captor.getValue().getPassword().startsWith("$2a$"));
+            assertEquals("admin", captor.getValue().getUserName());
         }
     }
 }

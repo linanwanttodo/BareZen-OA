@@ -17,6 +17,7 @@ import com.linan.system.mapper.SysMenuMapper;
 import com.linan.system.mapper.SysRoleMapper;
 import com.linan.system.mapper.SysUserMapper;
 import com.linan.system.monitor.OnlineUserService;
+import com.linan.web.service.CaptchaService;
 import jakarta.servlet.http.Cookie;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -29,7 +30,6 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
-import java.security.SecureRandom;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -60,12 +60,14 @@ public class AuthController {
     private final JwtUtil jwtUtil;
     private final SysLogininforMapper logininforMapper;
     private final IpUtil ipUtil;
+    private final CaptchaService captchaService;
 
     public AuthController(SysUserMapper userMapper, SysRoleMapper roleMapper,
                           SysMenuMapper menuMapper, RedisTemplate<String, Object> redisTemplate,
                           StringRedisTemplate stringRedisTemplate,
                           OnlineUserService onlineUserService, JwtUtil jwtUtil,
-                          SysLogininforMapper logininforMapper, IpUtil ipUtil) {
+                          SysLogininforMapper logininforMapper, IpUtil ipUtil,
+                          CaptchaService captchaService) {
         this.userMapper = userMapper;
         this.roleMapper = roleMapper;
         this.menuMapper = menuMapper;
@@ -75,6 +77,7 @@ public class AuthController {
         this.jwtUtil = jwtUtil;
         this.logininforMapper = logininforMapper;
         this.ipUtil = ipUtil;
+        this.captchaService = captchaService;
     }
 
     /** 是否开放注册，生产默认关闭 */
@@ -107,7 +110,6 @@ public class AuthController {
 
     private static final Set<String> AVATAR_ALLOWED_EXT = Set.of(".jpg", ".jpeg", ".png", ".gif", ".webp");
     private static final long AVATAR_MAX_SIZE = 2 * 1024 * 1024L;
-    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     /**
      * 用户登录
@@ -123,19 +125,10 @@ public class AuthController {
         String captchaCode = body.get("captchaCode");
         String uuid = body.get("uuid");
 
-        // 验证码校验
-        if (uuid == null || uuid.isEmpty() || captchaCode == null || captchaCode.isEmpty()) {
-            return Result.error("验证码不能为空");
-        }
-        String redisKey = "captcha:" + uuid;
-        Object cachedCode = redisTemplate.opsForValue().get(redisKey);
-        // 验证码一次性使用，无论对错都删除
-        redisTemplate.delete(redisKey);
-        if (cachedCode == null) {
-            return Result.error("验证码已过期，请重新获取");
-        }
-        if (!cachedCode.toString().equalsIgnoreCase(captchaCode)) {
-            return Result.error("验证码错误");
+        // 验证码校验（一次性消费，逻辑收敛在 CaptchaService）
+        String captchaError = captchaService.validate(uuid, captchaCode);
+        if (captchaError != null) {
+            return Result.error(captchaError);
         }
 
         if (username == null || username.isEmpty()) {
@@ -319,101 +312,7 @@ public class AuthController {
     @Operation(summary = "获取验证码")
     @GetMapping("/captcha")
     public Result<Map<String, String>> captcha() {
-        String uuid = java.util.UUID.randomUUID().toString().replace("-", "");
-        String code = generateCode(6);
-
-        redisTemplate.opsForValue().set("captcha:" + uuid, code, 5, java.util.concurrent.TimeUnit.MINUTES);
-
-        Map<String, String> data = new HashMap<>();
-        data.put("uuid", uuid);
-        data.put("captchaBase64", "data:image/svg+xml;base64," + generateSvgCaptcha(code));
-        return Result.success(data);
-    }
-
-    private String generateCode(int length) {
-        String chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < length; i++) {
-            sb.append(chars.charAt(SECURE_RANDOM.nextInt(chars.length())));
-        }
-        return sb.toString();
-    }
-
-    /**
-     * 生成带干扰线、噪点和字符旋转扭曲的 SVG 验证码，防止 OCR 识别
-     */
-    private String generateSvgCaptcha(String code) {
-        SecureRandom random = SECURE_RANDOM;
-        int width = 160;
-        int height = 55;
-        StringBuilder svg = new StringBuilder();
-        svg.append("<svg xmlns='http://www.w3.org/2000/svg' width='").append(width).append("' height='").append(height).append("'>");
-
-        // 背景
-        svg.append("<rect fill='#f0f0f0' width='").append(width).append("' height='").append(height).append("'/>");
-
-        // 噪点 — 随机小圆点（增强：从80增加到150个）
-        for (int i = 0; i < 150; i++) {
-            int x = random.nextInt(width);
-            int y = random.nextInt(height);
-            String color = randomRgb(random);
-            svg.append("<circle cx='").append(x).append("' cy='").append(y).append("' r='").append(random.nextBoolean() ? 1 : 2).append("' fill='").append(color).append("' opacity='0.7'/>");
-        }
-
-        // 干扰线 — 8条随机曲线（增强：从5条增加到8条）
-        for (int i = 0; i < 8; i++) {
-            String color = randomRgb(random);
-            int x1 = random.nextInt(width);
-            int y1 = random.nextInt(height);
-            int x2 = random.nextInt(width);
-            int y2 = random.nextInt(height);
-            int cx1 = random.nextInt(width);
-            int cy1 = random.nextInt(height);
-            svg.append("<path d='M").append(x1).append(",").append(y1)
-               .append(" Q").append(cx1).append(",").append(cy1)
-               .append(" ").append(x2).append(",").append(y2)
-               .append("' stroke='").append(color).append("' stroke-width='1.5' fill='none' opacity='0.5'/>");
-        }
-
-        // 字符 — 每个字符随机旋转、偏移、颜色
-        String[] colors = {"#333", "#2a5", "#c25", "#25c", "#c82", "#52c"};
-        int charWidth = (width - 30) / code.length();
-        for (int i = 0; i < code.length(); i++) {
-            int x = 18 + i * charWidth + random.nextInt(8);
-            int y = 30 + random.nextInt(12) - 6;
-            int rotate = random.nextInt(40) - 20; // -20° ~ 20°
-            String color = colors[random.nextInt(colors.length)];
-            int fontSize = 22 + random.nextInt(6);
-            svg.append("<text x='").append(x).append("' y='").append(y)
-               .append("' font-size='").append(fontSize)
-               .append("' fill='").append(color)
-               .append("' font-family='monospace' font-weight='bold'")
-               .append(" transform='rotate(").append(rotate).append(",").append(x).append(",").append(y).append(")'")
-               .append(">").append(code.charAt(i)).append("</text>");
-        }
-
-        // 额外干扰弧线（增强：从3条增加到5条）
-        for (int i = 0; i < 5; i++) {
-            String color = randomRgb(random);
-            svg.append("<line x1='").append(random.nextInt(width)).append("' y1='").append(random.nextInt(height))
-               .append("' x2='").append(random.nextInt(width)).append("' y2='").append(random.nextInt(height))
-               .append("' stroke='").append(color).append("' stroke-width='1' opacity='0.4'/>");
-        }
-
-        svg.append("</svg>");
-
-        try {
-            return Base64.getEncoder().encodeToString(svg.toString().getBytes("UTF-8"));
-        } catch (Exception e) {
-            return Base64.getEncoder().encodeToString(svg.toString().getBytes());
-        }
-    }
-
-    private String randomRgb(SecureRandom random) {
-        int r = random.nextInt(150) + 50;
-        int g = random.nextInt(150) + 50;
-        int b = random.nextInt(150) + 50;
-        return "rgb(" + r + "," + g + "," + b + ")";
+        return Result.success(captchaService.generate());
     }
 
     /**

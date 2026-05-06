@@ -6,16 +6,12 @@ import com.linan.core.common.api.Result;
 import com.linan.core.common.controller.BaseController;
 import com.linan.core.security.RequirePermission;
 import com.linan.system.entity.SysNotice;
-import com.linan.system.entity.SysNoticeRead;
-import com.linan.system.service.ISysNoticeReadService;
 import com.linan.system.service.ISysNoticeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -26,7 +22,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @RequiredArgsConstructor
 public class SysNoticeController extends BaseController<SysNotice, ISysNoticeService> {
     private final ISysNoticeService noticeService;
-    private final ISysNoticeReadService noticeReadService;
     @Override protected ISysNoticeService getService() { return noticeService; }
 
     @RequirePermission("system:notice:list")
@@ -114,29 +109,7 @@ public class SysNoticeController extends BaseController<SysNotice, ISysNoticeSer
     @Operation(summary = "公告阅读回执统计")
     @GetMapping("/{id}/read-receipt")
     public Result<Map<String, Object>> readReceipt(@PathVariable Long id) {
-        SysNotice notice = noticeService.getById(id);
-        if (notice == null) {
-            return Result.error("公告不存在");
-        }
-        // 已读记录（按阅读时间倒序）
-        List<SysNoticeRead> reads = noticeReadService.lambdaQuery()
-                .eq(SysNoticeRead::getNoticeId, id)
-                .orderByDesc(SysNoticeRead::getReadTime)
-                .list();
-        // 已读用户数（去重）
-        long readCount = reads.stream()
-                .map(SysNoticeRead::getUserId)
-                .distinct().count();
-
-        Map<String, Object> data = new HashMap<>();
-        data.put("noticeId", id);
-        data.put("requireRead", notice.getRequireRead());
-        data.put("readCount", readCount);
-        data.put("totalCount", null); // 总用户数由前端从用户列表获取，此处仅返回已读
-        data.put("reads", reads.stream().map(r -> Map.of(
-                "userId", r.getUserId(),
-                "readTime", r.getReadTime() != null ? r.getReadTime().toString() : null
-        )).collect(Collectors.toList()));
-        return Result.success(data);
+        Map<String, Object> data = noticeService.readReceipt(id);
+        return data == null ? Result.error("公告不存在") : Result.success(data);
     }
 }

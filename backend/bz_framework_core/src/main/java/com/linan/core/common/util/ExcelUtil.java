@@ -14,19 +14,17 @@ import java.util.List;
  * <p>提供简单的 CSV 导出功能，兼容 Excel 打开。
  * 后续可扩展为基于 EasyExcel 或 Apache POI 的完整实现。</p>
  *
- * <p>使用方式：</p>
- * <pre>{@code
- * // Controller 中导出
- * @GetMapping("/export")
- * public void export(HttpServletResponse response) {
- *     List<String> headers = List.of("ID", "名称", "状态");
- *     List<List<String>> rows = service.getExportData();
- *     ExcelUtil.exportCsv(response, "用户数据.csv", headers, rows);
- * }
- * }</pre>
+ * <p>安全说明：单元格统一按 RFC 4180 转义（逗号/引号/换行），并对以
+ * {@code = + - @} 等字符开头的单元格加单引号前缀，防止 CSV 公式注入
+ * （OWASP CSV Injection）。</p>
+ *
+ * @author BareZen Team
  */
 @Slf4j
 public final class ExcelUtil {
+
+    /** 公式注入敏感前缀：以这些字符开头的单元格会被转义为文本 */
+    private static final String FORMULA_PREFIXES = "=+-@\t\r";
 
     private ExcelUtil() {}
 
@@ -56,7 +54,7 @@ public final class ExcelUtil {
 
             // 写入表头
             if (headers != null && !headers.isEmpty()) {
-                os.write(String.join(",", headers).getBytes(StandardCharsets.UTF_8));
+                os.write(joinCsv(headers).getBytes(StandardCharsets.UTF_8));
                 os.write('\n');
             }
 
@@ -64,7 +62,7 @@ public final class ExcelUtil {
             if (rows != null) {
                 for (List<String> row : rows) {
                     if (row != null) {
-                        os.write(String.join(",", row).getBytes(StandardCharsets.UTF_8));
+                        os.write(joinCsv(row).getBytes(StandardCharsets.UTF_8));
                         os.write('\n');
                     }
                 }
@@ -74,5 +72,40 @@ public final class ExcelUtil {
         } catch (Exception e) {
             log.error("导出 CSV 失败: {}", e.getMessage());
         }
+    }
+
+    /** 拼接一行 CSV：逐单元格转义后以逗号连接 */
+    private static String joinCsv(List<String> cells) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < cells.size(); i++) {
+            if (i > 0) {
+                sb.append(',');
+            }
+            sb.append(escapeCsvCell(cells.get(i)));
+        }
+        return sb.toString();
+    }
+
+    /**
+     * 转义单个 CSV 单元格（RFC 4180 + 公式注入防护）
+     *
+     * <p>字段含逗号/双引号/换行时以双引号包裹并双写内部引号；
+     * 以公式敏感字符开头的字段先加 {@code '} 前缀避免被 Excel 当作公式执行。</p>
+     */
+    public static String escapeCsvCell(String cell) {
+        if (cell == null || cell.isEmpty()) {
+            return cell == null ? "" : cell;
+        }
+        String value = cell;
+        char first = value.charAt(0);
+        if (FORMULA_PREFIXES.indexOf(first) >= 0) {
+            value = "'" + value;
+        }
+        boolean needsQuotes = value.indexOf(',') >= 0 || value.indexOf('"') >= 0
+                || value.indexOf('\n') >= 0 || value.indexOf('\r') >= 0;
+        if (!needsQuotes) {
+            return value;
+        }
+        return "\"" + value.replace("\"", "\"\"") + "\"";
     }
 }

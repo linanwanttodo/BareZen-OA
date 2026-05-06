@@ -17,9 +17,6 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 import jakarta.servlet.http.HttpServletRequest;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.TimeUnit;
 
 @Aspect
@@ -97,22 +94,9 @@ public class RepeatSubmitAspect {
             }
         }
 
-        // 使用 SHA-256 生成定长指纹
-        try {
-            MessageDigest md = MessageDigest.getInstance("SHA-256");
-            byte[] hash = md.digest(sb.toString().getBytes(StandardCharsets.UTF_8));
-            StringBuilder hex = new StringBuilder();
-            for (byte b : hash) {
-                String h = Integer.toHexString(0xff & b);
-                if (h.length() == 1) hex.append('0');
-                hex.append(h);
-            }
-            return hex.toString();
-        } catch (NoSuchAlgorithmException e) {
-            // fallback to MD5 (should not happen on standard JVM)
-            return org.springframework.util.DigestUtils.md5DigestAsHex(
-                    sb.toString().getBytes(StandardCharsets.UTF_8));
-        }
+        // 使用 SHA-256 生成定长指纹（统一走 DigestUtil）
+        return com.linan.core.common.util.DigestUtil.sha256Hex(
+                sb.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8));
     }
 
     private HttpServletRequest getHttpServletRequest() {

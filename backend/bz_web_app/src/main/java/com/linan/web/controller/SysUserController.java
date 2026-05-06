@@ -7,7 +7,6 @@ import com.linan.core.common.annotation.OperLog;
 import com.linan.core.common.api.PageResult;
 import com.linan.core.common.api.Result;
 import com.linan.core.common.controller.BaseController;
-import com.linan.core.security.PasswordUtil;
 import com.linan.core.security.RequirePermission;
 import com.linan.system.entity.SysUser;
 import com.linan.system.entity.SysUserDept;
@@ -159,21 +158,8 @@ public class SysUserController extends BaseController<SysUser, ISysUserService> 
     @RequirePermission("system:user:edit")
     @PutMapping("/{id}/password")
     public Result<Void> resetPassword(@PathVariable Long id, @RequestBody Map<String, String> body) {
-        String password = body.get("password");
-        if (password == null || password.isEmpty()) {
-            return Result.error("新密码不能为空");
-        }
-        String policyMsg = PasswordUtil.validatePasswordPolicy(password);
-        if (policyMsg != null) {
-            return Result.error(policyMsg);
-        }
-        SysUser user = userMapper.selectById(id);
-        if (user == null) {
-            return Result.error("用户不存在");
-        }
-        user.setPassword(PasswordUtil.encode(password));
-        boolean ok = userService.updateById(user);
-        return ok ? Result.success(null) : Result.error("重置失败");
+        String errorMsg = userService.resetPassword(id, body.get("password"));
+        return errorMsg == null ? Result.success(null) : Result.error(errorMsg);
     }
 
     // ============ 角色分配 ============

@@ -12,7 +12,6 @@ import org.springframework.stereotype.Service;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -135,10 +134,5 @@ public class SysWebhookServiceImpl extends ServiceImpl<SysWebhookMapper, SysWebh
 
     private String truncate(String s, int max) {
         return s != null && s.length() > max ? s.substring(0, max) + "..." : s;
-    }
-
-    // 兼容引用：避免未使用告警（MessageDigest 用于签名兜底）
-    static {
-        assert MessageDigest.class != null;
     }
 }

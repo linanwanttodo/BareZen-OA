@@ -2,7 +2,9 @@ package com.linan.system.service.impl;
 
 import com.linan.core.common.event.NoticePublishEvent;
 import com.linan.system.entity.SysNotice;
+import com.linan.system.entity.SysNoticeRead;
 import com.linan.system.mapper.SysNoticeMapper;
+import com.linan.system.service.ISysNoticeReadService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -13,7 +15,12 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
@@ -35,11 +42,14 @@ class SysNoticeServiceImplTest {
     @Mock
     private ApplicationEventPublisher eventPublisher;
 
+    @Mock
+    private ISysNoticeReadService noticeReadService;
+
     private SysNoticeServiceImpl noticeService;
 
     @BeforeEach
     void setUp() {
-        noticeService = new SysNoticeServiceImpl(eventPublisher);
+        noticeService = new SysNoticeServiceImpl(eventPublisher, noticeReadService);
         ReflectionTestUtils.setField(noticeService, "baseMapper", noticeMapper);
     }
 
@@ -102,5 +112,50 @@ class SysNoticeServiceImplTest {
 
         assertFalse(noticeService.publish(1L));
         verify(eventPublisher, never()).publishEvent(any());
+    }
+
+    @Test
+    @DisplayName("阅读回执：公告不存在返回 null，不查询已读")
+    void readReceipt_missingNotice_returnsNull() {
+        when(noticeMapper.selectById(9L)).thenReturn(null);
+
+        assertNull(noticeService.readReceipt(9L));
+        verify(noticeReadService, never()).lambdaQuery();
+    }
+
+    @Test
+    @DisplayName("阅读回执：同一用户多次阅读去重计数")
+    void readReceipt_readCountDistinctByUser() {
+        SysNotice notice = new SysNotice();
+        notice.setId(9L);
+        notice.setRequireRead("Y");
+        when(noticeMapper.selectById(9L)).thenReturn(notice);
+
+        // 同一用户(5)阅读两次，另一用户(8)阅读一次 → 去重后 readCount = 2
+        stubLambdaQueryReturns(List.of(read(9L, 5L), read(9L, 5L), read(9L, 8L)));
+
+        Map<String, Object> data = noticeService.readReceipt(9L);
+
+        assertEquals(2L, data.get("readCount"), "已读用户数应按 userId 去重");
+        assertEquals("Y", data.get("requireRead"));
+    }
+
+    private SysNoticeRead read(Long noticeId, Long userId) {
+        SysNoticeRead r = new SysNoticeRead();
+        r.setNoticeId(noticeId);
+        r.setUserId(userId);
+        r.setReadTime(java.time.LocalDateTime.of(2026, 8, 5, 10, 0));
+        return r;
+    }
+
+    /** stub lambdaQuery() 链式查询返回给定已读记录 */
+    private void stubLambdaQueryReturns(List<SysNoticeRead> reads) {
+        @SuppressWarnings("unchecked")
+        com.baomidou.mybatisplus.core.mapper.BaseMapper<SysNoticeRead> mapper =
+                org.mockito.Mockito.mock(com.baomidou.mybatisplus.core.mapper.BaseMapper.class);
+        when(mapper.selectList(any(com.baomidou.mybatisplus.core.conditions.Wrapper.class))).thenReturn(reads);
+        com.baomidou.mybatisplus.extension.conditions.query.LambdaQueryChainWrapper<SysNoticeRead> chain =
+                new com.baomidou.mybatisplus.extension.conditions.query.LambdaQueryChainWrapper<>(mapper);
+        when(noticeReadService.lambdaQuery()).thenReturn(chain);
     }
 }

@@ -8,9 +8,6 @@ import com.linan.system.service.ISysApiKeyService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Set;
@@ -79,20 +76,9 @@ public class SysApiKeyServiceImpl extends ServiceImpl<SysApiKeyMapper, SysApiKey
     }
 
     /**
-     * SHA-256 哈希（十六进制小写）
+     * SHA-256 哈希（十六进制小写，统一走 DigestUtil）
      */
     private String sha256(String input) {
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hash = digest.digest(input.getBytes(StandardCharsets.UTF_8));
-            StringBuilder sb = new StringBuilder(hash.length * 2);
-            for (byte b : hash) {
-                sb.append(Character.forDigit((b >> 4) & 0xF, 16));
-                sb.append(Character.forDigit(b & 0xF, 16));
-            }
-            return sb.toString();
-        } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException("SHA-256 算法不可用", e);
-        }
+        return com.linan.core.common.util.DigestUtil.sha256Hex(input);
     }
 }
