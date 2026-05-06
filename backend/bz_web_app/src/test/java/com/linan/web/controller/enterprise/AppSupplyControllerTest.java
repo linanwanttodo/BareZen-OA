@@ -8,7 +8,7 @@ import com.linan.office.entity.OfficeSupply;
 import com.linan.office.entity.OfficeSupplyRequest;
 import com.linan.office.service.IOfficeSupplyRequestService;
 import com.linan.office.service.IOfficeSupplyService;
-import com.linan.system.service.IApprovalFlowLogService;
+import com.linan.system.service.ApprovalFlowFacade;
 import org.apache.ibatis.builder.MapperBuilderAssistant;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -23,9 +23,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.lang.reflect.Field;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -46,7 +48,7 @@ class AppSupplyControllerTest {
     private IOfficeSupplyRequestService requestService;
 
     @Mock
-    private IApprovalFlowLogService flowLogService;
+    private ApprovalFlowFacade flowFacade;
 
     private AppSupplyController controller;
 
@@ -63,7 +65,7 @@ class AppSupplyControllerTest {
 
     @BeforeEach
     void setUp() {
-        controller = new AppSupplyController(supplyService, requestService, flowLogService);
+        controller = new AppSupplyController(supplyService, requestService, flowFacade);
     }
 
     @AfterEach
@@ -81,7 +83,7 @@ class AppSupplyControllerTest {
     }
 
     @Test
-    @DisplayName("撤销成功：原子条件更新 + 流程留痕")
+    @DisplayName("撤销成功：委托 Facade，handler 携带真实申请人并做原子条件更新")
     void revokeRequest_success_conditionalUpdateAndFlowLog() throws Exception {
         setThreadLocal("currentUserIdHolder", 1L);
         OfficeSupplyRequest request = new OfficeSupplyRequest();
@@ -95,19 +97,18 @@ class AppSupplyControllerTest {
         var result = controller.revokeRequest(1L);
 
         assertEquals(200, result.getCode());
+        ArgumentCaptor<ApprovalFlowFacade.ApprovalBizHandler> captor =
+                ArgumentCaptor.forClass(ApprovalFlowFacade.ApprovalBizHandler.class);
+        verify(flowFacade).revoke(eq("supply"), eq(1L), eq(1L), eq("王五"), captor.capture());
+        assertEquals(1L, captor.getValue().applicantId());
         // 用条件更新而非整单覆写，避免并发审批被覆盖
+        assertTrue(captor.getValue().cancel());
         verify(requestService).update(any(LambdaUpdateWrapper.class));
         verify(requestService, never()).updateById(any(OfficeSupplyRequest.class));
-        // 成功必须写审批流程留痕，状态 3=已撤销
-        ArgumentCaptor<String> bizType = ArgumentCaptor.forClass(String.class);
-        ArgumentCaptor<String> status = ArgumentCaptor.forClass(String.class);
-        verify(flowLogService).record(bizType.capture(), any(), any(), status.capture(), any(), any(), any());
-        assertEquals("supply", bizType.getValue());
-        assertEquals("3", status.getValue());
     }
 
     @Test
-    @DisplayName("撤销失败（状态已变更）返回业务错误且写失败留痕（含实际状态）")
+    @DisplayName("撤销失败（状态已变更）：handler 携带实际状态供 Facade 失败留痕")
     void revokeRequest_conditionalUpdateFailed_flowLogWithActualStatus() throws Exception {
         setThreadLocal("currentUserIdHolder", 1L);
         OfficeSupplyRequest request = new OfficeSupplyRequest();
@@ -120,16 +121,13 @@ class AppSupplyControllerTest {
 
         var result = controller.revokeRequest(1L);
 
-        assertEquals(500, result.getCode());
-        assertTrue(result.getMsg().contains("仅待审批"));
-        // 失败路径也必须留痕：节点=撤销失败，状态=单据当前实际状态
-        ArgumentCaptor<String> bizType = ArgumentCaptor.forClass(String.class);
-        ArgumentCaptor<String> node = ArgumentCaptor.forClass(String.class);
-        ArgumentCaptor<String> status = ArgumentCaptor.forClass(String.class);
-        verify(flowLogService).record(bizType.capture(), any(), node.capture(), status.capture(), any(), any(), any());
-        assertEquals("supply", bizType.getValue());
-        assertEquals("撤销失败", node.getValue());
-        assertEquals("1", status.getValue());
+        assertEquals(200, result.getCode(), "归属校验/失败留痕由 Facade 收口，此处仅验证委托接线");
+        ArgumentCaptor<ApprovalFlowFacade.ApprovalBizHandler> captor =
+                ArgumentCaptor.forClass(ApprovalFlowFacade.ApprovalBizHandler.class);
+        verify(flowFacade).revoke(eq("supply"), eq(1L), eq(1L), eq("王五"), captor.capture());
+        assertEquals("1", captor.getValue().currentStatus(), "携带单据实际状态供撤销失败留痕");
+        assertFalse(captor.getValue().cancel(), "状态已变更时条件更新失败");
+        verify(requestService).update(any(LambdaUpdateWrapper.class));
     }
 
     @Test
@@ -164,9 +162,8 @@ class AppSupplyControllerTest {
         assertEquals(9L, request.getUserId(), "userId 必须为服务端当前登录用户");
         assertEquals("supplyUser", request.getUserName(), "userName 必须为服务端真实用户名");
         assertEquals("0", request.getStatus(), "status 必须强制为待审批");
-        // flowLog 记录使用的 userName 是覆盖后的真实值
-        ArgumentCaptor<String> operatorName = ArgumentCaptor.forClass(String.class);
-        verify(flowLogService).record(any(), any(), any(), any(), any(), operatorName.capture(), any());
-        assertEquals("supplyUser", operatorName.getValue());
+        // 提交留痕与引擎启动由 Facade 统一编排，操作人为覆盖后的真实值
+        verify(flowFacade).submit(eq("supply"), eq(request.getId()), eq(request.getAssigneeId()),
+                eq(request.getAssigneeName()), eq(9L), eq("supplyUser"));
     }
 }

@@ -1,25 +1,13 @@
 package com.linan.web.controller;
 
-import com.baomidou.mybatisplus.core.MybatisConfiguration;
 import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
-import com.baomidou.mybatisplus.extension.conditions.query.LambdaQueryChainWrapper;
 import com.linan.core.common.api.PageResult;
 import com.linan.core.common.api.Result;
-import com.linan.hr.entity.AttLeaveRequest;
-import com.linan.hr.entity.AttOvertimeRequest;
-import com.linan.hr.entity.AttTravelRequest;
-import com.linan.hr.service.IAttLeaveRequestService;
-import com.linan.hr.service.IAttOvertimeRequestService;
-import com.linan.hr.service.IAttTravelRequestService;
-import com.linan.office.entity.OfficeSupplyRequest;
-import com.linan.office.entity.OfficeVehicleRequest;
-import com.linan.office.service.IOfficeSupplyRequestService;
-import com.linan.office.service.IOfficeVehicleRequestService;
+import com.linan.core.security.interceptor.AuthInterceptor;
 import com.linan.system.entity.ApprovalFlowTask;
-import com.linan.system.service.IApprovalFlowTaskService;
-import org.apache.ibatis.builder.MapperBuilderAssistant;
+import com.linan.web.service.TodoAggregationService;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -29,132 +17,108 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.List;
+import java.lang.reflect.Field;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 /**
- * TodoCenterController 统一待办参数钳制与 LIMIT 单测
+ * TodoCenterController 统一待办参数钳制与委托单测
  *
- * <p>覆盖 T12：pageNum<1 / pageSize<1 / pageSize>100 直接返回参数错误（拒绝 subList 负索引与无界内存分页）；
- * 合法参数下两个聚合查询均追加 LIMIT 1000 防无界全表扫描。</p>
+ * <p>聚合与数据库分页已下沉到 {@link TodoAggregationService}（web 编排层 service），
+ * 本测试聚焦 Controller：划参数钳制（pageNum&lt;1 / pageSize&lt;1 / pageSize&gt;100 拒绝）
+ * 与向服务的委托接线。业务分页见 TodoAggregationServiceImplTest。</p>
  */
 @ExtendWith(MockitoExtension.class)
 class TodoCenterControllerTest {
 
     @Mock
-    private IAttLeaveRequestService leaveService;
-
-    @Mock
-    private IAttOvertimeRequestService overtimeService;
-
-    @Mock
-    private IAttTravelRequestService travelService;
-
-    @Mock
-    private IOfficeVehicleRequestService vehicleService;
-
-    @Mock
-    private IOfficeSupplyRequestService supplyRequestService;
-
-    @Mock
-    private IApprovalFlowTaskService taskService;
+    private TodoAggregationService todoService;
 
     private TodoCenterController controller;
 
-    /**
-     * 初始化实体表信息缓存：lambdaQuery() 构造 LambdaQueryChainWrapper 时需解析列缓存
-     */
     @BeforeAll
     static void initTableInfoCache() {
-        TableInfoHelper.initTableInfo(
-                new MapperBuilderAssistant(new MybatisConfiguration(), ""), AttLeaveRequest.class);
-        TableInfoHelper.initTableInfo(
-                new MapperBuilderAssistant(new MybatisConfiguration(), ""), AttOvertimeRequest.class);
-        TableInfoHelper.initTableInfo(
-                new MapperBuilderAssistant(new MybatisConfiguration(), ""), AttTravelRequest.class);
-        TableInfoHelper.initTableInfo(
-                new MapperBuilderAssistant(new MybatisConfiguration(), ""), OfficeVehicleRequest.class);
-        TableInfoHelper.initTableInfo(
-                new MapperBuilderAssistant(new MybatisConfiguration(), ""), OfficeSupplyRequest.class);
-        TableInfoHelper.initTableInfo(
-                new MapperBuilderAssistant(new MybatisConfiguration(), ""), ApprovalFlowTask.class);
+        // 参数钳制与委托用例不构建 LambdaWrapper，此处无需 TableInfo 缓存
     }
 
     @BeforeEach
-    void setUp() {
-        controller = new TodoCenterController(leaveService, overtimeService, travelService, vehicleService, supplyRequestService, taskService);
+    void setUp() throws Exception {
+        controller = new TodoCenterController(todoService);
+        setThreadLocal("currentUserIdHolder", 1L);
+    }
+
+    @AfterEach
+    void tearDown() throws Exception {
+        AuthInterceptor.clearCurrentUser();
+    }
+
+    private static void setThreadLocal(String fieldName, Object value) throws Exception {
+        Field field = AuthInterceptor.class.getDeclaredField(fieldName);
+        field.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        ThreadLocal<Object> tl = (ThreadLocal<Object>) field.get(null);
+        tl.set(value);
     }
 
     @Test
-    @DisplayName("pageNum=0 直接返回参数错误，不触达服务层")
+    @DisplayName("pageNum=0 直接返回参数错误，不触达聚合服务")
     void list_pageNumZero_rejected() {
-        Result<PageResult<TodoCenterController.TodoItem>> result = controller.list(0, 10);
+        Result<PageResult<TodoAggregationService.TodoItem>> result = controller.list(0, 10);
 
         assertEquals(500, result.getCode());
         assertTrue(result.getMsg().contains("分页参数不合法"));
-        verifyNoInteractions(leaveService, overtimeService, travelService, vehicleService, supplyRequestService);
+        verifyNoInteractions(todoService);
     }
 
     @Test
-    @DisplayName("pageSize=1000 越界直接返回参数错误，不触达服务层")
+    @DisplayName("pageSize=1000 越界直接返回参数错误，不触达聚合服务")
     void list_pageSizeTooLarge_rejected() {
-        Result<PageResult<TodoCenterController.TodoItem>> result = controller.list(1, 1000);
+        Result<PageResult<TodoAggregationService.TodoItem>> result = controller.list(1, 1000);
 
         assertEquals(500, result.getCode());
         assertTrue(result.getMsg().contains("分页参数不合法"));
-        verifyNoInteractions(leaveService, overtimeService, travelService, vehicleService, supplyRequestService);
+        verifyNoInteractions(todoService);
     }
 
     @Test
     @DisplayName("pageSize=0 直接返回参数错误")
     void list_pageSizeZero_rejected() {
-        Result<PageResult<TodoCenterController.TodoItem>> result = controller.list(1, 0);
+        Result<PageResult<TodoAggregationService.TodoItem>> result = controller.list(1, 0);
 
         assertEquals(500, result.getCode());
         assertTrue(result.getMsg().contains("分页参数不合法"));
-        verifyNoInteractions(leaveService, overtimeService, travelService, vehicleService, supplyRequestService);
+        verifyNoInteractions(todoService);
     }
 
     @Test
-    @DisplayName("合法参数：五个聚合查询均携带 LIMIT 1000")
-    void list_validParams_queriesLimited() {
-        // lambdaQuery() 是 IService 默认方法，Mockito 会拦截返回 null，
-        // 因此用真实 LambdaQueryChainWrapper（底层挂 mock BaseMapper）替换
-        BaseMapper<OfficeSupplyRequest> supplyMapper = mock(BaseMapper.class);
-        BaseMapper<ApprovalFlowTask> taskMapper = mock(BaseMapper.class);
-        when(supplyMapper.selectList(any())).thenReturn(List.of());
-        // 引擎当前待审节点聚合（V36）：空任务列表，不触达四个业务表查询
-        when(taskMapper.selectList(any())).thenReturn(List.of());
-        when(supplyRequestService.lambdaQuery())
-                .thenReturn(new LambdaQueryChainWrapper<>(supplyMapper));
-        when(taskService.lambdaQuery())
-                .thenReturn(new LambdaQueryChainWrapper<>(taskMapper));
+    @DisplayName("合法参数：委托聚合服务做数据库分页")
+    void list_validParams_delegatesToService() {
+        PageResult<TodoAggregationService.TodoItem> pr = new PageResult<>();
+        pr.setTotal(2);
+        pr.setList(java.util.List.of());
+        when(todoService.page(1L, 1, 10)).thenReturn(pr);
 
-        Result<PageResult<TodoCenterController.TodoItem>> result = controller.list(1, 10);
+        Result<PageResult<TodoAggregationService.TodoItem>> result = controller.list(1, 10);
 
         assertEquals(200, result.getCode());
-        assertNotNull(result.getData());
-        assertEquals(0, result.getData().getTotal());
-
-        // 待审节点为空时业务表查询不触发：仅引擎任务查询与用品聚合须携带 LIMIT 1000
-        assertCapturedHasLimit(taskMapper);
-        assertCapturedHasLimit(supplyMapper);
+        assertEquals(2, result.getData().getTotal());
+        verify(todoService).page(1L, 1, 10);
     }
 
-    /** 断言 mock mapper 捕获到的查询 wrapper 含 LIMIT 1000 */
-    @SuppressWarnings({"rawtypes", "unchecked"})
-    private static void assertCapturedHasLimit(BaseMapper mapper) {
-        ArgumentCaptor<Wrapper> captor = ArgumentCaptor.forClass(Wrapper.class);
-        verify(mapper).selectList(captor.capture());
-        assertTrue(captor.getValue().getCustomSqlSegment().contains("LIMIT 1000"),
-                "待办查询必须加 LIMIT 1000");
+    @Test
+    @DisplayName("summary 委托聚合服务")
+    void summary_delegatesToService() {
+        when(todoService.summary(1L)).thenReturn(java.util.Map.of("total", 5L));
+
+        Result<java.util.Map<String, Long>> result = controller.summary();
+
+        assertEquals(200, result.getCode());
+        assertEquals(5L, result.getData().get("total"));
+        verify(todoService).summary(1L);
     }
 }

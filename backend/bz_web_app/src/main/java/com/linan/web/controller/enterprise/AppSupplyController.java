@@ -12,7 +12,7 @@ import com.linan.office.entity.OfficeSupply;
 import com.linan.office.entity.OfficeSupplyRequest;
 import com.linan.office.service.IOfficeSupplyRequestService;
 import com.linan.office.service.IOfficeSupplyService;
-import com.linan.system.service.IApprovalFlowLogService;
+import com.linan.system.service.ApprovalFlowFacade;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import lombok.RequiredArgsConstructor;
@@ -40,7 +40,7 @@ public class AppSupplyController {
 
     private final IOfficeSupplyRequestService requestService;
 
-    private final IApprovalFlowLogService flowLogService;
+    private final ApprovalFlowFacade flowFacade;
 
     /**
      * 可申领用品列表
@@ -131,8 +131,9 @@ public class AppSupplyController {
             request.setStatus("0");
             boolean ok = requestService.save(request);
             if (ok) {
-                flowLogService.record("supply", request.getId(), "提交申请", "0",
-                        userId, request.getUserName(), null);
+                // 审批编排统一收口：启动引擎首节点 + 记录提交日志（同一事务）
+                flowFacade.submit("supply", request.getId(), request.getAssigneeId(), request.getAssigneeName(),
+                        userId, request.getUserName());
             }
             return ok ? Result.success(null) : Result.error("提交失败");
         } catch (Exception e) {
@@ -159,21 +160,27 @@ public class AppSupplyController {
         if (request == null) {
             return Result.error("记录不存在");
         }
-        if (!userId.equals(request.getUserId())) {
-            return Result.error("只能撤销自己的申领");
-        }
-        boolean ok = requestService.update(new LambdaUpdateWrapper<OfficeSupplyRequest>()
-                .eq(OfficeSupplyRequest::getId, id)
-                .eq(OfficeSupplyRequest::getStatus, "0")
-                .set(OfficeSupplyRequest::getStatus, "3"));
-        if (!ok) {
-            // 失败也留痕：记录单据当前实际状态（可能审批已把状态改走），保证撤销失败可审计
-            flowLogService.record("supply", request.getId(), "撤销失败",
-                    request.getStatus(), userId, request.getUserName(), "仅待审批状态的申领可撤销");
-            return Result.error("仅待审批状态的申领可撤销");
-        }
-        flowLogService.record("supply", request.getId(), "撤销申请", "3",
-                userId, request.getUserName(), null);
+        // 审批编排统一收口：归属校验 / 业务表 0→3 原子更新 / 引擎节点取消 / 撤销日志（同一事务）
+        flowFacade.revoke("supply", id, userId, request.getUserName(),
+                new ApprovalFlowFacade.ApprovalBizHandler() {
+                    @Override
+                    public Long applicantId() {
+                        return request.getUserId();
+                    }
+
+                    @Override
+                    public boolean cancel() {
+                        return requestService.update(new LambdaUpdateWrapper<OfficeSupplyRequest>()
+                                .eq(OfficeSupplyRequest::getId, id)
+                                .eq(OfficeSupplyRequest::getStatus, "0")
+                                .set(OfficeSupplyRequest::getStatus, "3"));
+                    }
+
+                    @Override
+                    public String currentStatus() {
+                        return request.getStatus();
+                    }
+                });
         return Result.success(null);
     }
 }

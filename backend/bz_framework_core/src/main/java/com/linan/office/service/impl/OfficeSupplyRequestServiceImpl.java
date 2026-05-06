@@ -1,17 +1,16 @@
 package com.linan.office.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.linan.core.common.event.ApprovalCompletedEvent;
+import com.linan.core.common.enums.ApprovalStatus;
 import com.linan.core.common.exception.BusinessException;
-import com.linan.core.security.interceptor.AuthInterceptor;
 import com.linan.office.entity.OfficeSupply;
 import com.linan.office.entity.OfficeSupplyRequest;
 import com.linan.office.mapper.OfficeSupplyMapper;
 import com.linan.office.mapper.OfficeSupplyRequestMapper;
 import com.linan.office.service.IOfficeSupplyRequestService;
 import com.linan.office.service.IOfficeSupplyService;
-import com.linan.system.service.IApprovalFlowLogService;
-import org.springframework.context.ApplicationEventPublisher;
+import com.linan.system.service.ApprovalFlowFacade;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +19,11 @@ import java.time.format.DateTimeFormatter;
 
 /**
  * 用品申领记录服务实现
+ *
+ * <p>审批编排统一收口到 {@link ApprovalFlowFacade}（自审校验 / 引擎节点推进 /
+ * 流程日志 / 通知事件 / 事务一致），本服务仅承载单据差异逻辑：
+ * 通过时悲观锁扣减库存（同一用品并发扣减串行化，避免超扣）。
+ * 任一步骤失败抛出 {@link BusinessException}，库存扣减与状态变更整体回滚。</p>
  *
  * @author BareZen Team
  */
@@ -33,83 +37,82 @@ public class OfficeSupplyRequestServiceImpl extends ServiceImpl<OfficeSupplyRequ
 
     private final IOfficeSupplyService supplyService;
 
-    private final IApprovalFlowLogService flowLogService;
-
-    private final ApplicationEventPublisher eventPublisher;
+    private final ApprovalFlowFacade flowFacade;
 
     public OfficeSupplyRequestServiceImpl(OfficeSupplyMapper supplyMapper,
                                           IOfficeSupplyService supplyService,
-                                          IApprovalFlowLogService flowLogService,
-                                          ApplicationEventPublisher eventPublisher) {
+                                          ApprovalFlowFacade flowFacade) {
         this.supplyMapper = supplyMapper;
         this.supplyService = supplyService;
-        this.flowLogService = flowLogService;
-        this.eventPublisher = eventPublisher;
+        this.flowFacade = flowFacade;
     }
 
     /**
      * 审批申领（通过/驳回），通过时扣减库存
      *
-     * <p>事务内悲观锁：先锁定申领记录行（同一记录的并发审批串行化，
-     * 后到者等待锁释放后可见最新状态），通过时再锁定用品行
-     * （同一用品的并发扣减串行化，避免库存超扣）。
-     * 任一步骤失败抛出 {@link BusinessException}，库存扣减与状态变更整体回滚。</p>
+     * <p>编排（自审/引擎/日志/通知）由 Facade 统一；单据差异逻辑（悲观锁扣库存 +
+     * 业务表原子状态更新 + 文案）在 {@link ApprovalFlowFacade.ApprovalBizHandler} 中。</p>
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void approve(Long id, String action, String remark) {
-        // 悲观锁锁定申领记录行，使同一记录的并发审批串行化
-        OfficeSupplyRequest request = baseMapper.selectByIdForUpdate(id);
+        OfficeSupplyRequest request = getById(id);
         if (request == null) {
             throw new BusinessException("申领记录不存在");
         }
-        if (!"0".equals(request.getStatus())) {
-            throw new BusinessException("该记录已审批，不能重复操作");
-        }
-        Long approverId = AuthInterceptor.getCurrentUserId();
-        if (approverId != null && approverId.equals(request.getUserId())) {
-            throw new BusinessException("不能审批自己的申请");
-        }
-        // 指定审批人校验（V31）：若申请指定了审批人，仅该审批人可操作
-        if (request.getAssigneeId() != null
-                && (approverId == null || !approverId.equals(request.getAssigneeId()))) {
-            throw new BusinessException("该申请已指定审批人（" + request.getAssigneeName() + "），仅其可审批");
-        }
+        Long approverId = com.linan.core.security.interceptor.AuthInterceptor.getCurrentUserId();
+        String approverName = com.linan.core.security.interceptor.AuthInterceptor.getCurrentUsername();
 
-        if ("pass".equals(action)) {
-            // 悲观锁锁定用品行，使同一用品的并发扣减串行化，避免库存超扣
-            OfficeSupply supply = supplyMapper.selectByIdForUpdate(request.getSupplyId());
-            if (supply == null) {
-                throw new BusinessException("用品已不存在");
-            }
-            if (supply.getStock() < request.getQuantity()) {
-                throw new BusinessException("库存不足，当前库存 " + supply.getStock());
-            }
-            supply.setStock(supply.getStock() - request.getQuantity());
-            supplyService.updateById(supply);
-            request.setStatus("1");
-        } else if ("reject".equals(action)) {
-            request.setStatus("2");
-        } else {
-            throw new BusinessException("无效的审批动作");
-        }
+        flowFacade.approve("supply", id, approverId, approverName, action, remark,
+                new ApprovalFlowFacade.ApprovalBizHandler() {
+                    @Override
+                    public Long applicantId() {
+                        return request.getUserId();
+                    }
 
-        request.setApproverId(approverId);
-        request.setApproverName(AuthInterceptor.getCurrentUsername());
-        request.setApproveTime(LocalDateTime.now().format(FMT));
-        request.setApproveRemark(remark);
-        if (!updateById(request)) {
-            throw new BusinessException("审批失败");
-        }
+                    @Override
+                    public boolean finish(String targetStatus, Long approverId, String approverName, String remark) {
+                        // 通过时扣减库存（悲观锁锁定用品行，并发串行化避免超扣）
+                        if (ApprovalStatus.APPROVED.getValue().equals(targetStatus)) {
+                            deductStock(request);
+                        }
+                        // 业务表原子条件更新（并发兜底：后到者受影响行数为 0）
+                        return OfficeSupplyRequestServiceImpl.this.update(
+                                new LambdaUpdateWrapper<OfficeSupplyRequest>()
+                                        .eq(OfficeSupplyRequest::getId, id)
+                                        .eq(OfficeSupplyRequest::getStatus, ApprovalStatus.PENDING.getValue())
+                                        .set(OfficeSupplyRequest::getStatus, targetStatus)
+                                        .set(OfficeSupplyRequest::getApproverId, approverId)
+                                        .set(OfficeSupplyRequest::getApproverName, approverName)
+                                        .set(OfficeSupplyRequest::getApproveTime, LocalDateTime.now().format(FMT))
+                                        .set(OfficeSupplyRequest::getApproveRemark, remark));
+                    }
 
-        String node = "pass".equals(action) ? "审批通过" : "审批驳回";
-        flowLogService.record("supply", request.getId(), node, request.getStatus(),
-                approverId, AuthInterceptor.getCurrentUsername(), remark);
-        String result = "pass".equals(action) ? "已通过" : "已驳回";
-        eventPublisher.publishEvent(new ApprovalCompletedEvent(
-                request.getUserId(),
-                "用品申领审批" + result,
-                "您的用品申领（" + request.getSupplyName() + " × " + request.getQuantity() + "）" + result
-                        + (remark != null && !remark.isEmpty() ? "，审批意见：" + remark : "")));
+                    @Override
+                    public boolean cancel() {
+                        return false;
+                    }
+
+                    @Override
+                    public ApprovalFlowFacade.NotifyText resultNotify(boolean approved, String remark) {
+                        String res = approved ? "已通过" : "已驳回";
+                        String content = "您的用品申领（" + request.getSupplyName() + " × " + request.getQuantity() + "）" + res
+                                + (remark != null && !remark.isEmpty() ? "，审批意见：" + remark : "");
+                        return ApprovalFlowFacade.NotifyText.of("用品申领审批" + res, content);
+                    }
+                });
+    }
+
+    /** 悲观锁扣减库存：锁定用品行，库存不足抛业务异常（事务内整体回滚） */
+    private void deductStock(OfficeSupplyRequest request) {
+        OfficeSupply supply = supplyMapper.selectByIdForUpdate(request.getSupplyId());
+        if (supply == null) {
+            throw new BusinessException("用品已不存在");
+        }
+        if (supply.getStock() < request.getQuantity()) {
+            throw new BusinessException("库存不足，当前库存 " + supply.getStock());
+        }
+        supply.setStock(supply.getStock() - request.getQuantity());
+        supplyService.updateById(supply);
     }
 }
