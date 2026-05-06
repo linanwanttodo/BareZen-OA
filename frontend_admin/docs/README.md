@@ -6,7 +6,7 @@
 
 ```
 BareZen_Base/
-├── frontend_admin/            # 管理后台 (Vue 3 + Element Plus)
+├── frontend_admin/            # 管理后台 (Vue 3 + Arco Design)
 │   ├── docs/                 # 开发文档 (本目录)
 │   └── src/
 │       ├── api/              # 对接 /api/system/* + /api/auth/*
@@ -51,7 +51,6 @@ docs/
 ├── 15-在线用户模块/            # 在线用户列表 + 强制下线
 ├── 16-打包部署/               # Vite build + Nginx 配置
 ├── 17-前后端对接/             # API 对接细节 + Mock 数据
-└── 18-内容管理模块/           # 文章/分类/评论 接口设计
 ```
 
 ### frontend_user 文档顺序
@@ -66,10 +65,9 @@ docs/
 ├── 05-请求封装/               # Axios 实例 + 拦截器
 ├── 06-认证模块/               # 注册 + 登录 + 找回密码 + JWT 存储
 ├── 07-首页开发/               # Banner + 分类 + 热门内容
-├── 08-内容详情页/             # 详情组件 + 评论 + 相关推荐
-├── 09-个人中心/               # 个人信息 + 我的收藏 + 历史记录
-├── 10-打包部署/               # Vite build + Nginx 配置
-└── 11-前后端对接/             # API 对接细节
+├── 08-个人中心/               # 个人信息 + 我的申请 + 考勤打卡
+├── 09-打包部署/               # Vite build + Nginx 配置
+└── 10-前后端对接/             # API 对接细节
 ```
 
 ## 技术栈对照表
@@ -79,12 +77,12 @@ docs/
 | 构建工具 | Vite 5.x | Vite 5.x |
 | 核心框架 | Vue 3.4 + Composition API | Vue 3.4 + Composition API |
 | 类型系统 | TypeScript 5.x | TypeScript 5.x |
-| UI 组件库 | Element Plus (管理端) | Tailwind CSS (用户端) |
+| UI 组件库 | Arco Design (管理端) | Tailwind CSS (用户端) |
 | 状态管理 | Pinia 2.x | Pinia 2.x |
 | 路由 | Vue Router 4.x | Vue Router 4.x |
 | HTTP 客户端 | Axios | Axios |
-| CSS 方案 | Scoped CSS + Element Plus 样式覆盖 | Tailwind CSS 原子化 |
-| 图标 | @element-plus/icons-vue | @iconify/vue (Lucide) |
+| CSS 方案 | Scoped CSS + Arco Design 样式覆盖 | Tailwind CSS 原子化 |
+| 图标 | @arco-design/web-vue/icon | @iconify/vue (Lucide) |
 | 构建目标 | PC 浏览器 (≥ IE11 无需支持) | PC + 移动端响应式 |
 
 ## 后端接口对接

@@ -44,7 +44,7 @@
 
 ### 3.1 模块化设计原则
 采用 Maven/Gradle 多模块结构，各功能通过依赖引入，不引入即不生效。
-* **`framework-core`**：微内核，提供统一返回体、异常捕获、JWT 基础。
+* **`bz_framework_core`**：微内核，提供统一返回体、异常捕获、JWT 基础（RBAC、存储抽象等插件能力已合入本模块）。
 * **`framework-rbac`**：权限插件，提供用户、角色、菜单、部门逻辑。
 * **`framework-oss`**：存储插件，提供对象存储接入。
 * **`web-admin`**：主启动类，负责业务 Controller 的承载。
@@ -52,20 +52,19 @@
 ### 3.2 详细目录树
 ```text
 BareZen_Base/
-├── backend-workspace/             # 后端根工程
+├── backend/                       # 后端根工程（Gradle 多模块）
 │   ├── build.gradle.kts           # 全局依赖管理
 │   ├── settings.gradle.kts        # 模块包含逻辑
-│   ├── framework-core/            # 【微内核】核心逻辑
+│   ├── bz_framework_core/         # 【微内核】核心逻辑（含 RBAC/系统/HR/办公/资产/知识库域）
 │   │   └── src/main/java/com/linan/core/
 │   │       ├── common/api/        # 统一返回体 Result
 │   │       ├── common/exception/  # 全局异常处理
 │   │       ├── security/          # JWT 拦截器逻辑
 │   │       └── config/            # 跨域与 JSON 配置
-│   ├── framework-rbac/            # 【插件】企业权限模块
-│   └── web-admin/                 # 【主启动】业务应用入口
+│   └── bz_web_app/                # 【主启动】业务应用入口（Controller/配置/Flyway 迁移）
 │
-├── frontend-admin/                # 管理端 (Vue 3 + Element Plus)
-│   ├── src/api/                   # 对接 /api/admin/*
+├── frontend-admin/                # 管理端 (Vue 3 + Arco Design)
+│   ├── src/api/                   # 对接 /api/system/*、/api/hr/* 等
 │   ├── src/layout/                # 管理后台侧边栏布局
 │   └── src/views/                 # 具体业务管理页面
 │
@@ -103,7 +102,7 @@ BareZen_Base/
 
 ## 5. 核心初始化源码清单 (部分)
 
-### 5.1 统一返回体规范 (`framework-core`)
+### 5.1 统一返回体规范 (`bz_framework_core`)
 ```java
 package com.linan.core.common.api;
 
@@ -125,7 +124,7 @@ public class Result<T> {
 }
 ```
 
-### 5.2 全局异常拦截 (`framework-core`)
+### 5.2 全局异常拦截 (`bz_framework_core`)
 ```java
 package com.linan.core.common.exception;
 

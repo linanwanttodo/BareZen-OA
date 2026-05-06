@@ -10,6 +10,12 @@
 | 数据字典 | 100% | Redis 缓存 |
 | 通知公告 | 100% | CRUD + 发布/下架 |
 | 操作日志 | 100% | @OperLog AOP 记录 |
+| 考勤打卡 | 100% | 上下班打卡 + 迟到/早退计算 + 月度统计 |
+| 多级审批引擎 | 100% | 模板驱动节点链（leave/overtime/travel/vehicle） |
+| 待办中心 | 100% | 按当前审批节点聚合 + WebSocket 通知 |
+| 资产分类/借用归还 | 100% | 分类树 + 借用状态流转 |
+| 知识库分类/文档版本 | 100% | 分类树 + 更新前版本快照 |
+| 开放平台 | 100% | API Key 鉴权 + Webhook 事件转发 |
 | 接口限流 | 100% | Redis + Lua 脚本 |
 | 防重复提交 | 100% | Redis SETNX |
 | 在线用户监控 | 100% | Redis 在线记录、强制下线 |
@@ -51,23 +57,18 @@ backend/
 # 1. 启动数据库
 make env-up
 
-# 2. 执行建表 SQL（按顺序）
-# sql/init_rbac.sql
-# sql/sys_notice.sql
-# sql/sys_dict.sql
-# sql/sys_file.sql
-# sql/sys_oper_log.sql
-
-# 3. 启动后端
+# 2. 启动后端（数据库结构由 Flyway 自动迁移，无需手动执行 SQL）
 make dev-api
 
-# 4. 访问接口文档
+# 3. 访问接口文档
 # http://localhost:8080/doc.html
 
-# 5. 默认账号
+# 4. 默认账号
 # 用户名: admin
 # 密码: admin123
 ```
+
+> 数据库结构变更：新增 `bz_web_app/src/main/resources/db/migration/V{编号}__*.sql`，启动时自动应用；V1-V24 历史脚本不可修改。
 
 ## 核心功能一览
 
@@ -100,6 +101,6 @@ docs/
 ├── 07-部署运维/          # 打包、Docker
 └── 08-前后端对接/         # 前端开发指南
 
-frontend_admin/docs/     # 17 章前端文档（管理后台 Element Plus）
-frontend_user/docs/      # 10 章前端文档（用户前台 Tailwind CSS）
+frontend_admin/docs/     # 前端开发文档（管理后台 Arco Design，00-17 章）
+frontend_user/docs/      # 前端开发文档（用户前台 Tailwind CSS）
 ```

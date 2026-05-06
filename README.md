@@ -33,18 +33,16 @@ cd backend
 make env-up        # 启动 MySQL + Redis Docker 容器
 ```
 
-### 2. 初始化数据库
+### 2. 初始化数据库（Flyway 自动迁移）
 
-按以下顺序执行 SQL 脚本：
+数据库结构由 **Flyway 自动迁移**管理，无需手动执行 SQL 脚本。首次启动后端时会自动创建 `barezen_base` 库表并写入种子数据（V1-V43）：
 
 ```bash
-# 在 MySQL 中执行（先创建 barezen_base 数据库）
-mysql -uroot -p123456 barezen_base < sql/init_rbac.sql
-mysql -uroot -p123456 barezen_base < sql/sys_notice.sql
-mysql -uroot -p123456 barezen_base < sql/sys_dict.sql
-mysql -uroot -p123456 barezen_base < sql/sys_file.sql
-mysql -uroot -p123456 barezen_base < sql/sys_oper_log.sql
+# 只需确保 MySQL 存在 barezen_base 数据库（或由连接配置自动创建）
+mysql -uroot -p123456 -e "CREATE DATABASE IF NOT EXISTS barezen_base CHARACTER SET utf8mb4;"
 ```
+
+后续结构变更一律新增 `backend/bz_web_app/src/main/resources/db/migration/V{编号}__*.sql`，启动时按版本号顺序自动应用，历史脚本不可修改。
 
 ### 3. 启动后端
 
@@ -77,15 +75,15 @@ npm run dev
 ```
 BareZen_Base/
 ├── backend/                  # 后端 Gradle 多模块
-│   ├── bz_framework_core/    # 核心底座 + RBAC + 系统业务
+│   ├── bz_framework_core/    # 核心底座 + RBAC + 业务域（hr/office/asset/kb/system）
 │   ├── bz_web_app/           # Web 启动模块
-│   ├── sql/                  # 建表脚本
+│   │   └── src/main/resources/db/migration/  # Flyway 迁移脚本（V1-V43）
 │   ├── docker-compose.yml    # MySQL + Redis
 │   └── Dockerfile            # 后端容器化
-├── frontend_admin/           # 管理后台
-├── frontend_user/            # 用户前台
+├── frontend_admin/           # 管理后台（Vue 3 + Arco Design）
+├── frontend_user/            # 用户前台（Vue 3 + Tailwind CSS）
 ├── design-system/            # 设计规范文档
-└── docs/                    # 项目文档（.md）
+└── docs/                     # 项目文档（.md）
 ```
 
 ## 模块功能
@@ -101,7 +99,16 @@ BareZen_Base/
 | 操作日志 | 是 | | — |
 | 在线用户监控 | 是 | | — |
 | 员工通讯录 | 是 | — | 是 |
-| 待办事项 | 是 | — | 是 |
+| 考勤打卡（上下班/迟到早退统计） | 是 | | 是 |
+| 请假/加班/出差/用车申请 | 是 | | 是 |
+| 多级审批引擎（模板配置 + 节点链） | 是 | | — |
+| 待办中心 | 是 | | 是 |
+| 会议预订（行锁防冲突） | 是 | | 是 |
+| 办公用品申领/库存预警 | 是 | | 是 |
+| 资产台账 + 分类 + 借用归还 | 是 | | — |
+| 知识库 + 分类 + 文档版本 | 是 | | — |
+| 日程管理 | 是 | | 是 |
+| 开放平台（API Key / Webhook） | 是 | | — |
 | 仪表盘 | 是 | | 是 |
 | 接口限流 | 是 | — | — |
 | 防重复提交 | 是 | — | — |
