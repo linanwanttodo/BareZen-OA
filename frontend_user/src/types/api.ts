@@ -63,6 +63,20 @@ export interface Notice {
   updateTime: string
 }
 
+/** 站内消息（3.1 WebSocket 离线兜底，消息中心） */
+export interface SysMessage {
+  id: string
+  userId: string
+  title: string
+  content: string
+  msgType: string
+  bizType: string | null
+  bizId: string | null
+  isRead: number
+  readTime: string | null
+  createTime: string
+}
+
 /** 通讯录联系人 */
 export interface Contact {
   userId: string

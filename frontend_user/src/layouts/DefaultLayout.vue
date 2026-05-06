@@ -42,9 +42,14 @@
         </a-dropdown>
       </nav>
 
-      <!-- 右侧：用户信息 -->
+      <!-- 右侧：消息铃铛 + 用户信息 -->
       <div class="user-header__right">
         <template v-if="userStore.token">
+          <div class="user-header__bell" title="消息中心" @click="router.push('/messages')">
+            <a-badge :count="unreadCount" :max-count="99" :offset="[2, -2]">
+              <icon-notification :size="18" />
+            </a-badge>
+          </div>
           <a-dropdown>
             <div class="user-header__user">
               <div class="user-header__avatar">{{ userInitial }}</div>
@@ -123,12 +128,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, reactive } from 'vue'
+import { computed, ref, reactive, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { Message } from '@arco-design/web-vue'
 import { ChevronDown } from 'lucide-vue-next'
+import { IconNotification } from '@arco-design/web-vue/es/icon'
 import { useUserStore } from '@/stores/user'
 import { changePasswordApi } from '@/api/auth'
+import { getUnreadCountApi } from '@/api/message'
 
 const router = useRouter()
 const route = useRoute()
@@ -136,6 +143,22 @@ const userStore = useUserStore()
 
 const nickName = computed(() => userStore.userInfo?.nickName || '用户')
 const userInitial = computed(() => nickName.value.charAt(0).toUpperCase())
+
+// ---- 消息中心：未读角标（路由切换时刷新，离线通知落库后可即时看到） ----
+const unreadCount = ref(0)
+
+async function refreshUnreadCount() {
+  if (!userStore.token) return
+  try {
+    const res = await getUnreadCountApi()
+    unreadCount.value = res.data ?? 0
+  } catch {
+    // 未读数失败静默，不影响页面
+  }
+}
+
+watch(() => route.path, refreshUnreadCount)
+onMounted(refreshUnreadCount)
 
 interface NavItem {
   title: string
@@ -345,6 +368,21 @@ async function onPwdSubmit() {
 .user-header__right {
   flex-shrink: 0;
   margin-left: 24px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.user-header__bell {
+  display: flex;
+  align-items: center;
+  padding: 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--muted-foreground);
+}
+.user-header__bell:hover {
+  color: var(--foreground);
+  background: var(--muted);
 }
 .user-header__user {
   display: flex;
