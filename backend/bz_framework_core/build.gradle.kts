@@ -49,6 +49,9 @@ dependencies {
     // Quartz 定时任务调度框架
     implementation("org.springframework.boot:spring-boot-starter-quartz")
 
+    // JavaMail 邮件发送（SMTP，版本由 Spring Boot BOM 管理）
+    implementation("org.springframework.boot:spring-boot-starter-mail")
+
     // 测试依赖
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.mockito:mockito-core")

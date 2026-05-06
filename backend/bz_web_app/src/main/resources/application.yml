@@ -77,6 +77,18 @@ spring:
       max-file-size: 100MB
       max-request-size: 100MB
 
+  # ---- 邮件发送配置（3.1）----
+  # 未配置 host 时 Spring Boot 不创建 JavaMailSender，MailService 静默跳过（离线通知走站内信兜底）
+  mail:
+    host: ${MAIL_HOST:}
+    port: ${MAIL_PORT:465}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    default-encoding: UTF-8
+    properties:
+      mail.smtp.ssl.enable: ${MAIL_SMTP_SSL:true}
+      mail.smtp.auth: ${MAIL_SMTP_AUTH:true}
+
   # ---- Jackson JSON 序列化配置 ----
   jackson:
     date-format: yyyy-MM-dd HH:mm:ss     # 全局日期格式
