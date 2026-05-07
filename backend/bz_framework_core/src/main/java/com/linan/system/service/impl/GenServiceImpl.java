@@ -3,6 +3,7 @@ package com.linan.system.service.impl;
 import com.linan.core.gen.ColumnInfo;
 import com.linan.core.gen.GenConstants;
 import com.linan.core.gen.TableInfo;
+import com.linan.core.common.exception.BusinessException;
 import com.linan.system.service.IGenService;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -267,7 +268,7 @@ public class GenServiceImpl implements IGenService {
     public Map<String, String> generateCode(String tableName) {
         TableInfo table = selectTableByName(tableName);
         if (table == null) {
-            throw new RuntimeException("表 " + tableName + " 不存在");
+            throw new BusinessException("表 " + tableName + " 不存在");
         }
 
         Map<String, String> result = new LinkedHashMap<>();

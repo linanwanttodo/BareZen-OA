@@ -2,6 +2,7 @@ package com.linan.system.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.linan.system.entity.SysWebhook;
 import com.linan.system.mapper.SysWebhookMapper;
 import com.linan.system.service.ISysWebhookService;
@@ -13,12 +14,9 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -26,7 +24,8 @@ import java.util.stream.Collectors;
  *
  * <p>事件发生时向订阅方推送 JSON 回调，支持 HMAC-SHA256 签名（配置了 secret 时），
  * 回调头携带 {@code X-Webhook-Signature}，接收方可验签防伪造。
- * 使用 {@code @Async} 异步推送，不阻塞主业务；单次失败仅记录日志（重试策略可后续增强）。</p>
+ * 使用 {@code @Async} 异步推送，不阻塞主业务；单次失败仅记录日志（重试策略可后续增强）。
+ * JSON 序列化统一走 Jackson {@link ObjectMapper}，避免手写拼接导致特殊字符/转义错误。</p>
  *
  * @author BareZen Team
  */
@@ -35,14 +34,37 @@ import java.util.stream.Collectors;
 public class SysWebhookServiceImpl extends ServiceImpl<SysWebhookMapper, SysWebhook>
         implements ISysWebhookService {
 
-    private static final Set<String> EVENTS = Set.of("approval.completed", "notice.published");
+    private final ObjectMapper objectMapper;
+
+    public SysWebhookServiceImpl(ObjectMapper objectMapper) {
+        this.objectMapper = objectMapper;
+    }
 
     @Override
     public List<SysWebhook> listSubscribers(String event) {
         return list(new LambdaQueryWrapper<SysWebhook>()
-                .eq(SysWebhook::getStatus, "0")          // 仅启用
-                .like(SysWebhook::getEvents, event)      // 订阅了该事件（逗号分隔包含匹配）
-                .orderByAsc(SysWebhook::getCreateTime));
+                        .eq(SysWebhook::getStatus, "0")          // 仅启用
+                        .orderByAsc(SysWebhook::getCreateTime))
+                .stream()
+                // events 逗号分隔，取与目标事件精确相等的项（避免 like 子串误匹配）
+                .filter(w -> subscribedTo(w.getEvents(), event))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 判断 subscriberEvents（逗号分隔）是否精确订阅了 event。
+     * 首尾 trim 后整段精确比较，规避 "notice" 命中 "notice.published" 这类子串误报。
+     */
+    private boolean subscribedTo(String subscriberEvents, String event) {
+        if (subscriberEvents == null || event == null) {
+            return false;
+        }
+        for (String sub : subscriberEvents.split(",")) {
+            if (event.equals(sub.trim())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Async
@@ -89,24 +111,15 @@ public class SysWebhookServiceImpl extends ServiceImpl<SysWebhookMapper, SysWebh
     }
 
     /**
-     * 简单 JSON 序列化（避免在 Service 引入 ObjectMapper 依赖链，字段均为基本类型）
+     * 委托 Jackson 序列化 JSON（正确处理引号/反斜杠/换行/控制字符等特殊字符）。
      */
     private String toJson(Map<String, Object> map) {
-        StringBuilder sb = new StringBuilder("{");
-        int i = 0;
-        for (Map.Entry<String, Object> e : map.entrySet()) {
-            if (i++ > 0) sb.append(",");
-            sb.append('"').append(e.getKey()).append("\":");
-            Object v = e.getValue();
-            if (v == null) {
-                sb.append("null");
-            } else if (v instanceof Number || v instanceof Boolean) {
-                sb.append(v);
-            } else {
-                sb.append('"').append(String.valueOf(v).replace("\"", "\\\"")).append('"');
-            }
+        try {
+            return objectMapper.writeValueAsString(map);
+        } catch (Exception e) {
+            log.warn("Webhook JSON 序列化失败: {}", e.getMessage());
+            return "{}";
         }
-        return sb.append('}').toString();
     }
 
     /**

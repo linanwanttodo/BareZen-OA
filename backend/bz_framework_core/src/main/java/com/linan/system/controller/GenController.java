@@ -3,8 +3,8 @@ package com.linan.system.controller;
 import com.linan.core.common.api.Result;
 import com.linan.core.gen.TableInfo;
 import com.linan.core.security.RequirePermission;
+import com.linan.core.common.exception.BusinessException;
 import com.linan.system.service.IGenService;
-import lombok.extern.slf4j.Slf4j;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,7 +18,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 /**
  * 代码生成控制器
  */
-@Slf4j
 @Tag(name = "代码生成", description = "数据库表查询与代码生成")
 @RestController
 @RequestMapping("/api/system/v1/gen")
@@ -59,12 +58,9 @@ public class GenController {
     @Operation(summary = "生成代码")
     @PostMapping("/gen/{tableName}")
     public Result<Map<String, String>> generateCode(@Parameter(description = "表名称") @PathVariable String tableName) {
-        try {
-            Map<String, String> codeMap = genService.generateCode(tableName);
-            return Result.success(codeMap);
-        } catch (Exception e) {
-            log.error("生成代码失败: tableName={}", tableName, e);
-            return Result.error("生成代码失败，请稍后重试");
-        }
+        // 业务失败（表不存在等）抛 BusinessException 由全局处理器统一收口；
+        // 模板/映射等程序异常同样上抛，便于日志定位
+        Map<String, String> codeMap = genService.generateCode(tableName);
+        return Result.success(codeMap);
     }
 }
