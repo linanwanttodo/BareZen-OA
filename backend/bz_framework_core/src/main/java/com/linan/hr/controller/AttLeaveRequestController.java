@@ -13,6 +13,7 @@ import com.linan.core.security.interceptor.AuthInterceptor;
 import com.linan.hr.entity.AttLeaveRequest;
 import com.linan.hr.service.IAttLeaveRequestService;
 import com.linan.system.service.ApprovalFlowFacade;
+import com.linan.system.service.ApprovalNotifyTexts;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -164,12 +165,12 @@ public class AttLeaveRequestController {
                 String res = approved ? "已通过" : "已驳回";
                 String content = "您的请假申请（" + leave.getStartTime() + " ~ " + leave.getEndTime() + "）" + res
                         + (remark != null && !remark.isEmpty() ? "，审批意见：" + remark : "");
-                return ApprovalFlowFacade.NotifyText.of("请假审批" + res, content);
+                return ApprovalFlowFacade.NotifyText.of(ApprovalNotifyTexts.resultTitle("请假", approved), content);
             }
 
             @Override
             public ApprovalFlowFacade.NotifyText nextNotify() {
-                return ApprovalFlowFacade.NotifyText.of("新的待审批申请",
+                return ApprovalFlowFacade.NotifyText.of(ApprovalNotifyTexts.nextNotifyTitle(),
                         "有新的请假申请（" + leave.getStartTime() + " ~ " + leave.getEndTime() + "）待您审批");
             }
         });

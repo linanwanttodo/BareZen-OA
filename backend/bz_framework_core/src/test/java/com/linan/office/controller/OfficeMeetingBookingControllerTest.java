@@ -4,6 +4,7 @@ import com.linan.core.common.annotation.OperLog;
 import com.linan.core.common.api.Result;
 import com.linan.core.common.exception.BusinessException;
 import com.linan.core.security.PermissionService;
+import com.linan.core.security.PermissionSupport;
 import com.linan.core.security.RequirePermission;
 import com.linan.core.security.interceptor.AuthInterceptor;
 import com.linan.office.entity.OfficeMeetingBooking;
@@ -13,7 +14,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -39,11 +39,15 @@ class OfficeMeetingBookingControllerTest {
     @Mock
     private PermissionService permissionService;
 
-    @InjectMocks
+    private PermissionSupport permissionSupport;
+
     private OfficeMeetingBookingController controller;
 
     @BeforeEach
     void setUp() throws Exception {
+        // 真实 PermissionSupport 内聚 owner||admin 判定，内部委托 mock 的 PermissionService
+        permissionSupport = new PermissionSupport(permissionService);
+        controller = new OfficeMeetingBookingController(bookingService, permissionSupport);
         Field field = AuthInterceptor.class.getDeclaredField("currentUserIdHolder");
         field.setAccessible(true);
         @SuppressWarnings("unchecked")

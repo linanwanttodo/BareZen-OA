@@ -13,6 +13,7 @@ import com.linan.core.security.interceptor.AuthInterceptor;
 import com.linan.hr.entity.AttTravelRequest;
 import com.linan.hr.service.IAttTravelRequestService;
 import com.linan.system.service.ApprovalFlowFacade;
+import com.linan.system.service.ApprovalNotifyTexts;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -157,12 +158,12 @@ public class AttTravelRequestController {
                 String content = "您的出差申请（" + request.getDestination() + "，" + request.getStartTime() + " ~ "
                         + request.getEndTime() + "）" + res
                         + (remark != null && !remark.isEmpty() ? "，审批意见：" + remark : "");
-                return ApprovalFlowFacade.NotifyText.of("出差审批" + res, content);
+                return ApprovalFlowFacade.NotifyText.of(ApprovalNotifyTexts.resultTitle("出差", approved), content);
             }
 
             @Override
             public ApprovalFlowFacade.NotifyText nextNotify() {
-                return ApprovalFlowFacade.NotifyText.of("新的待审批申请",
+                return ApprovalFlowFacade.NotifyText.of(ApprovalNotifyTexts.nextNotifyTitle(),
                         "有新的出差申请（" + request.getStartTime() + " ~ " + request.getEndTime() + "）待您审批");
             }
         });

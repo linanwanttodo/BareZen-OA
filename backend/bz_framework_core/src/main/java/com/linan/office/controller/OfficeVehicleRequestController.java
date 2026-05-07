@@ -13,6 +13,7 @@ import com.linan.core.security.interceptor.AuthInterceptor;
 import com.linan.office.entity.OfficeVehicleRequest;
 import com.linan.office.service.IOfficeVehicleRequestService;
 import com.linan.system.service.ApprovalFlowFacade;
+import com.linan.system.service.ApprovalNotifyTexts;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -157,12 +158,12 @@ public class OfficeVehicleRequestController {
                 String content = "您的用车申请（" + request.getPurpose() + "，" + request.getStartTime() + " ~ "
                         + request.getEndTime() + "）" + res
                         + (remark != null && !remark.isEmpty() ? "，审批意见：" + remark : "");
-                return ApprovalFlowFacade.NotifyText.of("用车审批" + res, content);
+                return ApprovalFlowFacade.NotifyText.of(ApprovalNotifyTexts.resultTitle("用车", approved), content);
             }
 
             @Override
             public ApprovalFlowFacade.NotifyText nextNotify() {
-                return ApprovalFlowFacade.NotifyText.of("新的待审批申请",
+                return ApprovalFlowFacade.NotifyText.of(ApprovalNotifyTexts.nextNotifyTitle(),
                         "有新的用车申请（" + request.getStartTime() + " ~ " + request.getEndTime() + "）待您审批");
             }
         });

@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.MybatisConfiguration;
 import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
 import com.linan.core.common.api.Result;
+import com.linan.core.common.exception.BusinessException;
 import com.linan.core.security.interceptor.AuthInterceptor;
 import com.linan.kb.entity.KbDocument;
 import com.linan.kb.entity.KbDocumentVersion;
@@ -16,7 +17,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -25,15 +25,15 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * 知识文档版本快照 Controller 单元测试（2.3）
+ * 知识文档 Controller 单测（2.3）
  *
- * <p>覆盖：新增首版生成 v1、更新前写旧内容快照且 version_no 递增、
- * 更新不存在文档拒绝、版本历史查询倒序。</p>
+ * <p>版本快照（续版/首版 v1）规则已下沉至 {@link IKbDocumentService#createDocument} 与
+ * {@link IKbDocumentService#updateDocument}，由 {@code KbDocumentServiceImplTest} 覆盖；
+ * 此处仅验证 Controller 正确委托服务方法。版本历史倒序查询仍由 Controller 直接委托。</p>
  *
  * @author BareZen Team
  */
@@ -45,9 +45,6 @@ class KbDocumentVersionControllerTest {
 
     @Mock
     private IKbDocumentVersionService versionService;
-
-    @Mock
-    private com.linan.core.security.PermissionService permissionService;
 
     @InjectMocks
     private KbDocumentController controller;
@@ -90,64 +87,40 @@ class KbDocumentVersionControllerTest {
     }
 
     @Test
-    @DisplayName("新增文档：保存后生成首版 v1 快照")
-    void save_generatesV1Version() {
+    @DisplayName("新增文档：委托 createDocument，成功返回 200")
+    void save_delegatesToCreate() {
         KbDocument d = doc(10L, "测试文档", 2L, "正文v1");
-        when(documentService.save(any(KbDocument.class))).thenReturn(true);
-        // 无历史版本：version_no=1
-        when(versionService.list(any(Wrapper.class))).thenReturn(List.of());
+        when(documentService.createDocument(d)).thenReturn(true);
 
         Result<Void> result = controller.save(d);
 
         assertEquals(200, result.getCode());
-        ArgumentCaptor<KbDocumentVersion> captor = ArgumentCaptor.forClass(KbDocumentVersion.class);
-        verify(versionService).save(captor.capture());
-        KbDocumentVersion v = captor.getValue();
-        assertEquals(10L, v.getDocId());
-        assertEquals(1, v.getVersionNo(), "首版版本号为 1");
-        assertEquals("测试文档", v.getTitle());
-        assertEquals(2L, v.getCategoryId());
-        assertEquals("正文v1", v.getContent());
-        assertEquals(1L, v.getOperatorId());
+        verify(documentService).createDocument(d);
     }
 
     @Test
-    @DisplayName("更新文档：写旧内容快照，version_no 在现有基础上递增")
-    void update_writesSnapshotBeforeUpdate() {
-        KbDocument old = doc(10L, "旧标题", 2L, "旧正文");
+    @DisplayName("更新文档：委托 updateDocument（版本快照由其内部生成）")
+    void update_delegatesToUpdate() {
         KbDocument newDoc = doc(10L, "新标题", 3L, "新正文");
-        when(documentService.getById(10L)).thenReturn(old);
-        // 已有 v1：下一个版本号为 2
-        KbDocumentVersion v1 = new KbDocumentVersion();
-        v1.setDocId(10L);
-        v1.setVersionNo(1);
-        when(versionService.list(any(Wrapper.class))).thenReturn(List.of(v1));
-        when(documentService.updateById(any(KbDocument.class))).thenReturn(true);
+        when(documentService.updateDocument(newDoc)).thenReturn(true);
 
         Result<Void> result = controller.update(newDoc);
 
         assertEquals(200, result.getCode());
-        ArgumentCaptor<KbDocumentVersion> captor = ArgumentCaptor.forClass(KbDocumentVersion.class);
-        verify(versionService).save(captor.capture());
-        KbDocumentVersion v = captor.getValue();
-        assertEquals(2, v.getVersionNo(), "快照版本号应在现有基础上递增");
-        // 快照内容是旧文档内容（更新前状态）
-        assertEquals("旧标题", v.getTitle());
-        assertEquals("旧正文", v.getContent());
+        verify(documentService).updateDocument(newDoc);
     }
 
     @Test
-    @DisplayName("更新不存在的文档拒绝，不写快照")
+    @DisplayName("更新不存在的文档：updateDocument 抛业务异常向上传播")
     void update_missingDocument_rejected() {
         KbDocument newDoc = doc(99L, "新标题", 3L, "新正文");
-        when(documentService.getById(99L)).thenReturn(null);
+        when(documentService.updateDocument(newDoc))
+                .thenThrow(new BusinessException("文档不存在"));
 
-        Result<Void> result = controller.update(newDoc);
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> controller.update(newDoc));
 
-        assertEquals(500, result.getCode());
-        assertTrue(result.getMsg().contains("不存在"));
-        verify(versionService, never()).save(any());
-        verify(documentService, never()).updateById(any());
+        assertTrue(ex.getMessage().contains("不存在"));
     }
 
     @Test

@@ -2,6 +2,7 @@ package com.linan.web.controller.enterprise;
 
 import com.linan.core.common.api.Result;
 import com.linan.core.security.PermissionService;
+import com.linan.core.security.PermissionSupport;
 import com.linan.core.security.interceptor.AuthInterceptor;
 import com.linan.hr.entity.HrSchedule;
 import com.linan.hr.service.IHrScheduleService;
@@ -38,11 +39,14 @@ class AppScheduleControllerTest {
     @Mock
     private PermissionService permissionService;
 
+    private PermissionSupport permissionSupport;
+
     private AppScheduleController controller;
 
     @BeforeEach
     void setUp() {
-        controller = new AppScheduleController(scheduleService, permissionService);
+        permissionSupport = new PermissionSupport(permissionService);
+        controller = new AppScheduleController(scheduleService, permissionSupport);
     }
 
     @AfterEach

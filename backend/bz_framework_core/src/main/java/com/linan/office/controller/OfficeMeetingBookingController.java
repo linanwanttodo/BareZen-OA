@@ -6,7 +6,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.linan.core.common.annotation.OperLog;
 import com.linan.core.common.api.PageResult;
 import com.linan.core.common.api.Result;
-import com.linan.core.security.PermissionService;
+import com.linan.core.security.PermissionSupport;
 import com.linan.core.security.RequirePermission;
 import com.linan.core.security.interceptor.AuthInterceptor;
 import com.linan.office.entity.OfficeMeetingBooking;
@@ -31,12 +31,12 @@ public class OfficeMeetingBookingController {
 
     private final IOfficeMeetingBookingService bookingService;
 
-    private final PermissionService permissionService;
+    private final PermissionSupport permissionSupport;
 
     public OfficeMeetingBookingController(IOfficeMeetingBookingService bookingService,
-                                          PermissionService permissionService) {
+                                          PermissionSupport permissionSupport) {
         this.bookingService = bookingService;
-        this.permissionService = permissionService;
+        this.permissionSupport = permissionSupport;
     }
 
     /**
@@ -104,9 +104,7 @@ public class OfficeMeetingBookingController {
         if (booking == null) {
             return Result.error("预订不存在");
         }
-        boolean isOwner = userId.equals(booking.getBookerId());
-        boolean isAdmin = permissionService.hasPermission(userId, "office:meeting:delete");
-        if (!isOwner && !isAdmin) {
+        if (!permissionSupport.isOwnerOrHasPermission(userId, booking.getBookerId(), "office:meeting:delete")) {
             return Result.error("无权限删除该预订");
         }
         boolean ok = bookingService.removeById(id);

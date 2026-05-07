@@ -1,14 +1,12 @@
 package com.linan.hr.controller;
 
 import com.baomidou.mybatisplus.core.MybatisConfiguration;
-import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
 import com.linan.core.common.api.Result;
 import com.linan.core.security.interceptor.AuthInterceptor;
 import com.linan.hr.entity.HrSchedule;
 import com.linan.hr.service.IHrScheduleService;
 import com.linan.system.entity.SysUser;
-import com.linan.system.service.ISysUserService;
 import org.apache.ibatis.builder.MapperBuilderAssistant;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -33,17 +31,14 @@ import static org.mockito.Mockito.when;
 /**
  * 管理端日程新增/修改 Controller 单元测试（2.4）
  *
- * <p>覆盖：新增时 userId 缺省按 userName 关联 sys_user 回填、回填不到则用当前登录用户、
- * 时间倒置拒绝、修改不存在日程拒绝。</p>
+ * <p>覆盖：新增委托 resolveAndCreate（userName→userId 回填与回落已下沉至 Service，
+ * 由 HrScheduleServiceImplTest 覆盖）、时间倒置拒绝、修改不存在日程拒绝、合法更新。\u003c/p>
  */
 @ExtendWith(MockitoExtension.class)
 class HrScheduleControllerTest {
 
     @Mock
     private IHrScheduleService scheduleService;
-
-    @Mock
-    private ISysUserService userService;
 
     @InjectMocks
     private HrScheduleController controller;
@@ -84,34 +79,29 @@ class HrScheduleControllerTest {
     }
 
     @Test
-    @DisplayName("新增：userId 缺省按 userName 关联 sys_user 回填")
-    void save_userIdBackfilledByUserName() {
+    @DisplayName("新增：委托 resolveAndCreate（userName→userId 关联回填在 Service 内完成）")
+    void save_delegatesToResolveAndCreate() {
         HrSchedule s = schedule("项目周会", "2026-08-25 10:00", "2026-08-25 11:00");
         s.setUserName("张三");
-        SysUser user = new SysUser();
-        user.setId(7L);
-        user.setUserName("zhangsan");
-        when(userService.list(any(Wrapper.class))).thenReturn(java.util.List.of(user));
-        when(scheduleService.save(any(HrSchedule.class))).thenReturn(true);
+        when(scheduleService.resolveAndCreate(s)).thenReturn(true);
 
         Result<Void> result = controller.save(s);
 
         assertEquals(200, result.getCode());
-        assertEquals(7L, s.getUserId(), "userId 应按 userName 命中 sys_user 回填");
+        verify(scheduleService).resolveAndCreate(s);
     }
 
     @Test
-    @DisplayName("新增：userName 无对应用户时 userId 回落当前登录用户")
-    void save_userNameNotFound_fallbackToCurrentUser() {
+    @DisplayName("新增：userName 回填失败回落当前登录用户逻辑在 Service 内（此处仅委托）")
+    void save_userNameNotFound_fallbackInService() {
         HrSchedule s = schedule("项目周会", "2026-08-25 10:00", "2026-08-25 11:00");
         s.setUserName("不存在的人");
-        when(userService.list(any(Wrapper.class))).thenReturn(java.util.List.of());
-        when(scheduleService.save(any(HrSchedule.class))).thenReturn(true);
+        when(scheduleService.resolveAndCreate(s)).thenReturn(true);
 
         Result<Void> result = controller.save(s);
 
         assertEquals(200, result.getCode());
-        assertEquals(1L, s.getUserId(), "回填失败时默认当前登录用户");
+        verify(scheduleService).resolveAndCreate(s);
     }
 
     @Test
@@ -123,7 +113,7 @@ class HrScheduleControllerTest {
 
         assertEquals(500, result.getCode());
         assertTrue(result.getMsg().contains("结束时间"));
-        verify(scheduleService, never()).save(any());
+        verify(scheduleService, never()).resolveAndCreate(any());
     }
 
     @Test

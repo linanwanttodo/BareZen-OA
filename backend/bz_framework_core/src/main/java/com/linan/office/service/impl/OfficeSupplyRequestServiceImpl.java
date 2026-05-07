@@ -11,6 +11,7 @@ import com.linan.office.mapper.OfficeSupplyRequestMapper;
 import com.linan.office.service.IOfficeSupplyRequestService;
 import com.linan.office.service.IOfficeSupplyService;
 import com.linan.system.service.ApprovalFlowFacade;
+import com.linan.system.service.ApprovalNotifyTexts;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -98,7 +99,7 @@ public class OfficeSupplyRequestServiceImpl extends ServiceImpl<OfficeSupplyRequ
                         String res = approved ? "已通过" : "已驳回";
                         String content = "您的用品申领（" + request.getSupplyName() + " × " + request.getQuantity() + "）" + res
                                 + (remark != null && !remark.isEmpty() ? "，审批意见：" + remark : "");
-                        return ApprovalFlowFacade.NotifyText.of("用品申领审批" + res, content);
+                        return ApprovalFlowFacade.NotifyText.of(ApprovalNotifyTexts.resultTitle("用品申领", approved), content);
                     }
                 });
     }

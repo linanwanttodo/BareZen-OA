@@ -19,8 +19,9 @@ import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -126,16 +127,16 @@ class AppClockControllerTest {
     }
 
     @Test
-    @DisplayName("业务失败（重复打卡/未上班）透传业务提示")
-    void businessFailure_messagePassedThrough() throws Exception {
+    @DisplayName("业务失败（重复打卡/未上班）向上抛业务异常，由全局处理器统一收口")
+    void businessFailure_propagatesToGlobalHandler() throws Exception {
         setCurrentUser(100L, "张三");
         when(clockService.clockIn(eq(100L), eq("张三"), any(LocalDateTime.class)))
                 .thenThrow(new BusinessException("今日已打卡上班，请勿重复打卡"));
 
-        var result = controller.clockIn();
-
-        assertEquals(500, result.getCode());
-        assertTrue(result.getMsg().contains("重复打卡"));
+        BusinessException ex = assertThrows(BusinessException.class, () -> controller.clockIn());
+        assertTrue(ex.getMessage().contains("重复打卡"));
+        // 控制器不再内联 try/catch，异常交由 GlobalExceptionHandler 转换为 Result
+        verify(clockService).clockIn(eq(100L), eq("张三"), any(LocalDateTime.class));
     }
 
     @Test

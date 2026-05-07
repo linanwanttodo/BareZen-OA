@@ -13,6 +13,7 @@ import com.linan.core.security.interceptor.AuthInterceptor;
 import com.linan.hr.entity.AttOvertimeRequest;
 import com.linan.hr.service.IAttOvertimeRequestService;
 import com.linan.system.service.ApprovalFlowFacade;
+import com.linan.system.service.ApprovalNotifyTexts;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -156,12 +157,12 @@ public class AttOvertimeRequestController {
                 String res = approved ? "已通过" : "已驳回";
                 String content = "您的加班申请（" + request.getStartTime() + " ~ " + request.getEndTime() + "）" + res
                         + (remark != null && !remark.isEmpty() ? "，审批意见：" + remark : "");
-                return ApprovalFlowFacade.NotifyText.of("加班审批" + res, content);
+                return ApprovalFlowFacade.NotifyText.of(ApprovalNotifyTexts.resultTitle("加班", approved), content);
             }
 
             @Override
             public ApprovalFlowFacade.NotifyText nextNotify() {
-                return ApprovalFlowFacade.NotifyText.of("新的待审批申请",
+                return ApprovalFlowFacade.NotifyText.of(ApprovalNotifyTexts.nextNotifyTitle(),
                         "有新的加班申请（" + request.getStartTime() + " ~ " + request.getEndTime() + "）待您审批");
             }
         });
