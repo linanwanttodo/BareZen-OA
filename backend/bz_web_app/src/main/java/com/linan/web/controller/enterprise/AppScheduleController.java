@@ -9,8 +9,6 @@ import com.linan.core.security.PermissionService;
 import com.linan.core.security.interceptor.AuthInterceptor;
 import com.linan.hr.entity.HrSchedule;
 import com.linan.hr.service.IHrScheduleService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -29,8 +27,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @RequestMapping("/api/app/v1/schedules")
 @RequiredArgsConstructor
 public class AppScheduleController {
-
-    private static final Logger log = LoggerFactory.getLogger(AppScheduleController.class);
 
     private final IHrScheduleService scheduleService;
 
@@ -52,22 +48,17 @@ public class AppScheduleController {
         if (userId == null) {
             return Result.error("请先登录");
         }
-        try {
-            LambdaQueryWrapper<HrSchedule> wrapper = new LambdaQueryWrapper<HrSchedule>()
-                    .eq(HrSchedule::getUserId, userId);
-            if (status != null && !status.isEmpty()) {
-                wrapper.eq(HrSchedule::getStatus, status);
-            }
-            if (date != null && !date.isEmpty()) {
-                wrapper.likeRight(HrSchedule::getStartTime, date);
-            }
-            wrapper.orderByAsc(HrSchedule::getStartTime);
-            IPage<HrSchedule> result = scheduleService.page(new Page<>(page, pageSize), wrapper);
-            return Result.page(result);
-        } catch (Exception e) {
-            log.error("查询我的日程失败, userId={}", userId, e);
-            return Result.error("查询失败");
+        LambdaQueryWrapper<HrSchedule> wrapper = new LambdaQueryWrapper<HrSchedule>()
+                .eq(HrSchedule::getUserId, userId);
+        if (status != null && !status.isEmpty()) {
+            wrapper.eq(HrSchedule::getStatus, status);
         }
+        if (date != null && !date.isEmpty()) {
+            wrapper.likeRight(HrSchedule::getStartTime, date);
+        }
+        wrapper.orderByAsc(HrSchedule::getStartTime);
+        IPage<HrSchedule> result = scheduleService.page(new Page<>(page, pageSize), wrapper);
+        return Result.page(result);
     }
 
     /**
@@ -90,17 +81,12 @@ public class AppScheduleController {
         if (schedule.getStartTime().compareTo(schedule.getEndTime()) >= 0) {
             return Result.error("结束时间必须晚于开始时间");
         }
-        try {
-            schedule.setUserId(userId);
-            if (schedule.getStatus() == null || schedule.getStatus().isEmpty()) {
-                schedule.setStatus("0");
-            }
-            boolean ok = scheduleService.save(schedule);
-            return ok ? Result.success(null) : Result.error("新增失败");
-        } catch (Exception e) {
-            log.error("新增日程失败, userId={}", userId, e);
-            return Result.error("新增失败");
+        schedule.setUserId(userId);
+        if (schedule.getStatus() == null || schedule.getStatus().isEmpty()) {
+            schedule.setStatus("0");
         }
+        boolean ok = scheduleService.save(schedule);
+        return ok ? Result.success(null) : Result.error("新增失败");
     }
 
     /**
@@ -121,13 +107,8 @@ public class AppScheduleController {
         if (!userId.equals(existing.getUserId())) {
             return Result.error("只能操作自己的日程");
         }
-        try {
-            boolean ok = scheduleService.updateById(schedule);
-            return ok ? Result.success(null) : Result.error("更新失败");
-        } catch (Exception e) {
-            log.error("更新日程失败, userId={}", userId, e);
-            return Result.error("更新失败");
-        }
+        boolean ok = scheduleService.updateById(schedule);
+        return ok ? Result.success(null) : Result.error("更新失败");
     }
 
     /**

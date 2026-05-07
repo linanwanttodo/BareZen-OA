@@ -13,8 +13,6 @@ import com.linan.office.entity.OfficeSupplyRequest;
 import com.linan.office.service.IOfficeSupplyRequestService;
 import com.linan.office.service.IOfficeSupplyService;
 import com.linan.system.service.ApprovalFlowFacade;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -34,8 +32,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @RequiredArgsConstructor
 public class AppSupplyController {
 
-    private static final Logger log = LoggerFactory.getLogger(AppSupplyController.class);
-
     private final IOfficeSupplyService supplyService;
 
     private final IOfficeSupplyRequestService requestService;
@@ -53,20 +49,15 @@ public class AppSupplyController {
             @RequestParam(defaultValue = "10") Integer pageSize,
             @RequestParam(required = false) String keyword) {
 
-        try {
-            LambdaQueryWrapper<OfficeSupply> wrapper = new LambdaQueryWrapper<OfficeSupply>()
-                    .eq(OfficeSupply::getStatus, "0")
-                    .gt(OfficeSupply::getStock, 0);
-            if (keyword != null && !keyword.isEmpty()) {
-                wrapper.like(OfficeSupply::getSupplyName, keyword);
-            }
-            wrapper.orderByDesc(OfficeSupply::getCreateTime);
-            IPage<OfficeSupply> result = supplyService.page(new Page<>(page, pageSize), wrapper);
-            return Result.page(result);
-        } catch (Exception e) {
-            log.error("查询用品列表失败", e);
-            return Result.error("查询失败");
+        LambdaQueryWrapper<OfficeSupply> wrapper = new LambdaQueryWrapper<OfficeSupply>()
+                .eq(OfficeSupply::getStatus, "0")
+                .gt(OfficeSupply::getStock, 0);
+        if (keyword != null && !keyword.isEmpty()) {
+            wrapper.like(OfficeSupply::getSupplyName, keyword);
         }
+        wrapper.orderByDesc(OfficeSupply::getCreateTime);
+        IPage<OfficeSupply> result = supplyService.page(new Page<>(page, pageSize), wrapper);
+        return Result.page(result);
     }
 
     /**
@@ -84,19 +75,14 @@ public class AppSupplyController {
         if (userId == null) {
             return Result.error("请先登录");
         }
-        try {
-            LambdaQueryWrapper<OfficeSupplyRequest> wrapper = new LambdaQueryWrapper<OfficeSupplyRequest>()
-                    .eq(OfficeSupplyRequest::getUserId, userId);
-            if (status != null && !status.isEmpty()) {
-                wrapper.eq(OfficeSupplyRequest::getStatus, status);
-            }
-            wrapper.orderByDesc(OfficeSupplyRequest::getCreateTime);
-            IPage<OfficeSupplyRequest> result = requestService.page(new Page<>(page, pageSize), wrapper);
-            return Result.page(result);
-        } catch (Exception e) {
-            log.error("查询我的申领记录失败, userId={}", userId, e);
-            return Result.error("查询失败");
+        LambdaQueryWrapper<OfficeSupplyRequest> wrapper = new LambdaQueryWrapper<OfficeSupplyRequest>()
+                .eq(OfficeSupplyRequest::getUserId, userId);
+        if (status != null && !status.isEmpty()) {
+            wrapper.eq(OfficeSupplyRequest::getStatus, status);
         }
+        wrapper.orderByDesc(OfficeSupplyRequest::getCreateTime);
+        IPage<OfficeSupplyRequest> result = requestService.page(new Page<>(page, pageSize), wrapper);
+        return Result.page(result);
     }
 
     /**
@@ -123,23 +109,18 @@ public class AppSupplyController {
         if (supply.getStock() < request.getQuantity()) {
             return Result.error("库存不足，当前库存 " + supply.getStock());
         }
-        try {
-            request.setSupplyName(supply.getSupplyName());
-            // 身份字段服务端强制覆盖，不信任请求体（防身份伪造）
-            request.setUserId(userId);
-            request.setUserName(AuthInterceptor.getCurrentUsername());
-            request.setStatus("0");
-            boolean ok = requestService.save(request);
-            if (ok) {
-                // 审批编排统一收口：启动引擎首节点 + 记录提交日志（同一事务）
-                flowFacade.submit("supply", request.getId(), request.getAssigneeId(), request.getAssigneeName(),
-                        userId, request.getUserName());
-            }
-            return ok ? Result.success(null) : Result.error("提交失败");
-        } catch (Exception e) {
-            log.error("提交申领失败, userId={}", userId, e);
-            return Result.error("提交失败");
+        request.setSupplyName(supply.getSupplyName());
+        // 身份字段服务端强制覆盖，不信任请求体（防身份伪造）
+        request.setUserId(userId);
+        request.setUserName(AuthInterceptor.getCurrentUsername());
+        request.setStatus("0");
+        boolean ok = requestService.save(request);
+        if (ok) {
+            // 审批编排统一收口：启动引擎首节点 + 记录提交日志（同一事务）
+            flowFacade.submit("supply", request.getId(), request.getAssigneeId(), request.getAssigneeName(),
+                    userId, request.getUserName());
         }
+        return ok ? Result.success(null) : Result.error("提交失败");
     }
 
     /**

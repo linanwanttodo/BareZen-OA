@@ -1,7 +1,6 @@
 package com.linan.web.controller.enterprise;
 
 import com.linan.core.common.api.Result;
-import com.linan.core.common.exception.BusinessException;
 import com.linan.core.security.interceptor.AuthInterceptor;
 import com.linan.hr.entity.AttClockRecord;
 import com.linan.hr.service.IAttClockRecordService;
@@ -49,13 +48,9 @@ public class AppClockController {
         if (userId == null) {
             return Result.error("请先登录");
         }
-        try {
-            AttClockRecord record = clockService.clockIn(userId,
-                    AuthInterceptor.getCurrentUsername(), LocalDateTime.now());
-            return Result.success(record);
-        } catch (BusinessException e) {
-            return Result.error(e.getMessage());
-        }
+        AttClockRecord record = clockService.clockIn(userId,
+                AuthInterceptor.getCurrentUsername(), LocalDateTime.now());
+        return Result.success(record);
     }
 
     /**
@@ -69,13 +64,9 @@ public class AppClockController {
         if (userId == null) {
             return Result.error("请先登录");
         }
-        try {
-            AttClockRecord record = clockService.clockOut(userId,
-                    AuthInterceptor.getCurrentUsername(), LocalDateTime.now());
-            return Result.success(record);
-        } catch (BusinessException e) {
-            return Result.error(e.getMessage());
-        }
+        AttClockRecord record = clockService.clockOut(userId,
+                AuthInterceptor.getCurrentUsername(), LocalDateTime.now());
+        return Result.success(record);
     }
 
     /**

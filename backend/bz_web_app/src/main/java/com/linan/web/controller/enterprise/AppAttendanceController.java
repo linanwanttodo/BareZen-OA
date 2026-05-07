@@ -17,8 +17,6 @@ import com.linan.hr.service.IAttOvertimeRequestService;
 import com.linan.hr.service.IAttTravelRequestService;
 import com.linan.hr.service.IHrWorkLogService;
 import com.linan.system.service.ApprovalFlowFacade;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -39,8 +37,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @RequestMapping("/api/app/v1")
 @RequiredArgsConstructor
 public class AppAttendanceController {
-
-    private static final Logger log = LoggerFactory.getLogger(AppAttendanceController.class);
 
     private final IAttOvertimeRequestService overtimeService;
 
@@ -70,19 +66,14 @@ public class AppAttendanceController {
         if (userId == null) {
             return Result.error("请先登录");
         }
-        try {
-            LambdaQueryWrapper<AttLeaveRequest> wrapper = new LambdaQueryWrapper<AttLeaveRequest>()
-                    .eq(AttLeaveRequest::getUserId, userId);
-            if (status != null && !status.isEmpty()) {
-                wrapper.eq(AttLeaveRequest::getStatus, status);
-            }
-            wrapper.orderByDesc(AttLeaveRequest::getCreateTime);
-            IPage<AttLeaveRequest> result = leaveService.page(new Page<>(page, pageSize), wrapper);
-            return Result.page(result);
-        } catch (Exception e) {
-            log.error("查询我的请假申请失败, userId={}", userId, e);
-            return Result.error("查询失败");
+        LambdaQueryWrapper<AttLeaveRequest> wrapper = new LambdaQueryWrapper<AttLeaveRequest>()
+                .eq(AttLeaveRequest::getUserId, userId);
+        if (status != null && !status.isEmpty()) {
+            wrapper.eq(AttLeaveRequest::getStatus, status);
         }
+        wrapper.orderByDesc(AttLeaveRequest::getCreateTime);
+        IPage<AttLeaveRequest> result = leaveService.page(new Page<>(page, pageSize), wrapper);
+        return Result.page(result);
     }
 
     /**
@@ -105,22 +96,17 @@ public class AppAttendanceController {
         if (request.getStartTime().compareTo(request.getEndTime()) >= 0) {
             return Result.error("结束时间必须晚于开始时间");
         }
-        try {
-            // 身份字段服务端强制覆盖，不信任请求体（防身份伪造）
-            request.setUserId(userId);
-            request.setUserName(AuthInterceptor.getCurrentUsername());
-            request.setStatus("0");
-            boolean ok = leaveService.save(request);
+        // 身份字段服务端强制覆盖，不信任请求体（防身份伪造）
+        request.setUserId(userId);
+        request.setUserName(AuthInterceptor.getCurrentUsername());
+        request.setStatus("0");
+        boolean ok = leaveService.save(request);
             if (ok) {
                 // 审批编排统一收口：启动引擎首节点 + 记录提交日志（同一事务）
                 flowFacade.submit("leave", request.getId(), request.getAssigneeId(), request.getAssigneeName(),
                         userId, request.getUserName());
             }
             return ok ? Result.success(null) : Result.error("提交失败");
-        } catch (Exception e) {
-            log.error("提交请假申请失败, userId={}", userId, e);
-            return Result.error("提交失败");
-        }
     }
 
     /**
@@ -183,19 +169,14 @@ public class AppAttendanceController {
         if (userId == null) {
             return Result.error("请先登录");
         }
-        try {
-            LambdaQueryWrapper<AttOvertimeRequest> wrapper = new LambdaQueryWrapper<AttOvertimeRequest>()
-                    .eq(AttOvertimeRequest::getUserId, userId);
-            if (status != null && !status.isEmpty()) {
-                wrapper.eq(AttOvertimeRequest::getStatus, status);
-            }
-            wrapper.orderByDesc(AttOvertimeRequest::getCreateTime);
-            IPage<AttOvertimeRequest> result = overtimeService.page(new Page<>(page, pageSize), wrapper);
-            return Result.page(result);
-        } catch (Exception e) {
-            log.error("查询我的加班申请失败, userId={}", userId, e);
-            return Result.error("查询失败");
+        LambdaQueryWrapper<AttOvertimeRequest> wrapper = new LambdaQueryWrapper<AttOvertimeRequest>()
+                .eq(AttOvertimeRequest::getUserId, userId);
+        if (status != null && !status.isEmpty()) {
+            wrapper.eq(AttOvertimeRequest::getStatus, status);
         }
+        wrapper.orderByDesc(AttOvertimeRequest::getCreateTime);
+        IPage<AttOvertimeRequest> result = overtimeService.page(new Page<>(page, pageSize), wrapper);
+        return Result.page(result);
     }
 
     /**
@@ -215,22 +196,17 @@ public class AppAttendanceController {
         if (request.getStartTime().compareTo(request.getEndTime()) >= 0) {
             return Result.error("结束时间必须晚于开始时间");
         }
-        try {
-            // 身份字段服务端强制覆盖，不信任请求体（防身份伪造）
-            request.setUserId(userId);
-            request.setUserName(AuthInterceptor.getCurrentUsername());
-            request.setStatus("0");
-            boolean ok = overtimeService.save(request);
+        // 身份字段服务端强制覆盖，不信任请求体（防身份伪造）
+        request.setUserId(userId);
+        request.setUserName(AuthInterceptor.getCurrentUsername());
+        request.setStatus("0");
+        boolean ok = overtimeService.save(request);
             if (ok) {
                 // 审批编排统一收口：启动引擎首节点 + 记录提交日志（同一事务）
                 flowFacade.submit("overtime", request.getId(), request.getAssigneeId(), request.getAssigneeName(),
                         userId, request.getUserName());
             }
             return ok ? Result.success(null) : Result.error("提交失败");
-        } catch (Exception e) {
-            log.error("提交加班申请失败, userId={}", userId, e);
-            return Result.error("提交失败");
-        }
     }
 
     /**
@@ -293,19 +269,14 @@ public class AppAttendanceController {
         if (userId == null) {
             return Result.error("请先登录");
         }
-        try {
-            LambdaQueryWrapper<AttTravelRequest> wrapper = new LambdaQueryWrapper<AttTravelRequest>()
-                    .eq(AttTravelRequest::getUserId, userId);
-            if (status != null && !status.isEmpty()) {
-                wrapper.eq(AttTravelRequest::getStatus, status);
-            }
-            wrapper.orderByDesc(AttTravelRequest::getCreateTime);
-            IPage<AttTravelRequest> result = travelService.page(new Page<>(page, pageSize), wrapper);
-            return Result.page(result);
-        } catch (Exception e) {
-            log.error("查询我的出差申请失败, userId={}", userId, e);
-            return Result.error("查询失败");
+        LambdaQueryWrapper<AttTravelRequest> wrapper = new LambdaQueryWrapper<AttTravelRequest>()
+                .eq(AttTravelRequest::getUserId, userId);
+        if (status != null && !status.isEmpty()) {
+            wrapper.eq(AttTravelRequest::getStatus, status);
         }
+        wrapper.orderByDesc(AttTravelRequest::getCreateTime);
+        IPage<AttTravelRequest> result = travelService.page(new Page<>(page, pageSize), wrapper);
+        return Result.page(result);
     }
 
     /**
@@ -325,22 +296,17 @@ public class AppAttendanceController {
         if (request.getStartTime().compareTo(request.getEndTime()) >= 0) {
             return Result.error("结束时间必须晚于开始时间");
         }
-        try {
-            // 身份字段服务端强制覆盖，不信任请求体（防身份伪造）
-            request.setUserId(userId);
-            request.setUserName(AuthInterceptor.getCurrentUsername());
-            request.setStatus("0");
-            boolean ok = travelService.save(request);
+        // 身份字段服务端强制覆盖，不信任请求体（防身份伪造）
+        request.setUserId(userId);
+        request.setUserName(AuthInterceptor.getCurrentUsername());
+        request.setStatus("0");
+        boolean ok = travelService.save(request);
             if (ok) {
                 // 审批编排统一收口：启动引擎首节点 + 记录提交日志（同一事务）
                 flowFacade.submit("travel", request.getId(), request.getAssigneeId(), request.getAssigneeName(),
                         userId, request.getUserName());
             }
             return ok ? Result.success(null) : Result.error("提交失败");
-        } catch (Exception e) {
-            log.error("提交出差申请失败, userId={}", userId, e);
-            return Result.error("提交失败");
-        }
     }
 
     /**
@@ -402,19 +368,14 @@ public class AppAttendanceController {
         if (userId == null) {
             return Result.error("请先登录");
         }
-        try {
-            LambdaQueryWrapper<HrWorkLog> wrapper = new LambdaQueryWrapper<HrWorkLog>()
-                    .eq(HrWorkLog::getUserId, userId);
-            if (logType != null && !logType.isEmpty()) {
-                wrapper.eq(HrWorkLog::getLogType, logType);
-            }
-            wrapper.orderByDesc(HrWorkLog::getLogDate);
-            IPage<HrWorkLog> result = workLogService.page(new Page<>(page, pageSize), wrapper);
-            return Result.page(result);
-        } catch (Exception e) {
-            log.error("查询我的工作日志失败, userId={}", userId, e);
-            return Result.error("查询失败");
+        LambdaQueryWrapper<HrWorkLog> wrapper = new LambdaQueryWrapper<HrWorkLog>()
+                .eq(HrWorkLog::getUserId, userId);
+        if (logType != null && !logType.isEmpty()) {
+            wrapper.eq(HrWorkLog::getLogType, logType);
         }
+        wrapper.orderByDesc(HrWorkLog::getLogDate);
+        IPage<HrWorkLog> result = workLogService.page(new Page<>(page, pageSize), wrapper);
+        return Result.page(result);
     }
 
     /**
@@ -431,13 +392,8 @@ public class AppAttendanceController {
         if (workLog.getContent() == null || workLog.getContent().isBlank()) {
             return Result.error("日志内容不能为空");
         }
-        try {
-            workLog.setUserId(userId);
-            boolean ok = workLogService.save(workLog);
-            return ok ? Result.success(null) : Result.error("提交失败");
-        } catch (Exception e) {
-            log.error("提交工作日志失败, userId={}", userId, e);
-            return Result.error("提交失败");
-        }
+        workLog.setUserId(userId);
+        boolean ok = workLogService.save(workLog);
+        return ok ? Result.success(null) : Result.error("提交失败");
     }
 }

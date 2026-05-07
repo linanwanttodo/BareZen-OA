@@ -126,36 +126,31 @@ public class AppEnterpriseController {
     public Result<PageResult<SysNotice>> noticeList(
             @RequestParam(defaultValue = "1") Integer page,
             @RequestParam(defaultValue = "10") Integer pageSize) {
-        try {
-            // 查询已发布的通知（包含通知和公告两种类型）
-            LambdaQueryWrapper<SysNotice> wrapper = new LambdaQueryWrapper<SysNotice>()
-                    .eq(SysNotice::getStatus, "1")
-                    .orderByDesc(SysNotice::getCreateTime);
+        // 查询已发布的通知（包含通知和公告两种类型）
+        LambdaQueryWrapper<SysNotice> wrapper = new LambdaQueryWrapper<SysNotice>()
+                .eq(SysNotice::getStatus, "1")
+                .orderByDesc(SysNotice::getCreateTime);
 
-            // 未登录的游客只能看到 scope=public 的公告
-            Long userId = AuthInterceptor.getCurrentUserId();
-            if (userId == null) {
-                wrapper.eq(SysNotice::getScope, "public");
-            }
-
-            Page<SysNotice> p = new Page<>(page, pageSize);
-            IPage<SysNotice> result = noticeService.page(p, wrapper);
-
-            // 已读标记：登录用户可见自己已读的公告
-            if (userId != null && result.getRecords() != null && !result.getRecords().isEmpty()) {
-                List<Long> noticeIds = result.getRecords().stream()
-                        .map(SysNotice::getId).toList();
-                List<Long> readIds = noticeReadService.lambdaQuery()
-                        .in(SysNoticeRead::getNoticeId, noticeIds)
-                        .eq(SysNoticeRead::getUserId, userId)
-                        .list().stream().map(SysNoticeRead::getNoticeId).toList();
-                result.getRecords().forEach(n -> n.setIsRead(readIds.contains(n.getId())));
-            }
-            return Result.page(result);
-        } catch (Exception e) {
-            log.error("查询公告列表失败", e);
-            return Result.error("查询公告失败");
+        // 未登录的游客只能看到 scope=public 的公告
+        Long userId = AuthInterceptor.getCurrentUserId();
+        if (userId == null) {
+            wrapper.eq(SysNotice::getScope, "public");
         }
+
+        Page<SysNotice> p = new Page<>(page, pageSize);
+        IPage<SysNotice> result = noticeService.page(p, wrapper);
+
+        // 已读标记：登录用户可见自己已读的公告
+        if (userId != null && result.getRecords() != null && !result.getRecords().isEmpty()) {
+            List<Long> noticeIds = result.getRecords().stream()
+                    .map(SysNotice::getId).toList();
+            List<Long> readIds = noticeReadService.lambdaQuery()
+                    .in(SysNoticeRead::getNoticeId, noticeIds)
+                    .eq(SysNoticeRead::getUserId, userId)
+                    .list().stream().map(SysNoticeRead::getNoticeId).toList();
+            result.getRecords().forEach(n -> n.setIsRead(readIds.contains(n.getId())));
+        }
+        return Result.page(result);
     }
 
     /**
@@ -203,65 +198,60 @@ public class AppEnterpriseController {
             @RequestParam(defaultValue = "1") Integer page,
             @RequestParam(defaultValue = "20") Integer pageSize,
             @RequestParam(required = false) String keyword) {
-        try {
-            LambdaQueryWrapper<SysUser> wrapper = new LambdaQueryWrapper<SysUser>()
-                    .eq(SysUser::getStatus, "0"); // 只查正常状态用户（0=正常 1=停用）
+        LambdaQueryWrapper<SysUser> wrapper = new LambdaQueryWrapper<SysUser>()
+                .eq(SysUser::getStatus, "0"); // 只查正常状态用户（0=正常 1=停用）
 
-            if (keyword != null && !keyword.isEmpty()) {
-                wrapper.and(w -> w
-                        .like(SysUser::getUserName, keyword)
-                        .or().like(SysUser::getNickName, keyword)
-                        .or().like(SysUser::getEmail, keyword)
-                        .or().like(SysUser::getPhone, keyword));
-            }
-
-            wrapper.orderByAsc(SysUser::getUserName);
-
-            Page<SysUser> p = new Page<>(page, pageSize);
-            IPage<SysUser> result = userMapper.selectPage(p, wrapper);
-
-            // 批量查询当页所有用户的角色，避免逐用户循环查询的 N+1 问题
-            List<Long> userIds = result.getRecords().stream()
-                    .map(SysUser::getId)
-                    .collect(Collectors.toList());
-            Map<Long, List<String>> roleNameMap = new HashMap<>();
-            if (!userIds.isEmpty()) {
-                try {
-                    for (Map<String, Object> row : roleMapper.selectRoleNamesByUserIds(userIds)) {
-                        Long uid = ((Number) row.get("userId")).longValue();
-                        roleNameMap.computeIfAbsent(uid, k -> new java.util.ArrayList<>())
-                                .add(String.valueOf(row.get("roleName")));
-                    }
-                } catch (Exception e) {
-                    log.warn("批量查询用户角色失败", e);
-                }
-            }
-
-            // 脱敏：隐藏密码等敏感信息，附加角色信息
-            List<Map<String, Object>> contacts = result.getRecords().stream().map(user -> {
-                Map<String, Object> map = new HashMap<>();
-                map.put("userId", user.getId());
-                map.put("userName", user.getUserName());
-                map.put("nickName", user.getNickName());
-                map.put("email", user.getEmail());
-                map.put("phone", user.getPhone());
-                map.put("sex", user.getSex());
-                map.put("avatar", user.getAvatar());
-                map.put("roleNames", roleNameMap.getOrDefault(user.getId(), List.of()));
-                return map;
-            }).collect(Collectors.toList());
-
-            PageResult<Map<String, Object>> pageResult = new PageResult<>();
-            pageResult.setTotal(result.getTotal());
-            pageResult.setPageNum(result.getCurrent());
-            pageResult.setPageSize(result.getSize());
-            pageResult.setPages(result.getPages());
-            pageResult.setList(contacts);
-            return Result.success(pageResult);
-        } catch (Exception e) {
-            log.error("查询通讯录失败", e);
-            return Result.error("查询通讯录失败");
+        if (keyword != null && !keyword.isEmpty()) {
+            wrapper.and(w -> w
+                    .like(SysUser::getUserName, keyword)
+                    .or().like(SysUser::getNickName, keyword)
+                    .or().like(SysUser::getEmail, keyword)
+                    .or().like(SysUser::getPhone, keyword));
         }
+
+        wrapper.orderByAsc(SysUser::getUserName);
+
+        Page<SysUser> p = new Page<>(page, pageSize);
+        IPage<SysUser> result = userMapper.selectPage(p, wrapper);
+
+        // 批量查询当页所有用户的角色，避免逐用户循环查询的 N+1 问题
+        List<Long> userIds = result.getRecords().stream()
+                .map(SysUser::getId)
+                .collect(Collectors.toList());
+        Map<Long, List<String>> roleNameMap = new HashMap<>();
+        if (!userIds.isEmpty()) {
+            try {
+                for (Map<String, Object> row : roleMapper.selectRoleNamesByUserIds(userIds)) {
+                    Long uid = ((Number) row.get("userId")).longValue();
+                    roleNameMap.computeIfAbsent(uid, k -> new java.util.ArrayList<>())
+                            .add(String.valueOf(row.get("roleName")));
+                }
+            } catch (Exception e) {
+                log.warn("批量查询用户角色失败", e);
+            }
+        }
+
+        // 脱敏：隐藏密码等敏感信息，附加角色信息
+        List<Map<String, Object>> contacts = result.getRecords().stream().map(user -> {
+            Map<String, Object> map = new HashMap<>();
+            map.put("userId", user.getId());
+            map.put("userName", user.getUserName());
+            map.put("nickName", user.getNickName());
+            map.put("email", user.getEmail());
+            map.put("phone", user.getPhone());
+            map.put("sex", user.getSex());
+            map.put("avatar", user.getAvatar());
+            map.put("roleNames", roleNameMap.getOrDefault(user.getId(), List.of()));
+            return map;
+        }).collect(Collectors.toList());
+
+        PageResult<Map<String, Object>> pageResult = new PageResult<>();
+        pageResult.setTotal(result.getTotal());
+        pageResult.setPageNum(result.getCurrent());
+        pageResult.setPageSize(result.getSize());
+        pageResult.setPages(result.getPages());
+        pageResult.setList(contacts);
+        return Result.success(pageResult);
     }
 
     // ==================== 待办事项 ====================
@@ -281,24 +271,19 @@ public class AppEnterpriseController {
             return Result.error("请先登录");
         }
 
-        try {
-            LambdaQueryWrapper<TodoItem> wrapper = new LambdaQueryWrapper<TodoItem>()
-                    .eq(TodoItem::getUserId, userId);
+        LambdaQueryWrapper<TodoItem> wrapper = new LambdaQueryWrapper<TodoItem>()
+                .eq(TodoItem::getUserId, userId);
 
-            if (status != null) {
-                wrapper.eq(TodoItem::getStatus, status);
-            }
-
-            wrapper.orderByDesc(TodoItem::getPriority)
-                    .orderByAsc(TodoItem::getDueDate);
-
-            Page<TodoItem> p = new Page<>(page, pageSize);
-            IPage<TodoItem> result = todoItemService.page(p, wrapper);
-            return Result.page(result);
-        } catch (Exception e) {
-            log.error("查询待办列表失败, userId={}", userId, e);
-            return Result.error("查询待办失败");
+        if (status != null) {
+            wrapper.eq(TodoItem::getStatus, status);
         }
+
+        wrapper.orderByDesc(TodoItem::getPriority)
+                .orderByAsc(TodoItem::getDueDate);
+
+        Page<TodoItem> p = new Page<>(page, pageSize);
+        IPage<TodoItem> result = todoItemService.page(p, wrapper);
+        return Result.page(result);
     }
 
     /**
@@ -312,21 +297,16 @@ public class AppEnterpriseController {
             return Result.error("请先登录");
         }
 
-        try {
-            todo.setUserId(userId);
-            if (todo.getStatus() == null) {
-                todo.setStatus(0);
-            }
-            if (todo.getPriority() == null) {
-                todo.setPriority(1);
-            }
-
-            boolean ok = todoItemService.save(todo);
-            return ok ? Result.success(null) : Result.error("新增失败");
-        } catch (Exception e) {
-            log.error("新增待办失败, userId={}", userId, e);
-            return Result.error("新增待办失败");
+        todo.setUserId(userId);
+        if (todo.getStatus() == null) {
+            todo.setStatus(0);
         }
+        if (todo.getPriority() == null) {
+            todo.setPriority(1);
+        }
+
+        boolean ok = todoItemService.save(todo);
+        return ok ? Result.success(null) : Result.error("新增失败");
     }
 
     /**
@@ -340,24 +320,19 @@ public class AppEnterpriseController {
             return Result.error("请先登录");
         }
 
-        try {
-            // 确认是本人的待办
-            TodoItem existing = todoItemService.getById(todo.getId());
-            if (existing == null || !existing.getUserId().equals(userId)) {
-                return Result.error("无权操作");
-            }
-
-            // 如果状态改为已完成，记录完成时间
-            if (todo.getStatus() != null && todo.getStatus() == 2 && existing.getStatus() != 2) {
-                todo.setCompletedTime(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
-            }
-
-            boolean ok = todoItemService.updateById(todo);
-            return ok ? Result.success(null) : Result.error("更新失败");
-        } catch (Exception e) {
-            log.error("更新待办失败, userId={}", userId, e);
-            return Result.error("更新待办失败");
+        // 确认是本人的待办
+        TodoItem existing = todoItemService.getById(todo.getId());
+        if (existing == null || !existing.getUserId().equals(userId)) {
+            return Result.error("无权操作");
         }
+
+        // 如果状态改为已完成，记录完成时间
+        if (todo.getStatus() != null && todo.getStatus() == 2 && existing.getStatus() != 2) {
+            todo.setCompletedTime(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+        }
+
+        boolean ok = todoItemService.updateById(todo);
+        return ok ? Result.success(null) : Result.error("更新失败");
     }
 
     /**
@@ -371,18 +346,13 @@ public class AppEnterpriseController {
             return Result.error("请先登录");
         }
 
-        try {
-            TodoItem existing = todoItemService.getById(id);
-            if (existing == null || !existing.getUserId().equals(userId)) {
-                return Result.error("无权操作");
-            }
-
-            boolean ok = todoItemService.removeById(id);
-            return ok ? Result.success(null) : Result.error("删除失败");
-        } catch (Exception e) {
-            log.error("删除待办失败, userId={}, todoId={}", userId, id, e);
-            return Result.error("删除待办失败");
+        TodoItem existing = todoItemService.getById(id);
+        if (existing == null || !existing.getUserId().equals(userId)) {
+            return Result.error("无权操作");
         }
+
+        boolean ok = todoItemService.removeById(id);
+        return ok ? Result.success(null) : Result.error("删除失败");
     }
 
     // ==================== 用户资料 ====================
@@ -398,30 +368,25 @@ public class AppEnterpriseController {
             return Result.error("请先登录");
         }
 
-        try {
-            SysUser user = userMapper.selectById(userId);
-            if (user == null) {
-                return Result.error("用户不存在");
-            }
-
-            if (body.containsKey("nickName")) {
-                user.setNickName(body.get("nickName"));
-            }
-            if (body.containsKey("email")) {
-                user.setEmail(body.get("email"));
-            }
-            if (body.containsKey("phone")) {
-                user.setPhone(body.get("phone"));
-            }
-            if (body.containsKey("sex")) {
-                user.setSex(body.get("sex"));
-            }
-
-            userMapper.updateById(user);
-            return Result.success(null);
-        } catch (Exception e) {
-            log.error("更新个人资料失败, userId={}", userId, e);
-            return Result.error("更新资料失败");
+        SysUser user = userMapper.selectById(userId);
+        if (user == null) {
+            return Result.error("用户不存在");
         }
+
+        if (body.containsKey("nickName")) {
+            user.setNickName(body.get("nickName"));
+        }
+        if (body.containsKey("email")) {
+            user.setEmail(body.get("email"));
+        }
+        if (body.containsKey("phone")) {
+            user.setPhone(body.get("phone"));
+        }
+        if (body.containsKey("sex")) {
+            user.setSex(body.get("sex"));
+        }
+
+        userMapper.updateById(user);
+        return Result.success(null);
     }
 }
