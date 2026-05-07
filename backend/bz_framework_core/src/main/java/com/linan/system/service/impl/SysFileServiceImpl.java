@@ -37,9 +37,12 @@ public class SysFileServiceImpl extends ServiceImpl<SysFileMapper, SysFile> impl
     /** 文件存储抽象（local=本地磁盘 / s3=对象存储），由 barezen.storage.type 决定 */
     private final FileStorage storage;
 
-    /** 允许上传的文件后缀白名单（空=不限制） */
+    /** 允许上传的文件后缀白名单（空=不限制）
+     * 注意：故意排除 svg/html 等可内联执行脚本的类型——上传目录经 /profile 静态映射
+     * 按原 content-type 直接输出，SVG 被直接导航时可在同源执行脚本（存储型 XSS）。
+     */
     private static final Set<String> ALLOWED_EXTENSIONS = Set.of(
-            "jpg", "jpeg", "png", "gif", "webp", "svg", "bmp", "ico",
+            "jpg", "jpeg", "png", "gif", "webp", "bmp", "ico",
             "doc", "docx", "xls", "xlsx", "ppt", "pptx", "pdf", "txt", "csv",
             "mp4", "avi", "mov", "wmv", "flv", "mkv",
             "mp3", "wav", "wma", "flac", "aac", "ogg",
@@ -93,8 +96,6 @@ public class SysFileServiceImpl extends ServiceImpl<SysFileMapper, SysFile> impl
                             if (!detectedMime.startsWith("image/")) {
                                 throw new IllegalArgumentException("文件内容与扩展名不匹配，检测到 MIME: " + detectedMime);
                             }
-                        } else if ("svg".equals(suffix) && !"image/svg+xml".equals(detectedMime)) {
-                            throw new IllegalArgumentException("文件内容与扩展名不匹配");
                         }
                     }
                 } catch (IOException e) {
@@ -322,7 +323,7 @@ public class SysFileServiceImpl extends ServiceImpl<SysFileMapper, SysFile> impl
     private String detectFileType(String suffix) {
         if (!StringUtils.hasText(suffix)) return "other";
         String s = suffix.toLowerCase();
-        if (s.matches("(jpg|jpeg|png|gif|webp|svg|bmp|ico)")) return "image";
+        if (s.matches("(jpg|jpeg|png|gif|webp|bmp|ico)")) return "image";
         if (s.matches("(doc|docx|xls|xlsx|ppt|pptx|pdf|txt|csv)")) return "document";
         if (s.matches("(mp4|avi|mov|wmv|flv|mkv)")) return "video";
         if (s.matches("(mp3|wav|wma|flac|aac|ogg)")) return "audio";

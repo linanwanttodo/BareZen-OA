@@ -4,6 +4,7 @@ import com.linan.core.security.JwtUtil;
 import com.linan.core.security.interceptor.AuthInterceptor;
 import com.linan.core.security.interceptor.OpenApiInterceptor;
 import com.linan.core.spi.permission.ApiKeyValidator;
+import jakarta.annotation.PostConstruct;
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
@@ -43,6 +44,10 @@ public class WebMvcConfig implements WebMvcConfigurer {
     /** JWT 过期时间（毫秒） */
     @Value("${jwt.expiration:86400000}")
     private long jwtExpiration;
+
+    /** 启用的 Spring profile（逗号分隔，用主动检测 prod 以决定是否 fail-fast） */
+    @Value("${spring.profiles.active:}")
+    private String activeProfiles;
 
     /**
      * 通过构造函数注入 RedisTemplate、JwtUtil 和 JWT 过期时间
@@ -132,6 +137,29 @@ public class WebMvcConfig implements WebMvcConfigurer {
             // 使用 allowedOriginPatterns 支持端口通配，与 allowCredentials(true) 兼容
             cors.allowedOriginPatterns("http://localhost:*", "http://127.0.0.1:*")
                 .allowCredentials(true);
+        }
+    }
+
+    /**
+     * 生产环境 CORS fail-fast 校验。
+     *
+     * 生产模式下若未显式配置 {@code cors.allowed-origins}，{@link #addCorsMappings} 会
+     * 落入开发分支、用 localhost 通配放行跨域——这对公网站点是危险的（任何来源可获得
+     * 已登录会话的跨域读写）。因此在启动阶段即抛错终止，禁止生产带病启动。
+     */
+    @PostConstruct
+    public void validateProdCors() {
+        boolean prod = false;
+        for (String p : activeProfiles.split(",")) {
+            if ("prod".equalsIgnoreCase(p.trim())) {
+                prod = true;
+                break;
+            }
+        }
+        if (prod && !StringUtils.hasText(allowedOrigins)) {
+            throw new IllegalStateException(
+                    "生产环境必须显式配置 cors.allowed-origins（CORS_ALLOWED_ORIGINS），"
+                    + "禁止使用开发环境的 localhost 通配放行跨域，应用启动失败。");
         }
     }
 

@@ -8,7 +8,8 @@ services:
     image: mysql:8.0
     container_name: zen-mysql
     environment:
-      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-123456}
+      # 数据库密码不允许内联默认值，缺失时 docker compose 直接报错（fail-fast）
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:?请设置 DB_PASSWORD 环境变量（勿使用默认弱口令）}
       MYSQL_DATABASE: barezen_base
       TZ: Asia/Shanghai
     ports:
@@ -63,13 +64,13 @@ services:
       DB_PORT: 3306
       DB_NAME: ${DB_NAME:-barezen_base}
       DB_USER: ${DB_USER:-root}
-      DB_PASSWORD: ${DB_PASSWORD:-123456}
+      DB_PASSWORD: ${DB_PASSWORD:?请设置 DB_PASSWORD 环境变量（勿使用默认弱口令）}
       # Redis 连接（Docker 网络内通过服务名访问）
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:-}
-      # JWT 配置
-      JWT_SECRET: ${JWT_SECRET:-bXktZGV2LWp3dC1zZWNyZXQta2V5LWZvci1sb2NhbC1kZXZlbG9wbWVudA==}
+      # JWT 密钥必须显式注入，禁止内联默认值（生产环境至少 32 字符强随机）
+      JWT_SECRET: ${JWT_SECRET:?请设置 JWT_SECRET 环境变量}
       JWT_EXPIRATION: ${JWT_EXPIRATION:-86400000}
       # 业务配置
       AUTH_REGISTER_ENABLED: ${AUTH_REGISTER_ENABLED:-false}

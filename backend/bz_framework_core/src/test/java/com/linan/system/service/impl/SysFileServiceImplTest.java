@@ -92,6 +92,18 @@ class SysFileServiceImplTest {
     }
 
     @Test
+    @DisplayName("安全：SVG 上传被拒绝（防 /profile 存储型 XSS）")
+    void uploadFile_svg_rejectedForStoredXss() throws IOException {
+        // SVG 可内联执行脚本，上传目录又经 /profile 静态映射直接输出，存在存储型 XSS 风险
+        MockMultipartFile svg = new MockMultipartFile(
+                "file", "danger.svg", "image/svg+xml",
+                "<svg xmlns=\"http://www.w3.org/2000/svg\"><script>document.location='https://evil'</script></svg>".getBytes());
+
+        assertThrows(IllegalArgumentException.class, () -> fileService.uploadFile(svg, null, null));
+        verify(storage, never()).store(any(), any(long.class), any());
+    }
+
+    @Test
     @DisplayName("下载：从 storage 读取并写入响应流")
     void downloadFile_streamsFromStorage() throws IOException {
         SysFile sysFile = new SysFile();
