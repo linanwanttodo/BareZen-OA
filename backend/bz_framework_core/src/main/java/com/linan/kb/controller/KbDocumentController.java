@@ -6,7 +6,6 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.linan.core.common.annotation.OperLog;
 import com.linan.core.common.api.PageResult;
 import com.linan.core.common.api.Result;
-import com.linan.core.security.PermissionService;
 import com.linan.core.security.RequirePermission;
 import com.linan.core.security.interceptor.AuthInterceptor;
 import com.linan.kb.entity.KbDocument;
@@ -25,7 +24,8 @@ import java.util.List;
 /**
  * 知识文档 Controller
  *
- * <p>支持分类查询、发布/下线、浏览计数、CRUD。</p>
+ * <p>仅做参数绑定与 {@link Result} 委托；版本快照、作者兜底、浏览量自增、删除双轨校验
+ * 等规则下沉至 {@link IKbDocumentService}。</p>
  *
  * @author BareZen Team
  */
@@ -37,9 +37,6 @@ public class KbDocumentController {
 
     private final IKbDocumentService documentService;
 
-    private final PermissionService permissionService;
-
-    /** 文档版本（V41：更新前写快照） */
     private final IKbDocumentVersionService versionService;
 
     /**
@@ -58,7 +55,6 @@ public class KbDocumentController {
 
         Page<KbDocument> page = new Page<>(pageNum, pageSize);
         LambdaQueryWrapper<KbDocument> wrapper = new LambdaQueryWrapper<>();
-
         if (title != null && !title.isEmpty()) {
             wrapper.like(KbDocument::getTitle, title);
         }
@@ -84,48 +80,24 @@ public class KbDocumentController {
     @RequirePermission("kb:document:add")
     @PostMapping
     public Result<Void> save(@Valid @RequestBody KbDocument doc) {
-        if (doc.getStatus() == null || doc.getStatus().isEmpty()) {
-            doc.setStatus("0");
-        }
-        Long userId = AuthInterceptor.getCurrentUserId();
-        doc.setAuthorId(userId);
-        if (doc.getAuthorName() == null || doc.getAuthorName().isEmpty()) {
-            // 后端兜底填真实用户名（JWT 中解析），禁止把 userId 当姓名落库
-            doc.setAuthorName(userId != null ? AuthInterceptor.getCurrentUsername() : null);
-        }
-        if (doc.getViewCount() == null) {
-            doc.setViewCount(0);
-        }
-        boolean ok = documentService.save(doc);
-        if (ok) {
-            // 首版快照（v1）
-            writeVersion(doc, userId);
-        }
+        boolean ok = documentService.createDocument(doc);
         return ok ? Result.success(null) : Result.error("新增失败");
     }
 
     /**
-     * 更新文档（更新前先写当前内容为版本快照，保证历史可回溯）
+     * 更新文档（更新前先写当前内容版本快照，保证历史可回溯）
      */
     @Operation(summary = "修改知识文档")
     @OperLog(title = "知识文档", businessType = 2)
     @RequirePermission("kb:document:edit")
     @PutMapping
     public Result<Void> update(@Valid @RequestBody KbDocument doc) {
-        KbDocument old = documentService.getById(doc.getId());
-        if (old == null) {
-            return Result.error("文档不存在");
-        }
-        // 更新前快照：写入旧内容副本（operator 为当前用户）
-        Long userId = AuthInterceptor.getCurrentUserId();
-        writeVersion(old, userId);
-        boolean ok = documentService.updateById(doc);
-        return ok ? Result.success(null) : Result.error("更新失败");
+        documentService.updateDocument(doc);
+        return Result.success(null);
     }
 
     /**
      * 文档版本历史（version_no 倒序，最新在前）
-     * GET /api/kb/v1/documents/{id}/versions
      */
     @Operation(summary = "查询文档版本历史")
     @RequirePermission("kb:document:list")
@@ -137,34 +109,7 @@ public class KbDocumentController {
     }
 
     /**
-     * 写版本快照：version_no = 现有最大 + 1（首版为 1）
-     */
-    private void writeVersion(KbDocument doc, Long operatorId) {
-        KbDocumentVersion version = new KbDocumentVersion();
-        version.setDocId(doc.getId());
-        version.setTitle(doc.getTitle());
-        version.setCategoryId(doc.getCategoryId());
-        version.setContent(doc.getContent());
-        version.setOperatorId(operatorId);
-        version.setOperatorName(operatorId != null ? AuthInterceptor.getCurrentUsername() : null);
-        version.setVersionNo(nextVersionNo(doc.getId()));
-        versionService.save(version);
-    }
-
-    /** 文档当前最大版本号 + 1（无历史时从 1 开始） */
-    private int nextVersionNo(Long docId) {
-        List<KbDocumentVersion> versions = versionService.list(new LambdaQueryWrapper<KbDocumentVersion>()
-                .eq(KbDocumentVersion::getDocId, docId)
-                .orderByDesc(KbDocumentVersion::getVersionNo)
-                .last("LIMIT 1"));
-        return versions.isEmpty() ? 1 : versions.get(0).getVersionNo() + 1;
-    }
-
-    /**
-     * 删除文档（作者本人 OR 持删除权限，双轨校验）
-     *
-     * <p>移除方法级 @RequirePermission：否则作者本人（无删除按钮权限）会被切面先行拦截，
-     * 无法删除自己的文档；改为方法内 isOwner || hasPermission 双轨放行。</p>
+     * 删除文档（作者本人 OR 持删除权限，双轨校验在 service 内进行）
      */
     @Operation(summary = "删除知识文档")
     @OperLog(title = "知识文档", businessType = 3)
@@ -174,17 +119,8 @@ public class KbDocumentController {
         if (userId == null) {
             return Result.error("请先登录");
         }
-        KbDocument doc = documentService.getById(id);
-        if (doc == null) {
-            return Result.error("文档不存在");
-        }
-        boolean isOwner = userId.equals(doc.getAuthorId());
-        boolean isAdmin = permissionService.hasPermission(userId, "kb:document:delete");
-        if (!isOwner && !isAdmin) {
-            return Result.error("无权限删除该文档");
-        }
-        boolean ok = documentService.removeById(id);
-        return ok ? Result.success(null) : Result.error("删除失败");
+        documentService.deleteDocument(id, userId);
+        return Result.success(null);
     }
 
     /**
@@ -194,17 +130,7 @@ public class KbDocumentController {
     @Operation(summary = "查询文档详情")
     @GetMapping("/{id}")
     public Result<KbDocument> getById(@PathVariable Long id) {
-        KbDocument doc = documentService.getById(id);
-        if (doc == null) {
-            return Result.error("文档不存在");
-        }
-        // 浏览量 +1（幂等，仅统计）
-        documentService.lambdaUpdate()
-                .eq(KbDocument::getId, id)
-                .setSql("view_count = view_count + 1")
-                .update();
-        doc.setViewCount(doc.getViewCount() != null ? doc.getViewCount() + 1 : 1);
-        return Result.success(doc);
+        return Result.success(documentService.viewDocument(id));
     }
 
     /**
