@@ -30,7 +30,7 @@
       <template #title>
         <div class="flex items-center justify-between w-full">
           <span>{{ $t('hr.employeeList') }}</span>
-          <a-button v-permission="'hr:employee:add'" type="primary" @click="handleAdd">
+          <a-button v-permission="PERM.hr.employeeAdd" type="primary" @click="handleAdd">
             <template #icon><icon-plus /></template>
             {{ $t('common.add') }}
           </a-button>
@@ -64,9 +64,9 @@
             <a-table-column :title="$t('common.operate')" :width="150" align="right">
               <template #cell="{ record }">
                 <a-space>
-                  <a-button v-permission="'hr:employee:edit'" size="small" @click="handleEdit(record)">{{ $t('common.edit') }}</a-button>
+                  <a-button v-permission="PERM.hr.employeeEdit" size="small" @click="handleEdit(record)">{{ $t('common.edit') }}</a-button>
                   <a-popconfirm :content="$t('common.deleteConfirm')" @ok="handleDelete(record)">
-                    <a-button v-permission="'hr:employee:delete'" size="small" status="danger">{{ $t('common.delete') }}</a-button>
+                    <a-button v-permission="PERM.hr.employeeDelete" size="small" status="danger">{{ $t('common.delete') }}</a-button>
                   </a-popconfirm>
                 </a-space>
               </template>
@@ -186,6 +186,7 @@
 </template>
 
 <script setup lang="ts">
+import { PERM } from '@/utils/constants'
 import { ref, reactive, onMounted } from 'vue'
 import { Message } from '@arco-design/web-vue'
 import { getEmployeePageApi, addEmployeeApi, updateEmployeeApi, deleteEmployeeApi, type HrEmployee } from '@/api/hr'

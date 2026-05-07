@@ -9,11 +9,11 @@
           </div>
           <div class="flex gap-2">
             <input ref="fileInputRef" type="file" class="hidden" multiple @change="onFileSelected" />
-            <a-button v-permission="'system:file:upload'" type="primary" :loading="uploading" @click="triggerUpload">
+            <a-button v-permission="PERM.system.fileUpload" type="primary" :loading="uploading" @click="triggerUpload">
               <template #icon><icon-upload /></template>
               {{ $t('file.upload') }}
             </a-button>
-            <a-button v-permission="'system:file:add'" @click="openCreateFolder">
+            <a-button v-permission="PERM.system.fileAdd" @click="openCreateFolder">
               <template #icon><icon-plus /></template>
               {{ $t('file.createFolder') }}
             </a-button>
@@ -79,13 +79,13 @@
             <a-table-column :title="$t('common.operate')" align="right" :width="170">
               <template #cell="{ record }">
                 <div class="flex justify-end gap-1">
-                  <a-button v-if="record.isFolder !== 1" v-permission="'system:file:download'" type="text" size="small" @click="handleDownload(record)">
+                  <a-button v-if="record.isFolder !== 1" v-permission="PERM.system.fileDownload" type="text" size="small" @click="handleDownload(record)">
                     {{ $t('file.download') }}
                   </a-button>
-                  <a-button v-permission="'system:file:edit'" type="text" size="small" @click="openRename(record)">
+                  <a-button v-permission="PERM.system.fileEdit" type="text" size="small" @click="openRename(record)">
                     {{ $t('file.rename') }}
                   </a-button>
-                  <a-button v-permission="'system:file:delete'" type="text" size="small" status="danger" @click="openDelete(record)">
+                  <a-button v-permission="PERM.system.fileDelete" type="text" size="small" status="danger" @click="openDelete(record)">
                     {{ $t('common.delete') }}
                   </a-button>
                 </div>
@@ -134,6 +134,7 @@
 </template>
 
 <script setup lang="ts">
+import { PERM } from '@/utils/constants'
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Message } from '@arco-design/web-vue'

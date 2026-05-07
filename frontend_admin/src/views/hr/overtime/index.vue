@@ -25,7 +25,7 @@
       <template #title>
         <div class="flex items-center justify-between w-full">
           <span>{{ $t('overtime.title') }}</span>
-          <a-button v-permission="'hr:overtime:add'" type="primary" @click="handleAdd">
+          <a-button v-permission="PERM.hr.overtimeAdd" type="primary" @click="handleAdd">
             <template #icon><icon-plus /></template>
             {{ $t('overtime.apply') }}
           </a-button>
@@ -55,10 +55,10 @@
               <template #cell="{ record }">
                 <a-space>
                   <template v-if="record.status === '0'">
-                    <a-button v-permission="'hr:overtime:approve'" size="small" type="primary" @click="openApprove(record)">
+                    <a-button v-permission="PERM.hr.overtimeApprove" size="small" type="primary" @click="openApprove(record)">
                       {{ $t('overtime.approve') }}
                     </a-button>
-                    <a-button v-permission="'hr:overtime:edit'" size="small" @click="handleRevoke(record)">
+                    <a-button v-permission="PERM.hr.overtimeEdit" size="small" @click="handleRevoke(record)">
                       {{ $t('overtime.revoke') }}
                     </a-button>
                   </template>
@@ -67,7 +67,7 @@
                   </a-button>
                   <a-button size="small" @click="openFlow(record)">{{ $t('overtime.flow') }}</a-button>
                   <a-popconfirm :content="$t('common.deleteConfirm')" @ok="handleDelete(record)">
-                    <a-button v-permission="'hr:overtime:delete'" size="small" status="danger">{{ $t('common.delete') }}</a-button>
+                    <a-button v-permission="PERM.hr.overtimeDelete" size="small" status="danger">{{ $t('common.delete') }}</a-button>
                   </a-popconfirm>
                 </a-space>
               </template>
@@ -145,6 +145,7 @@
 </template>
 
 <script setup lang="ts">
+import { PERM } from '@/utils/constants'
 import { ref, reactive, onMounted } from 'vue'
 import { Message } from '@arco-design/web-vue'
 import { IconPlus } from '@arco-design/web-vue/es/icon'

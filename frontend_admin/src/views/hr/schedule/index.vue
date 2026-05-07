@@ -30,7 +30,7 @@
     <a-card>
       <template #title>
         <span>{{ $t('schedule.title') }}</span>
-        <a-button v-permission="'hr:schedule:add'" class="ml-4" type="primary" size="small" @click="openAdd">
+        <a-button v-permission="PERM.hr.scheduleAdd" class="ml-4" type="primary" size="small" @click="openAdd">
           {{ $t('common.add') }}
         </a-button>
       </template>
@@ -53,10 +53,10 @@
             <a-table-column :title="$t('common.operate')" :width="120" align="right">
               <template #cell="{ record }">
                 <a-space>
-                  <a-button v-permission="'hr:schedule:edit'" size="small" @click="openEdit(record)">
+                  <a-button v-permission="PERM.hr.scheduleEdit" size="small" @click="openEdit(record)">
                     {{ $t('common.edit') }}
                   </a-button>
-                  <a-button v-permission="'hr:schedule:delete'" size="small" status="danger" @click="handleDelete(record)">
+                  <a-button v-permission="PERM.hr.scheduleDelete" size="small" status="danger" @click="handleDelete(record)">
                     {{ $t('common.delete') }}
                   </a-button>
                 </a-space>
@@ -111,6 +111,7 @@
 </template>
 
 <script setup lang="ts">
+import { PERM } from '@/utils/constants'
 import { ref, reactive, onMounted } from 'vue'
 import { Message } from '@arco-design/web-vue'
 import { useI18n } from 'vue-i18n'

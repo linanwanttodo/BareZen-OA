@@ -5,7 +5,7 @@
         <div class="flex items-center justify-between w-full">
           <span>{{ $t('monitor.jobs.title') }}</span>
           <a-space>
-            <a-button v-permission="'monitor:job:add'" type="primary" size="small" @click="handleAdd">
+            <a-button v-permission="PERM.monitor.jobAdd" type="primary" size="small" @click="handleAdd">
               <template #icon><icon-plus /></template>
               {{ $t('common.add') }}
             </a-button>
@@ -35,9 +35,9 @@
             <a-table-column :title="$t('common.operate')" :width="260" align="right">
               <template #cell="{ record }">
                 <a-space>
-                  <a-button v-permission="'monitor:job:edit'" size="small" @click="handleRun(record)">{{ $t('monitor.jobs.execute') }}</a-button>
-                  <a-button v-permission="'monitor:job:edit'" size="small" @click="handleEdit(record)">{{ $t('common.edit') }}</a-button>
-                  <a-popconfirm v-permission="'monitor:job:delete'" :content="$t('monitor.jobs.deleteConfirm')" @ok="handleDelete(record)">
+                  <a-button v-permission="PERM.monitor.jobEdit" size="small" @click="handleRun(record)">{{ $t('monitor.jobs.execute') }}</a-button>
+                  <a-button v-permission="PERM.monitor.jobEdit" size="small" @click="handleEdit(record)">{{ $t('common.edit') }}</a-button>
+                  <a-popconfirm v-permission="PERM.monitor.jobDelete" :content="$t('monitor.jobs.deleteConfirm')" @ok="handleDelete(record)">
                     <a-button size="small" status="danger">{{ $t('common.delete') }}</a-button>
                   </a-popconfirm>
                 </a-space>
@@ -83,6 +83,7 @@
 </template>
 
 <script setup lang="ts">
+import { PERM } from '@/utils/constants'
 import { ref, reactive, onMounted } from 'vue'
 import { Message } from '@arco-design/web-vue'
 import { useI18n } from 'vue-i18n'

@@ -61,10 +61,10 @@
             <a-table-column :title="$t('common.operate')" :width="180" align="right">
               <template #cell="{ record }">
                 <a-space>
-                  <a-button v-permission="'hr:leave:approve'" v-if="record.type === 'leave'" size="small" type="primary" @click="openApprove(record)">
+                  <a-button v-permission="PERM.hr.leaveApprove" v-if="record.type === 'leave'" size="small" type="primary" @click="openApprove(record)">
                     {{ $t('todoCenter.approve') }}
                   </a-button>
-                  <a-button v-permission="'office:vehicle:approve'" v-if="record.type === 'vehicle'" size="small" type="primary" @click="openApprove(record)">
+                  <a-button v-permission="PERM.office.vehicleApprove" v-if="record.type === 'vehicle'" size="small" type="primary" @click="openApprove(record)">
                     {{ $t('todoCenter.approve') }}
                   </a-button>
                 </a-space>
@@ -103,6 +103,7 @@
 </template>
 
 <script setup lang="ts">
+import { PERM } from '@/utils/constants'
 import { ref, reactive, onMounted } from 'vue'
 import { Message } from '@arco-design/web-vue'
 import { getTodoPageApi, getTodoSummaryApi, type TodoItem } from '@/api/todo'

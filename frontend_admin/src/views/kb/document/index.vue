@@ -31,7 +31,7 @@
       <template #title>
         <div class="flex items-center justify-between w-full">
           <span>{{ $t('kb.docList') }}</span>
-          <a-button v-permission="'kb:document:add'" type="primary" @click="handleAdd">
+          <a-button v-permission="PERM.kb.documentAdd" type="primary" @click="handleAdd">
             <template #icon><icon-plus /></template>
             {{ $t('common.add') }}
           </a-button>
@@ -62,14 +62,14 @@
             <a-table-column :title="$t('common.operate')" :width="280" align="right">
               <template #cell="{ record }">
                 <a-space>
-                  <a-button v-permission="'kb:document:list'" size="small" @click="handleView(record)">{{ $t('kb.view') }}</a-button>
-                  <a-button v-permission="'kb:document:list'" size="small" @click="handleVersions(record)">{{ $t('kb.versions') }}</a-button>
-                  <a-button v-permission="'kb:document:edit'" size="small" @click="handleEdit(record)">{{ $t('common.edit') }}</a-button>
-                  <a-button v-if="record.status === '0'" v-permission="'kb:document:edit'" size="small" type="primary" @click="handlePublish(record)">
+                  <a-button v-permission="PERM.kb.documentList" size="small" @click="handleView(record)">{{ $t('kb.view') }}</a-button>
+                  <a-button v-permission="PERM.kb.documentList" size="small" @click="handleVersions(record)">{{ $t('kb.versions') }}</a-button>
+                  <a-button v-permission="PERM.kb.documentEdit" size="small" @click="handleEdit(record)">{{ $t('common.edit') }}</a-button>
+                  <a-button v-if="record.status === '0'" v-permission="PERM.kb.documentEdit" size="small" type="primary" @click="handlePublish(record)">
                     {{ $t('kb.publish') }}
                   </a-button>
                   <a-popconfirm :content="$t('common.deleteConfirm')" @ok="handleDelete(record)">
-                    <a-button v-permission="'kb:document:delete'" size="small" status="danger">{{ $t('common.delete') }}</a-button>
+                    <a-button v-permission="PERM.kb.documentDelete" size="small" status="danger">{{ $t('common.delete') }}</a-button>
                   </a-popconfirm>
                 </a-space>
               </template>
@@ -151,6 +151,7 @@
 </template>
 
 <script setup lang="ts">
+import { PERM } from '@/utils/constants'
 import { ref, reactive, onMounted, computed } from 'vue'
 import { Message } from '@arco-design/web-vue'
 import DOMPurify from 'dompurify'

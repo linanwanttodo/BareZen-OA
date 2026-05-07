@@ -30,7 +30,7 @@
             <a-button @click="toggleExpandAll">
               {{ isAllExpanded ? $t('common.collapseAll') : $t('common.expandAll') }}
             </a-button>
-            <a-button v-permission="'system:menu:add'" type="primary" @click="handleAdd()">
+            <a-button v-permission="PERM.system.menuAdd" type="primary" @click="handleAdd()">
               <template #icon><icon-plus /></template>
               {{ $t('common.add') }}
             </a-button>
@@ -86,9 +86,9 @@
             <a-table-column :title="$t('common.operate')" :width="180" align="right">
               <template #cell="{ record }">
                 <a-space>
-                  <a-button v-permission="'system:menu:add'" v-if="record.node.menuType !== 'F'" size="small" @click="handleAdd(record.node)">{{ $t('common.add') }}</a-button>
-                  <a-button v-permission="'system:menu:edit'" size="small" @click="handleEdit(record.node)">{{ $t('common.edit') }}</a-button>
-                  <a-popconfirm v-permission="'system:menu:delete'" :content="$t('menu.deleteConfirm', { name: record.node.menuName })" @ok="handleDelete(record.node)">
+                  <a-button v-permission="PERM.system.menuAdd" v-if="record.node.menuType !== 'F'" size="small" @click="handleAdd(record.node)">{{ $t('common.add') }}</a-button>
+                  <a-button v-permission="PERM.system.menuEdit" size="small" @click="handleEdit(record.node)">{{ $t('common.edit') }}</a-button>
+                  <a-popconfirm v-permission="PERM.system.menuDelete" :content="$t('menu.deleteConfirm', { name: record.node.menuName })" @ok="handleDelete(record.node)">
                     <a-button size="small" status="danger">{{ $t('common.delete') }}</a-button>
                   </a-popconfirm>
                 </a-space>
@@ -183,6 +183,7 @@
 </template>
 
 <script setup lang="ts">
+import { PERM } from '@/utils/constants'
 import { ref, reactive, computed, onMounted } from 'vue'
 import { Message, Modal } from '@arco-design/web-vue'
 import { useI18n } from 'vue-i18n'

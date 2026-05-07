@@ -26,7 +26,7 @@
         <template #title>
           <div class="flex items-center justify-between w-full">
             <span>{{ $t('openapi.apiKeyTab') }}</span>
-            <a-button v-permission="'system:apiKey:add'" type="primary" @click="openKeyCreate">
+            <a-button v-permission="PERM.system.apiKeyAdd" type="primary" @click="openKeyCreate">
               <template #icon><icon-plus /></template>
               {{ $t('openapi.addApiKey') }}
             </a-button>
@@ -59,7 +59,7 @@
               <a-table-column :title="$t('common.operate')" :width="100" align="right">
                 <template #cell="{ record }">
                   <a-popconfirm :content="$t('common.deleteConfirm')" @ok="handleKeyDelete(record)">
-                    <a-button v-permission="'system:apiKey:delete'" size="small" status="danger">{{ $t('common.delete') }}</a-button>
+                    <a-button v-permission="PERM.system.apiKeyDelete" size="small" status="danger">{{ $t('common.delete') }}</a-button>
                   </a-popconfirm>
                 </template>
               </a-table-column>
@@ -98,7 +98,7 @@
         <template #title>
           <div class="flex items-center justify-between w-full">
             <span>{{ $t('openapi.webhookTab') }}</span>
-            <a-button v-permission="'system:webhook:add'" type="primary" @click="openHookCreate">
+            <a-button v-permission="PERM.system.webhookAdd" type="primary" @click="openHookCreate">
               <template #icon><icon-plus /></template>
               {{ $t('openapi.addWebhook') }}
             </a-button>
@@ -129,7 +129,7 @@
               <a-table-column :title="$t('common.operate')" :width="100" align="right">
                 <template #cell="{ record }">
                   <a-popconfirm :content="$t('common.deleteConfirm')" @ok="handleHookDelete(record)">
-                    <a-button v-permission="'system:webhook:delete'" size="small" status="danger">{{ $t('common.delete') }}</a-button>
+                    <a-button v-permission="PERM.system.webhookDelete" size="small" status="danger">{{ $t('common.delete') }}</a-button>
                   </a-popconfirm>
                 </template>
               </a-table-column>
@@ -200,6 +200,7 @@
 </template>
 
 <script setup lang="ts">
+import { PERM } from '@/utils/constants'
 import { ref, reactive, onMounted } from 'vue'
 import { Message } from '@arco-design/web-vue'
 import { useI18n } from 'vue-i18n'

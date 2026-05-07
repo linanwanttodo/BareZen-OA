@@ -12,7 +12,7 @@
               <template #icon><icon-refresh /></template>
               {{ $t('monitor.online.refresh') }}
             </a-button>
-            <a-button v-permission="'monitor:online:delete'" status="danger" :disabled="!selectedTokens.length" @click="handleBatchForceLogout">
+            <a-button v-permission="PERM.monitor.onlineDelete" status="danger" :disabled="!selectedTokens.length" @click="handleBatchForceLogout">
               <template #icon><icon-poweroff /></template>
               {{ $t('monitor.online.batchLogout') }}
             </a-button>
@@ -58,7 +58,7 @@
               </a-table-column>
               <a-table-column :title="$t('common.operate')" align="right">
                 <template #cell="{ record }">
-                  <a-button v-permission="'monitor:online:delete'" type="text" size="small" @click="handleForceLogout(record)">{{ $t('monitor.online.forceLogout') }}</a-button>
+                  <a-button v-permission="PERM.monitor.onlineDelete" type="text" size="small" @click="handleForceLogout(record)">{{ $t('monitor.online.forceLogout') }}</a-button>
                 </template>
               </a-table-column>
             </template>
@@ -89,6 +89,7 @@
 </template>
 
 <script setup lang="ts">
+import { PERM } from '@/utils/constants'
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { IconRefresh, IconPoweroff } from '@arco-design/web-vue/es/icon'

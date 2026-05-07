@@ -46,11 +46,11 @@
               <template #icon><icon-refresh /></template>
               {{ $t('monitor.operLog.refresh') }}
             </a-button>
-            <a-button v-permission="'monitor:operlog:delete'" status="danger" :disabled="!selectedIds.length" @click="handleBatchDelete">
+            <a-button v-permission="PERM.monitor.operlogDelete" status="danger" :disabled="!selectedIds.length" @click="handleBatchDelete">
               <template #icon><icon-delete /></template>
               {{ $t('common.batchDelete') }}
             </a-button>
-            <a-popconfirm v-permission="'monitor:operlog:delete'" :content="$t('monitor.operLog.cleanConfirm', { beforeDays: 30 })" @ok="handleClean">
+            <a-popconfirm v-permission="PERM.monitor.operlogDelete" :content="$t('monitor.operLog.cleanConfirm', { beforeDays: 30 })" @ok="handleClean">
               <a-button status="danger">
                 <template #icon><icon-delete /></template>
                 {{ $t('monitor.operLog.clean') }}
@@ -102,9 +102,9 @@
                 <template #cell="{ record }">
                   <a-space>
                     <a-popconfirm :content="$t('monitor.operLog.deleteConfirm')" @ok="handleDelete(record)">
-                      <a-button v-permission="'monitor:operlog:delete'" type="text" size="small" status="danger">{{ $t('common.delete') }}</a-button>
+                      <a-button v-permission="PERM.monitor.operlogDelete" type="text" size="small" status="danger">{{ $t('common.delete') }}</a-button>
                     </a-popconfirm>
-                    <a-button v-permission="'monitor:operlog:list'" type="text" size="small" @click="handleDetail(record)">{{ $t('monitor.operLog.detail') }}</a-button>
+                    <a-button v-permission="PERM.monitor.operlogList" type="text" size="small" @click="handleDetail(record)">{{ $t('monitor.operLog.detail') }}</a-button>
                   </a-space>
                 </template>
               </a-table-column>
@@ -198,6 +198,7 @@
 </template>
 
 <script setup lang="ts">
+import { PERM } from '@/utils/constants'
 import { ref, reactive, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Message } from '@arco-design/web-vue'

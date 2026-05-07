@@ -30,7 +30,7 @@
             <a-button @click="toggleExpandAll">
               {{ isAllExpanded ? $t('common.collapseAll') : $t('common.expandAll') }}
             </a-button>
-            <a-button v-permission="'system:dept:add'" type="primary" @click="handleAdd()">
+            <a-button v-permission="PERM.system.deptAdd" type="primary" @click="handleAdd()">
               <template #icon><icon-plus /></template>
               {{ $t('common.add') }}
             </a-button>
@@ -76,9 +76,9 @@
             <a-table-column :title="$t('common.operate')" :width="180" align="right">
               <template #cell="{ record }">
                 <a-space>
-                  <a-button v-permission="'system:dept:add'" size="small" @click="handleAdd(record.node)">{{ $t('common.add') }}</a-button>
-                  <a-button v-permission="'system:dept:edit'" size="small" @click="handleEdit(record.node)">{{ $t('common.edit') }}</a-button>
-                  <a-popconfirm v-permission="'system:dept:delete'" :content="$t('dept.deleteConfirm')" @ok="handleDelete(record.node)">
+                  <a-button v-permission="PERM.system.deptAdd" size="small" @click="handleAdd(record.node)">{{ $t('common.add') }}</a-button>
+                  <a-button v-permission="PERM.system.deptEdit" size="small" @click="handleEdit(record.node)">{{ $t('common.edit') }}</a-button>
+                  <a-popconfirm v-permission="PERM.system.deptDelete" :content="$t('dept.deleteConfirm')" @ok="handleDelete(record.node)">
                     <a-button size="small" status="danger">{{ $t('common.delete') }}</a-button>
                   </a-popconfirm>
                 </a-space>
@@ -141,6 +141,7 @@
 </template>
 
 <script setup lang="ts">
+import { PERM } from '@/utils/constants'
 import { ref, onMounted, computed } from 'vue'
 import { Message, Modal } from '@arco-design/web-vue'
 import { useI18n } from 'vue-i18n'

@@ -22,7 +22,7 @@
       <template #title>
         <div class="flex items-center justify-between w-full">
           <span>{{ $t('flowTemplate.title') }}</span>
-          <a-button v-permission="'system:flow:template:add'" type="primary" @click="handleAdd">
+          <a-button v-permission="PERM.system.flowTemplateAdd" type="primary" @click="handleAdd">
             <template #icon><icon-plus /></template>
             {{ $t('common.add') }}
           </a-button>
@@ -44,7 +44,7 @@
             <a-table-column :title="$t('common.status')" :width="100" align="center">
               <template #cell="{ record }">
                 <a-switch
-                  v-permission="'system:flow:template:edit'"
+                  v-permission="PERM.system.flowTemplateEdit"
                   :model-value="record.enabled === 1"
                   @change="(val: string | number | boolean) => handleEnableChange(record, Boolean(val))"
                 />
@@ -54,9 +54,9 @@
             <a-table-column :title="$t('common.operate')" :width="140" align="right">
               <template #cell="{ record }">
                 <a-space>
-                  <a-button v-permission="'system:flow:template:edit'" size="small" @click="handleEdit(record)">{{ $t('common.edit') }}</a-button>
+                  <a-button v-permission="PERM.system.flowTemplateEdit" size="small" @click="handleEdit(record)">{{ $t('common.edit') }}</a-button>
                   <a-popconfirm :content="$t('common.deleteConfirm')" @ok="handleDelete(record)">
-                    <a-button v-permission="'system:flow:template:delete'" size="small" status="danger">{{ $t('common.delete') }}</a-button>
+                    <a-button v-permission="PERM.system.flowTemplateDelete" size="small" status="danger">{{ $t('common.delete') }}</a-button>
                   </a-popconfirm>
                 </a-space>
               </template>
@@ -102,6 +102,7 @@
 </template>
 
 <script setup lang="ts">
+import { PERM } from '@/utils/constants'
 import { ref, reactive, onMounted } from 'vue'
 import { Message } from '@arco-design/web-vue'
 import { useI18n } from 'vue-i18n'

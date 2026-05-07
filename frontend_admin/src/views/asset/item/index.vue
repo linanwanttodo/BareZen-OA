@@ -36,7 +36,7 @@
       <template #title>
         <div class="flex items-center justify-between w-full">
           <span>{{ $t('asset.title') }}</span>
-          <a-button v-permission="'asset:item:add'" type="primary" @click="handleAdd">
+          <a-button v-permission="PERM.asset.itemAdd" type="primary" @click="handleAdd">
             <template #icon><icon-plus /></template>
             {{ $t('common.add') }}
           </a-button>
@@ -69,19 +69,19 @@
             <a-table-column :title="$t('common.operate')" :width="260" align="right">
               <template #cell="{ record }">
                 <a-space>
-                  <a-button v-permission="'asset:item:borrow'" v-if="record.status === '0'" size="small" type="primary" @click="handleBorrow(record)">
+                  <a-button v-permission="PERM.asset.itemBorrow" v-if="record.status === '0'" size="small" type="primary" @click="handleBorrow(record)">
                     {{ $t('asset.borrow') }}
                   </a-button>
-                  <a-button v-permission="'asset:item:borrow'" v-else-if="record.status === '1'" size="small" status="success" @click="handleReturn(record)">
+                  <a-button v-permission="PERM.asset.itemBorrow" v-else-if="record.status === '1'" size="small" status="success" @click="handleReturn(record)">
                     {{ $t('asset.return') }}
                   </a-button>
                   <a-button size="small" @click="handleRecords(record)">{{ $t('asset.records') }}</a-button>
-                  <a-button v-permission="'asset:item:edit'" size="small" @click="handleEdit(record)">{{ $t('common.edit') }}</a-button>
-                  <a-button v-if="record.status !== '3'" v-permission="'asset:item:edit'" size="small" status="warning" @click="handleScrap(record)">
+                  <a-button v-permission="PERM.asset.itemEdit" size="small" @click="handleEdit(record)">{{ $t('common.edit') }}</a-button>
+                  <a-button v-if="record.status !== '3'" v-permission="PERM.asset.itemEdit" size="small" status="warning" @click="handleScrap(record)">
                     {{ $t('asset.scrap') }}
                   </a-button>
                   <a-popconfirm :content="$t('common.deleteConfirm')" @ok="handleDelete(record)">
-                    <a-button v-permission="'asset:item:delete'" size="small" status="danger">{{ $t('common.delete') }}</a-button>
+                    <a-button v-permission="PERM.asset.itemDelete" size="small" status="danger">{{ $t('common.delete') }}</a-button>
                   </a-popconfirm>
                 </a-space>
               </template>
@@ -216,6 +216,7 @@
 </template>
 
 <script setup lang="ts">
+import { PERM } from '@/utils/constants'
 import { ref, reactive, onMounted } from 'vue'
 import { Message } from '@arco-design/web-vue'
 import { getAssetPageApi, addAssetApi, updateAssetApi, deleteAssetApi, scrapAssetApi, borrowAssetApi, returnAssetApi, getBorrowRecordsApi, getCategoryListApi, type AssetItem, type AssetBorrowRecord, type AssetCategory } from '@/api/asset'

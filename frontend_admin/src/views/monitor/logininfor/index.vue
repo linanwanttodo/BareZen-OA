@@ -26,7 +26,7 @@
       <template #title>
         <div class="flex items-center justify-between w-full">
           <span>{{ $t('monitor.logininfor.title') }}</span>
-          <a-popconfirm v-permission="'monitor:logininfor:delete'" :content="$t('monitor.logininfor.cleanConfirm')" @ok="handleClean">
+          <a-popconfirm v-permission="PERM.monitor.logininforDelete" :content="$t('monitor.logininfor.cleanConfirm')" @ok="handleClean">
             <a-button status="danger" size="small">
               <template #icon><icon-delete /></template>
               {{ $t('monitor.logininfor.clean') }}
@@ -66,6 +66,7 @@
 </template>
 
 <script setup lang="ts">
+import { PERM } from '@/utils/constants'
 import { ref, reactive, onMounted } from 'vue'
 import { Message } from '@arco-design/web-vue'
 import { useI18n } from 'vue-i18n'

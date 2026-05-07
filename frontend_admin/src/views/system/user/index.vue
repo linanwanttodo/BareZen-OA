@@ -30,15 +30,15 @@
         <div class="flex items-center justify-between w-full">
           <span>{{ $t('user.userManagement') }}</span>
           <a-space>
-            <a-button v-permission="'system:user:add'" type="primary" @click="handleAdd">
+            <a-button v-permission="PERM.system.userAdd" type="primary" @click="handleAdd">
               <template #icon><icon-plus /></template>
               {{ $t('user.addUser') }}
             </a-button>
-            <a-button v-permission="'system:user:add'" @click="batchVisible = true">
+            <a-button v-permission="PERM.system.userAdd" @click="batchVisible = true">
               <template #icon><icon-user-group /></template>
               {{ $t('user.batchAdd') }}
             </a-button>
-            <a-button v-permission="'system:user:delete'" status="danger" :disabled="!selectedIds.length" @click="handleBatchDelete">
+            <a-button v-permission="PERM.system.userDelete" status="danger" :disabled="!selectedIds.length" @click="handleBatchDelete">
               <template #icon><icon-delete /></template>
               {{ $t('user.batchDelete') }}
             </a-button>
@@ -82,11 +82,11 @@
             <a-table-column :title="$t('common.operate')" :width="280" align="right">
               <template #cell="{ record }">
                 <a-space>
-                  <a-button v-permission="'system:user:edit'" size="small" @click="handleEdit(record)">{{ $t('common.edit') }}</a-button>
-                  <a-button v-permission="'system:user:edit'" size="small" @click="handleAssignRole(record)">{{ $t('user.assignRole') }}</a-button>
+                  <a-button v-permission="PERM.system.userEdit" size="small" @click="handleEdit(record)">{{ $t('common.edit') }}</a-button>
+                  <a-button v-permission="PERM.system.userEdit" size="small" @click="handleAssignRole(record)">{{ $t('user.assignRole') }}</a-button>
                   <a-button size="small" @click="handleAssignDept(record)">{{ $t('user.assignDept') }}</a-button>
                   <a-button size="small" @click="handleResetPwd(record)">{{ $t('user.resetPwd') }}</a-button>
-                  <a-popconfirm v-permission="'system:user:delete'" :content="$t('user.deleteConfirm')" @ok="handleDelete(record)">
+                  <a-popconfirm v-permission="PERM.system.userDelete" :content="$t('user.deleteConfirm')" @ok="handleDelete(record)">
                     <a-button size="small" status="danger">{{ $t('common.delete') }}</a-button>
                   </a-popconfirm>
                 </a-space>
@@ -284,6 +284,7 @@
 </template>
 
 <script setup lang="ts">
+import { PERM } from '@/utils/constants'
 import { ref, reactive, computed, onMounted } from 'vue'
 import { Message, Modal } from '@arco-design/web-vue'
 import { useI18n } from 'vue-i18n'

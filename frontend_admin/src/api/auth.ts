@@ -1,5 +1,5 @@
 import request from './request'
-import type { ApiResult, LoginParams, LoginResult, CurrentUser, CaptchaResult } from '@/types/api'
+import type { LoginParams, LoginResult, CurrentUser, CaptchaResult } from '@/types/api'
 
 /** 用户注册参数（注册功能经后端 registerEnabled 开关控制，默认关闭） */
 export interface RegisterParams {
@@ -12,35 +12,35 @@ export interface RegisterParams {
 
 /** 用户登录 */
 export function loginApi(data: LoginParams) {
-  return request.post<any, ApiResult<LoginResult>>('/auth/v1/login', data)
+  return request.post<LoginResult>('/auth/v1/login', data)
 }
 
 /** 用户注册 */
 export function registerApi(data: RegisterParams) {
-  return request.post<any, ApiResult<void>>('/auth/v1/register', data)
+  return request.post<void>('/auth/v1/register', data)
 }
 
 /** 获取验证码 */
 export function getCaptchaApi() {
-  return request.get<any, ApiResult<CaptchaResult>>('/auth/v1/captcha')
+  return request.get<CaptchaResult>('/auth/v1/captcha')
 }
 
 /** 获取当前用户信息 */
 export function getCurrentUserApi() {
-  return request.get<any, ApiResult<CurrentUser>>('/auth/v1/current/user')
+  return request.get<CurrentUser>('/auth/v1/current/user')
 }
 
 /** 修改密码 */
 export function changePasswordApi(data: { oldPassword: string; newPassword: string }) {
-  return request.put<any, ApiResult<void>>('/auth/v1/password', data)
+  return request.put<void>('/auth/v1/password', data)
 }
 
 /** 退出登录 */
 export function logoutApi() {
-  return request.post<any, ApiResult<void>>('/auth/v1/logout')
+  return request.post<void>('/auth/v1/logout')
 }
 
 /** 刷新 Token */
 export function refreshTokenApi() {
-  return request.post<any, ApiResult<{ token: string }>>('/auth/v1/refresh')
+  return request.post<{ token: string }>('/auth/v1/refresh')
 }

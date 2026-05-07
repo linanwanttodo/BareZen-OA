@@ -26,11 +26,11 @@
         <div class="flex items-center justify-between w-full">
           <span>{{ $t('office.roomList') }}</span>
           <a-space>
-            <a-button v-permission="'office:meeting:add'" type="primary" @click="roomDialogVisible = true">
+            <a-button v-permission="PERM.office.meetingAdd" type="primary" @click="roomDialogVisible = true">
               <template #icon><icon-plus /></template>
               {{ $t('office.addRoom') }}
             </a-button>
-            <a-button v-permission="'office:meeting:add'" type="outline" @click="bookingVisible = true">
+            <a-button v-permission="PERM.office.meetingAdd" type="outline" @click="bookingVisible = true">
               <template #icon><icon-calendar /></template>
               {{ $t('office.bookMeeting') }}
             </a-button>
@@ -52,9 +52,9 @@
               <div>{{ $t('office.equipment') }}：{{ room.equipment || '-' }}</div>
             </div>
             <div class="mt-3 flex justify-end gap-2">
-              <a-button v-permission="'office:meeting:edit'" size="small" @click="openRoomEdit(room)">{{ $t('common.edit') }}</a-button>
+              <a-button v-permission="PERM.office.meetingEdit" size="small" @click="openRoomEdit(room)">{{ $t('common.edit') }}</a-button>
               <a-popconfirm :content="$t('common.deleteConfirm')" @ok="handleDeleteRoom(room)">
-                <a-button v-permission="'office:meeting:delete'" size="small" status="danger">{{ $t('common.delete') }}</a-button>
+                <a-button v-permission="PERM.office.meetingDelete" size="small" status="danger">{{ $t('common.delete') }}</a-button>
               </a-popconfirm>
             </div>
           </a-card>
@@ -82,7 +82,7 @@
             <a-table-column :title="$t('common.operate')" :width="90" align="right">
               <template #cell="{ record }">
                 <a-popconfirm :content="$t('common.deleteConfirm')" @ok="handleDeleteBooking(record)">
-                  <a-button v-permission="'office:meeting:delete'" size="small" status="danger">{{ $t('common.delete') }}</a-button>
+                  <a-button v-permission="PERM.office.meetingDelete" size="small" status="danger">{{ $t('common.delete') }}</a-button>
                 </a-popconfirm>
               </template>
             </a-table-column>
@@ -153,6 +153,7 @@
 </template>
 
 <script setup lang="ts">
+import { PERM } from '@/utils/constants'
 import { ref, reactive, onMounted, computed } from 'vue'
 import { Message } from '@arco-design/web-vue'
 import {

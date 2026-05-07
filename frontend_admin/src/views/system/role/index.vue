@@ -30,11 +30,11 @@
         <div class="flex items-center justify-between w-full">
           <span>{{ $t('role.title') }}</span>
           <a-space>
-            <a-button v-permission="'system:role:add'" type="primary" @click="handleAdd">
+            <a-button v-permission="PERM.system.roleAdd" type="primary" @click="handleAdd">
               <template #icon><icon-plus /></template>
               {{ $t('common.add') }}
             </a-button>
-            <a-button v-permission="'system:role:delete'" status="danger" :disabled="!selectedIds.length" @click="handleBatchDelete">
+            <a-button v-permission="PERM.system.roleDelete" status="danger" :disabled="!selectedIds.length" @click="handleBatchDelete">
               <template #icon><icon-delete /></template>
               {{ $t('common.batchDelete') }}
             </a-button>
@@ -73,9 +73,9 @@
             <a-table-column :title="$t('common.operate')" :width="200" align="right">
               <template #cell="{ record }">
                 <a-space>
-                  <a-button v-permission="'system:role:edit'" size="small" @click="handleEdit(record)">{{ $t('common.edit') }}</a-button>
-                  <a-button v-permission="'system:role:edit'" size="small" @click="handleAssignMenu(record)">{{ $t('role.assignMenu') }}</a-button>
-                  <a-popconfirm v-permission="'system:role:delete'" :content="$t('role.deleteConfirm')" @ok="handleDelete(record)">
+                  <a-button v-permission="PERM.system.roleEdit" size="small" @click="handleEdit(record)">{{ $t('common.edit') }}</a-button>
+                  <a-button v-permission="PERM.system.roleEdit" size="small" @click="handleAssignMenu(record)">{{ $t('role.assignMenu') }}</a-button>
+                  <a-popconfirm v-permission="PERM.system.roleDelete" :content="$t('role.deleteConfirm')" @ok="handleDelete(record)">
                     <a-button size="small" status="danger">{{ $t('common.delete') }}</a-button>
                   </a-popconfirm>
                 </a-space>
@@ -171,6 +171,7 @@
 </template>
 
 <script setup lang="ts">
+import { PERM } from '@/utils/constants'
 import { ref, reactive, computed, onMounted } from 'vue'
 import { Message, Modal } from '@arco-design/web-vue'
 import { useI18n } from 'vue-i18n'

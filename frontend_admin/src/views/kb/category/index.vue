@@ -4,7 +4,7 @@
     <a-card class="mb-4">
       <div class="flex items-center justify-between">
         <span class="text-sm text-[var(--color-text-2)]">{{ $t('kb.categoryDesc') }}</span>
-        <a-button v-permission="'kb:category:add'" type="primary" @click="handleAdd">
+        <a-button v-permission="PERM.kb.categoryAdd" type="primary" @click="handleAdd">
           <template #icon><icon-plus /></template>
           {{ $t('common.add') }}
         </a-button>
@@ -32,9 +32,9 @@
             <a-table-column :title="$t('common.operate')" :width="160" align="right">
               <template #cell="{ record }">
                 <a-space>
-                  <a-button v-permission="'kb:category:edit'" size="small" @click="handleEdit(record)">{{ $t('common.edit') }}</a-button>
+                  <a-button v-permission="PERM.kb.categoryEdit" size="small" @click="handleEdit(record)">{{ $t('common.edit') }}</a-button>
                   <a-popconfirm :content="$t('common.deleteConfirm')" @ok="handleDelete(record)">
-                    <a-button v-permission="'kb:category:delete'" size="small" status="danger">{{ $t('common.delete') }}</a-button>
+                    <a-button v-permission="PERM.kb.categoryDelete" size="small" status="danger">{{ $t('common.delete') }}</a-button>
                   </a-popconfirm>
                 </a-space>
               </template>
@@ -66,6 +66,7 @@
 </template>
 
 <script setup lang="ts">
+import { PERM } from '@/utils/constants'
 import { ref, reactive, onMounted } from 'vue'
 import { Message } from '@arco-design/web-vue'
 import { useI18n } from 'vue-i18n'

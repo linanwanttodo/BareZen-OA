@@ -34,7 +34,7 @@
         <template #title>
           <div class="flex items-center justify-between w-full">
             <span>{{ $t('supply.supplyList') }}</span>
-            <a-button v-permission="'office:supply:add'" type="primary" @click="openSupplyAdd">
+            <a-button v-permission="PERM.office.supplyAdd" type="primary" @click="openSupplyAdd">
               <template #icon><icon-plus /></template>
               {{ $t('supply.addSupply') }}
             </a-button>
@@ -64,9 +64,9 @@
               <a-table-column :title="$t('common.operate')" :width="150" align="right">
                 <template #cell="{ record }">
                   <a-space>
-                    <a-button v-permission="'office:supply:edit'" size="small" @click="openSupplyEdit(record)">{{ $t('common.edit') }}</a-button>
+                    <a-button v-permission="PERM.office.supplyEdit" size="small" @click="openSupplyEdit(record)">{{ $t('common.edit') }}</a-button>
                     <a-popconfirm :content="$t('common.deleteConfirm')" @ok="handleDeleteSupply(record)">
-                      <a-button v-permission="'office:supply:delete'" size="small" status="danger">{{ $t('common.delete') }}</a-button>
+                      <a-button v-permission="PERM.office.supplyDelete" size="small" status="danger">{{ $t('common.delete') }}</a-button>
                     </a-popconfirm>
                   </a-space>
                 </template>
@@ -115,7 +115,7 @@
                 <template #cell="{ record }">
                   <a-space>
                     <template v-if="record.status === '0'">
-                      <a-button v-permission="'office:supply:approve'" size="small" type="primary" @click="openApprove(record)">
+                      <a-button v-permission="PERM.office.supplyApprove" size="small" type="primary" @click="openApprove(record)">
                         {{ $t('supply.approve') }}
                       </a-button>
                     </template>
@@ -124,7 +124,7 @@
                     </a-button>
                     <a-button size="small" @click="openFlow(record)">{{ $t('supply.flow') }}</a-button>
                     <a-popconfirm :content="$t('common.deleteConfirm')" @ok="handleDeleteRequest(record)">
-                      <a-button v-permission="'office:supply:delete'" size="small" status="danger">{{ $t('common.delete') }}</a-button>
+                      <a-button v-permission="PERM.office.supplyDelete" size="small" status="danger">{{ $t('common.delete') }}</a-button>
                     </a-popconfirm>
                   </a-space>
                 </template>
@@ -211,6 +211,7 @@
 </template>
 
 <script setup lang="ts">
+import { PERM } from '@/utils/constants'
 import { ref, reactive, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { Message } from '@arco-design/web-vue'

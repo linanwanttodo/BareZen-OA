@@ -28,7 +28,7 @@
       <template #title>
         <div class="flex items-center justify-between w-full">
           <span>{{ $t('office.vehicleList') }}</span>
-          <a-button v-permission="'office:vehicle:add'" type="primary" @click="handleAdd">
+          <a-button v-permission="PERM.office.vehicleAdd" type="primary" @click="handleAdd">
             <template #icon><icon-plus /></template>
             {{ $t('office.applyVehicle') }}
           </a-button>
@@ -61,10 +61,10 @@
               <template #cell="{ record }">
                 <a-space>
                   <template v-if="record.status === '0'">
-                    <a-button v-permission="'office:vehicle:approve'" size="small" type="primary" @click="openApprove(record)">
+                    <a-button v-permission="PERM.office.vehicleApprove" size="small" type="primary" @click="openApprove(record)">
                       {{ $t('office.approve') }}
                     </a-button>
-                    <a-button v-permission="'office:vehicle:edit'" size="small" @click="handleCancel(record)">
+                    <a-button v-permission="PERM.office.vehicleEdit" size="small" @click="handleCancel(record)">
                       {{ $t('office.cancel') }}
                     </a-button>
                   </template>
@@ -73,7 +73,7 @@
                   </a-button>
                   <a-button size="small" @click="openFlow(record)">{{ $t('office.flow') }}</a-button>
                   <a-popconfirm :content="$t('common.deleteConfirm')" @ok="handleDelete(record)">
-                    <a-button v-permission="'office:vehicle:delete'" size="small" status="danger">{{ $t('common.delete') }}</a-button>
+                    <a-button v-permission="PERM.office.vehicleDelete" size="small" status="danger">{{ $t('common.delete') }}</a-button>
                   </a-popconfirm>
                 </a-space>
               </template>
@@ -165,6 +165,7 @@
 </template>
 
 <script setup lang="ts">
+import { PERM } from '@/utils/constants'
 import { ref, reactive, onMounted } from 'vue'
 import { Message } from '@arco-design/web-vue'
 import { getVehiclePageApi, submitVehicleApi, approveVehicleApi, cancelVehicleApi, deleteVehicleApi, type OfficeVehicleRequest } from '@/api/office'

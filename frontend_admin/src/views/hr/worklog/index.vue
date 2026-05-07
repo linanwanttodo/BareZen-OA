@@ -26,7 +26,7 @@
       <template #title>
         <div class="flex items-center justify-between w-full">
           <span>{{ $t('worklog.title') }}</span>
-          <a-button v-permission="'hr:worklog:add'" type="primary" @click="handleAdd">
+          <a-button v-permission="PERM.hr.worklogAdd" type="primary" @click="handleAdd">
             <template #icon><icon-plus /></template>
             {{ $t('common.add') }}
           </a-button>
@@ -52,13 +52,13 @@
             <a-table-column :title="$t('common.operate')" :width="200" align="right">
               <template #cell="{ record }">
                 <a-space>
-                  <a-button v-permission="'hr:worklog:list'" size="small" @click="handleView(record)">{{ $t('worklog.view') }}</a-button>
-                  <a-button v-if="!record.reviewerName" v-permission="'hr:worklog:review'" size="small" type="primary" @click="openReview(record)">
+                  <a-button v-permission="PERM.hr.worklogList" size="small" @click="handleView(record)">{{ $t('worklog.view') }}</a-button>
+                  <a-button v-if="!record.reviewerName" v-permission="PERM.hr.worklogReview" size="small" type="primary" @click="openReview(record)">
                     {{ $t('worklog.review') }}
                   </a-button>
-                  <a-button v-permission="'hr:worklog:edit'" size="small" @click="handleEdit(record)">{{ $t('common.edit') }}</a-button>
+                  <a-button v-permission="PERM.hr.worklogEdit" size="small" @click="handleEdit(record)">{{ $t('common.edit') }}</a-button>
                   <a-popconfirm :content="$t('common.deleteConfirm')" @ok="handleDelete(record)">
-                    <a-button v-permission="'hr:worklog:delete'" size="small" status="danger">{{ $t('common.delete') }}</a-button>
+                    <a-button v-permission="PERM.hr.worklogDelete" size="small" status="danger">{{ $t('common.delete') }}</a-button>
                   </a-popconfirm>
                 </a-space>
               </template>
@@ -134,6 +134,7 @@
 </template>
 
 <script setup lang="ts">
+import { PERM } from '@/utils/constants'
 import { ref, reactive, onMounted } from 'vue'
 import { Message } from '@arco-design/web-vue'
 import { getWorkLogPageApi, addWorkLogApi, updateWorkLogApi, deleteWorkLogApi, reviewWorkLogApi, type HrWorkLog } from '@/api/worklog'

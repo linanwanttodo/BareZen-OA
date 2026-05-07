@@ -6,7 +6,7 @@
           <h3 class="text-base font-medium">{{ $t('monitor.backup.backupTitle') }}</h3>
           <p class="text-sm text-gray-500 mt-1">{{ $t('monitor.backup.backupDesc') }}</p>
         </div>
-        <a-button v-permission="'system:backup:add'" type="primary" :loading="creating" @click="handleCreate">
+        <a-button v-permission="PERM.system.backupAdd" type="primary" :loading="creating" @click="handleCreate">
           <template #icon><icon-plus /></template>
           {{ $t('monitor.backup.createBackup') }}
         </a-button>
@@ -35,8 +35,8 @@
             <a-table-column :title="$t('common.operate')" :width="160" align="right">
               <template #cell="{ record }">
                 <a-space>
-                  <a-button v-permission="'system:backup:list'" size="small" @click="handleDownload(record)">{{ $t('monitor.backup.download') }}</a-button>
-                  <a-popconfirm v-permission="'system:backup:delete'" :content="$t('monitor.backup.deleteConfirm')" @ok="handleDelete(record)">
+                  <a-button v-permission="PERM.system.backupList" size="small" @click="handleDownload(record)">{{ $t('monitor.backup.download') }}</a-button>
+                  <a-popconfirm v-permission="PERM.system.backupDelete" :content="$t('monitor.backup.deleteConfirm')" @ok="handleDelete(record)">
                     <a-button size="small" status="danger">{{ $t('monitor.backup.delete') }}</a-button>
                   </a-popconfirm>
                 </a-space>
@@ -53,6 +53,7 @@
 </template>
 
 <script setup lang="ts">
+import { PERM } from '@/utils/constants'
 import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Message } from '@arco-design/web-vue'

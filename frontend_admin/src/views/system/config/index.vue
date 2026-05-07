@@ -24,7 +24,7 @@
         <div class="flex items-center justify-between w-full">
           <span>{{ $t('config.systemConfig') }}</span>
           <a-space>
-            <a-button v-permission="'system:config:edit'" @click="handleClearCache" :loading="clearing">
+            <a-button v-permission="PERM.system.configEdit" @click="handleClearCache" :loading="clearing">
               <template #icon><icon-refresh /></template>
               {{ $t('config.clearCache') }}
             </a-button>
@@ -59,7 +59,7 @@
             </a-table-column>
             <a-table-column :title="$t('common.operate')" :width="180" align="right">
               <template #cell="{ record }">
-                <a-button v-permission="'system:config:edit'" size="small" @click="handleEdit(record)">{{ $t('common.edit') }}</a-button>
+                <a-button v-permission="PERM.system.configEdit" size="small" @click="handleEdit(record)">{{ $t('common.edit') }}</a-button>
               </template>
             </a-table-column>
           </template>
@@ -103,6 +103,7 @@
 </template>
 
 <script setup lang="ts">
+import { PERM } from '@/utils/constants'
 import { ref, reactive, onMounted } from 'vue'
 import { Message } from '@arco-design/web-vue'
 import { useI18n } from 'vue-i18n'

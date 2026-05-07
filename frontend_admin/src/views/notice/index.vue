@@ -24,7 +24,7 @@
       <template #title>
         <div class="flex items-center justify-between w-full">
           <span>{{ $t('notice.title') }}</span>
-          <a-button v-permission="'system:notice:add'" type="primary" @click="handleAdd">
+          <a-button v-permission="PERM.system.noticeAdd" type="primary" @click="handleAdd">
             <template #icon><icon-plus /></template>
             {{ $t('common.add') }}
           </a-button>
@@ -78,11 +78,11 @@
                 <template #cell="{ record }">
                   <a-space>
                     <a-button type="text" size="small" @click="handleView(record)">{{ $t('common.detail') }}</a-button>
-                    <a-button v-permission="'system:notice:edit'" type="text" size="small" @click="handleEdit(record)">{{ $t('common.edit') }}</a-button>
-                    <a-button v-if="record.status === '0'" v-permission="'system:notice:edit'" type="text" size="small" @click="handlePublish(record)">{{ $t('notice.publish') }}</a-button>
-                    <a-button v-if="record.status === '1'" v-permission="'system:notice:edit'" type="text" size="small" @click="handleRevoke(record)">{{ $t('notice.revoke') }}</a-button>
-                    <a-button v-permission="'system:notice:list'" type="text" size="small" @click="handleReadReceipt(record)">{{ $t('notice.readReceipt') }}</a-button>
-                    <a-button v-permission="'system:notice:delete'" type="text" size="small" @click="handleDelete(record)">{{ $t('common.delete') }}</a-button>
+                    <a-button v-permission="PERM.system.noticeEdit" type="text" size="small" @click="handleEdit(record)">{{ $t('common.edit') }}</a-button>
+                    <a-button v-if="record.status === '0'" v-permission="PERM.system.noticeEdit" type="text" size="small" @click="handlePublish(record)">{{ $t('notice.publish') }}</a-button>
+                    <a-button v-if="record.status === '1'" v-permission="PERM.system.noticeEdit" type="text" size="small" @click="handleRevoke(record)">{{ $t('notice.revoke') }}</a-button>
+                    <a-button v-permission="PERM.system.noticeList" type="text" size="small" @click="handleReadReceipt(record)">{{ $t('notice.readReceipt') }}</a-button>
+                    <a-button v-permission="PERM.system.noticeDelete" type="text" size="small" @click="handleDelete(record)">{{ $t('common.delete') }}</a-button>
                   </a-space>
                 </template>
               </a-table-column>
@@ -191,6 +191,7 @@
 </template>
 
 <script setup lang="ts">
+import { PERM } from '@/utils/constants'
 import { ref, reactive, onMounted } from 'vue'
 import { IconPlus } from '@arco-design/web-vue/es/icon'
 import { useI18n } from 'vue-i18n'

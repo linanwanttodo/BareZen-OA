@@ -6,7 +6,7 @@
         <template #title>
           <div class="flex items-center justify-between w-full">
             <span>{{ $t('dict.title') }}</span>
-            <a-button v-permission="'system:dict:add'" type="primary" size="small" @click="handleAddType">
+            <a-button v-permission="PERM.system.dictAdd" type="primary" size="small" @click="handleAddType">
               <template #icon><icon-plus /></template>
               {{ $t('common.add') }}
             </a-button>
@@ -31,8 +31,8 @@
             <a-dropdown>
               <icon-more class="cursor-pointer" style="color: #86909C" />
               <template #content>
-                <a-doption v-permission="'system:dict:edit'" @click="handleEditType(item)">{{ $t('common.edit') }}</a-doption>
-                <a-doption v-permission="'system:dict:delete'" @click="handleDeleteType(item)" status="danger">{{ $t('common.delete') }}</a-doption>
+                <a-doption v-permission="PERM.system.dictEdit" @click="handleEditType(item)">{{ $t('common.edit') }}</a-doption>
+                <a-doption v-permission="PERM.system.dictDelete" @click="handleDeleteType(item)" status="danger">{{ $t('common.delete') }}</a-doption>
               </template>
             </a-dropdown>
           </div>
@@ -57,7 +57,7 @@
               <span>{{ $t('dict.dataTitle') }}</span>
               <a-tag v-if="selectedType" color="blue">{{ selectedType.dictName }}</a-tag>
             </div>
-            <a-button v-permission="'system:dict:add'" type="primary" size="small" :disabled="!selectedType" @click="handleAddData">
+            <a-button v-permission="PERM.system.dictAdd" type="primary" size="small" :disabled="!selectedType" @click="handleAddData">
               <template #icon><icon-plus /></template>
               {{ $t('common.add') }}
             </a-button>
@@ -93,8 +93,8 @@
                 <a-table-column :title="$t('common.operate')" :width="120" align="right">
                   <template #cell="{ record }">
                     <a-space>
-                      <a-button v-permission="'system:dict:edit'" size="small" @click="handleEditData(record)">{{ $t('common.edit') }}</a-button>
-                      <a-popconfirm v-permission="'system:dict:delete'" :content="$t('dict.deleteDataConfirm')" @ok="handleDeleteData(record)">
+                      <a-button v-permission="PERM.system.dictEdit" size="small" @click="handleEditData(record)">{{ $t('common.edit') }}</a-button>
+                      <a-popconfirm v-permission="PERM.system.dictDelete" :content="$t('dict.deleteDataConfirm')" @ok="handleDeleteData(record)">
                         <a-button size="small" status="danger">{{ $t('common.delete') }}</a-button>
                       </a-popconfirm>
                     </a-space>
@@ -213,6 +213,7 @@
 </template>
 
 <script setup lang="ts">
+import { PERM } from '@/utils/constants'
 import { ref, reactive, computed, onMounted } from 'vue'
 import { Message, Modal } from '@arco-design/web-vue'
 import { useI18n } from 'vue-i18n'

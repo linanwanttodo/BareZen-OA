@@ -25,7 +25,7 @@
       <template #title>
         <div class="flex items-center justify-between w-full">
           <span>{{ $t('leave.title') }}</span>
-          <a-button v-permission="'hr:leave:add'" type="primary" @click="handleAdd">
+          <a-button v-permission="PERM.hr.leaveAdd" type="primary" @click="handleAdd">
             <template #icon><icon-plus /></template>
             {{ $t('leave.apply') }}
           </a-button>
@@ -61,10 +61,10 @@
                 <a-space>
                   <!-- 待审批：管理员可审批，申请人可撤销 -->
                   <template v-if="record.status === '0'">
-                    <a-button v-permission="'hr:leave:approve'" size="small" type="primary" @click="openApprove(record)">
+                    <a-button v-permission="PERM.hr.leaveApprove" size="small" type="primary" @click="openApprove(record)">
                       {{ $t('leave.approve') }}
                     </a-button>
-                    <a-button v-permission="'hr:leave:edit'" size="small" @click="handleRevoke(record)">
+                    <a-button v-permission="PERM.hr.leaveEdit" size="small" @click="handleRevoke(record)">
                       {{ $t('leave.revoke') }}
                     </a-button>
                   </template>
@@ -74,7 +74,7 @@
                   </a-button>
                   <a-button size="small" @click="openFlow(record)">{{ $t('leave.flow') }}</a-button>
                   <a-popconfirm :content="$t('common.deleteConfirm')" @ok="handleDelete(record)">
-                    <a-button v-permission="'hr:leave:delete'" size="small" status="danger">{{ $t('common.delete') }}</a-button>
+                    <a-button v-permission="PERM.hr.leaveDelete" size="small" status="danger">{{ $t('common.delete') }}</a-button>
                   </a-popconfirm>
                 </a-space>
               </template>
@@ -163,6 +163,7 @@
 </template>
 
 <script setup lang="ts">
+import { PERM } from '@/utils/constants'
 import { ref, reactive, onMounted } from 'vue'
 import { Message } from '@arco-design/web-vue'
 import { getLeavePageApi, submitLeaveApi, approveLeaveApi, revokeLeaveApi, deleteLeaveApi, type AttLeaveRequest } from '@/api/leave'
