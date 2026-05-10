@@ -198,6 +198,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
             public void doFilter(ServletRequest request, ServletResponse response,
                                  FilterChain chain) throws IOException, ServletException {
                 HttpServletResponse resp = (HttpServletResponse) response;
+                resp.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
                 resp.setHeader("X-Content-Type-Options", "nosniff");
                 resp.setHeader("X-Frame-Options", "DENY");
                 resp.setHeader("X-XSS-Protection", "1; mode=block");

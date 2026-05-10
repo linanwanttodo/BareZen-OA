@@ -12,6 +12,9 @@ import org.springframework.stereotype.Service;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
+import java.net.InetAddress;
+import java.net.URI;
+import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.HashMap;
@@ -84,6 +87,11 @@ public class SysWebhookServiceImpl extends ServiceImpl<SysWebhookMapper, SysWebh
 
         for (SysWebhook webhook : subscribers) {
             try {
+                // SSRF 防护：禁止回调内网地址
+                if (isInternalUrl(webhook.getUrl())) {
+                    log.warn("Webhook SSRF 防护拦截: url={} 指向内网地址，已跳过推送", webhook.getUrl());
+                    continue;
+                }
                 String json = toJson(body);
                 String signature = sign(webhook, json);
                 java.net.http.HttpClient client = java.net.http.HttpClient.newBuilder()
@@ -147,5 +155,32 @@ public class SysWebhookServiceImpl extends ServiceImpl<SysWebhookMapper, SysWebh
 
     private String truncate(String s, int max) {
         return s != null && s.length() > max ? s.substring(0, max) + "..." : s;
+    }
+
+    /**
+     * SSRF 防护：检测 URL 是否指向内网地址。
+     *
+     * <p>拦截 RFC 1918 私有地址段（10.0.0.0/8、172.16.0.0/12、192.168.0.0/16）、
+     * 回环地址（127.0.0.0/8）和链路本地地址（169.254.0.0/16），
+     * 防止攻击者配置 Webhook 回调地址扫描内网或访问云元数据服务。</p>
+     */
+    public static boolean isInternalUrl(String url) {
+        if (url == null) {
+            return true;
+        }
+        try {
+            URI uri = URI.create(url);
+            String host = uri.getHost();
+            if (host == null) {
+                return true;
+            }
+            InetAddress addr = InetAddress.getByName(host);
+            return addr.isSiteLocalAddress()      // 10.x, 172.16-31.x, 192.168.x
+                    || addr.isLoopbackAddress()     // 127.x
+                    || addr.isLinkLocalAddress();   // 169.254.x
+        } catch (UnknownHostException e) {
+            log.warn("Webhook URL 主机名解析失败: url={}", url);
+            return true; // 无法解析的主机名拒绝连接（fail-safe）
+        }
     }
 }

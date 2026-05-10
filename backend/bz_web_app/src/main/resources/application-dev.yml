@@ -25,9 +25,11 @@ spring:
     repair-on-migrate: true
 
   # ---- 数据源（本地开发默认密码） ----
-  # 本地 Docker 数据库（zen-mysql）的默认密码，仅 dev profile 生效；
-  # 公共配置（application.yml）不设密码默认值，避免弱口令泄漏到其他环境。
+  # 本地 Docker 数据库（zen-mysql），dev 环境关闭 SSL（本地开发无需证书），
+  # 并开放公钥检索以适配 MySQL 8.0 认证插件。
+  # 公共配置（application.yml）默认 useSSL=true，安全优先。
   datasource:
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:barezen_base}?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
     password: ${DB_PASSWORD:123456}
 
 # ---- JWT 开发环境默认密钥 ----

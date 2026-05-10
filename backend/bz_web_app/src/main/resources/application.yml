@@ -55,7 +55,7 @@ spring:
   # MySQL 8.0 数据库连接（连接 Docker 中启动的 zen-mysql 容器）
   # 生产请通过环境变量覆盖：DB_HOST / DB_PORT / DB_NAME / DB_USER / DB_PASSWORD
   datasource:
-    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:barezen_base}?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:barezen_base}?useUnicode=true&characterEncoding=utf-8&useSSL=true&serverTimezone=Asia/Shanghai
     username: ${DB_USER:root}
     # 密码不设公共默认值（弱默认值已移除）：本地开发默认密码在 application-dev.yml，
     # 生产环境（application-prod.yml）同样无默认——缺失 DB_PASSWORD 时启动直接失败（fail-fast），

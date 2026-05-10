@@ -1,6 +1,7 @@
 package com.linan.web.controller.open;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.linan.core.common.annotation.RateLimit;
 import com.linan.core.common.api.Result;
 import com.linan.core.security.OpenScope;
@@ -80,13 +81,15 @@ public class OpenApiController {
             @Parameter(description = "返回条数上限，默认 20，最大 100")
             @RequestParam(defaultValue = "20") Integer limit) {
 
-        List<AttLeaveRequest> list = leaveService.list(new LambdaQueryWrapper<AttLeaveRequest>()
-                .eq(AttLeaveRequest::getStatus, "0")
-                .eq(AttLeaveRequest::getUserId, userId)
-                .orderByAsc(AttLeaveRequest::getCreateTime)
-                .last("LIMIT " + Math.min(Math.max(limit, 1), 100)));
+        int safeLimit = Math.min(Math.max(limit, 1), 100);
+        Page<AttLeaveRequest> page = leaveService.page(
+                new Page<>(1, safeLimit),
+                new LambdaQueryWrapper<AttLeaveRequest>()
+                        .eq(AttLeaveRequest::getStatus, "0")
+                        .eq(AttLeaveRequest::getUserId, userId)
+                        .orderByAsc(AttLeaveRequest::getCreateTime));
 
-        List<Map<String, Object>> result = list.stream().map(r -> {
+        List<Map<String, Object>> result = page.getRecords().stream().map(r -> {
             Map<String, Object> m = new HashMap<>();
             m.put("id", r.getId());
             m.put("userName", r.getUserName());
@@ -108,12 +111,14 @@ public class OpenApiController {
     @Operation(summary = "查询办公用品库存")
     @GetMapping("/supplies")
     public Result<List<Map<String, Object>>> supplies(@RequestParam(defaultValue = "100") Integer limit) {
-        List<OfficeSupply> list = supplyService.list(new LambdaQueryWrapper<OfficeSupply>()
-                .eq(OfficeSupply::getStatus, "0")
-                .orderByDesc(OfficeSupply::getCreateTime)
-                .last("LIMIT " + Math.min(Math.max(limit, 1), 200)));
+        int safeLimit = Math.min(Math.max(limit, 1), 200);
+        Page<OfficeSupply> page = supplyService.page(
+                new Page<>(1, safeLimit),
+                new LambdaQueryWrapper<OfficeSupply>()
+                        .eq(OfficeSupply::getStatus, "0")
+                        .orderByDesc(OfficeSupply::getCreateTime));
 
-        List<Map<String, Object>> result = list.stream().map(s -> {
+        List<Map<String, Object>> result = page.getRecords().stream().map(s -> {
             Map<String, Object> m = new HashMap<>();
             m.put("id", s.getId());
             m.put("supplyName", s.getSupplyName());
@@ -134,12 +139,14 @@ public class OpenApiController {
     @Operation(summary = "查询已发布公告")
     @GetMapping("/notices")
     public Result<List<Map<String, Object>>> notices(@RequestParam(defaultValue = "20") Integer limit) {
-        List<SysNotice> list = noticeService.list(new LambdaQueryWrapper<SysNotice>()
-                .eq(SysNotice::getStatus, "1")
-                .orderByDesc(SysNotice::getCreateTime)
-                .last("LIMIT " + Math.min(Math.max(limit, 1), 100)));
+        int safeLimit = Math.min(Math.max(limit, 1), 100);
+        Page<SysNotice> page = noticeService.page(
+                new Page<>(1, safeLimit),
+                new LambdaQueryWrapper<SysNotice>()
+                        .eq(SysNotice::getStatus, "1")
+                        .orderByDesc(SysNotice::getCreateTime));
 
-        List<Map<String, Object>> result = list.stream().map(n -> {
+        List<Map<String, Object>> result = page.getRecords().stream().map(n -> {
             Map<String, Object> m = new HashMap<>();
             m.put("id", n.getId());
             m.put("noticeTitle", n.getNoticeTitle());

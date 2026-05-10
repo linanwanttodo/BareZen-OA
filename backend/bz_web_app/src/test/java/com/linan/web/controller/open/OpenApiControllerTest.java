@@ -1,6 +1,7 @@
 package com.linan.web.controller.open;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.linan.core.common.annotation.RateLimit;
 import com.linan.hr.entity.AttLeaveRequest;
 import com.linan.hr.service.IAttLeaveRequestService;
@@ -70,7 +71,10 @@ class OpenApiControllerTest {
         r.setId(1L);
         r.setUserName("张三");
         r.setReason("敏感事由，不应出现在开放接口响应中");
-        when(leaveService.list(any(LambdaQueryWrapper.class))).thenReturn(List.of(r));
+        Page<AttLeaveRequest> page = new Page<>(1, 20);
+        page.setRecords(List.of(r));
+        page.setTotal(1);
+        when(leaveService.page(any(Page.class), any(LambdaQueryWrapper.class))).thenReturn(page);
 
         var result = controller.pendingLeaves(1L, 20);
 
@@ -79,17 +83,20 @@ class OpenApiControllerTest {
                 "开放接口响应不应携带 reason 敏感字段");
         assertEquals(1L, result.getData().get(0).get("id"));
 
-        // 过滤恒生效：接口仅按固定用户维度查询
+        // 过滤恒生效：接口仅按固定用户维度查询（用户ID条件必须存在）
         ArgumentCaptor<LambdaQueryWrapper<AttLeaveRequest>> captor =
                 ArgumentCaptor.forClass(LambdaQueryWrapper.class);
-        verify(leaveService).list(captor.capture());
+        verify(leaveService).page(any(Page.class), captor.capture());
         assertNotNull(captor.getValue());
     }
 
     @Test
     @DisplayName("pendingLeaves 无待审批数据返回空列表")
     void pendingLeaves_emptyList() {
-        when(leaveService.list(any(LambdaQueryWrapper.class))).thenReturn(List.of());
+        Page<AttLeaveRequest> page = new Page<>(1, 20);
+        page.setRecords(List.of());
+        page.setTotal(0);
+        when(leaveService.page(any(Page.class), any(LambdaQueryWrapper.class))).thenReturn(page);
 
         var result = controller.pendingLeaves(2L, 20);
 

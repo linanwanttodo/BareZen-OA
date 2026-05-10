@@ -63,7 +63,7 @@ public class OnlineUserServiceImpl implements OnlineUserService {
                     .build();
             try (Cursor<byte[]> cursor = redisTemplate.execute(
                     (org.springframework.data.redis.connection.RedisConnection connection) ->
-                            connection.scan(scanOptions))) {
+                            connection.keyCommands().scan(scanOptions))) {
                 if (cursor == null) {
                     return users;
                 }
@@ -98,7 +98,7 @@ public class OnlineUserServiceImpl implements OnlineUserService {
                     .build();
             try (Cursor<byte[]> cursor = redisTemplate.execute(
                     (org.springframework.data.redis.connection.RedisConnection connection) ->
-                            connection.scan(scanOptions))) {
+                            connection.keyCommands().scan(scanOptions))) {
                 if (cursor != null) {
                     while (cursor.hasNext()) {
                         cursor.next();

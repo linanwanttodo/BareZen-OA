@@ -9,6 +9,7 @@ import com.linan.core.common.api.Result;
 import com.linan.core.security.RequirePermission;
 import com.linan.system.entity.SysWebhook;
 import com.linan.system.service.ISysWebhookService;
+import com.linan.system.service.impl.SysWebhookServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -91,6 +92,10 @@ public class SysWebhookController {
         }
         if (!(url.startsWith("http://") || url.startsWith("https://"))) {
             return Result.error("回调地址必须以 http:// 或 https:// 开头");
+        }
+        // SSRF 防护：禁止回调内网地址
+        if (SysWebhookServiceImpl.isInternalUrl(url.trim())) {
+            return Result.error("回调地址不允许指向内网地址（如 localhost / 192.168.x.x 等）");
         }
         if (events == null || events.isBlank()) {
             return Result.error("订阅事件不能为空");

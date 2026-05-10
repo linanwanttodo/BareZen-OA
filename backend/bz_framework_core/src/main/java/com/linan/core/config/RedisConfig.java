@@ -5,7 +5,8 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.databind.jsontype.impl.LaissezFaireSubTypeValidator;
+import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
+import com.fasterxml.jackson.databind.jsontype.PolymorphicTypeValidator;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -28,7 +29,14 @@ public class RedisConfig {
         // GenericJackson2JsonRedisSerializer 依赖类型信息完成反序列化；
         // 传入自定义 ObjectMapper 时必须手动开启，否则读回来的是 LinkedHashMap 而非原对象
         objectMapper.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
-        objectMapper.activateDefaultTyping(LaissezFaireSubTypeValidator.instance,
+        // 使用安全的白名单类型验证器，仅允许项目自有类型 + JDK 安全类型
+        PolymorphicTypeValidator ptv = BasicPolymorphicTypeValidator.builder()
+                .allowIfBaseType("com.linan.")
+                .allowIfBaseType("java.util.")
+                .allowIfBaseType("java.time.")
+                .allowIfBaseType(Object.class.getName())
+                .build();
+        objectMapper.activateDefaultTyping(ptv,
                 ObjectMapper.DefaultTyping.NON_FINAL, JsonTypeInfo.As.PROPERTY);
 
         StringRedisSerializer stringSerializer = new StringRedisSerializer();
