@@ -14,12 +14,14 @@ import com.linan.hr.entity.AttLeaveRequest;
 import com.linan.hr.service.IAttLeaveRequestService;
 import com.linan.system.service.ApprovalFlowFacade;
 import com.linan.system.service.ApprovalNotifyTexts;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
-
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -32,7 +34,7 @@ import java.time.format.DateTimeFormatter;
  *
  * @author BareZen Team
  */
-@Tag(name = "请假审批", description = "考勤管理 - 请假申请与审批")
+@Tag(name = "请假审批", description = "考勤管理 - 请假申请与审批接口")
 @RestController
 @RequestMapping("/api/hr/v1/leaves")
 @RequiredArgsConstructor
@@ -50,13 +52,23 @@ public class AttLeaveRequestController {
      * 普通用户仅看自己的；管理员可通过 userId 筛选查看全部
      */
     @RequirePermission("hr:leave:list")
-    @Operation(summary = "分页查询请假记录")
+    @Operation(summary = "分页查询请假记录", description = "分页查询请假记录，支持按状态、用户ID筛选，普通用户默认只查看自己的记录")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "查询成功"),
+            @ApiResponse(responseCode = "401", description = "未授权"),
+            @ApiResponse(responseCode = "403", description = "无权限")
+    })
     @GetMapping("/page")
     public Result<PageResult<AttLeaveRequest>> list(
+            @Parameter(description = "页码", example = "1")
             @RequestParam(defaultValue = "1") Integer pageNum,
+            @Parameter(description = "每页大小", example = "10")
             @RequestParam(defaultValue = "10") Integer pageSize,
+            @Parameter(description = "状态：0=待审批，1=通过，2=驳回，3=撤销")
             @RequestParam(required = false) String status,
+            @Parameter(description = "用户ID（管理员用）")
             @RequestParam(required = false) Long userId,
+            @Parameter(description = "是否只查看自己的记录")
             @RequestParam(required = false) Boolean onlyMine) {
 
         Page<AttLeaveRequest> page = new Page<>(pageNum, pageSize);
@@ -80,18 +92,17 @@ public class AttLeaveRequestController {
     /**
      * 提交请假申请（申请人自动填充为当前登录用户）
      */
-    @Operation(summary = "提交请假申请")
+    @Operation(summary = "提交请假申请", description = "提交请假申请，自动填充申请人为当前登录用户，并启动审批流程")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "提交成功"),
+            @ApiResponse(responseCode = "400", description = "参数错误"),
+            @ApiResponse(responseCode = "401", description = "未授权"),
+            @ApiResponse(responseCode = "403", description = "无权限")
+    })
     @OperLog(title = "请假审批", businessType = 1)
     @RequirePermission("hr:leave:add")
     @PostMapping
     public Result<Void> submit(@Valid @RequestBody AttLeaveRequest request) {
-        if (request.getStartTime() == null || request.getEndTime() == null) {
-            return Result.error("请选择请假起止时间");
-        }
-        if (request.getStartTime().compareTo(request.getEndTime()) >= 0) {
-            return Result.error("结束时间必须晚于开始时间");
-        }
-
         Long userId = AuthInterceptor.getCurrentUserId();
         if (userId == null) {
             return Result.error("未登录");
@@ -102,14 +113,15 @@ public class AttLeaveRequestController {
             String username = AuthInterceptor.getCurrentUsername();
             request.setUserName(username != null ? username : "用户" + userId);
         }
-        request.setStatus(ApprovalStatus.PENDING.getValue());
-        boolean ok = leaveService.save(request);
-        if (ok) {
-            // 多级审批引擎门面：启动首节点 + 记录提交申请日志（同一事务）
-            flowFacade.submit("leave", request.getId(), request.getAssigneeId(), request.getAssigneeName(),
-                    request.getUserId(), request.getUserName());
-        }
-        return ok ? Result.success(null) : Result.error("提交失败");
+
+        // 使用Service层处理业务逻辑
+        leaveService.submitLeaveRequest(request);
+
+        // 多级审批引擎门面：启动首节点 + 记录提交申请日志（同一事务）
+        flowFacade.submit("leave", request.getId(), request.getAssigneeId(), request.getAssigneeName(),
+                request.getUserId(), request.getUserName());
+
+        return Result.success(null);
     }
 
     /**
@@ -118,11 +130,19 @@ public class AttLeaveRequestController {
      * <p>原子条件更新（WHERE status='0'）：并发重复审批时仅首个请求生效，
      * 后到者受影响行数为 0 返回"已审批"，避免覆盖首次审批结果。</p>
      */
-    @Operation(summary = "审批请假")
+    @Operation(summary = "审批请假", description = "审批请假申请，支持通过或驳回操作，使用原子条件更新防止并发重复审批")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "审批成功"),
+            @ApiResponse(responseCode = "400", description = "参数错误或业务规则限制"),
+            @ApiResponse(responseCode = "401", description = "未授权"),
+            @ApiResponse(responseCode = "403", description = "无权限")
+    })
     @OperLog(title = "请假审批", businessType = 2)
     @RequirePermission("hr:leave:approve")
     @PutMapping("/{id}/approve")
-    public Result<Void> approve(@PathVariable Long id,
+    public Result<Void> approve(
+            @Parameter(description = "请假记录ID", required = true)
+            @PathVariable Long id,
                                 @RequestParam String action,
                                 @RequestParam(required = false) String remark) {
         AttLeaveRequest leave = leaveService.getById(id);

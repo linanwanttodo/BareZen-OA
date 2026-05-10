@@ -158,19 +158,19 @@ class AttLeaveRequestControllerTest {
     }
 
     @Test
-    @DisplayName("提交申请：状态为待审批，申请人自动填充")
+    @DisplayName("提交申请：委托 Service 提交，申请人自动填充")
     void submit_setsStatusAndApplicant() {
         AttLeaveRequest request = new AttLeaveRequest();
         request.setStartTime("2026-08-10 09:00");
         request.setEndTime("2026-08-10 18:00");
         request.setUserName("张三");
-        when(leaveService.save(any(AttLeaveRequest.class))).thenReturn(true);
 
         Result<Void> result = controller.submit(request);
 
         assertEquals(200, result.getCode());
         assertEquals(approverId, request.getUserId());
-        assertEquals(ApprovalStatus.PENDING.getValue(), request.getStatus());
+        // 状态与时间校验已下沉到 Service.submitLeaveRequest，Controller 不再设置
+        verify(leaveService).submitLeaveRequest(request);
         verify(flowFacade).submit(eq("leave"), eq(request.getId()), eq(request.getAssigneeId()),
                 eq(request.getAssigneeName()), eq(approverId), eq("张三"));
     }
