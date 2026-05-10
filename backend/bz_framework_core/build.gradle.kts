@@ -21,10 +21,10 @@ dependencies {
     compileOnly("org.projectlombok:lombok")
     annotationProcessor("org.projectlombok:lombok")
     
-    // JWT 支持 (jjwt)
-    implementation("io.jsonwebtoken:jjwt-api:0.12.5")
-    runtimeOnly("io.jsonwebtoken:jjwt-impl:0.12.5")
-    runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.12.5")
+    // JWT 支持 (jjwt) - 升级到安全版本修复CVE-2024-31033
+    implementation("io.jsonwebtoken:jjwt-api:0.12.6")
+    runtimeOnly("io.jsonwebtoken:jjwt-impl:0.12.6")
+    runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.12.6")
 
     // Spring Security Crypto (BCryptPasswordEncoder 密码加密)
     implementation("org.springframework.security:spring-security-crypto")
@@ -56,4 +56,13 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.mockito:mockito-core")
     testImplementation("org.mockito:mockito-junit-jupiter")
+    
+    // H2内存数据库（测试环境）
+    testImplementation("com.h2database:h2")
+}
+
+tasks {
+    test {
+        useJUnitPlatform()
+    }
 }
