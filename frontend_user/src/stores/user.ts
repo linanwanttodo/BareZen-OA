@@ -5,11 +5,20 @@ import { connectNotification, disconnectNotification } from '@/utils/notificatio
 import { loginApi, getCurrentUserApi, logoutApi } from '@/api/auth'
 import type { LoginParams, CurrentUser } from '@/types/api'
 
-export const useUserStore = defineStore('user', () => {
+// 基础用户状态管理逻辑（内联版本，与管理端保持一致）
+function createBaseUserStore(
+  getToken: () => string | null,
+  setToken: (token: string) => void,
+  removeToken: () => void,
+  loginApi: (data: LoginParams) => Promise<{ data: { token: string } }>,
+  getCurrentUserApi: () => Promise<{ data: CurrentUser }>,
+  logoutApi: () => Promise<unknown>,
+  connectNotification: () => void,
+  disconnectNotification: () => void
+) {
   const token = ref<string>(getToken() || '')
   const userInfo = ref<CurrentUser | null>(null)
 
-  // 页面刷新时若已有令牌（未过期），恢复 WebSocket 连接
   if (token.value) {
     connectNotification()
   }
@@ -19,8 +28,8 @@ export const useUserStore = defineStore('user', () => {
     const data = res.data
     token.value = data.token
     setToken(data.token)
-    // 登录成功后建立 WebSocket 实时通知连接
     connectNotification()
+    await fetchUserInfo()
     return data
   }
 
@@ -39,7 +48,6 @@ export const useUserStore = defineStore('user', () => {
   }
 
   function resetState() {
-    // 断开 WebSocket，避免登出后仍收到广播
     disconnectNotification()
     token.value = ''
     userInfo.value = null
@@ -53,5 +61,23 @@ export const useUserStore = defineStore('user', () => {
     fetchUserInfo,
     logout,
     resetState,
+  }
+}
+
+export const useUserStore = defineStore('user', () => {
+  // 使用基础用户状态管理逻辑
+  const baseUser = createBaseUserStore(
+    getToken,
+    setToken,
+    removeToken,
+    loginApi,
+    getCurrentUserApi,
+    logoutApi,
+    connectNotification,
+    disconnectNotification
+  )
+
+  return {
+    ...baseUser,
   }
 })
