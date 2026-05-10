@@ -58,19 +58,21 @@ CREATE TABLE IF NOT EXISTS salary_payment_record (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='工资发放记录表';
 
 -- 插入工资管理菜单（V1 sys_menu 表结构：无 is_frame/is_cache 列）
+-- 菜单 ID 从 10031 起：10019 已被 V40 资产分类占用、10020 已被 V42 知识库分类占用、
+-- 10021-10030 已部分用于其他业务菜单；10031-10259 段空闲，避免 INSERT IGNORE 静默跳过。
 INSERT IGNORE INTO `sys_menu` (`id`, `parent_id`, `menu_name`, `menu_type`, `perms`, `path`, `component`, `icon`, `order_num`, `visible`, `status`, `remark`) VALUES
-(10019, 0, '工资管理', 'M', NULL, 'salary', NULL, 'money-circle', 10, '0', '0', '工资管理模块'),
-(10020, 10019, '工资结构', 'C', 'salary:structure:list', 'structure', 'salary/structure/index', 'edit', 1, '0', '0', '工资结构管理'),
-(10021, 10019, '工资发放', 'C', 'salary:payment:list', 'payment', 'salary/payment/index', 'upload', 2, '0', '0', '工资发放管理'),
-(10022, 10019, '工资统计', 'C', 'salary:statistics:view', 'statistics', 'salary/statistics/index', 'bar-chart', 3, '0', '0', '工资统计报表');
+(10031, 0, '工资管理', 'M', NULL, 'salary', NULL, 'money-circle', 10, '0', '0', '工资管理模块'),
+(10032, 10031, '工资结构', 'C', 'salary:structure:list', 'structure', 'salary/structure/index', 'edit', 1, '0', '0', '工资结构管理'),
+(10033, 10031, '工资发放', 'C', 'salary:payment:list', 'payment', 'salary/payment/index', 'upload', 2, '0', '0', '工资发放管理'),
+(10034, 10031, '工资统计', 'C', 'salary:statistics:view', 'statistics', 'salary/statistics/index', 'bar-chart', 3, '0', '0', '工资统计报表');
 
 -- 插入工资管理按钮权限
 INSERT IGNORE INTO `sys_menu` (`id`, `parent_id`, `menu_name`, `menu_type`, `perms`, `path`, `component`, `icon`, `order_num`, `visible`, `status`, `remark`) VALUES
-(10023, 10020, '工资结构查询', 'F', 'salary:structure:list', '', '', '#', 1, '0', '0', ''),
-(10024, 10020, '工资结构新增', 'F', 'salary:structure:add', '', '', '#', 2, '0', '0', ''),
-(10025, 10020, '工资结构修改', 'F', 'salary:structure:edit', '', '', '#', 3, '0', '0', ''),
-(10026, 10020, '工资结构删除', 'F', 'salary:structure:delete', '', '', '#', 4, '0', '0', ''),
-(10027, 10020, '工资结构计算', 'F', 'salary:structure:calculate', '', '', '#', 5, '0', '0', ''),
-(10028, 10021, '工资发放查询', 'F', 'salary:payment:list', '', '', '#', 1, '0', '0', ''),
-(10029, 10021, '工资发放操作', 'F', 'salary:payment:execute', '', '', '#', 2, '0', '0', ''),
-(10030, 10022, '工资统计查看', 'F', 'salary:statistics:view', '', '', '#', 1, '0', '0', '');
+(10035, 10032, '工资结构查询', 'F', 'salary:structure:list', '', '', '#', 1, '0', '0', ''),
+(10036, 10032, '工资结构新增', 'F', 'salary:structure:add', '', '', '#', 2, '0', '0', ''),
+(10037, 10032, '工资结构修改', 'F', 'salary:structure:edit', '', '', '#', 3, '0', '0', ''),
+(10038, 10032, '工资结构删除', 'F', 'salary:structure:delete', '', '', '#', 4, '0', '0', ''),
+(10039, 10032, '工资结构计算', 'F', 'salary:structure:calculate', '', '', '#', 5, '0', '0', ''),
+(10040, 10033, '工资发放查询', 'F', 'salary:payment:list', '', '', '#', 1, '0', '0', ''),
+(10041, 10033, '工资发放操作', 'F', 'salary:payment:execute', '', '', '#', 2, '0', '0', ''),
+(10042, 10034, '工资统计查看', 'F', 'salary:statistics:view', '', '', '#', 1, '0', '0', '');
