@@ -1,0 +1,74 @@
+{
+  "pluginId": "com.linan.plugin.salary",
+  "pluginName": "工资管理模块",
+  "version": "1.0.0",
+  "description": "提供员工工资结构管理、工资计算、发放记录和报表统计功能",
+  "author": "BareZen Team",
+  "dependencies": [],
+  "configuration": {
+    "salary.calculation.enabled": true,
+    "salary.auto.payment.enabled": false,
+    "salary.payment.day": 10
+  },
+  "controllers": [
+    "com.linan.plugin.salary.controller.SalaryStructureController"
+  ],
+  "services": [
+    "com.linan.plugin.salary.service.ISalaryStructureService"
+  ],
+  "entities": [
+    "com.linan.plugin.salary.entity.SalaryStructure"
+  ],
+  "migrations": [
+    "V47__salary_plugin.sql"
+  ],
+  "frontendRoutes": [
+    {
+      "path": "/salary",
+      "component": "Layout",
+      "redirect": "/salary/structure",
+      "children": [
+        {
+          "path": "structure",
+          "component": "salary/structure/index",
+          "name": "SalaryStructure",
+          "meta": {
+            "title": "工资结构",
+            "icon": "edit",
+            "roles": ["salary:structure:list"]
+          }
+        },
+        {
+          "path": "payment",
+          "component": "salary/payment/index",
+          "name": "SalaryPayment",
+          "meta": {
+            "title": "工资发放",
+            "icon": "upload",
+            "roles": ["salary:payment:list"]
+          }
+        },
+        {
+          "path": "statistics",
+          "component": "salary/statistics/index",
+          "name": "SalaryStatistics",
+          "meta": {
+            "title": "工资统计",
+            "icon": "bar-chart",
+            "roles": ["salary:statistics:view"]
+          }
+        }
+      ]
+    }
+  ],
+  "permissions": [
+    "salary:structure:list",
+    "salary:structure:add",
+    "salary:structure:edit",
+    "salary:structure:delete",
+    "salary:structure:calculate",
+    "salary:payment:list",
+    "salary:payment:execute",
+    "salary:statistics:view"
+  ]
+}
