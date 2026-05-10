@@ -52,3 +52,6 @@ Thumbs.db
 
 # --- Playwright 调试临时文件 ---
 .playwright-cli/
+
+# 本地 IDE/MCP 配置
+.continue/
