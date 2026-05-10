@@ -1,17 +1,21 @@
 package com.linan.asset.controller;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.linan.asset.dto.AssetCategoryDTO;
 import com.linan.asset.entity.AssetCategory;
 import com.linan.asset.service.IAssetCategoryService;
 import com.linan.core.common.annotation.OperLog;
 import com.linan.core.common.api.Result;
-import com.linan.core.common.exception.BusinessException;
 import com.linan.core.security.RequirePermission;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
-
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
 
 import java.util.List;
 
@@ -22,7 +26,7 @@ import java.util.List;
  *
  * @author BareZen Team
  */
-@Tag(name = "资产分类", description = "资产管理 - 资产分类树")
+@Tag(name = "资产分类", description = "资产管理 - 资产分类树管理接口")
 @RestController
 @RequestMapping("/api/asset/v1/categories")
 @RequiredArgsConstructor
@@ -34,71 +38,93 @@ public class AssetCategoryController {
      * 分类列表（全部，前端组树；可按启用状态过滤）
      * GET /api/asset/v1/categories?status=1
      */
-    @Operation(summary = "查询资产分类列表")
+    @Operation(summary = "查询资产分类列表", description = "获取所有资产分类，支持按启用状态过滤，返回结果按排序字段和ID升序排列")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "查询成功",
+                    content = @Content(schema = @Schema(implementation = Result.class))),
+            @ApiResponse(responseCode = "401", description = "未授权"),
+            @ApiResponse(responseCode = "403", description = "无权限")
+    })
     @RequirePermission("asset:category:list")
     @GetMapping
-    public Result<List<AssetCategory>> list(@RequestParam(required = false) Integer status) {
-        LambdaQueryWrapper<AssetCategory> wrapper = new LambdaQueryWrapper<>();
-        if (status != null) {
-            wrapper.eq(AssetCategory::getStatus, status);
-        }
-        wrapper.orderByAsc(AssetCategory::getSort)
-                .orderByAsc(AssetCategory::getId);
-        return Result.success(categoryService.list(wrapper));
+    public Result<List<AssetCategory>> list(
+            @Parameter(description = "启用状态：1=启用，0=禁用，不传则查询全部")
+            @RequestParam(required = false) Integer status) {
+        return Result.success(categoryService.listCategories(status));
     }
 
     /**
      * 新增分类
      */
-    @Operation(summary = "新增资产分类")
+    @Operation(summary = "新增资产分类", description = "创建新的资产分类，分类名称不能重复")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "新增成功"),
+            @ApiResponse(responseCode = "400", description = "参数错误或分类名称已存在"),
+            @ApiResponse(responseCode = "401", description = "未授权"),
+            @ApiResponse(responseCode = "403", description = "无权限")
+    })
     @OperLog(title = "资产分类", businessType = 1)
     @RequirePermission("asset:category:add")
     @PostMapping
-    public Result<Void> save(@RequestBody AssetCategory category) {
-        if (category.getName() == null || category.getName().isBlank()) {
-            throw new BusinessException("分类名称不能为空");
-        }
-        if (category.getParentId() == null) {
-            category.setParentId(0L);
-        }
-        if (category.getSort() == null) {
-            category.setSort(0);
-        }
-        if (category.getStatus() == null) {
-            category.setStatus(1);
-        }
-        // 同名唯一（uk_name）
-        long exists = categoryService.count(new LambdaQueryWrapper<AssetCategory>()
-                .eq(AssetCategory::getName, category.getName()));
-        if (exists > 0) {
-            throw new BusinessException("分类名称已存在");
-        }
-        boolean ok = categoryService.save(category);
-        return ok ? Result.success(null) : Result.error("新增失败");
+    public Result<Void> save(@Valid @RequestBody AssetCategoryDTO categoryDTO) {
+        // DTO转Entity
+        AssetCategory category = new AssetCategory();
+        category.setName(categoryDTO.getName());
+        category.setParentId(categoryDTO.getParentId());
+        category.setSort(categoryDTO.getSort());
+        category.setStatus(categoryDTO.getStatus());
+        
+        categoryService.addCategory(category);
+        return Result.success(null);
     }
 
     /**
      * 修改分类
      */
-    @Operation(summary = "修改资产分类")
+    @Operation(summary = "修改资产分类", description = "更新已有资产分类信息")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "修改成功"),
+            @ApiResponse(responseCode = "400", description = "参数错误"),
+            @ApiResponse(responseCode = "401", description = "未授权"),
+            @ApiResponse(responseCode = "403", description = "无权限"),
+            @ApiResponse(responseCode = "404", description = "分类不存在")
+    })
     @OperLog(title = "资产分类", businessType = 2)
     @RequirePermission("asset:category:edit")
     @PutMapping("/{id}")
-    public Result<Void> update(@PathVariable Long id, @RequestBody AssetCategory category) {
+    public Result<Void> update(
+            @Parameter(description = "分类ID", required = true)
+            @PathVariable Long id,
+            @Valid @RequestBody AssetCategoryDTO categoryDTO) {
+        // DTO转Entity
+        AssetCategory category = new AssetCategory();
         category.setId(id);
-        boolean ok = categoryService.updateById(category);
-        return ok ? Result.success(null) : Result.error("分类不存在或更新失败");
+        category.setName(categoryDTO.getName());
+        category.setParentId(categoryDTO.getParentId());
+        category.setSort(categoryDTO.getSort());
+        category.setStatus(categoryDTO.getStatus());
+        
+        categoryService.updateCategory(category);
+        return Result.success(null);
     }
 
     /**
      * 删除分类（逻辑删除；有关联资产的分类禁止删除）
      */
-    @Operation(summary = "删除资产分类")
+    @Operation(summary = "删除资产分类", description = "逻辑删除指定分类，如果该分类下有关联资产则无法删除")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "删除成功"),
+            @ApiResponse(responseCode = "401", description = "未授权"),
+            @ApiResponse(responseCode = "403", description = "无权限"),
+            @ApiResponse(responseCode = "404", description = "分类不存在")
+    })
     @OperLog(title = "资产分类", businessType = 3)
     @RequirePermission("asset:category:delete")
     @DeleteMapping("/{id}")
-    public Result<Void> delete(@PathVariable Long id) {
-        boolean ok = categoryService.removeById(id);
-        return ok ? Result.success(null) : Result.error("分类不存在");
+    public Result<Void> delete(
+            @Parameter(description = "分类ID", required = true)
+            @PathVariable Long id) {
+        categoryService.deleteCategory(id);
+        return Result.success(null);
     }
 }

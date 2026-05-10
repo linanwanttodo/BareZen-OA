@@ -2,6 +2,7 @@ package com.linan.asset.entity;
 
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.linan.core.common.entity.BaseEntity;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -15,29 +16,30 @@ import lombok.EqualsAndHashCode;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @TableName("asset_borrow_record")
+@Schema(description = "资产借用记录实体")
 public class AssetBorrowRecord extends BaseEntity {
 
-    /** 资产ID */
+    @Schema(description = "资产ID", example = "1", required = true)
     private Long assetId;
 
-    /** 借用人用户ID */
+    @Schema(description = "借用人用户ID", example = "100", required = true)
     private Long borrowerId;
 
-    /** 借用人姓名 */
+    @Schema(description = "借用人姓名", example = "张三", required = true)
     private String borrowerName;
 
-    /** 借用时间（yyyy-MM-dd HH:mm:ss） */
+    @Schema(description = "借用时间（yyyy-MM-dd HH:mm:ss）", example = "2024-01-01 09:00:00")
     private String borrowTime;
 
-    /** 预计归还时间 */
+    @Schema(description = "预计归还时间", example = "2024-01-07 18:00:00")
     private String expectReturnTime;
 
-    /** 实际归还时间 */
+    @Schema(description = "实际归还时间", example = "2024-01-07 17:30:00")
     private String returnTime;
 
-    /** 借用备注 */
+    @Schema(description = "借用备注", example = "项目使用")
     private String remark;
 
-    /** 状态：0=借用中 1=已归还 */
+    @Schema(description = "状态：0=借用中 1=已归还", example = "0", allowableValues = {"0", "1"})
     private String status;
 }
