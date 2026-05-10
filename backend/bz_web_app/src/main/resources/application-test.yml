@@ -1,39 +1,44 @@
 # ============================================
 # BareZen Base 测试环境配置
 # ============================================
+# 说明：集成测试使用真实 MySQL（本机 3306）+ 独立测试库 barezen_test，
+#       由 Flyway V1-V47 自动建表（GenTableQueryServiceImpl 依赖 MySQL
+#       information_schema 方言，H2 无法兼容）；Redis 使用本机 6379（database 1）。
+# 前置：mysql -uroot -p -e "CREATE DATABASE IF NOT EXISTS barezen_test CHARACTER SET utf8mb4;"
 
 spring:
   application:
     name: BareZen-Base-Test
 
-  # ---- 测试数据源配置 ----
-  # 使用H2内存数据库进行测试，避免依赖外部MySQL
+  # ---- 测试数据源（真实 MySQL，独立测试库） ----
   datasource:
-    url: jdbc:h2:mem:testdb;MODE=MySQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
-    driver-class-name: org.h2.Driver
-    username: sa
-    password: 
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:barezen_test}?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: ${DB_USER:root}
+    password: ${DB_PASSWORD:123456}
     hikari:
       maximum-pool-size: 5
       minimum-idle: 1
 
-  # ---- SQL 自动初始化 ----
+  # ---- SQL 自动初始化（真实库由 Flyway 管理，禁用脚本初始化） ----
   sql:
     init:
-      mode: always
-      schema-locations: classpath:db/schema.sql
-      data-locations: classpath:db/data.sql
+      mode: never
 
-  # ---- Flyway 配置（测试环境禁用，使用SQL初始化）----
+  # ---- Flyway 配置（测试库全量迁移建表） ----
   flyway:
-    enabled: false
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    baseline-version: 0
+    table: flyway_schema_history
 
-  # ---- Redis 配置（测试环境使用嵌入式Redis或禁用）----
+  # ---- Redis 配置（本机 Redis，独立测试库 1） ----
   data:
     redis:
       host: localhost
       port: 6379
-      database: 1  # 使用独立的测试数据库
+      database: 1
       timeout: 3000ms
       lettuce:
         pool:
@@ -41,13 +46,7 @@ spring:
           max-idle: 2
           min-idle: 0
 
-  # ---- 测试环境专用配置 ----
-  jpa:
-    hibernate:
-      ddl-auto: create-drop
-    show-sql: true
-
-# ---- JWT 配置（测试环境使用固定密钥）----
+# ---- JWT 配置（测试环境使用固定密钥） ----
 jwt:
   secret: test-secret-key-for-testing-purposes-only-32chars
   expiration: 3600000  # 测试环境1小时过期
@@ -56,27 +55,25 @@ jwt:
 auth:
   register-enabled: true  # 测试环境启用注册功能
 
-# ---- 安全配置（测试环境信任代理头）----
+# ---- 安全配置（测试环境信任代理头） ----
 security:
   trust-proxy-headers: true
 
-# ---- CORS配置（测试环境允许所有来源）----
+# ---- CORS配置（测试环境允许所有来源） ----
 cors:
   allowed-origins: "*"
 
-# ---- 日志配置（测试环境详细日志）----
+# ---- 日志配置（测试环境详细日志） ----
 logging:
   level:
     root: INFO
     com.linan: DEBUG
-    org.springframework.web: DEBUG
-    org.springframework.security: DEBUG
     org.springframework.jdbc: DEBUG
     org.springframework.transaction: DEBUG
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{50} - %msg%n"
 
-# ---- MyBatis-Plus 配置（测试环境显示SQL）----
+# ---- MyBatis-Plus 配置（测试环境显示SQL） ----
 mybatis-plus:
   configuration:
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl

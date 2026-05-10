@@ -2,7 +2,7 @@ package com.linan.system.service;
 
 import com.linan.core.gen.ColumnInfo;
 import com.linan.core.gen.TableInfo;
-import org.junit.jupiter.api.Disabled;
+import com.linan.web.BareZenApplication;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,11 +18,9 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author BareZen Team
  */
-@SpringBootTest
+@SpringBootTest(classes = BareZenApplication.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
 @DisplayName("代码生成表查询Service测试")
-@Disabled("GenTableQueryServiceImpl 使用 MySQL information_schema 方言（TABLE_COMMENT 等列），"
-        + "H2 不支持；bz_framework_core 模块无 @SpringBootConfiguration，需真实 MySQL 环境后移入 bz_web_app 模块执行")
 class GenTableQueryServiceTest {
 
     @Autowired
@@ -48,10 +46,11 @@ class GenTableQueryServiceTest {
         List<TableInfo> tables = tableQueryService.selectTableList("asset");
         
         assertNotNull(tables);
-        // 如果有asset相关的表，应该被返回
+        assertFalse(tables.isEmpty());
+        // barezen_test 由 Flyway V39 建了 asset_category/asset_item/asset_borrow_record，必然命中
         boolean hasAssetTable = tables.stream()
                 .anyMatch(t -> t.getTableName().toLowerCase().contains("asset"));
-        // 这个断言可能失败，取决于数据库中是否有asset表
+        assertTrue(hasAssetTable, "应返回 asset 相关表");
     }
 
     @Test
@@ -83,9 +82,13 @@ class GenTableQueryServiceTest {
         assertFalse(columns.isEmpty());
         
         // 验证字段信息完整性
+        // 注意：ColumnInfoRowMapper 负责 columnName/columnType/dataType 等元数据，
+        // javaType 由 GenTypeMappingService 单独映射（不属于 RowMapper 职责），此处不断言。
         ColumnInfo firstColumn = columns.get(0);
         assertNotNull(firstColumn.getColumnName());
         assertNotNull(firstColumn.getDataType());
-        assertNotNull(firstColumn.getJavaType());
+        assertNotNull(firstColumn.getColumnType());
+        // 主键应被标记（sys_user.id 为 PRI）
+        assertTrue(firstColumn.isPk(), "首列应为表主键");
     }
 }

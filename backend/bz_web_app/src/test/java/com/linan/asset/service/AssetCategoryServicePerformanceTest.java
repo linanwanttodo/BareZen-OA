@@ -2,7 +2,7 @@ package com.linan.asset.service;
 
 import com.linan.asset.entity.AssetCategory;
 import com.linan.core.common.test.TestDataBuilder;
-import org.junit.jupiter.api.Disabled;
+import com.linan.web.BareZenApplication;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,15 +21,14 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * 资产分类Service性能测试
  *
- * 测试Service在高并发场景下的性能表现
+ * 测试Service在高并发场景下的性能表现（真实 MySQL barezen_test 库）
  *
  * @author BareZen Team
  */
-@SpringBootTest
+@SpringBootTest(classes = BareZenApplication.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
 @Transactional
 @DisplayName("资产分类Service性能测试")
-@Disabled("bz_framework_core 模块无 @SpringBootConfiguration，且并发性能测试不适合单测套件；需移入 bz_web_app 模块作为独立集成/性能测试")
 class AssetCategoryServicePerformanceTest {
 
     @Autowired

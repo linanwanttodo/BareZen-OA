@@ -53,12 +53,10 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-mail")
 
     // 测试依赖
+    // 注：H2 已移除——集成测试移入 bz_web_app 模块，使用真实 MySQL（barezen_test 库，Flyway 建表）
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.mockito:mockito-core")
     testImplementation("org.mockito:mockito-junit-jupiter")
-    
-    // H2内存数据库（测试环境）
-    testImplementation("com.h2database:h2")
 }
 
 tasks {

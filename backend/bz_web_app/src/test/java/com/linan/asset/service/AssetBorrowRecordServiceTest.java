@@ -2,7 +2,7 @@ package com.linan.asset.service;
 
 import com.linan.asset.entity.AssetBorrowRecord;
 import com.linan.core.common.exception.BusinessException;
-import org.junit.jupiter.api.Disabled;
+import com.linan.web.BareZenApplication;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,15 +18,14 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * 资产借用记录Service集成测试
  *
- * 测试实际的数据库操作和业务逻辑
+ * 测试实际的数据库操作和业务逻辑（真实 MySQL barezen_test 库，Flyway 自动建表）
  *
  * @author BareZen Team
  */
-@SpringBootTest
+@SpringBootTest(classes = BareZenApplication.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
 @Transactional
 @DisplayName("资产借用记录Service集成测试")
-@Disabled("bz_framework_core 模块无 @SpringBootConfiguration，集成测试需移入 bz_web_app 模块 + H2/真实 MySQL 环境")
 class AssetBorrowRecordServiceTest {
 
     @Autowired
