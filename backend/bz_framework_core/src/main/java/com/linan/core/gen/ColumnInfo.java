@@ -14,6 +14,9 @@ public class ColumnInfo {
     /** SQL 列类型（如 varchar(255), bigint） */
     private String columnType;
 
+    /** 数据库数据类型（如 varchar, bigint） */
+    private String dataType;
+
     /** Java 类型（如 String, Long, LocalDateTime） */
     private String javaType;
 
@@ -71,6 +74,14 @@ public class ColumnInfo {
 
     public void setColumnType(String columnType) {
         this.columnType = columnType;
+    }
+
+    public String getDataType() {
+        return dataType;
+    }
+
+    public void setDataType(String dataType) {
+        this.dataType = dataType;
     }
 
     public String getJavaType() {
