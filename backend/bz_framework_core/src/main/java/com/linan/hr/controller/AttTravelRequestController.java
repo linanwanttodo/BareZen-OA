@@ -8,6 +8,7 @@ import com.linan.core.common.annotation.OperLog;
 import com.linan.core.common.api.PageResult;
 import com.linan.core.common.api.Result;
 import com.linan.core.common.enums.ApprovalStatus;
+import com.linan.core.security.PermissionSupport;
 import com.linan.core.security.RequirePermission;
 import com.linan.core.security.interceptor.AuthInterceptor;
 import com.linan.hr.entity.AttTravelRequest;
@@ -45,6 +46,9 @@ public class AttTravelRequestController {
     /** 审批流程编排门面（V36+：统一事务/引擎/日志/通知） */
     private final ApprovalFlowFacade flowFacade;
 
+    /** 权限辅助工具 */
+    private final PermissionSupport permissionSupport;
+
     /**
      * 分页查询出差记录
      */
@@ -55,14 +59,22 @@ public class AttTravelRequestController {
             @RequestParam(defaultValue = "1") Integer pageNum,
             @RequestParam(defaultValue = "10") Integer pageSize,
             @RequestParam(required = false) String status,
+            @RequestParam(required = false) Long userId,
             @RequestParam(required = false) Boolean onlyMine) {
 
         Page<AttTravelRequest> page = new Page<>(pageNum, pageSize);
         LambdaQueryWrapper<AttTravelRequest> wrapper = new LambdaQueryWrapper<>();
 
-        if (Boolean.TRUE.equals(onlyMine)) {
-            wrapper.eq(AttTravelRequest::getUserId, AuthInterceptor.getCurrentUserId());
+        // 服务端强制权限校验：仅管理员（持 hr:travel:audit）可按 userId 筛选，否则强制只看本人
+        Long currentUserId = AuthInterceptor.getCurrentUserId();
+        boolean hasAuditPerm = permissionSupport.hasPermission(currentUserId, "hr:travel:audit");
+        
+        if (hasAuditPerm && userId != null) {
+            wrapper.eq(AttTravelRequest::getUserId, userId);
+        } else {
+            wrapper.eq(AttTravelRequest::getUserId, currentUserId);
         }
+        
         if (status != null && !status.isEmpty()) {
             wrapper.eq(AttTravelRequest::getStatus, status);
         }

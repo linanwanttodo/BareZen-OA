@@ -30,4 +30,18 @@ public class PermissionSupport {
         boolean isOwner = userId.equals(ownerId);
         return isOwner || permissionService.hasPermission(userId, permission);
     }
+
+    /**
+     * 判断用户是否持有指定管理权限。
+     *
+     * @param userId     当前用户 ID（可空，视为无权限）
+     * @param permission 权限标识（如 hr:leave:audit）
+     * @return true=持权限
+     */
+    public boolean hasPermission(Long userId, String permission) {
+        if (userId == null) {
+            return false;
+        }
+        return permissionService.hasPermission(userId, permission);
+    }
 }

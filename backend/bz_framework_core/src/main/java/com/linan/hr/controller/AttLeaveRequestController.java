@@ -8,6 +8,7 @@ import com.linan.core.common.annotation.OperLog;
 import com.linan.core.common.api.PageResult;
 import com.linan.core.common.api.Result;
 import com.linan.core.common.enums.ApprovalStatus;
+import com.linan.core.security.PermissionSupport;
 import com.linan.core.security.RequirePermission;
 import com.linan.core.security.interceptor.AuthInterceptor;
 import com.linan.hr.entity.AttLeaveRequest;
@@ -47,6 +48,9 @@ public class AttLeaveRequestController {
     /** 审批流程编排门面（V36+：统一事务/引擎/日志/通知） */
     private final ApprovalFlowFacade flowFacade;
 
+    /** 权限辅助工具 */
+    private final PermissionSupport permissionSupport;
+
     /**
      * 分页查询请假记录
      * 普通用户仅看自己的；管理员可通过 userId 筛选查看全部
@@ -74,12 +78,18 @@ public class AttLeaveRequestController {
         Page<AttLeaveRequest> page = new Page<>(pageNum, pageSize);
         LambdaQueryWrapper<AttLeaveRequest> wrapper = new LambdaQueryWrapper<>();
 
-        // 仅查看自己的（用户端/个人视角）；管理员传 userId 或不过滤
-        if (Boolean.TRUE.equals(onlyMine)) {
-            wrapper.eq(AttLeaveRequest::getUserId, AuthInterceptor.getCurrentUserId());
-        } else if (userId != null) {
+        // 服务端强制权限校验：仅管理员（持 hr:leave:audit）可按 userId 筛选，否则强制只看本人
+        Long currentUserId = AuthInterceptor.getCurrentUserId();
+        boolean hasAuditPerm = permissionSupport.hasPermission(currentUserId, "hr:leave:audit");
+        
+        if (hasAuditPerm && userId != null) {
+            // 管理员可按指定用户筛选
             wrapper.eq(AttLeaveRequest::getUserId, userId);
+        } else {
+            // 普通用户或管理员未传 userId 时，强制只看本人
+            wrapper.eq(AttLeaveRequest::getUserId, currentUserId);
         }
+        
         if (status != null && !status.isEmpty()) {
             wrapper.eq(AttLeaveRequest::getStatus, status);
         }

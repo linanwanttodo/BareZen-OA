@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.linan.core.common.annotation.OperLog;
 import com.linan.core.common.api.PageResult;
 import com.linan.core.common.api.Result;
+import com.linan.core.security.PermissionSupport;
 import com.linan.core.security.RequirePermission;
 import com.linan.core.security.interceptor.AuthInterceptor;
 import com.linan.hr.entity.HrWorkLog;
@@ -37,6 +38,9 @@ public class HrWorkLogController {
 
     private final IHrWorkLogService workLogService;
 
+    /** 权限辅助工具 */
+    private final PermissionSupport permissionSupport;
+
     /**
      * 条件分页查询
      */
@@ -48,14 +52,22 @@ public class HrWorkLogController {
             @RequestParam(defaultValue = "10") Integer pageSize,
             @RequestParam(required = false) String logType,
             @RequestParam(required = false) String userName,
+            @RequestParam(required = false) Long userId,
             @RequestParam(required = false) Boolean onlyMine) {
 
         Page<HrWorkLog> page = new Page<>(pageNum, pageSize);
         LambdaQueryWrapper<HrWorkLog> wrapper = new LambdaQueryWrapper<>();
 
-        if (Boolean.TRUE.equals(onlyMine)) {
-            wrapper.eq(HrWorkLog::getUserId, AuthInterceptor.getCurrentUserId());
+        // 服务端强制权限校验：仅管理员（持 hr:worklog:audit）可按 userId 筛选，否则强制只看本人
+        Long currentUserId = AuthInterceptor.getCurrentUserId();
+        boolean hasAuditPerm = permissionSupport.hasPermission(currentUserId, "hr:worklog:audit");
+        
+        if (hasAuditPerm && userId != null) {
+            wrapper.eq(HrWorkLog::getUserId, userId);
+        } else {
+            wrapper.eq(HrWorkLog::getUserId, currentUserId);
         }
+        
         if (logType != null && !logType.isEmpty()) {
             wrapper.eq(HrWorkLog::getLogType, logType);
         }
