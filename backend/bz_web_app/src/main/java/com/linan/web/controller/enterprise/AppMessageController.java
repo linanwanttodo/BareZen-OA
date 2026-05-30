@@ -99,4 +99,36 @@ public class AppMessageController {
         }
         return Result.success(messageService.markAllRead(userId));
     }
+
+    /**
+     * 查询单条消息详情（校验属主 + 自动标记已读）
+     * GET /api/app/v1/messages/{id}
+     */
+    @Operation(summary = "查询单条消息详情", description = "校验消息属于当前用户，并自动标记为已读")
+    @GetMapping("/{id}")
+    public Result<SysMessage> getDetail(
+            @Parameter(description = "消息ID") @PathVariable Long id) {
+        Long userId = AuthInterceptor.getCurrentUserId();
+        if (userId == null) {
+            return Result.error("请先登录");
+        }
+        
+        SysMessage message = messageService.getById(id);
+        if (message == null) {
+            return Result.error("消息不存在");
+        }
+        
+        // 校验属主
+        if (!userId.equals(message.getUserId())) {
+            return Result.error("无权查看该消息");
+        }
+        
+        // 自动标记已读（幂等）
+        if (message.getIsRead() != null && message.getIsRead() == 0) {
+            messageService.markRead(id, userId);
+            message.setIsRead(1);
+        }
+        
+        return Result.success(message);
+    }
 }

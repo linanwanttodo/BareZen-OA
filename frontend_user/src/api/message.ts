@@ -22,3 +22,8 @@ export function markMessageReadApi(id: string) {
 export function markAllMessagesReadApi() {
   return request.put<any, ApiResult<number>>('/app/v1/messages/read-all')
 }
+
+/** 查询单条消息详情（校验属主 + 自动标记已读） */
+export function getMessageDetailApi(id: number) {
+  return request.get<any, ApiResult<SysMessage>>(`/app/v1/messages/${id}`)
+}

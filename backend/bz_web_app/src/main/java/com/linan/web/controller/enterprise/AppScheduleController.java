@@ -78,9 +78,29 @@ public class AppScheduleController {
         if (schedule.getStartTime() == null || schedule.getEndTime() == null) {
             return Result.error("请选择日程时间");
         }
+        
+        // 严格校验时间格式（统一为 yyyy-MM-dd HH:mm）
+        java.time.format.DateTimeFormatter fmt = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+        try {
+            java.time.LocalDateTime.parse(schedule.getStartTime(), fmt);
+            java.time.LocalDateTime.parse(schedule.getEndTime(), fmt);
+        } catch (Exception e) {
+            return Result.error("时间格式不正确，请使用 yyyy-MM-dd HH:mm 格式");
+        }
+        
         if (schedule.getStartTime().compareTo(schedule.getEndTime()) >= 0) {
             return Result.error("结束时间必须晚于开始时间");
         }
+        
+        // 校验提醒时间格式（如果提供）
+        if (schedule.getRemindTime() != null && !schedule.getRemindTime().isEmpty()) {
+            try {
+                java.time.LocalDateTime.parse(schedule.getRemindTime(), fmt);
+            } catch (Exception e) {
+                return Result.error("提醒时间格式不正确，请使用 yyyy-MM-dd HH:mm 格式");
+            }
+        }
+        
         schedule.setUserId(userId);
         if (schedule.getStatus() == null || schedule.getStatus().isEmpty()) {
             schedule.setStatus("0");

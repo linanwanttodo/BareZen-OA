@@ -65,14 +65,14 @@
           <a-input v-model="form.title" :placeholder="$t('common.inputPlaceholder')" />
         </a-form-item>
         <a-form-item :label="$t('schedule.timeRange')" required>
-          <a-date-picker v-model="form.startTime" show-time style="width: 100%; max-width: " :placeholder="$t('schedule.startTime')" />
+          <a-date-picker v-model="form.startTime" show-time value-format="YYYY-MM-DD HH:mm" style="width: 100%; max-width: " :placeholder="$t('schedule.startTime')" />
           <span class="mx-2">~</span>
-          <a-date-picker v-model="form.endTime" show-time style="width: 100%; max-width: " :placeholder="$t('schedule.endTime')" />
+          <a-date-picker v-model="form.endTime" show-time value-format="YYYY-MM-DD HH:mm" style="width: 100%; max-width: " :placeholder="$t('schedule.endTime')" />
         </a-form-item>
         <a-row :gutter="16">
           <a-col :span="12">
             <a-form-item :label="$t('schedule.remind')">
-              <a-date-picker v-model="form.remindTime" show-time style="width: 100%" :placeholder="$t('schedule.remindPlaceholder')" />
+              <a-date-picker v-model="form.remindTime" show-time value-format="YYYY-MM-DD HH:mm" style="width: 100%" :placeholder="$t('schedule.remindPlaceholder')" />
             </a-form-item>
           </a-col>
           <a-col :span="12">
