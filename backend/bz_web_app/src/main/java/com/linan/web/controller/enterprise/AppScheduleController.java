@@ -33,6 +33,19 @@ public class AppScheduleController {
     private final PermissionSupport permissionSupport;
 
     /**
+     * 统一的分页参数校验（防全表扫描）
+     */
+    private Result<Void> validatePageParams(Integer pageNum, Integer pageSize) {
+        if (pageNum == null || pageNum < 1) {
+            return Result.error("页码必须 ≥ 1");
+        }
+        if (pageSize == null || pageSize < 1 || pageSize > 100) {
+            return Result.error("每页条数必须在 1-100 之间");
+        }
+        return null; // 合法
+    }
+
+    /**
      * 我的日程列表
      * GET /api/app/v1/schedules
      */
@@ -43,6 +56,12 @@ public class AppScheduleController {
             @RequestParam(defaultValue = "10") Integer pageSize,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String date) {
+
+        // 分页参数钳制
+        Result<Void> pageError = validatePageParams(page, pageSize);
+        if (pageError != null) {
+            return Result.error(pageError.getMsg());
+        }
 
         Long userId = AuthInterceptor.getCurrentUserId();
         if (userId == null) {
