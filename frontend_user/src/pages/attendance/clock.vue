@@ -311,11 +311,8 @@ const monthStats = computed(() => {
     if (r.clockInTime) workDays++
     if (r.status === 'late') lateCount++
     if (r.status === 'early') earlyCount++
+    // 直接使用后端计算的缺卡状态（已考虑请假/加班豁免）
     if (r.status === 'absent' || r.status === 'abnormal') absentDays++
-  }
-  // 过去的工作日无任何打卡记录 → 缺卡
-  for (const cell of calendarCells.value) {
-    if (cell.dateStr && cell.isPast && !cell.isWeekend && !cell.record) absentDays++
   }
   return { workDays, lateCount, earlyCount, absentDays }
 })
