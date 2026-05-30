@@ -18,6 +18,7 @@ import com.linan.hr.service.IAttTravelRequestService;
 import com.linan.hr.service.IHrWorkLogService;
 import com.linan.system.service.ApprovalFlowFacade;
 import lombok.RequiredArgsConstructor;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -82,6 +83,7 @@ public class AppAttendanceController {
      */
     @Operation(summary = "提交请假申请")
     @PostMapping("/leaves")
+    @Transactional(rollbackFor = Exception.class)
     public Result<Void> submitLeave(@RequestBody AttLeaveRequest request) {
         Long userId = AuthInterceptor.getCurrentUserId();
         if (userId == null) {
@@ -96,17 +98,34 @@ public class AppAttendanceController {
         if (request.getStartTime().compareTo(request.getEndTime()) >= 0) {
             return Result.error("结束时间必须晚于开始时间");
         }
+        
+        // 强制清空客户端可能预置的敏感字段（防主键冲突、审批字段污染）
+        request.setId(null);
+        request.setApproverId(null);
+        request.setApproverName(null);
+        request.setApproveTime(null);
+        request.setApproveRemark(null);
+        
         // 身份字段服务端强制覆盖，不信任请求体（防身份伪造）
         request.setUserId(userId);
         request.setUserName(AuthInterceptor.getCurrentUsername());
         request.setStatus("0");
+        
         boolean ok = leaveService.save(request);
-            if (ok) {
-                // 审批编排统一收口：启动引擎首节点 + 记录提交日志（同一事务）
-                flowFacade.submit("leave", request.getId(), request.getAssigneeId(), request.getAssigneeName(),
-                        userId, request.getUserName());
-            }
-            return ok ? Result.success(null) : Result.error("提交失败");
+        if (!ok) {
+            return Result.error("提交失败");
+        }
+        
+        try {
+            // 审批编排统一收口：启动引擎首节点 + 记录提交日志（同一事务）
+            flowFacade.submit("leave", request.getId(), request.getAssigneeId(), request.getAssigneeName(),
+                    userId, request.getUserName());
+        } catch (Exception e) {
+            // submit 抛异常时整个事务回滚（包括已保存的请假记录）
+            throw new RuntimeException("启动审批流程失败: " + e.getMessage(), e);
+        }
+        
+        return Result.success(null);
     }
 
     /**
@@ -395,5 +414,55 @@ public class AppAttendanceController {
         workLog.setUserId(userId);
         boolean ok = workLogService.save(workLog);
         return ok ? Result.success(null) : Result.error("提交失败");
+    }
+
+    /**
+     * 更新工作日志
+     * PUT /api/app/v1/worklogs
+     */
+    @Operation(summary = "更新工作日志")
+    @PutMapping("/worklogs")
+    @OperLog(title = "工作日志", businessType = 2)
+    public Result<Void> updateWorkLog(@RequestBody HrWorkLog workLog) {
+        Long userId = AuthInterceptor.getCurrentUserId();
+        if (userId == null) {
+            return Result.error("请先登录");
+        }
+        HrWorkLog existing = workLogService.getById(workLog.getId());
+        if (existing == null) {
+            return Result.error("日志不存在");
+        }
+        if (!userId.equals(existing.getUserId())) {
+            return Result.error("只能修改自己的日志");
+        }
+        if (existing.getReviewerName() != null) {
+            return Result.error("已批阅的日志不能修改");
+        }
+        existing.setContent(workLog.getContent());
+        boolean ok = workLogService.updateById(existing);
+        return ok ? Result.success(null) : Result.error("更新失败");
+    }
+
+    /**
+     * 删除工作日志
+     * DELETE /api/app/v1/worklogs/{id}
+     */
+    @Operation(summary = "删除工作日志")
+    @DeleteMapping("/worklogs/{id}")
+    @OperLog(title = "工作日志", businessType = 3)
+    public Result<Void> deleteWorkLog(@PathVariable Long id) {
+        Long userId = AuthInterceptor.getCurrentUserId();
+        if (userId == null) {
+            return Result.error("请先登录");
+        }
+        HrWorkLog existing = workLogService.getById(id);
+        if (existing == null) {
+            return Result.error("日志不存在");
+        }
+        if (!userId.equals(existing.getUserId())) {
+            return Result.error("只能删除自己的日志");
+        }
+        boolean ok = workLogService.removeById(id);
+        return ok ? Result.success(null) : Result.error("删除失败");
     }
 }
