@@ -19,4 +19,15 @@ public interface IOfficeMeetingBookingService extends IService<OfficeMeetingBook
      * @param booking 预订信息（roomId/startTime/endTime 已由 Controller 校验）
      */
     void saveBooking(OfficeMeetingBooking booking);
+
+    /**
+     * 编辑会议预订（复用新增路径的冲突校验与行锁机制，排除自身 id）
+     *
+     * <p>限制可更新字段白名单：title/startTime/endTime/attendees/remark；
+     * 强制回填 roomUserId/bookerName 以请求时查询结果为准。</p>
+     *
+     * @param id 预订 ID
+     * @param booking 待更新的字段（仅白名单字段生效）
+     */
+    void updateBooking(Long id, OfficeMeetingBooking booking);
 }

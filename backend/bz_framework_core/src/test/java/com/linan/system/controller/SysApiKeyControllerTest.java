@@ -22,6 +22,8 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -127,8 +129,49 @@ class SysApiKeyControllerTest {
         assertEquals("system:apiKey:edit",
                 SysApiKeyController.class.getMethod("changeStatus", Long.class, String.class)
                         .getAnnotation(RequirePermission.class).value()[0]);
+        assertEquals("system:apiKey:edit",
+                SysApiKeyController.class.getMethod("update", Long.class, Map.class)
+                        .getAnnotation(RequirePermission.class).value()[0]);
         assertEquals("system:apiKey:delete",
                 SysApiKeyController.class.getMethod("delete", Long.class)
                         .getAnnotation(RequirePermission.class).value()[0]);
+    }
+
+    @Test
+    @DisplayName("编辑 API Key 成功")
+    void update_success() {
+        SysApiKey existing = new SysApiKey();
+        existing.setId(1L);
+        existing.setKeyName("旧名称");
+        when(apiKeyService.getById(1L)).thenReturn(existing);
+        when(apiKeyService.update(any())).thenReturn(true);
+
+        controller = newController();
+        Result<Void> result = controller.update(1L, Map.of(
+                "keyName", "新名称",
+                "scopes", "open:approval:read,open:approval:write",
+                "expireTime", "2027-12-31 23:59:59"));
+
+        assertEquals(200, result.getCode());
+        verify(apiKeyService).update(any());
+    }
+
+    @Test
+    @DisplayName("编辑 API Key 不存在时返回错误")
+    void update_notFound() {
+        when(apiKeyService.getById(99L)).thenReturn(null);
+
+        controller = newController();
+        Result<Void> result = controller.update(99L, Map.of("keyName", "新名称"));
+
+        assertEquals(500, result.getCode());
+        assertEquals("API Key 不存在", result.getMsg());
+    }
+
+    @Test
+    @DisplayName("编辑 API Key 名称为空返回错误")
+    void update_blankName() {
+        controller = newController();
+        assertEquals(500, controller.update(1L, Map.of("keyName", "  ")).getCode());
     }
 }

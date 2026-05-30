@@ -110,4 +110,43 @@ public class OfficeMeetingBookingController {
         boolean ok = bookingService.removeById(id);
         return ok ? Result.success(null) : Result.error("删除失败");
     }
+
+    /**
+     * 编辑会议预订（更新标题、时间、参会人、备注）
+     *
+     * <p>复用新增路径的冲突校验与行锁机制，排除自身 id；限制可更新字段白名单。</p>
+     */
+    @Operation(summary = "编辑会议预订")
+    @OperLog(title = "会议预订", businessType = 2)
+    @RequirePermission("office:meeting:edit")
+    @PutMapping("/{id}")
+    public Result<Void> update(@PathVariable Long id, @Valid @RequestBody OfficeMeetingBooking booking) {
+        OfficeMeetingBooking existing = bookingService.getById(id);
+        if (existing == null) {
+            return Result.error("预订不存在");
+        }
+        
+        // 归属校验：仅预订人本人或持管理权限可编辑
+        Long currentUserId = AuthInterceptor.getCurrentUserId();
+        if (currentUserId == null) {
+            return Result.error("请先登录");
+        }
+        if (!permissionSupport.isOwnerOrHasPermission(currentUserId, existing.getBookerId(), "office:meeting:manage")) {
+            return Result.error("无权限编辑该预订");
+        }
+        
+        // 基本时间校验
+        if (booking.getStartTime() != null && booking.getEndTime() != null
+                && booking.getStartTime().compareTo(booking.getEndTime()) >= 0) {
+            return Result.error("结束时间必须晚于开始时间");
+        }
+        
+        // 调用 Service 层统一校验方法（含行锁 + 冲突检测，排除自身）
+        try {
+            bookingService.updateBooking(id, booking);
+            return Result.success(null);
+        } catch (com.linan.core.common.exception.BusinessException e) {
+            return Result.error(e.getMessage());
+        }
+    }
 }

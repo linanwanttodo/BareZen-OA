@@ -110,8 +110,16 @@
             </a-form-item>
           </a-col>
           <a-col :span="12">
-            <a-form-item field="deptName" :label="$t('hr.deptName')">
-              <a-input v-model="form.deptName" :placeholder="$t('common.inputPlaceholder')" />
+            <a-form-item field="deptId" :label="$t('hr.deptName')">
+              <a-tree-select
+                v-model="form.deptId"
+                :data="deptTreeData"
+                :field-names="{ key: 'id', title: 'deptName', children: 'children' }"
+                :placeholder="$t('common.selectPlaceholder')"
+                allow-clear
+                allow-search
+                style="width: 100%"
+              />
             </a-form-item>
           </a-col>
           <a-col :span="12">
@@ -190,6 +198,7 @@ import { PERM } from '@/utils/constants'
 import { ref, reactive, onMounted } from 'vue'
 import { Message } from '@arco-design/web-vue'
 import { getEmployeePageApi, addEmployeeApi, updateEmployeeApi, deleteEmployeeApi, type HrEmployee } from '@/api/hr'
+import { getDeptTreeApi, type SysDept } from '@/api/dept'
 import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
@@ -198,6 +207,7 @@ const saving = ref(false)
 const tableData = ref<HrEmployee[]>([])
 const editVisible = ref(false)
 const isEdit = ref(false)
+const deptTreeData = ref<SysDept[]>([])
 
 const searchForm = reactive({
   name: '',
@@ -307,5 +317,17 @@ async function handleDelete(record: HrEmployee) {
   loadData()
 }
 
-onMounted(loadData)
+async function loadDeptTree() {
+  try {
+    const res = await getDeptTreeApi()
+    deptTreeData.value = res.data || []
+  } catch {
+    deptTreeData.value = []
+  }
+}
+
+onMounted(() => {
+  loadDeptTree()
+  loadData()
+})
 </script>

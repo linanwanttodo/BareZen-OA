@@ -1,6 +1,7 @@
 package com.linan.system.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.linan.core.common.annotation.OperLog;
@@ -129,6 +130,49 @@ public class SysApiKeyController {
         update.setStatus(status);
         boolean ok = apiKeyService.updateById(update);
         return ok ? Result.success(null) : Result.error("状态切换失败");
+    }
+
+    /**
+     * 编辑 API Key（更新名称、权限范围、过期时间）
+     *
+     * <p>body: {@code {"keyName":"xxx", "scopes":"open:approval:read", "expireTime":"2026-12-31 23:59:59"}}
+     * scopes/expireTime 可选；expireTime 传空字符串或 null 视为永不过期。</p>
+     */
+    @RequirePermission("system:apiKey:edit")
+    @OperLog(title = "开放平台 API Key", businessType = 2)
+    @Operation(summary = "编辑 API Key")
+    @PutMapping("/{id}")
+    public Result<Void> update(
+            @Parameter(description = "密钥ID") @PathVariable Long id,
+            @RequestBody Map<String, String> body) {
+        SysApiKey key = apiKeyService.getById(id);
+        if (key == null) {
+            return Result.error("API Key 不存在");
+        }
+        String keyName = body.get("keyName");
+        if (keyName == null || keyName.isBlank()) {
+            return Result.error("密钥名称不能为空");
+        }
+        if (keyName.length() > 50) {
+            return Result.error("密钥名称不能超过 50 个字符");
+        }
+        
+        // 使用 LambdaUpdateWrapper 确保 expireTime 为 null 时也能被更新到数据库
+        LambdaUpdateWrapper<SysApiKey> wrapper = new LambdaUpdateWrapper<>();
+        wrapper.eq(SysApiKey::getId, id)
+                .set(SysApiKey::getKeyName, keyName.trim())
+                .set(SysApiKey::getScopes, body.get("scopes"));
+        
+        String expireRaw = body.get("expireTime");
+        if (expireRaw != null && !expireRaw.isBlank()) {
+            wrapper.set(SysApiKey::getExpireTime, parseExpireTime(expireRaw));
+        } else {
+            // 传空字符串或 null 视为永不过期，显式设置为 NULL
+            wrapper.set(SysApiKey::getExpireTime, null);
+        }
+        
+        boolean ok = apiKeyService.update(wrapper);
+        return ok ? Result.success(null) : Result.error("编辑失败");
     }
 
     /**

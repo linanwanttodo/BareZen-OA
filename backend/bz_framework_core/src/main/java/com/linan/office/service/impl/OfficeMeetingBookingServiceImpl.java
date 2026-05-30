@@ -64,4 +64,48 @@ public class OfficeMeetingBookingServiceImpl extends ServiceImpl<OfficeMeetingBo
             throw new BusinessException("预订失败");
         }
     }
+
+    /**
+     * 编辑会议预订（复用新增路径的冲突校验与行锁机制，排除自身 id）
+     *
+     * <p>限制可更新字段白名单：title/startTime/endTime/attendees/remark；
+     * 强制回填 roomId/bookerName 以原始记录为准。</p>
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void updateBooking(Long id, OfficeMeetingBooking booking) {
+        OfficeMeetingBooking existing = getById(id);
+        if (existing == null) {
+            throw new BusinessException("预订不存在");
+        }
+
+        // 白名单字段拷贝：仅允许更新 title/startTime/endTime/attendees/remark
+        existing.setTitle(booking.getTitle());
+        existing.setStartTime(booking.getStartTime());
+        existing.setEndTime(booking.getEndTime());
+        existing.setAttendees(booking.getAttendees());
+        existing.setRemark(booking.getRemark());
+
+        // 强制保留原始归属信息，防止篡改
+        existing.setRoomId(existing.getRoomId());
+        existing.setRoomName(existing.getRoomName());
+        existing.setBookerId(existing.getBookerId());
+        existing.setBookerName(existing.getBookerName());
+
+        // 时间冲突校验：排除自身 id
+        long conflict = lambdaQuery()
+                .eq(OfficeMeetingBooking::getRoomId, existing.getRoomId())
+                .ne(OfficeMeetingBooking::getId, id)
+                .and(w -> w
+                        .lt(OfficeMeetingBooking::getStartTime, existing.getEndTime())
+                        .gt(OfficeMeetingBooking::getEndTime, existing.getStartTime()))
+                .count();
+        if (conflict > 0) {
+            throw new BusinessException("该会议室在所选时间段已被预订");
+        }
+
+        if (!updateById(existing)) {
+            throw new BusinessException("编辑失败");
+        }
+    }
 }
