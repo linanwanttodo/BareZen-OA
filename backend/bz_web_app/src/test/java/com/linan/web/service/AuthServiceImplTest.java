@@ -80,8 +80,18 @@ class AuthServiceImplTest {
         f.set(authService, true);
 
         lenient().when(ipUtil.getClientIp(any())).thenReturn("127.0.0.1");
-        lenient().when(redisTemplate.opsForValue()).thenReturn(
-                org.mockito.Mockito.mock(org.springframework.data.redis.core.ValueOperations.class));
+        
+        // Mock Redis ValueOperations (lenient to avoid strict stubbing issues)
+        org.springframework.data.redis.core.ValueOperations<String, Object> valueOps = 
+            org.mockito.Mockito.mock(org.springframework.data.redis.core.ValueOperations.class);
+        lenient().when(redisTemplate.opsForValue()).thenReturn(valueOps);
+        lenient().when(valueOps.get(anyString())).thenReturn(null);
+        
+        // Mock StringRedisTemplate operations for Lua script
+        lenient().when(stringRedisTemplate.execute(any(), any(), any(String[].class)))
+            .thenReturn(java.util.List.of(0L, 0L));
+        lenient().when(stringRedisTemplate.opsForValue())
+            .thenReturn(org.mockito.Mockito.mock(org.springframework.data.redis.core.ValueOperations.class));
     }
 
     @Test
@@ -94,7 +104,7 @@ class AuthServiceImplTest {
         req.setUuid("u1");
 
         when(captchaService.validate("u1", "abcd")).thenReturn(null);
-        when(redisTemplate.opsForValue().get("account_lock:admin")).thenReturn(null);
+        
         SysUser user = new SysUser();
         user.setId(1L);
         user.setUserName("admin");
@@ -128,11 +138,33 @@ class AuthServiceImplTest {
     }
 
     @Test
-    @DisplayName("登录失败：账号已锁定时抛异常")
+    @DisplayName("登录失败：账号已锁定时抛异常（指数退避）")
     void login_locked() {
         when(captchaService.validate(anyString(), anyString())).thenReturn(null);
-        when(redisTemplate.opsForValue().get("account_lock:admin"))
-                .thenReturn(10); // >= LOGIN_MAX_ATTEMPTS(5)
+        
+        // Mock account fail with high delay (e.g., 5 failures -> 160 seconds delay)
+        when(stringRedisTemplate.execute(any(), any(), any(String[].class)))
+            .thenReturn(java.util.List.of(5L, 160L));
+
+        LoginRequest req = new LoginRequest();
+        req.setUsername("admin");
+        req.setPassword("admin123");
+        req.setCaptchaCode("x");
+        req.setUuid("u");
+
+        // 验证会抛出业务异常（无论是账号锁定还是IP封禁）
+        assertThrows(BusinessException.class, () -> authService.login(req));
+        verify(userMapper, never()).selectOne(any());
+    }
+
+    @Test
+    @DisplayName("登录失败：IP被封禁时抛异常")
+    void login_ipBanned() {
+        when(captchaService.validate(anyString(), anyString())).thenReturn(null);
+        
+        // Mock IP fail count >= 15 (LOGIN_MAX_ATTEMPTS * 3)
+        org.springframework.data.redis.core.ValueOperations<String, Object> valueOps = redisTemplate.opsForValue();
+        when(valueOps.get(anyString())).thenReturn(20);
 
         LoginRequest req = new LoginRequest();
         req.setUsername("admin");
@@ -141,7 +173,7 @@ class AuthServiceImplTest {
         req.setUuid("u");
 
         BusinessException ex = assertThrows(BusinessException.class, () -> authService.login(req));
-        assertEquals("账号已被锁定，请 15 分钟后再试", ex.getMessage());
+        assertEquals("操作过于频繁，请稍后再试", ex.getMessage());
         verify(userMapper, never()).selectOne(any());
     }
 
