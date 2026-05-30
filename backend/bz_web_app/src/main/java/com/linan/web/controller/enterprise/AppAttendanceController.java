@@ -50,6 +50,19 @@ public class AppAttendanceController {
     /** 审批流程编排门面（统一 submit/revoke 编排并保证事务一致） */
     private final ApprovalFlowFacade flowFacade;
 
+    /**
+     * 统一的分页参数校验（防全表扫描）
+     */
+    private Result<Void> validatePageParams(Integer pageNum, Integer pageSize) {
+        if (pageNum == null || pageNum < 1) {
+            return Result.error("页码必须 ≥ 1");
+        }
+        if (pageSize == null || pageSize < 1 || pageSize > 100) {
+            return Result.error("每页条数必须在 1-100 之间");
+        }
+        return null; // 合法
+    }
+
     // ==================== 请假申请 ====================
 
     /**
@@ -62,6 +75,12 @@ public class AppAttendanceController {
             @RequestParam(defaultValue = "1") Integer page,
             @RequestParam(defaultValue = "10") Integer pageSize,
             @RequestParam(required = false) String status) {
+
+        // 分页参数钳制
+        Result<Void> pageError = validatePageParams(page, pageSize);
+        if (pageError != null) {
+            return Result.error(pageError.getMsg());
+        }
 
         Long userId = AuthInterceptor.getCurrentUserId();
         if (userId == null) {
@@ -184,6 +203,12 @@ public class AppAttendanceController {
             @RequestParam(defaultValue = "10") Integer pageSize,
             @RequestParam(required = false) String status) {
 
+        // 分页参数钳制
+        Result<Void> pageError = validatePageParams(page, pageSize);
+        if (pageError != null) {
+            return Result.error(pageError.getMsg());
+        }
+
         Long userId = AuthInterceptor.getCurrentUserId();
         if (userId == null) {
             return Result.error("请先登录");
@@ -284,6 +309,12 @@ public class AppAttendanceController {
             @RequestParam(defaultValue = "10") Integer pageSize,
             @RequestParam(required = false) String status) {
 
+        // 分页参数钳制
+        Result<Void> pageError = validatePageParams(page, pageSize);
+        if (pageError != null) {
+            return Result.error(pageError.getMsg());
+        }
+
         Long userId = AuthInterceptor.getCurrentUserId();
         if (userId == null) {
             return Result.error("请先登录");
@@ -382,6 +413,12 @@ public class AppAttendanceController {
             @RequestParam(defaultValue = "1") Integer page,
             @RequestParam(defaultValue = "10") Integer pageSize,
             @RequestParam(required = false) String logType) {
+
+        // 分页参数钳制
+        Result<Void> pageError = validatePageParams(page, pageSize);
+        if (pageError != null) {
+            return Result.error(pageError.getMsg());
+        }
 
         Long userId = AuthInterceptor.getCurrentUserId();
         if (userId == null) {
