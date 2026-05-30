@@ -4,6 +4,7 @@ import com.linan.core.common.api.Result;
 import com.linan.core.plugin.Plugin;
 import com.linan.core.plugin.PluginManager;
 import com.linan.core.plugin.PluginStatus;
+import com.linan.core.security.RequirePermission;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -28,6 +29,7 @@ public class PluginController {
 
     private final PluginManager pluginManager;
 
+    @RequirePermission("system:plugin:manage")
     @Operation(summary = "查询所有插件")
     @GetMapping
     public Result<List<PluginInfo>> listPlugins() {
@@ -37,6 +39,7 @@ public class PluginController {
         return Result.success(pluginInfos);
     }
 
+    @RequirePermission("system:plugin:manage")
     @Operation(summary = "查询已启用的插件")
     @GetMapping("/enabled")
     public Result<List<PluginInfo>> listEnabledPlugins() {
@@ -46,6 +49,7 @@ public class PluginController {
         return Result.success(pluginInfos);
     }
 
+    @RequirePermission("system:plugin:manage")
     @Operation(summary = "启动插件")
     @PostMapping("/{pluginId}/start")
     public Result<Void> startPlugin(
@@ -59,6 +63,7 @@ public class PluginController {
         }
     }
 
+    @RequirePermission("system:plugin:manage")
     @Operation(summary = "停止插件")
     @PostMapping("/{pluginId}/stop")
     public Result<Void> stopPlugin(
@@ -72,6 +77,7 @@ public class PluginController {
         }
     }
 
+    @RequirePermission("system:plugin:manage")
     @Operation(summary = "卸载插件")
     @DeleteMapping("/{pluginId}")
     public Result<Void> unloadPlugin(
@@ -85,6 +91,7 @@ public class PluginController {
         }
     }
 
+    @RequirePermission("system:plugin:manage")
     @Operation(summary = "获取插件详情")
     @GetMapping("/{pluginId}")
     public Result<PluginInfo> getPlugin(

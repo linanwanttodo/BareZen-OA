@@ -34,7 +34,6 @@ public class RedisConfig {
                 .allowIfBaseType("com.linan.")
                 .allowIfBaseType("java.util.")
                 .allowIfBaseType("java.time.")
-                .allowIfBaseType(Object.class.getName())
                 .build();
         objectMapper.activateDefaultTyping(ptv,
                 ObjectMapper.DefaultTyping.NON_FINAL, JsonTypeInfo.As.PROPERTY);

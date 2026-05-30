@@ -59,8 +59,12 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
             throw new BusinessException("用户名已存在");
         }
 
-        // 密码加密
+        // 密码加密前先做强密码策略校验
         if (user.getPassword() != null && !user.getPassword().isEmpty()) {
+            String policyMsg = com.linan.core.security.PasswordUtil.validatePasswordPolicy(user.getPassword());
+            if (policyMsg != null) {
+                throw new BusinessException(policyMsg);
+            }
             user.setPassword(PasswordUtil.encode(user.getPassword()));
         }
 
@@ -138,9 +142,12 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
             throw new BusinessException("用户信息不完整");
         }
 
-        // 如果传了密码，加密（以 $2a$ 开头说明已是加密密码，跳过）
-        if (user.getPassword() != null && !user.getPassword().isEmpty()
-                && !user.getPassword().startsWith("$2a$")) {
+        // 如果传了密码，先做强密码策略校验再加密
+        if (user.getPassword() != null && !user.getPassword().isEmpty()) {
+            String policyMsg = com.linan.core.security.PasswordUtil.validatePasswordPolicy(user.getPassword());
+            if (policyMsg != null) {
+                throw new BusinessException(policyMsg);
+            }
             user.setPassword(PasswordUtil.encode(user.getPassword()));
         } else {
             // 不更新密码字段

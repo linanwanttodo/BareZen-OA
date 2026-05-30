@@ -114,18 +114,31 @@ public class XssFilter implements Filter {
 
         private byte[] bodyBytes; // 缓存的请求体
 
+        /** JSON 请求体大小上限：2MB，超过此限制返回 413 */
+        private static final int MAX_BODY_SIZE = 2 * 1024 * 1024;
+
         public XssRequestWrapper(HttpServletRequest request) throws IOException {
             super(request);
 
             // 仅缓存 application/json 类型的请求体
             String contentType = request.getContentType();
             if (contentType != null && contentType.startsWith("application/json")) {
+                // 检查 Content-Length，防止内存耗尽攻击
+                int contentLength = request.getContentLength();
+                if (contentLength > MAX_BODY_SIZE) {
+                    throw new IOException("Request body too large: " + contentLength + " bytes (max: " + MAX_BODY_SIZE + ")");
+                }
+                
                 try (InputStream is = request.getInputStream();
                      ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
                     byte[] buffer = new byte[4096];
                     int bytesRead;
                     while ((bytesRead = is.read(buffer)) != -1) {
                         baos.write(buffer, 0, bytesRead);
+                        // 实时检查已读取字节数，防止无 Content-Length 的攻击
+                        if (baos.size() > MAX_BODY_SIZE) {
+                            throw new IOException("Request body exceeded maximum size of " + MAX_BODY_SIZE + " bytes");
+                        }
                     }
                     String originalBody = baos.toString(StandardCharsets.UTF_8);
                     String cleanedBody = cleanJsonValues(originalBody);
