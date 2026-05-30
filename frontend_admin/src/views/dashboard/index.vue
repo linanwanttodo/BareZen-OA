@@ -121,7 +121,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, onMounted, onUnmounted, onActivated, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import * as echarts from 'echarts'
@@ -303,19 +303,31 @@ onMounted(async () => {
       loadStats(),
       loadNotices(),
       loadOperLogs(),
-      loadCharts(),
     ])
   } catch (err) {
     console.error('dashboard load error:', err)
   } finally {
     loading.value = false
   }
+  
+  // loading 完成后等待 DOM 更新再初始化图表
+  await nextTick()
+  await loadCharts()
 
   resizeHandler = () => {
     lineChart?.resize()
     pieChart?.resize()
   }
   window.addEventListener('resize', resizeHandler)
+})
+
+onActivated(async () => {
+  // keep-alive 缓存后重新进入时刷新图表
+  if (lineChartRef.value && pieChartRef.value) {
+    await nextTick()
+    initLineChart()
+    initPieChart()
+  }
 })
 
 onUnmounted(() => {
