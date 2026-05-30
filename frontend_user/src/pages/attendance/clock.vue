@@ -328,6 +328,8 @@ const legends = computed(() => [
 ])
 
 // ---- 月份切换 ----
+let monthSeq = 0 // 请求序号，防止竞态
+
 function shiftMonth(offset: number) {
   const [y, m] = viewMonth.value.split('-').map(Number)
   const d = new Date(y, m - 1 + offset, 1)
@@ -351,24 +353,37 @@ async function loadToday() {
 }
 
 async function loadMonth() {
+  const seq = ++monthSeq // 捕获当前序号
   try {
     const res = await getMonthClockApi(viewMonth.value)
+    // 检查是否是最新请求
+    if (seq !== monthSeq) return
     monthRecords.value = res.data || []
   } catch (e) {
-    console.error('load month clock error:', e)
+    if (seq === monthSeq) {
+      console.error('load month clock error:', e)
+    }
   }
 }
 
 /** 页面内 i18n 直取（避免在 script 中大量 useI18n 解构） */
 
+let disposed = false // 组件卸载标志
+
 onMounted(async () => {
+  disposed = false
   await Promise.all([loadToday(), loadMonth()])
+  
+  // 只有在组件未卸载时才启动定时器
+  if (disposed) return
+  
   timer = setInterval(() => {
     now.value = new Date()
   }, 1000)
 })
 
 onUnmounted(() => {
+  disposed = true
   if (timer) clearInterval(timer)
 })
 </script>

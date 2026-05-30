@@ -26,7 +26,7 @@
         <div class="flex items-center justify-between w-full">
           <span>{{ $t('office.roomList') }}</span>
           <a-space>
-            <a-button v-permission="PERM.office.meetingAdd" type="primary" @click="roomDialogVisible = true">
+            <a-button v-permission="PERM.office.meetingAdd" type="primary" @click="openRoomAdd">
               <template #icon><icon-plus /></template>
               {{ $t('office.addRoom') }}
             </a-button>
@@ -79,11 +79,14 @@
             </a-table-column>
             <a-table-column :title="$t('office.bookerName')" data-index="bookerName" :width="100" />
             <a-table-column :title="$t('office.attendees')" data-index="attendees" ellipsis :width="160" />
-            <a-table-column :title="$t('common.operate')" :width="90" align="right">
+            <a-table-column :title="$t('common.operate')" :width="160" align="right">
               <template #cell="{ record }">
-                <a-popconfirm :content="$t('common.deleteConfirm')" @ok="handleDeleteBooking(record)">
-                  <a-button v-permission="PERM.office.meetingDelete" size="small" status="danger">{{ $t('common.delete') }}</a-button>
-                </a-popconfirm>
+                <a-space>
+                  <a-button v-permission="PERM.office.meetingEdit" size="small" @click="openBookingEdit(record)">{{ $t('common.edit') }}</a-button>
+                  <a-popconfirm :content="$t('common.deleteConfirm')" @ok="handleDeleteBooking(record)">
+                    <a-button v-permission="PERM.office.meetingDelete" size="small" status="danger">{{ $t('common.delete') }}</a-button>
+                  </a-popconfirm>
+                </a-space>
               </template>
             </a-table-column>
           </template>
@@ -100,8 +103,8 @@
     </a-card>
 
     <!-- 新增会议室弹窗 -->
-    <a-modal v-model:visible="roomDialogVisible" :title="$t('office.addRoom')" :width="520"
-             @ok="handleSaveRoom" @cancel="roomDialogVisible = false" :ok-loading="saving">
+    <a-modal v-model:visible="roomDialogVisible" :title="isRoomEdit ? $t('office.editRoom') : $t('office.addRoom')" :width="520"
+             @ok="handleSaveRoom" @cancel="cancelRoomEdit" :ok-loading="saving">
       <a-form :model="roomForm" layout="vertical">
         <a-form-item field="roomName" :label="$t('office.roomName')" required>
           <a-input v-model="roomForm.roomName" :placeholder="$t('common.inputPlaceholder')" />
@@ -124,9 +127,9 @@
       </a-form>
     </a-modal>
 
-    <!-- 会议预订弹窗 -->
-    <a-modal v-model:visible="bookingVisible" :title="$t('office.bookMeeting')" :width="560"
-             @ok="handleSaveBooking" @cancel="bookingVisible = false" :ok-loading="saving">
+    <!-- 会议预订弹窗（新增/编辑共用） -->
+    <a-modal v-model:visible="bookingVisible" :title="isBookingEdit ? $t('office.editBooking') : $t('office.bookMeeting')" :width="560"
+             @ok="handleSaveBooking" @cancel="cancelBooking" :ok-loading="saving">
       <a-form :model="bookingForm" layout="vertical">
         <a-form-item field="roomId" :label="$t('office.roomName')" required>
           <a-select v-model="bookingForm.roomId" :placeholder="$t('common.selectPlaceholder')">
@@ -158,7 +161,7 @@ import { ref, reactive, onMounted, computed } from 'vue'
 import { Message } from '@arco-design/web-vue'
 import {
   getRoomPageApi, getAvailableRoomsApi, addRoomApi, updateRoomApi, deleteRoomApi,
-  getBookingPageApi, addBookingApi, deleteBookingApi,
+  getBookingPageApi, addBookingApi, updateBookingApi, deleteBookingApi,
   type OfficeMeetingRoom, type OfficeMeetingBooking,
 } from '@/api/office'
 import { useUserStore } from '@/stores/user'
@@ -174,6 +177,8 @@ const roomOptions = ref<OfficeMeetingRoom[]>([])
 const tableData = ref<OfficeMeetingBooking[]>([])
 const roomDialogVisible = ref(false)
 const bookingVisible = ref(false)
+const isBookingEdit = ref(false)
+const isRoomEdit = ref(false)
 
 const searchForm = reactive({ title: '', roomId: '' })
 
@@ -181,6 +186,28 @@ const pagination = reactive({ current: 1, pageSize: 10, total: 0 })
 
 const roomForm = reactive<Partial<OfficeMeetingRoom>>({})
 const bookingForm = reactive<Partial<OfficeMeetingBooking>>({})
+
+function openRoomAdd() {
+  isRoomEdit.value = false
+  roomForm.id = undefined
+  roomForm.roomName = ''
+  roomForm.capacity = undefined
+  roomForm.location = ''
+  roomForm.description = ''
+  roomDialogVisible.value = true
+}
+
+function cancelRoomEdit() {
+  roomDialogVisible.value = false
+  if (!isRoomEdit.value) {
+    // 新增模式下取消，清空表单
+    roomForm.id = undefined
+    roomForm.roomName = ''
+    roomForm.capacity = undefined
+    roomForm.location = ''
+    roomForm.description = ''
+  }
+}
 
 async function loadRooms() {
   roomLoading.value = true
@@ -222,6 +249,7 @@ function handleReset() {
 }
 
 function openRoomEdit(room: OfficeMeetingRoom) {
+  isRoomEdit.value = true
   Object.assign(roomForm, room)
   roomDialogVisible.value = true
 }
@@ -253,6 +281,30 @@ async function handleDeleteRoom(room: OfficeMeetingRoom) {
   loadRooms()
 }
 
+function cancelBooking() {
+  bookingVisible.value = false
+  isBookingEdit.value = false
+  bookingForm.id = ''
+  bookingForm.roomId = ''
+  bookingForm.title = ''
+  bookingForm.startTime = ''
+  bookingForm.endTime = ''
+  bookingForm.attendees = ''
+  bookingForm.remark = ''
+}
+
+function openBookingEdit(record: OfficeMeetingBooking) {
+  isBookingEdit.value = true
+  bookingForm.id = record.id
+  bookingForm.roomId = record.roomId
+  bookingForm.title = record.title
+  bookingForm.startTime = record.startTime
+  bookingForm.endTime = record.endTime
+  bookingForm.attendees = record.attendees
+  bookingForm.remark = record.remark
+  bookingVisible.value = true
+}
+
 async function handleSaveBooking() {
   if (!bookingForm.roomId || !bookingForm.title) {
     Message.warning(t('common.msg.meetingInfoRequired'))
@@ -264,17 +316,31 @@ async function handleSaveBooking() {
   }
   saving.value = true
   try {
-    await addBookingApi({
-      roomId: bookingForm.roomId,
-      title: bookingForm.title,
-      startTime: bookingForm.startTime,
-      endTime: bookingForm.endTime,
-      attendees: bookingForm.attendees,
-      remark: bookingForm.remark,
-      bookerName: userStore.userInfo?.nickName || '',
-    })
+    if (isBookingEdit.value) {
+      await updateBookingApi({
+        id: bookingForm.id,
+        roomId: bookingForm.roomId,
+        title: bookingForm.title,
+        startTime: bookingForm.startTime,
+        endTime: bookingForm.endTime,
+        attendees: bookingForm.attendees,
+        remark: bookingForm.remark,
+      })
+    } else {
+      await addBookingApi({
+        roomId: bookingForm.roomId,
+        title: bookingForm.title,
+        startTime: bookingForm.startTime,
+        endTime: bookingForm.endTime,
+        attendees: bookingForm.attendees,
+        remark: bookingForm.remark,
+        bookerName: userStore.userInfo?.nickName || '',
+      })
+    }
     Message.success(t('common.msg.bookingSuccess'))
     bookingVisible.value = false
+    isBookingEdit.value = false
+    bookingForm.id = ''
     bookingForm.roomId = ''
     bookingForm.title = ''
     bookingForm.startTime = ''
