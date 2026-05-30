@@ -35,6 +35,19 @@ public class AppMessageController {
     private final ISysMessageService messageService;
 
     /**
+     * 统一的分页参数校验（防全表扫描）
+     */
+    private Result<Void> validatePageParams(Integer pageNum, Integer pageSize) {
+        if (pageNum == null || pageNum < 1) {
+            return Result.error("页码必须 ≥ 1");
+        }
+        if (pageSize == null || pageSize < 1 || pageSize > 100) {
+            return Result.error("每页条数必须在 1-100 之间");
+        }
+        return null; // 合法
+    }
+
+    /**
      * 分页查询我的站内信
      * GET /api/app/v1/messages?page=1&pageSize=10&isRead=0
      */
@@ -44,6 +57,12 @@ public class AppMessageController {
             @Parameter(description = "页码，从 1 开始") @RequestParam(defaultValue = "1") Integer page,
             @Parameter(description = "每页条数") @RequestParam(defaultValue = "10") Integer pageSize,
             @Parameter(description = "已读过滤：空=全部 0=未读 1=已读") @RequestParam(required = false) Integer isRead) {
+
+        // 分页参数钳制
+        Result<Void> pageError = validatePageParams(page, pageSize);
+        if (pageError != null) {
+            return Result.error(pageError.getMsg());
+        }
 
         Long userId = AuthInterceptor.getCurrentUserId();
         if (userId == null) {
