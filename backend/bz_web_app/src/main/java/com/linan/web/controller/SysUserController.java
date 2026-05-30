@@ -56,6 +56,11 @@ public class SysUserController extends BaseController<SysUser, ISysUserService> 
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String phone) {
 
+        // 分页参数钳制（防全表扫描）
+        if (!isValidPageParams(pageNum, pageSize)) {
+            return Result.error("分页参数不合法");
+        }
+
         Page<SysUser> page = new Page<>(pageNum, pageSize);
         LambdaQueryWrapper<SysUser> wrapper = new LambdaQueryWrapper<>();
 
@@ -201,6 +206,11 @@ public class SysUserController extends BaseController<SysUser, ISysUserService> 
             @RequestParam(required = false) String status,
             @RequestParam(defaultValue = "1") Integer pageNum,
             @RequestParam(defaultValue = "10") Integer pageSize) {
+
+        // 分页参数钳制（防全表扫描）
+        if (!isValidPageParams(pageNum, pageSize)) {
+            return Result.error("分页参数不合法");
+        }
 
         List<Long> roleIdList = Optional.ofNullable(roleIds)
                 .filter(s -> !s.isEmpty())
