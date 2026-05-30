@@ -4,6 +4,7 @@ export default {
   theme: {
     extend: {
       colors: {
+        // shadcn 兼容层
         border: 'var(--border)',
         input: 'var(--input)',
         ring: 'var(--ring)',
@@ -33,9 +34,54 @@ export default {
           DEFAULT: 'var(--card)',
           foreground: 'var(--card-foreground)',
         },
+        // 企业微信风格扩展
+        wecom: {
+          primary: 'var(--wecom-primary)',
+          'primary-hover': 'var(--wecom-primary-hover)',
+          'primary-active': 'var(--wecom-primary-active)',
+          'primary-light': 'var(--wecom-primary-light)',
+          success: 'var(--wecom-success)',
+          warning: 'var(--wecom-warning)',
+          error: 'var(--wecom-error)',
+          info: 'var(--wecom-info)',
+          text: {
+            primary: 'var(--wecom-text-primary)',
+            secondary: 'var(--wecom-text-secondary)',
+            tertiary: 'var(--wecom-text-tertiary)',
+          },
+          bg: {
+            page: 'var(--wecom-bg-page)',
+            card: 'var(--wecom-bg-card)',
+            hover: 'var(--wecom-bg-hover)',
+          },
+          border: 'var(--wecom-border)',
+        },
       },
       fontFamily: {
         sans: ['-apple-system', 'BlinkMacSystemFont', '"PingFang SC"', '"Microsoft YaHei"', '"Helvetica Neue"', 'Arial', 'sans-serif'],
+      },
+      spacing: {
+        // 企业微信间距系统
+        'wecom-xs': 'var(--wecom-spacing-xs)',
+        'wecom-sm': 'var(--wecom-spacing-sm)',
+        'wecom-md': 'var(--wecom-spacing-md)',
+        'wecom-lg': 'var(--wecom-spacing-lg)',
+        'wecom-xl': 'var(--wecom-spacing-xl)',
+        'wecom-xxl': 'var(--wecom-spacing-xxl)',
+      },
+      borderRadius: {
+        // 企业微信圆角系统
+        'wecom-sm': 'var(--wecom-radius-sm)',
+        'wecom-md': 'var(--wecom-radius-md)',
+        'wecom-lg': 'var(--wecom-radius-lg)',
+        'wecom-xl': 'var(--wecom-radius-xl)',
+      },
+      boxShadow: {
+        // 企业微信阴影系统
+        'wecom-sm': 'var(--wecom-shadow-sm)',
+        'wecom-md': 'var(--wecom-shadow-md)',
+        'wecom-lg': 'var(--wecom-shadow-lg)',
+        'wecom-xl': 'var(--wecom-shadow-xl)',
       },
       keyframes: {
         'fade-in': {
@@ -45,6 +91,11 @@ export default {
       },
       animation: {
         'fade-in': 'fade-in 0.25s ease-out forwards',
+      },
+      transitionDuration: {
+        'wecom-fast': 'var(--wecom-transition-fast)',
+        'wecom-base': 'var(--wecom-transition-base)',
+        'wecom-slow': 'var(--wecom-transition-slow)',
       },
     },
   },
