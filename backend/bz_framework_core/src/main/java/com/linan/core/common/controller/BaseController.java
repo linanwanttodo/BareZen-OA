@@ -47,9 +47,26 @@ public abstract class BaseController<T, S extends IService<T>> {
             @RequestParam(defaultValue = "1") Integer pageNum,
             @RequestParam(defaultValue = "10") Integer pageSize) {
 
+        // 参数钳制：防数据库分页负数/超大扫描
+        if (pageNum < 1 || pageSize < 1 || pageSize > 100) {
+            return Result.error("分页参数不合法");
+        }
+
         Page<T> page = new Page<>(pageNum, pageSize);
         IPage<T> result = getService().page(page);
         return Result.page(result);
+    }
+
+    /**
+     * 统一的分页参数校验工具方法（供未继承 BaseController 的 Controller 调用）
+     *
+     * @param pageNum  页码（从 1 开始）
+     * @param pageSize 每页条数
+     * @return true=合法，false=不合法
+     */
+    protected static boolean isValidPageParams(Integer pageNum, Integer pageSize) {
+        return pageNum != null && pageSize != null
+                && pageNum >= 1 && pageSize >= 1 && pageSize <= 100;
     }
 
     /**
