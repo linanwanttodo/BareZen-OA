@@ -72,24 +72,29 @@ public class AuthServiceImpl implements IAuthService {
     /** 登录失败锁定阈值 */
     private static final int LOGIN_MAX_ATTEMPTS = 5;
 
-    /** 锁定时间（分钟） */
-    private static final int LOGIN_LOCK_MINUTES = 15;
+    /** 单次失败基础延迟秒数（指数退避基数） */
+    private static final int LOGIN_DELAY_BASE_SECONDS = 10;
+
+    /** 最大延迟秒数（封顶值，避免无限增长） */
+    private static final int LOGIN_MAX_DELAY_SECONDS = 3600; // 1小时
 
     /** 头像白名单与上限 */
     private static final Set<String> AVATAR_ALLOWED_EXT = Set.of(".jpg", ".jpeg", ".png", ".gif", ".webp");
     private static final long AVATAR_MAX_SIZE = 2 * 1024 * 1024L;
 
     /**
-     * Lua 脚本：登录失败计数原子递增（INCR 与首次 EXPIRE 同脚本内完成，避免竞态导致的永久残留）。
-     * KEYS[1]=锁定计数 key；ARGV[1]=锁定分钟数（作为 TTL 秒）；返回值=当前失败次数。
+     * Lua 脚本：登录失败计数原子递增 + 指数退避延迟。
+     * KEYS[1]=失败计数 key；ARGV[1]=基础延迟秒数；ARGV[2]=最大延迟秒数
+     * 返回值=[当前失败次数, 应等待秒数]
      */
-    private static final DefaultRedisScript<Long> LOGIN_FAIL_SCRIPT = new DefaultRedisScript<>(
+    private static final DefaultRedisScript<List> LOGIN_FAIL_SCRIPT = new DefaultRedisScript<>(
             "local current = redis.call('INCR', KEYS[1]) "
-                    + "if current == 1 then "
-                    + "    redis.call('EXPIRE', KEYS[1], tonumber(ARGV[1]) * 60) "
-                    + "end "
-                    + "return current",
-            Long.class
+                    + "local baseDelay = tonumber(ARGV[1]) "
+                    + "local maxDelay = tonumber(ARGV[2]) "
+                    + "local delay = math.min(baseDelay * math.pow(2, current - 1), maxDelay) "
+                    + "redis.call('EXPIRE', KEYS[1], math.ceil(delay)) "
+                    + "return {current, math.floor(delay)} ",
+            List.class
     );
 
     @Override
@@ -110,32 +115,59 @@ public class AuthServiceImpl implements IAuthService {
             throw new BusinessException("密码不能为空");
         }
 
-        String lockKey = "account_lock:" + username;
-        int failCount = readFailCount(lockKey);
-        if (failCount >= LOGIN_MAX_ATTEMPTS) {
-            recordLoginLog(username, "1", "账号已被锁定");
-            throw new BusinessException("账号已被锁定，请 " + LOGIN_LOCK_MINUTES + " 分钟后再试");
+        // 获取客户端 IP（用于 IP 维度封禁）
+        String clientIp = getClientIp();
+        String ipFailKey = "ip_fail:" + clientIp;
+        
+        // IP 维度高频失败直接拒绝（防暴力破解）
+        int ipFailCount = readFailCount(ipFailKey);
+        if (ipFailCount >= LOGIN_MAX_ATTEMPTS * 3) { // IP 阈值为用户阈值的 3 倍
+            recordLoginLog(username, "1", "IP 已被临时封禁");
+            throw new BusinessException("操作过于频繁，请稍后再试");
+        }
+
+        // 账号维度指数退避延迟检查
+        String accountFailKey = "account_fail:" + username;
+        List<Object> failResult = readAccountFailWithDelay(accountFailKey);
+        if (failResult != null && !failResult.isEmpty()) {
+            long waitSeconds = ((Number) failResult.get(1)).longValue();
+            if (waitSeconds > 0) {
+                recordLoginLog(username, "1", "账号需等待 " + waitSeconds + " 秒");
+                throw new BusinessException("登录失败次数过多，请 " + waitSeconds + " 秒后再试");
+            }
         }
 
         SysUser user = userMapper.selectOne(
                 new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<SysUser>()
                         .eq(SysUser::getUserName, username));
+        
+        // 用户名不存在时不持久化计数（统一延迟响应防枚举）
         if (user == null) {
-            recordLoginFailure(lockKey);
+            // 仅增加 IP 计数，不增加账号计数
+            incrementIpFail(ipFailKey);
             recordLoginLog(username, "1", "用户不存在");
+            // 统一延迟响应，防止用户名枚举
+            try { Thread.sleep(500); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
             throw new BusinessException("用户名或密码错误");
         }
+        
         if ("1".equals(user.getStatus())) {
             recordLoginLog(username, "1", "账号已停用");
             throw new BusinessException("该账号已被停用");
         }
+        
         if (!PasswordUtil.matches(password, user.getPassword())) {
-            recordLoginFailure(lockKey);
+            // 密码错误时才记录账号失败计数
+            recordAccountFailure(accountFailKey);
+            // 同时增加 IP 计数
+            incrementIpFail(ipFailKey);
             recordLoginLog(username, "1", "密码错误");
             throw new BusinessException("用户名或密码错误");
         }
 
-        redisTemplate.delete(lockKey);
+        // 登录成功，清除所有失败计数
+        redisTemplate.delete(accountFailKey);
+        redisTemplate.delete(ipFailKey);
         recordLoginLog(username, "0", "登录成功");
 
         String token = jwtUtil.createToken(user.getId(), user.getUserName());
@@ -370,11 +402,53 @@ public class AuthServiceImpl implements IAuthService {
         AuthCookieUtil.clearAuthCookie(attributes.getResponse());
     }
 
-    private void recordLoginFailure(String lockKey) {
+    /**
+     * 读取账号失败计数并计算指数退避延迟。
+     * @return [failCount, delaySeconds]，若无记录返回 null
+     */
+    private List<Object> readAccountFailWithDelay(String accountFailKey) {
         try {
-            stringRedisTemplate.execute(LOGIN_FAIL_SCRIPT, List.of(lockKey), String.valueOf(LOGIN_LOCK_MINUTES));
+            Object value = redisTemplate.opsForValue().get(accountFailKey);
+            if (value instanceof Number) {
+                int failCount = ((Number) value).intValue();
+                long delay = Math.min(
+                    LOGIN_DELAY_BASE_SECONDS * (long) Math.pow(2, failCount - 1),
+                    LOGIN_MAX_DELAY_SECONDS
+                );
+                return List.of(failCount, delay);
+            }
         } catch (Exception e) {
-            log.warn("记录登录失败计数失败: {}", e.getMessage());
+            log.warn("读取账号失败计数失败: {}", e.getMessage());
+        }
+        return null;
+    }
+
+    /**
+     * 记录账号登录失败（仅递增计数，TTL 由 Lua 脚本管理）
+     */
+    private void recordAccountFailure(String accountFailKey) {
+        try {
+            stringRedisTemplate.execute(LOGIN_FAIL_SCRIPT, 
+                List.of(accountFailKey), 
+                String.valueOf(LOGIN_DELAY_BASE_SECONDS),
+                String.valueOf(LOGIN_MAX_DELAY_SECONDS));
+        } catch (Exception e) {
+            log.warn("记录账号登录失败计数失败: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * 记录 IP 登录失败（简单 INCR + EXPIRE）
+     */
+    private void incrementIpFail(String ipFailKey) {
+        try {
+            Long count = stringRedisTemplate.opsForValue().increment(ipFailKey);
+            if (count != null && count == 1) {
+                // 首次失败时设置 TTL（30分钟）
+                stringRedisTemplate.expire(ipFailKey, 30, TimeUnit.MINUTES);
+            }
+        } catch (Exception e) {
+            log.warn("记录 IP 登录失败计数失败: {}", e.getMessage());
         }
     }
 }
