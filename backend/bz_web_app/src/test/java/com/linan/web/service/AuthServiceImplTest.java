@@ -30,6 +30,7 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -141,10 +142,11 @@ class AuthServiceImplTest {
     @DisplayName("登录失败：账号已锁定时抛异常（指数退避）")
     void login_locked() {
         when(captchaService.validate(anyString(), anyString())).thenReturn(null);
-        
-        // Mock account fail with high delay (e.g., 5 failures -> 160 seconds delay)
-        when(stringRedisTemplate.execute(any(), any(), any(String[].class)))
-            .thenReturn(java.util.List.of(5L, 160L));
+
+        // 账号失败计数已存在：5 次失败 → 退避 10 * 2^4 = 160 秒。
+        // 实现从 redisTemplate 读取 account_fail:<username> 判定锁定，锁定时不得查询用户。
+        org.springframework.data.redis.core.ValueOperations<String, Object> valueOps = redisTemplate.opsForValue();
+        when(valueOps.get("account_fail:admin")).thenReturn(5L);
 
         LoginRequest req = new LoginRequest();
         req.setUsername("admin");
@@ -152,8 +154,9 @@ class AuthServiceImplTest {
         req.setCaptchaCode("x");
         req.setUuid("u");
 
-        // 验证会抛出业务异常（无论是账号锁定还是IP封禁）
-        assertThrows(BusinessException.class, () -> authService.login(req));
+        BusinessException ex = assertThrows(BusinessException.class, () -> authService.login(req));
+        assertTrue(ex.getMessage().contains("登录失败次数过多"),
+                "锁定时应抛出退避提示，实际: " + ex.getMessage());
         verify(userMapper, never()).selectOne(any());
     }
 
