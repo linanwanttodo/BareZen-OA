@@ -69,6 +69,10 @@ public class AuthServiceImpl implements IAuthService {
     @Value("${auth.register-enabled:false}")
     private boolean registerEnabled;
 
+    /** 上传根目录（与 LocalFileStorage / 静态资源映射同源），头像写入其下 avatar/ 子目录 */
+    @Value(com.linan.core.storage.FileStorage.UPLOAD_PATH_PROPERTY)
+    private String uploadPath;
+
     /** 登录失败锁定阈值 */
     private static final int LOGIN_MAX_ATTEMPTS = 5;
 
@@ -201,7 +205,8 @@ public class AuthServiceImpl implements IAuthService {
 
         String fileName = UUID.randomUUID().toString().replace("-", "") + suffix;
         String datePath = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy/MM/dd"));
-        String dirPath = System.getProperty("user.dir") + "/uploads/avatar/" + datePath;
+        String dirPath = com.linan.core.storage.FileStorage.resolveBasePath(uploadPath)
+                + "avatar/" + datePath;
         File dir = new File(dirPath);
         if (!dir.exists()) {
             dir.mkdirs();

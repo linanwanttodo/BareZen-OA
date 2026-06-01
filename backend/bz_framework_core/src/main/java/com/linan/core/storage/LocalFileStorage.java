@@ -32,13 +32,7 @@ public class LocalFileStorage implements FileStorage {
     private final String basePath;
 
     public LocalFileStorage(@Value("${barezen.upload-path:#{systemProperties['user.dir'] + '/uploads'}}") String uploadPath) {
-        if (uploadPath.startsWith("./") || uploadPath.startsWith("../") || uploadPath.equals(".")) {
-            this.basePath = new File(System.getProperty("user.dir"), uploadPath).getAbsolutePath() + "/";
-        } else if (!uploadPath.endsWith("/")) {
-            this.basePath = uploadPath + "/";
-        } else {
-            this.basePath = uploadPath;
-        }
+        this.basePath = FileStorage.resolveBasePath(uploadPath);
     }
 
     @Override

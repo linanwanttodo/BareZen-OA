@@ -106,4 +106,20 @@ class LocalFileStorageTest {
     void type_isLocal() {
         assertTrue("local".equals(storage().getType()));
     }
+
+    @Test
+    @DisplayName("resolveBasePath：相对路径按工作目录解析且末尾带 /")
+    void resolveBasePath_relative_resolvedAgainstUserDir() {
+        String base = FileStorage.resolveBasePath("./uploads");
+
+        assertTrue(base.equals(java.nio.file.Paths.get(System.getProperty("user.dir"), "uploads").toAbsolutePath().normalize() + "/"),
+                "相对路径应解析为工作目录下的绝对路径，实际: " + base);
+    }
+
+    @Test
+    @DisplayName("resolveBasePath：绝对路径原样保留并补末尾 /")
+    void resolveBasePath_absolute_keptWithTrailingSlash() {
+        assertTrue(FileStorage.resolveBasePath("/data/uploads").equals("/data/uploads/"));
+        assertTrue(FileStorage.resolveBasePath("/data/uploads/").equals("/data/uploads/"));
+    }
 }

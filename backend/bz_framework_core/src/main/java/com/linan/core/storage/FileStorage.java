@@ -1,5 +1,6 @@
 package com.linan.core.storage;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -16,6 +17,28 @@ import java.io.InputStream;
  * @author BareZen Team
  */
 public interface FileStorage {
+
+    /**
+     * 配置项：上传根目录（与 {@code barezen.upload-path} 同源）
+     */
+    String UPLOAD_PATH_PROPERTY = "${barezen.upload-path:#{systemProperties['user.dir'] + '/uploads'}}";
+
+    /**
+     * 解析上传根目录为绝对路径：相对路径（./、../、.）按工作目录解析并规范化，
+     * 末尾统一补 /。供 LocalFileStorage、头像上传、静态资源映射等使用，保证写入与读取同源。
+     */
+    static String resolveBasePath(String uploadPath) {
+        String root = uploadPath;
+        if (root.startsWith("./") || root.startsWith("../") || root.equals(".")) {
+            root = new File(System.getProperty("user.dir"), root).getAbsolutePath();
+        }
+        try {
+            root = new File(root).getCanonicalPath();
+        } catch (IOException e) {
+            // 规范化失败时保留原路径（极端文件系统场景），后续目录创建会再报错
+        }
+        return root.endsWith("/") ? root : root + "/";
+    }
 
     /**
      * 存储类型标识，写入 {@code sys_file.storage_type}（local / s3），供下载端选择读取方式

@@ -236,6 +236,27 @@ class AuthServiceImplTest {
     }
 
     @Test
+    @DisplayName("头像上传：写入 barezen.upload-path 配置目录而非 user.dir")
+    void uploadAvatar_usesConfiguredUploadPath(@org.junit.jupiter.api.io.TempDir java.nio.file.Path tempDir) throws Exception {
+        // 注入自定义上传根目录（生产由 Spring 填充 barezen.upload-path）
+        java.lang.reflect.Field f = AuthServiceImpl.class.getDeclaredField("uploadPath");
+        f.setAccessible(true);
+        f.set(authService, tempDir.toString());
+
+        when(userMapper.updateById(any(SysUser.class))).thenReturn(1);
+        org.springframework.mock.web.MockMultipartFile file = new org.springframework.mock.web.MockMultipartFile(
+                "file", "avatar.png", "image/png", new byte[]{1, 2, 3});
+
+        String avatarPath = authService.uploadAvatar(1L, file);
+
+        assertEquals(true, avatarPath.startsWith("/profile/avatar/"));
+        String relative = avatarPath.substring("/profile/".length());
+        java.io.File written = tempDir.resolve(relative).toFile();
+        assertEquals(true, written.exists(),
+                "头像应写入配置的上传目录，实际文件不存在: " + written.getAbsolutePath());
+    }
+
+    @Test
     @DisplayName("注册：关闭开关时抛异常")
     void register_disabled() throws Exception {
         java.lang.reflect.Field f = AuthServiceImpl.class.getDeclaredField("registerEnabled");

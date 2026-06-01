@@ -41,6 +41,10 @@ public class WebMvcConfig implements WebMvcConfigurer {
     @Value("${cors.allowed-origins:}")
     private String allowedOrigins;
 
+    /** 上传根目录（与 LocalFileStorage 同源），/profile/** 静态资源映射目标 */
+    @Value(com.linan.core.storage.FileStorage.UPLOAD_PATH_PROPERTY)
+    private String uploadPathConfig;
+
     /** JWT 过期时间（毫秒） */
     @Value("${jwt.expiration:86400000}")
     private long jwtExpiration;
@@ -172,9 +176,9 @@ public class WebMvcConfig implements WebMvcConfigurer {
     /**
      * 配置静态资源映射 —— 允许前端直接通过 URL 访问上传的文件（头像等）。
      *
-     * 将虚拟路径 /profile/** 映射到文件系统 <user.dir>/uploads/ 目录。
+     * 将虚拟路径 /profile/** 映射到上传根目录（barezen.upload-path，默认工作目录下 uploads/）。
      * 例如：访问 http://localhost:8080/profile/avatar/2025/01/01/xxx.png
-     *       实际读取 <user.dir>/uploads/avatar/2025/01/01/xxx.png
+     *       实际读取 <upload-path>/avatar/2025/01/01/xxx.png
      *
      * 这种方式适用于头像、公开图片等不需要鉴权的静态文件。
      * 若需权限控制的私有文件，请使用 SysFileController.download() 接口。
@@ -182,7 +186,8 @@ public class WebMvcConfig implements WebMvcConfigurer {
     @Override
     public void addResourceHandlers(@NonNull ResourceHandlerRegistry registry) {
         registry.addResourceHandler("/profile/**")
-                .addResourceLocations("file:./uploads/");
+                .addResourceLocations("file:" + com.linan.core.storage.FileStorage.resolveBasePath(
+                        uploadPathConfig));
     }
 
     /**
