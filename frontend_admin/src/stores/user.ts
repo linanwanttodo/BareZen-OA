@@ -86,7 +86,9 @@ export const useUserStore = defineStore('user', () => {
     connectNotification,
     disconnectNotification,
     () => {
-      // 登出后清空菜单/路由缓存
+      // 登出后清空权限状态与菜单/路由缓存，避免旧账号权限残留
+      roles.value = []
+      permissions.value = []
       usePermissionStore().resetPermission()
     }
   )

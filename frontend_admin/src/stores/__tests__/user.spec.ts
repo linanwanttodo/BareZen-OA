@@ -27,6 +27,7 @@ describe('userStore', () => {
     store.token = 'test-token'
     store.userInfo = { userName: 'admin' } as any
     store.roles = ['admin']
+    store.permissions = ['system:user:list']
 
     store.resetState()
 
