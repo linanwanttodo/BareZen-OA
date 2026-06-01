@@ -70,6 +70,10 @@ npm run dev
 - 用户名：`admin`
 - 密码：`admin123`
 
+> **注意**：`admin/admin123` 仅用于本地开发环境。该弱口令不满足生产强密码策略
+> （8 位+大小写+数字+特殊字符，见 `PasswordUtil.validatePasswordPolicy`），
+> **生产部署后必须立即改密**，禁止将默认账号用于任何对外环境。
+
 ## 项目结构
 
 ```
