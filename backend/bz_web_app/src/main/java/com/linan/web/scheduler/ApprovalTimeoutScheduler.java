@@ -72,7 +72,7 @@ public class ApprovalTimeoutScheduler {
     /**
      * 每天 09:30 执行待办超时扫描
      */
-    @Scheduled(cron = "0 30 9 * * ?")
+    @Scheduled(cron = "0 30 9 * * ?", zone = "Asia/Shanghai")
     public void checkTimeoutApprovals() {
         // SchedulerLockUtil 分布式锁（SET NX EX + Lua 原子释放）：多实例部署时同一时刻仅一个实例执行扫描
         String token = lockUtil.tryLock(TIMEOUT_LOCK_KEY, LOCK_EXPIRE_SECONDS);
