@@ -22,6 +22,8 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -113,8 +115,60 @@ class SysWebhookControllerTest {
         assertEquals("system:webhook:edit",
                 SysWebhookController.class.getMethod("changeStatus", Long.class, String.class)
                         .getAnnotation(RequirePermission.class).value()[0]);
+        assertEquals("system:webhook:edit",
+                SysWebhookController.class.getMethod("update", Long.class, Map.class)
+                        .getAnnotation(RequirePermission.class).value()[0]);
         assertEquals("system:webhook:delete",
                 SysWebhookController.class.getMethod("delete", Long.class)
                         .getAnnotation(RequirePermission.class).value()[0]);
+    }
+
+    @Test
+    @DisplayName("编辑 Webhook 成功")
+    void update_success() {
+        SysWebhook existing = new SysWebhook();
+        existing.setId(1L);
+        existing.setName("旧名称");
+        when(webhookService.getById(1L)).thenReturn(existing);
+        when(webhookService.updateById(any(SysWebhook.class))).thenReturn(true);
+
+        Result<Void> result = newController().update(1L, Map.of(
+                "name", "新名称",
+                "url", "https://new.example.com/hook",
+                "events", "approval.completed,leave.created",
+                "secret", "new-secret"));
+
+        assertEquals(200, result.getCode());
+        verify(webhookService).updateById(argThat(u ->
+                u.getId().equals(1L) &&
+                "新名称".equals(u.getName()) &&
+                u.getUrl().equals("https://new.example.com/hook") &&
+                u.getEvents().contains("leave.created") &&
+                "new-secret".equals(u.getSecret())));
+    }
+
+    @Test
+    @DisplayName("编辑 Webhook 不存在时返回错误")
+    void update_notFound() {
+        when(webhookService.getById(99L)).thenReturn(null);
+
+        Result<Void> result = newController().update(99L, Map.of("name", "新名称", "url", "https://ok.com", "events", "a"));
+
+        assertEquals(500, result.getCode());
+        assertEquals("订阅不存在", result.getMsg());
+    }
+
+    @Test
+    @DisplayName("编辑 Webhook 内网地址被 SSRF 拦截")
+    void update_internalUrlRejected() {
+        SysWebhook existing = new SysWebhook();
+        existing.setId(1L);
+        when(webhookService.getById(1L)).thenReturn(existing);
+
+        Result<Void> result = newController().update(1L, Map.of(
+                "name", "x", "url", "http://localhost:8080/hook", "events", "a"));
+
+        assertEquals(500, result.getCode());
+        assertTrue(result.getMsg().contains("内网地址"));
     }
 }

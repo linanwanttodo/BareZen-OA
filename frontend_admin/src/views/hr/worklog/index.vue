@@ -39,7 +39,7 @@
             <a-table-column :title="$t('worklog.userName')" data-index="userName" :width="100" />
             <a-table-column :title="$t('worklog.logType')" :width="90">
               <template #cell="{ record }">
-                <a-tag :color="record.logType === 'weekly' ? 'purple' : 'blue'">
+                <a-tag :color="record.logType === 'weekly' ? 'arcoblue' : 'gray'">
                   {{ record.logType === 'weekly' ? $t('worklog.typeWeekly') : $t('worklog.typeDaily') }}
                 </a-tag>
               </template>
@@ -106,15 +106,15 @@
     <a-modal v-model:visible="viewVisible" :title="$t('worklog.view')" :width="640" footer-only>
       <div v-if="currentLog">
         <div class="mb-3 flex items-center gap-2">
-          <a-tag :color="currentLog.logType === 'weekly' ? 'purple' : 'blue'">
+          <a-tag :color="currentLog.logType === 'weekly' ? 'arcoblue' : 'gray'">
             {{ currentLog.logType === 'weekly' ? $t('worklog.typeWeekly') : $t('worklog.typeDaily') }}
           </a-tag>
           <span class="text-sm text-[var(--muted-foreground)]">{{ currentLog.userName }} · {{ currentLog.logDate }}</span>
         </div>
-        <div class="whitespace-pre-wrap rounded-lg border border-[var(--border)] bg-[var(--muted)] p-4 text-sm leading-relaxed">
+        <div class="whitespace-pre-wrap rounded-wecom-md border border-[var(--wecom-border)] bg-[var(--wecom-bg-container)] p-4 text-sm leading-relaxed">
           {{ currentLog.content }}
         </div>
-        <div v-if="currentLog.reviewerName" class="mt-4 rounded-lg bg-[var(--muted)] p-3 text-sm">
+        <div v-if="currentLog.reviewerName" class="mt-4 rounded-wecom-md bg-[var(--wecom-bg-container)] p-3 text-sm">
           <div class="mb-1 font-medium">{{ $t('worklog.reviewRemark') }}：{{ currentLog.reviewerName }}（{{ currentLog.reviewTime }}）</div>
           <div class="text-[var(--muted-foreground)]">{{ currentLog.reviewRemark || '-' }}</div>
         </div>

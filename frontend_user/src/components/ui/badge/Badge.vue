@@ -13,7 +13,7 @@ const variants: Record<Variant, string> = {
   outline: 'border border-[var(--border)] text-[var(--foreground)]',
 }
 
-const cls = computed(() => cn('inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium', variants[props.variant]))
+const cls = computed(() => cn('inline-flex items-center rounded-wecom-sm px-2 py-0.5 text-xs font-medium', variants[props.variant]))
 </script>
 
 <template>

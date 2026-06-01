@@ -9,13 +9,13 @@ defineProps<{
 </script>
 
 <template>
-  <div class="flex items-center gap-3 rounded-lg border border-[var(--border)] bg-[var(--card)] p-5">
-    <div v-if="icon" class="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-[var(--muted)]">
-      <component :is="icon" class="h-5 w-5 text-[var(--foreground)]" />
+  <div class="flex items-center gap-3 rounded-wecom-md border border-[var(--wecom-border)] bg-[var(--wecom-bg-card)] p-5 shadow-wecom-sm">
+    <div v-if="icon" class="flex h-10 w-10 shrink-0 items-center justify-center rounded-wecom-sm bg-[var(--wecom-bg-container)]">
+      <component :is="icon" class="h-5 w-5 text-[var(--wecom-text-tertiary)]" />
     </div>
     <div>
-      <span class="text-sm text-[var(--muted-foreground)]">{{ label }}</span>
-      <p class="text-2xl font-bold text-[var(--foreground)]">{{ value }}</p>
+      <span class="text-sm text-[var(--wecom-text-tertiary)]">{{ label }}</span>
+      <p class="text-2xl font-semibold text-[var(--wecom-text-primary)]">{{ value }}</p>
     </div>
   </div>
 </template>

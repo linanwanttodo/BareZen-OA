@@ -2,21 +2,21 @@
   <div class="mx-auto max-w-4xl px-6 py-8">
     <div class="mb-6 flex items-center justify-between">
       <div>
-        <h1 class="text-2xl font-bold text-[var(--foreground)]">消息中心</h1>
-        <p class="mt-1 text-sm text-[var(--muted-foreground)]">离线通知兜底，登录后可查看未读消息</p>
+        <h1 class="text-xl font-semibold text-[var(--wecom-text-primary)]">{{ $t('message.title') }}</h1>
+        <p class="mt-1 text-sm text-[var(--muted-foreground)]">{{ $t('message.subtitle') }}</p>
       </div>
       <a-button type="primary" :disabled="unreadCount === 0" @click="onMarkAllRead">
         <template #icon><icon-check-circle /></template>
-        全部已读
+        {{ $t('message.markAllRead') }}
       </a-button>
     </div>
 
     <!-- 已读/未读筛选 -->
     <div class="mb-6">
       <a-radio-group v-model="readFilter" type="button" @change="onReadFilter">
-        <a-radio :value="undefined">全部</a-radio>
-        <a-radio :value="0">未读（{{ unreadCount }}）</a-radio>
-        <a-radio :value="1">已读</a-radio>
+        <a-radio :value="undefined">{{ $t('message.all') }}</a-radio>
+        <a-radio :value="0">{{ $t('message.unread') }}（{{ unreadCount }}）</a-radio>
+        <a-radio :value="1">{{ $t('message.read') }}</a-radio>
       </a-radio-group>
     </div>
 
@@ -26,9 +26,9 @@
         <div
           v-for="msg in messages"
           :key="msg.id"
-          class="cursor-pointer rounded-lg border bg-[var(--card)] p-5 transition-colors hover:border-[var(--primary)]"
-          :class="[msg.isRead === 1 ? 'border-[var(--border)]' : 'border-[var(--primary-light)] shadow-sm']"
-          @click="onMarkRead(msg)"
+          class="cursor-pointer rounded-wecom-md border border-[var(--wecom-border)] bg-[var(--wecom-bg-card)] p-5 transition-colors hover:border-[var(--primary)]"
+          :class="[msg.isRead === 1 ? 'border-[var(--wecom-border)]' : 'border-[var(--wecom-primary-light)] shadow-wecom-sm']"
+          @click="goDetail(msg)"
         >
           <div class="mb-1 flex items-center gap-2">
             <span
@@ -46,7 +46,7 @@
           </p>
         </div>
       </div>
-      <a-empty v-else description="暂无消息" />
+      <a-empty v-else :description="$t('message.noData')" />
     </a-spin>
 
     <!-- 分页 -->
@@ -64,6 +64,8 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { Message } from '@arco-design/web-vue'
 import { IconCheckCircle } from '@arco-design/web-vue/es/icon'
 import { getMyMessagesApi, getUnreadCountApi, markMessageReadApi, markAllMessagesReadApi } from '@/api/message'
@@ -77,13 +79,20 @@ const currentPage = ref(1)
 const pageSize = ref(10)
 const unreadCount = ref(0)
 const readFilter = ref<number | undefined>(undefined)
+const { t } = useI18n()
+const router = useRouter()
 
 function msgTypeLabel(type: string) {
-  return { approval: '审批', system: '系统', notice: '公告' }[type] || '通知'
+  const map: Record<string, string> = { approval: 'message.approval', system: 'message.system', notice: 'message.notice' }
+  return t(map[type] || 'message.notification')
 }
 
 function msgTypeColor(type: string) {
   return { approval: 'arcoblue', system: 'gray', notice: 'green' }[type] || 'gray'
+}
+
+function goDetail(msg: SysMessage) {
+  router.push(`/messages/${msg.id}`)
 }
 
 async function loadUnreadCount() {

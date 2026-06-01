@@ -147,6 +147,55 @@ public class SysWebhookController {
     }
 
     /**
+     * 编辑 Webhook（更新名称、URL、secret、事件）
+     *
+     * <p>body: {@code {"name":"xxx", "url":"https://...", "secret":"可选", "events":"approval.completed"}}
+     * secret 可选传空字符串则清空。</p>
+     */
+    @RequirePermission("system:webhook:edit")
+    @OperLog(title = "开放平台 Webhook", businessType = 2)
+    @Operation(summary = "编辑 Webhook")
+    @PutMapping("/{id}")
+    public Result<Void> update(
+            @Parameter(description = "订阅ID") @PathVariable Long id,
+            @RequestBody Map<String, String> body) {
+        SysWebhook webhook = webhookService.getById(id);
+        if (webhook == null) {
+            return Result.error("订阅不存在");
+        }
+        String name = body.get("name");
+        String url = body.get("url");
+        String events = body.get("events");
+        if (name == null || name.isBlank()) {
+            return Result.error("订阅名称不能为空");
+        }
+        if (name.length() > 50) {
+            return Result.error("订阅名称不能超过 50 个字符");
+        }
+        if (url == null || url.isBlank()) {
+            return Result.error("回调地址不能为空");
+        }
+        if (!(url.startsWith("http://") || url.startsWith("https://"))) {
+            return Result.error("回调地址必须以 http:// 或 https:// 开头");
+        }
+        // SSRF 防护：禁止回调内网地址
+        if (SysWebhookServiceImpl.isInternalUrl(url.trim())) {
+            return Result.error("回调地址不允许指向内网地址（如 localhost / 192.168.x.x 等）");
+        }
+        if (events == null || events.isBlank()) {
+            return Result.error("订阅事件不能为空");
+        }
+        SysWebhook update = new SysWebhook();
+        update.setId(id);
+        update.setName(name.trim());
+        update.setUrl(url.trim());
+        update.setSecret(body.get("secret"));
+        update.setEvents(events.trim());
+        boolean ok = webhookService.updateById(update);
+        return ok ? Result.success(null) : Result.error("编辑失败");
+    }
+
+    /**
      * 删除 Webhook 订阅（逻辑删除）
      */
     @RequirePermission("system:webhook:delete")

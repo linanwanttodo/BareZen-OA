@@ -84,6 +84,41 @@
   --bz-warning: var(--wecom-warning);
   --bz-danger: var(--wecom-error);
 
+  /* ── Arco 色阶桥接：让所有 Arco 组件（按钮/标签/表格/弹窗/菜单）走企业微信色板 ──
+     Arco 的 --gray-N / --arcoblue-N 为 RGB 三元组，覆盖后其语义变量
+     （--color-text-* / --color-bg-* / --color-fill-* / --color-border-* / --primary-*）自动跟随 */
+
+  /* 品牌色阶 → 腾讯蓝 #2B7CE9 */
+  --arcoblue-1: 232, 243, 254;
+  --arcoblue-2: 200, 225, 252;
+  --arcoblue-3: 163, 203, 248;
+  --arcoblue-4: 122, 178, 244;
+  --arcoblue-5: 79, 151, 238;
+  --arcoblue-6: 43, 124, 233;   /* = --wecom-primary */
+  --arcoblue-7: 26, 111, 216;   /* = --wecom-primary-hover */
+  --arcoblue-8: 15, 95, 194;    /* = --wecom-primary-active */
+  --arcoblue-9: 12, 77, 158;
+  --arcoblue-10: 9, 58, 120;
+
+  /* 中性灰阶 → 企业微信中性色 */
+  --gray-1: 250, 250, 250;      /* #FAFAFA 悬停/容器底 */
+  --gray-2: 245, 245, 245;      /* #F5F5F5 页面底 */
+  --gray-3: 232, 232, 232;      /* #E8E8E8 常规边框 */
+  --gray-4: 217, 217, 217;      /* #D9D9D9 强调边框 */
+  --gray-5: 191, 191, 191;      /* #BFBFBF 禁用文字 */
+  --gray-6: 140, 140, 140;      /* #8C8C8C 辅助文字 */
+  --gray-7: 113, 113, 113;
+  --gray-8: 89, 89, 89;         /* #595959 次要文字 */
+  --gray-9: 58, 58, 58;
+  --gray-10: 38, 38, 38;        /* #262626 主要文字 */
+
+  /* 功能色主体对齐（标签/状态点用色的 6 级） */
+  --blue-6: 24, 144, 255;       /* info #1890FF */
+  --green-6: 82, 196, 26;       /* success #52C41A */
+  --orange-6: 250, 173, 20;     /* warning #FAAD14 */
+  --gold-6: 250, 173, 20;
+  --red-6: 245, 34, 45;         /* error #F5222D */
+
   /* ── shadcn 兼容层（映射到新变量）── */
   --background: var(--wecom-bg-page);
   --foreground: var(--wecom-text-primary);
@@ -107,7 +142,48 @@
   --radius: var(--wecom-radius-md);
 }
 
-/* ===== 2. 全局重置 ===== */
+/* ===== 2. Arco 组件微调（对齐企业微信交互规范） ===== */
+
+/* 主按钮：悬停加深、按下再加深（Arco 默认悬停变浅，不符合 wecom 规范） */
+.arco-btn-primary {
+  background-color: var(--wecom-primary);
+  border-color: var(--wecom-primary);
+}
+.arco-btn-primary:not(:disabled):hover {
+  background-color: var(--wecom-primary-hover);
+  border-color: var(--wecom-primary-hover);
+}
+.arco-btn-primary:not(:disabled):active {
+  background-color: var(--wecom-primary-active);
+  border-color: var(--wecom-primary-active);
+}
+
+/* 输入类组件聚焦：使用 wecom 焦点边框，去掉 Arco 默认光晕 */
+.arco-input-wrapper:focus-within,
+.arco-textarea-wrapper:focus-within,
+.arco-select-view-focus {
+  border-color: var(--wecom-border-focus) !important;
+  box-shadow: none !important;
+}
+
+/* 表格：表头浅灰、行悬停浅灰，去掉多余强调 */
+.arco-table-th {
+  background-color: var(--wecom-bg-container);
+  font-weight: 500;
+  color: var(--wecom-text-secondary);
+}
+
+/* 卡片：Arco 默认直角，按 wecom 规范改为 4px 中圆角 */
+.arco-card {
+  border-radius: var(--wecom-radius-md);
+}
+
+/* 弹窗/下拉：阴影按 wecom 层级 */
+.arco-modal {
+  box-shadow: var(--wecom-shadow-lg);
+}
+
+/* ===== 3. 全局重置 ===== */
 *,
 *::before,
 *::after {
@@ -153,7 +229,7 @@ body {
   min-height: 100vh;
   margin: 0;
   padding: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'PingFang SC', 'Microsoft YaHei', 'Helvetica Neue', Arial, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', 'Helvetica Neue', Arial, sans-serif;
   font-size: 14px;
   line-height: 1.6;
   color: var(--foreground);
@@ -164,14 +240,14 @@ body {
   min-height: 100vh;
 }
 
-/* ===== 3. 焦点样式（无障碍） ===== */
+/* ===== 4. 焦点样式（无障碍） ===== */
 :focus-visible {
   outline: 2px solid var(--ring);
   outline-offset: 2px;
   border-radius: var(--radius);
 }
 
-/* ===== 4. 减少动效 ===== */
+/* ===== 5. 减少动效 ===== */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -183,7 +259,7 @@ body {
   }
 }
 
-/* ===== 5. 滚动条 ===== */
+/* ===== 6. 滚动条 ===== */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -192,20 +268,20 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #d4d4d8;
+  background: var(--wecom-border-strong);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #a1a1aa;
+  background: var(--wecom-text-disabled);
 }
 
-/* ===== 6. NProgress ===== */
+/* ===== 7. NProgress ===== */
 #nprogress .bar {
   background: var(--primary) !important;
   height: 2px !important;
 }
 
-/* ===== 7. 路由切换 ===== */
+/* ===== 8. 路由切换 ===== */
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.15s ease;
@@ -215,12 +291,12 @@ body {
   opacity: 0;
 }
 
-/* ===== 8. 选中文字颜色 ===== */
+/* ===== 9. 选中文字颜色 ===== */
 ::selection {
-  background: rgba(51, 112, 255, 0.15);
+  background: var(--wecom-primary-light);
 }
 
-/* ===== 9. 富文本（公告详情） ===== */
+/* ===== 10. 富文本（公告详情） ===== */
 .prose :where(img) {
   max-width: 100%;
   border-radius: var(--radius);

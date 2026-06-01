@@ -77,6 +77,11 @@ export function addBookingApi(data: Partial<OfficeMeetingBooking>) {
   return request.post<void>('/office/v1/bookings', data)
 }
 
+/** 编辑会议预订 */
+export function updateBookingApi(data: Partial<OfficeMeetingBooking>) {
+  return request.put<void>(`/office/v1/bookings/${data.id}`, data)
+}
+
 /** 删除会议预订 */
 export function deleteBookingApi(id: string) {
   return request.delete<void>(`/office/v1/bookings/${id}`)

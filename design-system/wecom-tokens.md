@@ -346,7 +346,7 @@ transition: all 0.2s ease-in-out;
 
 ## 9. 最佳实践
 
-### 9.1 Do's 是
+### 9.1 Do's
 
 - 使用 CSS 变量而非硬编码色值
 - 遵循 8px 网格系统
@@ -355,7 +355,7 @@ transition: all 0.2s ease-in-out;
 - 为交互元素添加过渡动画
 - 确保文字对比度符合 WCAG 标准
 
-### 9.2 Don'ts 否
+### 9.2 Don'ts
 
 - 不要使用渐变背景
 - 不要使用霓虹发光效果

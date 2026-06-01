@@ -2,16 +2,16 @@
   <div class="mx-auto max-w-6xl px-6 py-8">
     <!-- 头部 -->
     <div class="mb-6">
-      <h1 class="text-2xl font-bold text-[var(--foreground)]">{{ $t('clock.title') }}</h1>
+      <h1 class="text-xl font-semibold text-[var(--wecom-text-primary)]">{{ $t('clock.title') }}</h1>
       <p class="mt-1 text-sm text-[var(--muted-foreground)]">{{ $t('clock.subtitle') }}</p>
     </div>
 
     <!-- 今日打卡 -->
-    <div class="mb-6 rounded-xl border border-[var(--border)] bg-[var(--card)] p-6">
+    <div class="mb-6 rounded-wecom-md border border-[var(--wecom-border)] bg-[var(--wecom-bg-card)] p-6 shadow-wecom-sm">
       <div class="flex flex-col items-center justify-between gap-6 md:flex-row">
         <div class="text-center md:text-left">
           <p class="text-sm text-[var(--muted-foreground)]">{{ todayText }}</p>
-          <p class="mt-2 font-mono text-4xl font-semibold tracking-wide text-[var(--foreground)]">{{ nowTime }}</p>
+          <p class="mt-2 text-3xl font-semibold text-[var(--wecom-text-primary)]">{{ nowTime }}</p>
           <div class="mt-3 flex items-center justify-center gap-2 md:justify-start">
             <span class="h-2.5 w-2.5 rounded-full" :class="todayDotClass"></span>
             <span class="text-sm" :class="todayStatusTextClass">{{ todayStatusText }}</span>
@@ -66,7 +66,7 @@
     </div>
 
     <!-- 月度回顾 -->
-    <div class="rounded-xl border border-[var(--border)] bg-[var(--card)] p-6">
+    <div class="rounded-wecom-md border border-[var(--wecom-border)] bg-[var(--wecom-bg-card)] p-6 shadow-wecom-sm">
       <div class="mb-5 flex items-center justify-between">
         <h2 class="text-lg font-semibold text-[var(--foreground)]">{{ $t('clock.monthly') }}</h2>
         <div class="flex items-center gap-2">
@@ -83,23 +83,23 @@
 
       <!-- 月度统计 -->
       <div class="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <div class="rounded-lg border border-[var(--border)] bg-[var(--muted)] p-4">
+        <div class="rounded-wecom-md border border-[var(--wecom-border)] bg-[var(--wecom-bg-container)] p-4">
           <p class="text-xs text-[var(--muted-foreground)]">{{ $t('clock.workDays') }}</p>
           <p class="mt-1 text-2xl font-semibold text-[var(--foreground)]">{{ monthStats.workDays }}</p>
         </div>
-        <div class="rounded-lg border border-[var(--border)] bg-[var(--muted)] p-4">
+        <div class="rounded-wecom-md border border-[var(--wecom-border)] bg-[var(--wecom-bg-container)] p-4">
           <p class="text-xs text-[var(--muted-foreground)]">{{ $t('clock.lateCount') }}</p>
           <p class="mt-1 text-2xl font-semibold" :class="monthStats.lateCount > 0 ? 'text-[var(--bz-warning)]' : 'text-[var(--foreground)]'">
             {{ monthStats.lateCount }}
           </p>
         </div>
-        <div class="rounded-lg border border-[var(--border)] bg-[var(--muted)] p-4">
+        <div class="rounded-wecom-md border border-[var(--wecom-border)] bg-[var(--wecom-bg-container)] p-4">
           <p class="text-xs text-[var(--muted-foreground)]">{{ $t('clock.earlyCount') }}</p>
           <p class="mt-1 text-2xl font-semibold" :class="monthStats.earlyCount > 0 ? 'text-[var(--bz-warning)]' : 'text-[var(--foreground)]'">
             {{ monthStats.earlyCount }}
           </p>
         </div>
-        <div class="rounded-lg border border-[var(--border)] bg-[var(--muted)] p-4">
+        <div class="rounded-wecom-md border border-[var(--wecom-border)] bg-[var(--wecom-bg-container)] p-4">
           <p class="text-xs text-[var(--muted-foreground)]">{{ $t('clock.absentDays') }}</p>
           <p class="mt-1 text-2xl font-semibold" :class="monthStats.absentDays > 0 ? 'text-[var(--bz-danger)]' : 'text-[var(--foreground)]'">
             {{ monthStats.absentDays }}
@@ -113,7 +113,7 @@
         <div
           v-for="cell in calendarCells"
           :key="cell.dateStr"
-          class="flex aspect-square flex-col items-center justify-center rounded-lg border text-sm"
+          class="flex aspect-square flex-col items-center justify-center rounded-wecom-sm border text-sm"
           :class="cellClass(cell)"
         >
           <span>{{ cell.day }}</span>
@@ -279,12 +279,12 @@ const calendarCells = computed<CalendarCell[]>(() => {
   return cells
 })
 
-/** 格子底色：空占位透明；今天描边高亮；未来/周末淡化 */
+/** 格子底色：空占位透明；今天浅蓝底高亮；未来/周末淡化 */
 function cellClass(cell: CalendarCell): string {
   if (!cell.dateStr) return 'border-transparent'
-  const base = 'border-[var(--border)]'
-  if (cell.isToday) return `${base} border-[var(--primary)] ring-1 ring-[var(--primary)]`
-  if (cell.record || (cell.isPast && !cell.isWeekend)) return `${base} bg-[var(--muted)]`
+  const base = 'border-[var(--wecom-border)]'
+  if (cell.isToday) return `${base} border-[var(--wecom-primary)] bg-[var(--wecom-primary-light)]`
+  if (cell.record || (cell.isPast && !cell.isWeekend)) return `${base} bg-[var(--wecom-bg-container)]`
   return `${base} bg-transparent opacity-60`
 }
 
@@ -293,7 +293,7 @@ function cellDotClass(cell: CalendarCell): string {
   const status = cell.record?.status
   if (cell.record) {
     if (status === 'late') return 'bg-[var(--bz-warning)]'
-    if (status === 'early') return 'bg-amber-500'
+    if (status === 'early') return 'bg-wecom-warning'
     if (status === 'absent' || status === 'abnormal') return 'bg-[var(--bz-danger)]'
     return 'bg-[var(--bz-success)]'
   }
@@ -320,7 +320,7 @@ const monthStats = computed(() => {
 const legends = computed(() => [
   { label: i18nText('statusNormal'), dotClass: 'bg-[var(--bz-success)]' },
   { label: i18nText('statusLate'), dotClass: 'bg-[var(--bz-warning)]' },
-  { label: i18nText('statusEarly'), dotClass: 'bg-amber-500' },
+  { label: i18nText('statusEarly'), dotClass: 'bg-wecom-warning' },
   { label: i18nText('statusAbsent'), dotClass: 'bg-[var(--bz-danger)]' },
 ])
 

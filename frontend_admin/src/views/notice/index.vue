@@ -46,7 +46,7 @@
               </a-table-column>
               <a-table-column :title="$t('notice.noticeType')" :width="100">
                 <template #cell="{ record }">
-                  <a-tag :color="record.noticeType === '1' ? 'arcoblue' : 'purple'">{{ record.noticeType === '1' ? $t('notice.typeNotice') : $t('notice.typeAnnouncement') }}</a-tag>
+                  <a-tag :color="record.noticeType === '1' ? 'arcoblue' : 'gray'">{{ record.noticeType === '1' ? $t('notice.typeNotice') : $t('notice.typeAnnouncement') }}</a-tag>
                 </template>
               </a-table-column>
               <a-table-column :title="$t('notice.scope')" :width="120">
@@ -103,10 +103,10 @@
 
     <a-modal v-model:visible="formDialogVisible" :title="formType === 'add' ? $t('notice.addNotice') : $t('notice.editNotice')" @cancel="formDialogVisible = false">
       <div class="flex flex-col gap-4">
-        <div v-if="formError" class="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">{{ formError }}</div>
+        <div v-if="formError" class="rounded border border-wecom-error-light bg-wecom-error-light px-3 py-2 text-sm text-wecom-error">{{ formError }}</div>
         <div class="grid grid-cols-3 gap-4">
           <div class="col-span-2 flex flex-col gap-1.5">
-            <span class="text-sm text-[var(--foreground)]">{{ $t('notice.noticeTitle') }} <span class="text-red-500">*</span></span>
+            <span class="text-sm text-[var(--foreground)]">{{ $t('notice.noticeTitle') }} <span class="text-wecom-error">*</span></span>
             <a-input v-model="formData.noticeTitle" :placeholder="$t('notice.noticePlaceholder')" />
           </div>
           <div class="flex flex-col gap-1.5">
@@ -118,7 +118,7 @@
           </div>
         </div>
         <div class="flex flex-col gap-1.5">
-          <span class="text-sm text-[var(--foreground)]">{{ $t('notice.noticeContent') }} <span class="text-red-500">*</span></span>
+          <span class="text-sm text-[var(--foreground)]">{{ $t('notice.noticeContent') }} <span class="text-wecom-error">*</span></span>
           <a-textarea v-model="formData.noticeContent" :placeholder="$t('notice.noticeContent')" style="min-height: 120px" />
         </div>
         <div class="flex flex-col gap-1.5">
@@ -150,7 +150,7 @@
     <a-modal v-model:visible="detailVisible" :title="detailData?.noticeTitle || $t('notice.title')" @cancel="detailVisible = false">
       <div v-if="detailData">
         <div class="mb-4 flex flex-wrap items-center gap-2">
-          <a-tag :color="detailData.noticeType === '1' ? 'arcoblue' : 'purple'">{{ detailData.noticeType === '1' ? $t('notice.typeNotice') : $t('notice.typeAnnouncement') }}</a-tag>
+          <a-tag :color="detailData.noticeType === '1' ? 'arcoblue' : 'gray'">{{ detailData.noticeType === '1' ? $t('notice.typeNotice') : $t('notice.typeAnnouncement') }}</a-tag>
           <a-tag bordered>{{ detailData.scope === 'public' ? $t('notice.public') : detailData.scope === 'internal' ? $t('notice.internal') : $t('user.unknown') }}</a-tag>
           <a-tag v-if="detailData.status === '1'" color="arcoblue">{{ noticeStatusText(detailData.status) }}</a-tag>
           <a-tag v-else bordered>{{ noticeStatusText(detailData.status) }}</a-tag>

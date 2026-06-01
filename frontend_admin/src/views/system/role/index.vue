@@ -145,7 +145,7 @@
     >
       <div v-if="currentRole" class="mb-3">
         <a-space>
-          <span style="color: #86909C">{{ $t('common.currentRole') }}</span>
+          <span style="color: var(--wecom-text-tertiary)">{{ $t('common.currentRole') }}</span>
           <span style="font-weight: 500">{{ currentRole.roleName }}（{{ currentRole.roleKey }}）</span>
         </a-space>
       </div>
@@ -153,7 +153,7 @@
         <a-button size="small" @click="handleExpandAll">{{ $t('role.expandCollapse') }}</a-button>
         <a-button size="small" @click="handleCheckAll">{{ $t('role.checkAll') }}</a-button>
       </a-space>
-      <div class="max-h-[360px] overflow-y-auto border rounded p-2" style="border-color: #E5E6EB">
+      <div class="max-h-[360px] overflow-y-auto border rounded p-2" style="border-color: var(--wecom-border)">
         <div v-for="item in menuFlatRows" :key="item.node.id" class="flex items-center py-1.5" :style="{ paddingLeft: item.depth * 16 + 'px' }">
           <icon-right v-if="item.hasChildren && !menuExpandedIds.includes(item.node.id)" class="cursor-pointer mr-1" @click="toggleMenuExpand(item.node.id)" />
           <icon-down v-if="item.hasChildren && menuExpandedIds.includes(item.node.id)" class="cursor-pointer mr-1" @click="toggleMenuExpand(item.node.id)" />

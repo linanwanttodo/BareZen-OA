@@ -40,13 +40,13 @@ function handleSelect(value: string | number | Record<string, any> | undefined) 
   gap: 4px;
   padding: 4px 8px;
   cursor: pointer;
-  border-radius: 6px;
-  color: var(--muted-foreground, #666);
-  transition: background 0.15s, color 0.15s;
+  border-radius: var(--wecom-radius-md);
+  color: var(--wecom-text-secondary);
+  transition: background var(--wecom-transition-fast), color var(--wecom-transition-fast);
 }
 .lang-switch:hover {
-  background: var(--hover-bg, #f5f5f5);
-  color: var(--foreground, #333);
+  background: var(--wecom-bg-hover);
+  color: var(--wecom-text-primary);
 }
 .lang-switch__label {
   font-size: 13px;

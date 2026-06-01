@@ -85,8 +85,24 @@
     </a-card>
 
     <!-- 审批弹窗 -->
-    <a-modal v-model:visible="approveVisible" :title="$t('todoCenter.approve')" :width="480"
-             @ok="handleApprove" @cancel="approveVisible = false" :ok-loading="approving">
+    <a-modal v-model:visible="approveVisible" :title="$t('todoCenter.approve')" :width="520"
+             @ok="handleApprove" @cancel="approveVisible = false" :ok-loading="approving"
+             :ok-button-props="{ disabled: !approveForm.item }">
+      <template v-if="approveForm.item">
+        <a-card class="mb-4" :bordered="false" style="background: var(--color-fill-2)">
+          <a-descriptions :column="2" size="small" layout="horizontal">
+            <a-descriptions-item :label="$t('todoCenter.type')" :span="2">
+              <a-tag :color="approveForm.item.type === 'leave' ? 'blue' : 'orange'">{{ approveForm.item.typeName }}</a-tag>
+            </a-descriptions-item>
+            <a-descriptions-item :label="$t('todoCenter.title')" :span="2">{{ approveForm.item.title }}</a-descriptions-item>
+            <a-descriptions-item :label="$t('todoCenter.applicant')">{{ approveForm.item.applicantName }}</a-descriptions-item>
+            <a-descriptions-item :label="$t('todoCenter.applyTime')">{{ approveForm.item.createTime }}</a-descriptions-item>
+            <a-descriptions-item :label="$t('todoCenter.timeRange')" :span="2">
+              {{ approveForm.item.startTime }} ~ {{ approveForm.item.endTime }}
+            </a-descriptions-item>
+          </a-descriptions>
+        </a-card>
+      </template>
       <a-form :model="approveForm" layout="vertical">
         <a-form-item :label="$t('todoCenter.approveAction')" required>
           <a-radio-group v-model="approveForm.action" type="button">

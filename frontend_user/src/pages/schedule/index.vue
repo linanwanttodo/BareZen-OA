@@ -2,7 +2,7 @@
   <div class="mx-auto max-w-6xl px-6 py-8">
     <div class="mb-6 flex items-center justify-between">
       <div>
-        <h1 class="text-2xl font-bold text-[var(--foreground)]">{{ $t('schedule.title') }}</h1>
+        <h1 class="text-xl font-semibold text-[var(--wecom-text-primary)]">{{ $t('schedule.title') }}</h1>
         <p class="mt-1 text-sm text-[var(--muted-foreground)]">{{ $t('schedule.subtitle') }}</p>
       </div>
       <a-button type="primary" @click="openAdd">
@@ -27,7 +27,7 @@
         <div
           v-for="item in schedules"
           :key="item.id"
-          class="flex items-start gap-4 rounded-lg border border-[var(--border)] bg-[var(--card)] p-5"
+          class="flex items-start gap-4 rounded-wecom-md border border-[var(--wecom-border)] bg-[var(--wecom-bg-card)] p-5"
           :class="{ 'opacity-60': item.status === '2' || item.status === '3' }"
         >
           <div class="mt-0.5 w-40 shrink-0 text-sm">

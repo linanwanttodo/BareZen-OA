@@ -33,7 +33,7 @@
           <div class="filter-title">
             <icon-branch :size="16" />
             <span>{{ $t('roleDept.deptFilter') }}</span>
-            <a-tag v-if="selectedDeptIds.length" color="purple">{{ selectedDeptIds.length }}</a-tag>
+            <a-tag v-if="selectedDeptIds.length" color="arcoblue">{{ selectedDeptIds.length }}</a-tag>
           </div>
           <div class="filter-list">
             <div v-for="item in deptFlat" :key="item.node.id" class="flex items-center gap-2 py-1" :style="{ paddingLeft: item.depth * 16 + 'px' }">
@@ -467,16 +467,16 @@ onMounted(() => {
   border-radius: 50%;
 }
 .online-indicator.online {
-  color: #00B42A;
+  color: var(--wecom-success);
 }
 .online-indicator.online .dot {
-  background: #00B42A;
+  background: var(--wecom-success);
 }
 .online-indicator.offline {
-  color: #86909C;
+  color: var(--wecom-text-tertiary);
 }
 .online-indicator.offline .dot {
-  background: #C9CDD4;
+  background: var(--wecom-text-disabled);
 }
 
 .pagination-bar {

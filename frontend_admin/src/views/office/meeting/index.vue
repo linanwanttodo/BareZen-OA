@@ -193,7 +193,7 @@ function openRoomAdd() {
   roomForm.roomName = ''
   roomForm.capacity = undefined
   roomForm.location = ''
-  roomForm.description = ''
+  roomForm.equipment = ''
   roomDialogVisible.value = true
 }
 
@@ -205,7 +205,7 @@ function cancelRoomEdit() {
     roomForm.roomName = ''
     roomForm.capacity = undefined
     roomForm.location = ''
-    roomForm.description = ''
+    roomForm.equipment = ''
   }
 }
 

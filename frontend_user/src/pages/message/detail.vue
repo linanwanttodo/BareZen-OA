@@ -5,11 +5,11 @@
         <template #icon><icon-left /></template>
         返回
       </a-button>
-      <h1 class="text-2xl font-bold text-[var(--foreground)]">{{ $t('message.detail') }}</h1>
+      <h1 class="text-xl font-semibold text-[var(--wecom-text-primary)]">{{ $t('message.detail') }}</h1>
     </div>
 
     <a-spin :loading="loading">
-      <div v-if="message" class="rounded-lg border border-[var(--border)] bg-[var(--card)] p-6">
+      <div v-if="message" class="rounded-wecom-md border border-[var(--wecom-border)] bg-[var(--wecom-bg-card)] p-6">
         <div class="mb-4 flex items-center gap-2">
           <a-tag :color="tagColor" size="small">{{ tagLabel }}</a-tag>
           <span class="text-xs text-[var(--muted-foreground)]">{{ formatDate(message.createTime) }}</span>
@@ -28,6 +28,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
+import { Message } from '@arco-design/web-vue'
 import { IconLeft } from '@arco-design/web-vue/es/icon'
 import { getMessageDetailApi } from '@/api/message'
 import type { SysMessage } from '@/types/api'

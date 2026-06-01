@@ -181,7 +181,7 @@
     >
       <div v-if="currentUser" class="mb-3">
         <a-space>
-          <span style="color: #86909C">{{ $t('common.currentUser') }}</span>
+          <span style="color: var(--wecom-text-tertiary)">{{ $t('common.currentUser') }}</span>
           <span style="font-weight: 500">{{ currentUser.nickName }}（{{ currentUser.userName }}）</span>
         </a-space>
       </div>
@@ -203,7 +203,7 @@
     >
       <div v-if="currentUser" class="mb-3">
         <a-space>
-          <span style="color: #86909C">{{ $t('common.currentUser') }}</span>
+          <span style="color: var(--wecom-text-tertiary)">{{ $t('common.currentUser') }}</span>
           <span style="font-weight: 500">{{ currentUser.nickName }}（{{ currentUser.userName }}）</span>
         </a-space>
       </div>
@@ -211,12 +211,12 @@
         <a-form-item field="password" :label="$t('user.newPassword')" :rules="[{ required: true, message: $t('user.newPassword') + $t('validation.required', { field: '' }) }]">
           <a-input-password v-model="resetPwdData.password" :placeholder="$t('user.newPassword')" />
         </a-form-item>
-        <div v-if="resetPwdData.password" class="mb-4 rounded-md bg-[var(--muted)] p-3 text-xs text-[var(--muted-foreground)]">
+        <div v-if="resetPwdData.password" class="mb-4 rounded-wecom-md bg-[var(--wecom-bg-container)] p-3 text-xs">
           <p class="mb-1 font-medium">{{ $t('user.pwdPolicyTitle') }}</p>
-          <p v-for="rule in passwordRules" :key="rule.label">
-            <span :class="rule.valid ? 'text-[var(--bz-success)]' : 'text-[var(--muted-foreground)]'">
-              {{ rule.valid ? '已满足' : '未满足' }} {{ rule.label }}
-            </span>
+          <p v-for="rule in passwordRules" :key="rule.label" class="flex items-center gap-1.5" :class="rule.valid ? 'text-[var(--wecom-success)]' : 'text-[var(--wecom-text-tertiary)]'">
+            <icon-check v-if="rule.valid" :size="12" />
+            <icon-minus v-else :size="12" />
+            <span>{{ rule.label }}</span>
           </p>
         </div>
       </a-form>
@@ -237,11 +237,13 @@
         :placeholder="$t('user.batchPlaceholder')"
         :auto-size="{ minRows: 8, maxRows: 16 }"
       />
-      <div v-if="batchError" class="mt-3 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">{{ batchError }}</div>
-      <div class="mt-3 rounded-md bg-[var(--muted)] p-3 text-xs text-[var(--muted-foreground)]">
+      <div v-if="batchError" class="mt-3 rounded border border-wecom-error-light bg-wecom-error-light px-3 py-2 text-sm text-wecom-error">{{ batchError }}</div>
+      <div class="mt-3 rounded-wecom-md bg-[var(--wecom-bg-container)] p-3 text-xs">
         <p class="mb-1 font-medium">{{ $t('user.pwdPolicyTitle') }}</p>
-        <p v-for="rule in batchPasswordRules" :key="rule.label" :class="rule.valid ? 'text-[var(--bz-success)]' : 'text-[var(--muted-foreground)]'">
-          {{ rule.valid ? '已满足' : '未满足' }} {{ rule.label }}
+        <p v-for="rule in batchPasswordRules" :key="rule.label" class="flex items-center gap-1.5" :class="rule.valid ? 'text-[var(--wecom-success)]' : 'text-[var(--wecom-text-tertiary)]'">
+          <icon-check v-if="rule.valid" :size="12" />
+          <icon-minus v-else :size="12" />
+          <span>{{ rule.label }}</span>
         </p>
       </div>
     </a-modal>
@@ -257,12 +259,12 @@
     >
       <div v-if="currentUser" class="mb-3">
         <a-space>
-          <span style="color: #86909C">{{ $t('common.currentUser') }}</span>
+          <span style="color: var(--wecom-text-tertiary)">{{ $t('common.currentUser') }}</span>
           <span style="font-weight: 500">{{ currentUser.nickName }}（{{ currentUser.userName }}）</span>
         </a-space>
       </div>
       <a-empty v-if="deptFlat.length === 0" :description="$t('common.noDeptData')" />
-      <div v-else class="max-h-[360px] overflow-y-auto border rounded p-2" style="border-color: #E5E6EB">
+      <div v-else class="max-h-[360px] overflow-y-auto border rounded p-2" style="border-color: var(--wecom-border)">
         <div v-for="item in deptFlat" :key="item.node.id" class="flex items-center gap-2 py-1.5" :style="{ paddingLeft: item.depth * 16 + 'px' }">
           <a-checkbox :model-value="checkedDeptKeys.includes(item.node.id)" @change="() => toggleDeptCheck(item.node.id)">
             {{ item.node.deptName }}

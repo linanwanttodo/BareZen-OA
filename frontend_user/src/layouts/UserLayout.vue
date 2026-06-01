@@ -3,7 +3,7 @@
     <!-- 顶部导航 -->
     <header class="user-header">
       <div class="user-header__left">
-        <img src="/logo-icon.svg" alt="BareZen" class="user-header__logo" />
+        <img src="/logo.png" alt="BareZen" class="user-header__logo" />
         <span class="user-header__brand">BareZen</span>
       </div>
       <a-button size="small" @click="router.push('/')">返回工作台</a-button>
@@ -33,17 +33,17 @@ const router = useRouter()
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background: #F7F8FA;
+  background: var(--wecom-bg-page);
 }
 
 .user-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 52px;
+  height: var(--wecom-header-height);
   padding: 0 32px;
-  background: #FFFFFF;
-  border-bottom: 1px solid #E5E6EB;
+  background: var(--wecom-bg-card);
+  border-bottom: 1px solid var(--wecom-border);
   position: sticky;
   top: 0;
   z-index: 100;
@@ -55,17 +55,17 @@ const router = useRouter()
   gap: 10px;
 }
 .user-header__logo {
-  width: 30px;
-  height: 30px;
+  width: 28px;
+  height: 28px;
 }
 .user-header__brand {
   font-size: 16px;
   font-weight: 600;
-  color: #1D2129;
+  color: var(--wecom-text-primary);
 }
 
 .user-main {
   flex: 1;
-  padding: 24px 32px;
+  padding: var(--wecom-spacing-xl) 32px;
 }
 </style>

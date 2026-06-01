@@ -5,11 +5,11 @@
 
     <!-- 头像区域 -->
     <div class="flex flex-col items-center mb-8">
-      <div class="w-24 h-24 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-3xl font-bold shadow-lg mb-3">
+      <div class="w-20 h-20 rounded-wecom-lg bg-[var(--wecom-primary)] flex items-center justify-center text-white text-2xl font-semibold mb-3">
         {{ userInitial }}
       </div>
-      <h2 class="text-xl font-semibold text-gray-800">{{ userStore.userInfo?.nickName }}</h2>
-      <p class="text-sm text-gray-500">@{{ userStore.userInfo?.userName }}</p>
+      <h2 class="text-xl font-semibold text-[var(--wecom-text-primary)]">{{ userStore.userInfo?.nickName }}</h2>
+      <p class="text-sm text-[var(--wecom-text-tertiary)]">@{{ userStore.userInfo?.userName }}</p>
     </div>
 
     <!-- 信息卡片 -->
@@ -17,9 +17,9 @@
       <CardContent class="p-6">
         <div class="space-y-4">
           <div v-for="(item, index) in profileData" :key="index"
-               class="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
-            <span class="text-gray-500 text-sm">{{ item.label }}</span>
-            <span class="text-gray-800 font-medium">{{ item.value }}</span>
+               class="flex items-center justify-between py-2 border-b border-[var(--wecom-border)] last:border-0">
+            <span class="text-[var(--wecom-text-tertiary)] text-sm">{{ item.label }}</span>
+            <span class="text-[var(--wecom-text-primary)] font-medium">{{ item.value }}</span>
           </div>
         </div>
 

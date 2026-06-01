@@ -32,7 +32,7 @@ function go(page: number) {
       type="button"
       :disabled="modelValue <= 1"
       @click="go(modelValue - 1)"
-      :class="cn('h-8 min-w-8 rounded-md border border-[var(--border)] px-2 text-sm disabled:opacity-40', 'bg-[var(--background)] text-[var(--foreground)]')"
+      :class="cn('h-8 min-w-8 rounded-wecom-sm border border-[var(--wecom-border)] px-2 text-sm disabled:opacity-40', 'bg-[var(--background)] text-[var(--foreground)]')"
     >
       上一页
     </button>
@@ -42,7 +42,7 @@ function go(page: number) {
       type="button"
       @click="go(p)"
       :class="cn(
-        'h-8 min-w-8 rounded-md border px-2 text-sm',
+        'h-8 min-w-8 rounded-wecom-sm border px-2 text-sm',
         p === modelValue
           ? 'border-[var(--primary)] bg-[var(--primary)] text-[var(--primary-foreground)]'
           : 'border-[var(--border)] bg-[var(--background)] text-[var(--foreground)]',
@@ -54,7 +54,7 @@ function go(page: number) {
       type="button"
       :disabled="modelValue >= totalPages"
       @click="go(modelValue + 1)"
-      :class="cn('h-8 min-w-8 rounded-md border border-[var(--border)] px-2 text-sm disabled:opacity-40', 'bg-[var(--background)] text-[var(--foreground)]')"
+      :class="cn('h-8 min-w-8 rounded-wecom-sm border border-[var(--wecom-border)] px-2 text-sm disabled:opacity-40', 'bg-[var(--background)] text-[var(--foreground)]')"
     >
       下一页
     </button>

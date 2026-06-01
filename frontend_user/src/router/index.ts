@@ -32,6 +32,12 @@ const router = createRouter({
           meta: { title: '消息中心', requiresAuth: true },
         },
         {
+          path: 'messages/:id',
+          name: 'MessageDetail',
+          component: () => import('@/pages/message/detail.vue'),
+          meta: { title: '消息详情', requiresAuth: true },
+        },
+        {
           path: 'notices/:id',
           name: 'NoticeDetail',
           component: () => import('@/pages/notice/detail.vue'),

@@ -76,6 +76,7 @@ export const PERMISSIONS = {
   },
   system: {
     apiKeyAdd: 'system:apiKey:add',
+    apiKeyEdit: 'system:apiKey:edit',
     apiKeyDelete: 'system:apiKey:delete',
     backupAdd: 'system:backup:add',
     backupList: 'system:backup:list',
@@ -108,6 +109,7 @@ export const PERMISSIONS = {
     userDelete: 'system:user:delete',
     userList: 'system:user:list',
     webhookAdd: 'system:webhook:add',
+    webhookEdit: 'system:webhook:edit',
     webhookDelete: 'system:webhook:delete',
     flowTemplateAdd: 'system:flow:template:add',
     flowTemplateEdit: 'system:flow:template:edit',

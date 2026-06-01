@@ -4,7 +4,7 @@
     <header class="user-header">
       <!-- 左侧：Logo + 品牌名 -->
       <div class="user-header__left">
-        <img src="/logo-icon.svg" alt="BareZen" class="user-header__logo" />
+        <img src="/logo.png" alt="BareZen" class="user-header__logo" />
         <span class="user-header__brand">BareZen</span>
       </div>
 
@@ -77,7 +77,7 @@
     <footer class="user-footer">
       <div class="user-footer__inner">
         <div class="user-footer__left">
-          <img src="/logo-icon.svg" alt="BareZen" class="user-footer__logo" />
+          <img src="/logo.png" alt="BareZen" class="user-footer__logo" />
           <span>BareZen 企业门户</span>
         </div>
         <p>© 2026 BareZen</p>
@@ -113,10 +113,12 @@
           <p class="mt-1 text-xs" :class="strengthTextClass">{{ strengthText }}</p>
         </div>
         <!-- 校验规则清单 -->
-        <div v-if="pwdForm.newPassword" class="mb-2 rounded-md bg-[var(--muted)] p-3 text-xs">
+        <div v-if="pwdForm.newPassword" class="mb-2 rounded-wecom-md bg-[var(--wecom-bg-container)] p-3 text-xs">
           <p class="mb-1 font-medium">密码强度要求：</p>
-          <p v-for="rule in passwordRules" :key="rule.label" :class="rule.valid ? 'text-[var(--bz-success)]' : 'text-[var(--muted-foreground)]'">
-            {{ rule.valid ? '已满足' : '未满足' }} {{ rule.label }}
+          <p v-for="rule in passwordRules" :key="rule.label" class="flex items-center gap-1.5" :class="rule.valid ? 'text-[var(--wecom-success)]' : 'text-[var(--wecom-text-tertiary)]'">
+            <icon-check v-if="rule.valid" :size="12" />
+            <icon-minus v-else :size="12" />
+            <span>{{ rule.label }}</span>
           </p>
         </div>
         <a-form-item field="confirmPassword" label="确认新密码">
@@ -132,7 +134,7 @@ import { computed, ref, reactive, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { Message } from '@arco-design/web-vue'
 import { ChevronDown } from 'lucide-vue-next'
-import { IconNotification } from '@arco-design/web-vue/es/icon'
+import { IconNotification, IconCheck, IconMinus } from '@arco-design/web-vue/es/icon'
 import { useUserStore } from '@/stores/user'
 import { changePasswordApi } from '@/api/auth'
 import { getUnreadCountApi } from '@/api/message'
@@ -250,17 +252,27 @@ const strengthText = computed(() => {
 })
 
 const strengthTextClass = computed(() => {
-  const map = ['text-red-500', 'text-orange-500', 'text-yellow-600', 'text-green-500']
+  const map = [
+    'text-[var(--wecom-error)]',
+    'text-[var(--wecom-warning)]',
+    'text-[var(--wecom-warning)]',
+    'text-[var(--wecom-success)]',
+  ]
   return map[strengthLevel.value]
 })
 
 function strengthBarClass(barIndex: number): string {
   const level = strengthLevel.value
   if (barIndex <= level) {
-    const colors = ['bg-red-400', 'bg-orange-400', 'bg-yellow-500', 'bg-green-500']
+    const colors = [
+      'bg-[var(--wecom-error)]',
+      'bg-[var(--wecom-warning)]',
+      'bg-[var(--wecom-warning)]',
+      'bg-[var(--wecom-success)]',
+    ]
     return colors[level]
   }
-  return 'bg-[var(--border)]'
+  return 'bg-[var(--wecom-border)]'
 }
 
 async function onPwdSubmit() {
@@ -300,10 +312,10 @@ async function onPwdSubmit() {
 .user-header {
   display: flex;
   align-items: center;
-  height: 52px;
+  height: var(--wecom-header-height);
   padding: 0 32px;
-  background: var(--card);
-  border-bottom: 1px solid var(--border);
+  background: var(--wecom-bg-card);
+  border-bottom: 1px solid var(--wecom-border);
   position: sticky;
   top: 0;
   z-index: 100;
@@ -348,8 +360,8 @@ async function onPwdSubmit() {
   background: var(--muted);
 }
 .user-header__nav-item--active {
-  color: var(--primary);
-  background: color-mix(in srgb, var(--primary) 10%, transparent);
+  color: var(--wecom-primary);
+  background: var(--wecom-primary-light);
   font-weight: 500;
 }
 
@@ -398,8 +410,8 @@ async function onPwdSubmit() {
 .user-header__avatar {
   width: 28px;
   height: 28px;
-  border-radius: 50%;
-  background: var(--primary);
+  border-radius: var(--wecom-radius-md);
+  background: var(--wecom-primary);
   color: var(--primary-foreground);
   font-size: 12px;
   font-weight: 600;

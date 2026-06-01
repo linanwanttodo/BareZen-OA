@@ -5,14 +5,14 @@
       {{ $t('notice.backToList') }}
     </a-button>
 
-    <div v-if="notice" class="rounded-lg border border-[var(--border)] bg-[var(--card)] p-8">
+    <div v-if="notice" class="rounded-wecom-md border border-[var(--wecom-border)] bg-[var(--wecom-bg-card)] p-8">
       <div class="mb-6 border-b border-[var(--border)] pb-6">
         <div class="mb-3 flex items-center gap-2">
           <a-tag :color="notice.noticeType === '1' ? 'arcoblue' : 'green'">
             {{ notice.noticeType === '1' ? $t('notice.typeNotice') : $t('notice.typeAnnouncement') }}
           </a-tag>
         </div>
-        <h1 class="mb-4 text-2xl font-bold text-[var(--foreground)]">{{ notice.noticeTitle }}</h1>
+        <h1 class="mb-4 text-xl font-semibold text-[var(--wecom-text-primary)]">{{ notice.noticeTitle }}</h1>
         <div class="flex items-center gap-4 text-sm text-[var(--muted-foreground)]">
           <span>{{ $t('notice.publishTime') }}：{{ formatDateTime(notice.createTime) }}</span>
         </div>

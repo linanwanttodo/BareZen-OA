@@ -30,7 +30,7 @@
             <a-table-column :title="$t('tool.gen.tableComment')" data-index="tableComment" />
             <a-table-column :title="$t('tool.gen.entityName')" data-index="className" :width="160">
               <template #cell="{ record }">
-                <span class="text-blue-600">{{ record.className }}</span>
+                <span class="text-wecom-primary">{{ record.className }}</span>
               </template>
             </a-table-column>
             <a-table-column :title="$t('common.operate')" :width="180" align="right">
@@ -54,7 +54,7 @@
       <a-tabs v-if="previewData">
         <a-tab-pane v-for="(code, filename) in previewData" :key="filename" :title="getFileName(filename)">
           <div class="flex justify-between mb-2">
-            <span class="text-sm text-gray-500">{{ filename }}</span>
+            <span class="text-sm text-wecom-text-tertiary">{{ filename }}</span>
             <a-button size="mini" @click="copyCode(code)">{{ $t('tool.gen.copy') }}</a-button>
           </div>
           <pre class="code-preview"><code>{{ code }}</code></pre>

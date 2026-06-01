@@ -29,7 +29,7 @@
             </div>
             <a-tag v-if="item.status === '0'" color="red" size="small">{{ $t('common.disable') }}</a-tag>
             <a-dropdown>
-              <icon-more class="cursor-pointer" style="color: #86909C" />
+              <icon-more class="cursor-pointer" style="color: var(--wecom-text-tertiary)" />
               <template #content>
                 <a-doption v-permission="PERM.system.dictEdit" @click="handleEditType(item)">{{ $t('common.edit') }}</a-doption>
                 <a-doption v-permission="PERM.system.dictDelete" @click="handleDeleteType(item)" status="danger">{{ $t('common.delete') }}</a-doption>
@@ -38,7 +38,7 @@
           </div>
           <a-empty v-if="!filteredDictTypes.length" :description="$t('common.noData')" />
         </div>
-        <div v-if="typePagination.total > typePagination.pageSize" class="mt-3 pt-3" style="border-top: 1px solid #E5E6EB">
+        <div v-if="typePagination.total > typePagination.pageSize" class="mt-3 pt-3" style="border-top: 1px solid var(--wecom-border)">
           <a-pagination
             v-model:current="typePagination.current"
             :total="typePagination.total"
@@ -441,7 +441,7 @@ onMounted(() => {
   cursor: pointer;
 }
 .dict-type-item:hover {
-  background: #F2F3F5;
+  background: var(--wecom-bg-container);
 }
 .dict-type-item--active {
   background: var(--color-primary-light-1);
@@ -456,14 +456,14 @@ onMounted(() => {
 .dict-type-item__name {
   font-size: 14px;
   font-weight: 500;
-  color: #1D2129;
+  color: var(--wecom-text-primary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .dict-type-item__key {
   font-size: 12px;
-  color: #86909C;
+  color: var(--wecom-text-tertiary);
   font-family: monospace;
 }
 </style>

@@ -2,7 +2,7 @@
   <div class="mx-auto max-w-6xl px-6 py-8">
     <div class="mb-6 flex items-center justify-between">
       <div>
-        <h1 class="text-2xl font-bold text-[var(--foreground)]">{{ $t('attendance.title') }}</h1>
+        <h1 class="text-xl font-semibold text-[var(--wecom-text-primary)]">{{ $t('attendance.title') }}</h1>
         <p class="mt-1 text-sm text-[var(--muted-foreground)]">{{ $t('attendance.subtitle') }}</p>
       </div>
     </div>
@@ -53,7 +53,7 @@
       <a-card :title="$t('attendance.myLeaves')">
         <a-spin :loading="leaveLoading">
           <div v-if="leaves.length" class="space-y-3">
-            <div v-for="item in leaves" :key="item.id" class="flex items-start gap-4 rounded-lg border border-[var(--border)] bg-[var(--card)] p-5">
+            <div v-for="item in leaves" :key="item.id" class="flex items-start gap-4 rounded-wecom-md border border-[var(--wecom-border)] bg-[var(--wecom-bg-card)] p-5">
               <div class="min-w-0 flex-1">
                 <div class="mb-1 flex items-center gap-2">
                   <a-tag :color="statusColor(item.status)">{{ statusText(item.status) }}</a-tag>
@@ -112,7 +112,7 @@
       <a-card :title="$t('attendance.myOvertimes')">
         <a-spin :loading="overtimeLoading">
           <div v-if="overtimes.length" class="space-y-3">
-            <div v-for="item in overtimes" :key="item.id" class="flex items-start gap-4 rounded-lg border border-[var(--border)] bg-[var(--card)] p-5">
+            <div v-for="item in overtimes" :key="item.id" class="flex items-start gap-4 rounded-wecom-md border border-[var(--wecom-border)] bg-[var(--wecom-bg-card)] p-5">
               <div class="min-w-0 flex-1">
                 <div class="mb-1 flex items-center gap-2">
                   <a-tag :color="statusColor(item.status)">{{ statusText(item.status) }}</a-tag>
@@ -171,7 +171,7 @@
       <a-card :title="$t('attendance.myTravels')">
         <a-spin :loading="travelLoading">
           <div v-if="travels.length" class="space-y-3">
-            <div v-for="item in travels" :key="item.id" class="flex items-start gap-4 rounded-lg border border-[var(--border)] bg-[var(--card)] p-5">
+            <div v-for="item in travels" :key="item.id" class="flex items-start gap-4 rounded-wecom-md border border-[var(--wecom-border)] bg-[var(--wecom-bg-card)] p-5">
               <div class="min-w-0 flex-1">
                 <div class="mb-1 flex items-center gap-2">
                   <a-tag :color="statusColor(item.status)">{{ statusText(item.status) }}</a-tag>

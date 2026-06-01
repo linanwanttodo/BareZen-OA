@@ -1,17 +1,15 @@
 <template>
-  <div class="error-page min-h-[500px] flex flex-col items-center justify-center py-16">
-    <div class="error-code-wrapper mb-6">
-      <span class="error-code">{{ code }}</span>
-    </div>
-    <p class="text-lg text-[var(--muted-foreground)] mb-2 font-medium">{{ message }}</p>
-    <p class="text-sm text-[var(--muted-foreground)] mb-8">{{ $t('error.checkUrl') }}</p>
+  <div class="error-page flex min-h-[500px] flex-col items-center justify-center py-16">
+    <p class="text-sm font-medium text-[var(--wecom-text-tertiary)]">{{ code }}</p>
+    <p class="mt-3 text-base font-medium text-[var(--wecom-text-primary)]">{{ message }}</p>
+    <p class="mb-8 mt-1 text-sm text-[var(--wecom-text-tertiary)]">{{ $t('error.checkUrl') }}</p>
     <div class="flex items-center gap-3">
       <a-button type="primary" @click="router.push('/')">
-        <Home :size="16" class="mr-1.5" />
+        <icon-home :size="16" class="mr-1.5" />
         {{ $t('error.backHome') }}
       </a-button>
       <a-button @click="router.back()">
-        <ArrowLeft :size="16" class="mr-1.5" />
+        <icon-left :size="16" class="mr-1.5" />
         {{ $t('error.backPrev') }}
       </a-button>
     </div>
@@ -20,7 +18,6 @@
 
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
-import { Home, ArrowLeft } from 'lucide-vue-next'
 
 defineProps<{
   code: number | string
@@ -29,29 +26,3 @@ defineProps<{
 
 const router = useRouter()
 </script>
-
-<style scoped>
-.error-code-wrapper {
-  position: relative;
-}
-
-.error-code {
-  font-size: 120px;
-  font-weight: 800;
-  line-height: 1;
-  color: var(--primary);
-  opacity: 0.15;
-}
-
-.error-code-wrapper::after {
-  content: '';
-  position: absolute;
-  bottom: -8px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 60px;
-  height: 4px;
-  border-radius: 2px;
-  background: var(--primary);
-}
-</style>

@@ -28,9 +28,6 @@ public class PermissionGatewayImpl implements PermissionGateway {
     /** 超管角色键 */
     private static final String ROLE_KEY_ADMIN = "admin";
 
-    /** 数据权限：全部 */
-    private static final int SCOPE_ALL = 4;
-
     private final SysRoleMapper roleMapper;
 
     private final SysMenuMapper menuMapper;
@@ -56,15 +53,6 @@ public class PermissionGatewayImpl implements PermissionGateway {
             perms.addAll(menuMapper.selectPermsByRoleId(role.getId()));
         }
         return perms;
-    }
-
-    @Override
-    public int minDataScope(Long userId) {
-        return rolesOf(userId).stream()
-                .filter(r -> r.getDataScope() != null)
-                .mapToInt(SysRole::getDataScope)
-                .min()
-                .orElse(SCOPE_ALL);
     }
 
     @Override

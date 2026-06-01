@@ -1,19 +1,18 @@
 <template>
   <div>
     <div class="mb-8 text-center">
-      <img src="/logo.svg" alt="BareZen" class="mx-auto mb-4 h-10" />
-      <h2 class="text-2xl font-semibold tracking-tight text-[var(--foreground)]">{{ $t('auth.loginTitle') }}</h2>
-      <p class="mt-2 text-sm text-[var(--muted-foreground)]">登录你的企业账户</p>
+      <img src="/logo.png" alt="BareZen" class="mx-auto mb-4 h-10" />
+      <h2 class="text-xl font-semibold text-[var(--wecom-text-primary)]">{{ $t('auth.loginTitle') }}</h2>
+      <p class="mt-2 text-sm text-[var(--wecom-text-tertiary)]">登录你的企业账户</p>
     </div>
 
-    <a-form :model="formData" layout="vertical" @submit-success="onSubmit" class="space-y-4">
+    <a-form :model="formData" layout="vertical" @submit-success="onSubmit" class="space-y-2">
       <a-form-item field="username" :label="$t('auth.username')" :rules="[{ required: true, message: '请输入用户名' }]">
         <a-input
           v-model="formData.username"
           placeholder="请输入用户名"
           size="large"
           allow-clear
-          class="!rounded-lg"
         />
       </a-form-item>
 
@@ -22,7 +21,6 @@
           v-model="formData.password"
           placeholder="请输入密码"
           size="large"
-          class="!rounded-lg"
         />
       </a-form-item>
 
@@ -32,28 +30,27 @@
             v-model="formData.captchaCode"
             placeholder="请输入验证码"
             size="large"
-            class="flex-1 !rounded-lg"
+            class="flex-1"
             @keyup.enter="onSubmit"
           />
           <div
-            class="flex h-10 min-w-[120px] shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--muted)]"
+            class="flex h-10 min-w-[120px] shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-wecom-sm border border-[var(--wecom-border)] bg-[var(--wecom-bg-container)]"
             title="点击刷新"
             @click="refreshCaptcha"
           >
             <img v-if="captchaImg" :src="captchaImg" alt="验证码" class="h-full w-[120px]" />
-            <span v-else class="text-xs text-[var(--muted-foreground)]">加载中</span>
+            <span v-else class="text-xs text-[var(--wecom-text-tertiary)]">加载中</span>
           </div>
         </div>
       </a-form-item>
 
-      <a-form-item>
+      <a-form-item class="!mb-0 mt-2">
         <a-button
           type="primary"
           html-type="submit"
           long
           size="large"
           :loading="loading"
-          class="!rounded-lg !bg-[var(--primary)] !h-11 text-sm font-medium"
         >
           {{ $t('auth.login') }}
         </a-button>

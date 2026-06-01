@@ -11,10 +11,10 @@
       <div
         v-for="notice in notices"
         :key="notice.id"
-        class="flex cursor-pointer items-start gap-4 rounded-lg border border-[var(--border)] bg-[var(--card)] p-6"
+        class="flex cursor-pointer items-start gap-4 rounded-wecom-md border border-[var(--wecom-border)] bg-[var(--wecom-bg-card)] p-6"
         @click="router.push(`/notices/${notice.id}`)"
       >
-        <div class="mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-[var(--muted)]">
+        <div class="mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-wecom-sm bg-[var(--wecom-bg-container)]">
           <component :is="notice.noticeType === '1' ? Bell : FileText" :size="20" class="text-[var(--foreground)]" />
         </div>
         <div class="min-w-0 flex-1">
@@ -23,7 +23,7 @@
               {{ notice.noticeType === '1' ? $t('notice.typeNotice') : $t('notice.typeAnnouncement') }}
             </a-tag>
             <h3 class="truncate text-base font-semibold text-[var(--foreground)]">{{ notice.noticeTitle }}</h3>
-            <span v-if="notice.requireRead === 'Y' && notice.isRead === false" class="shrink-0 rounded bg-red-500 px-1.5 py-0.5 text-[10px] font-medium text-white">NEW</span>
+            <span v-if="notice.requireRead === 'Y' && notice.isRead === false" class="shrink-0 rounded bg-wecom-error px-1.5 py-0.5 text-[10px] font-medium text-white">NEW</span>
           </div>
           <p class="mb-3 line-clamp-2 leading-relaxed text-sm text-[var(--muted-foreground)]">{{ stripHtml(notice.noticeContent) }}</p>
           <div class="flex items-center gap-4 text-xs text-[var(--muted-foreground)]">

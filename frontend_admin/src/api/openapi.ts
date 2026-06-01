@@ -55,6 +55,11 @@ export function createApiKeyApi(data: { keyName: string; scopes?: string; expire
   return request.post<ApiKeyCreated>('/system/v1/api-keys', data)
 }
 
+/** 编辑 API Key（更新名称、范围、过期时间；expireTime 传空表示永不过期） */
+export function updateApiKeyApi(id: string, data: { keyName: string; scopes?: string; expireTime?: string }) {
+  return request.put<void>(`/system/v1/api-keys/${id}`, data)
+}
+
 /** 启用/禁用 API Key（0=启用 1=禁用） */
 export function changeApiKeyStatusApi(id: string, status: '0' | '1') {
   return request.put<void>(`/system/v1/api-keys/${id}/status/${status}`)
@@ -73,6 +78,11 @@ export function getWebhookPageApi(params: WebhookListParams) {
 /** 新增 Webhook 订阅 */
 export function createWebhookApi(data: { name: string; url: string; secret?: string; events: string }) {
   return request.post<void>('/system/v1/webhooks', data)
+}
+
+/** 编辑 Webhook 订阅（更新名称、URL、secret、事件） */
+export function updateWebhookApi(id: string, data: { name: string; url: string; secret?: string; events: string }) {
+  return request.put<void>(`/system/v1/webhooks/${id}`, data)
 }
 
 /** 启用/禁用 Webhook（0=启用 1=禁用） */

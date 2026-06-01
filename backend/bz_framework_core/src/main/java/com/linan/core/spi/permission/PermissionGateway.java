@@ -19,9 +19,6 @@ public interface PermissionGateway {
     /** 收集用户所有角色的权限标识并集（不含超管通配符） */
     Set<String> collectRolePermissions(Long userId);
 
-    /** 用户角色最小数据权限范围（最严格者，无则默认 4=全部） */
-    int minDataScope(Long userId);
-
     /** 用户直接所属的部门 ID 列表 */
     List<Long> selectDeptIdsByUserId(Long userId);
 

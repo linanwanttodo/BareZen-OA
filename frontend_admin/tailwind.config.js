@@ -37,9 +37,13 @@ export default {
           'primary-active': 'var(--wecom-primary-active)',
           'primary-light': 'var(--wecom-primary-light)',
           success: 'var(--wecom-success)',
+          'success-light': 'var(--wecom-success-light)',
           warning: 'var(--wecom-warning)',
+          'warning-light': 'var(--wecom-warning-light)',
           error: 'var(--wecom-error)',
+          'error-light': 'var(--wecom-error-light)',
           info: 'var(--wecom-info)',
+          'info-light': 'var(--wecom-info-light)',
           text: {
             primary: 'var(--wecom-text-primary)',
             secondary: 'var(--wecom-text-secondary)',

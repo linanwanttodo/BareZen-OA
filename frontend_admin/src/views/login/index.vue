@@ -1,120 +1,121 @@
 <template>
-  <div class="login-page flex min-h-screen">
-    <!-- 左侧品牌区域 -->
-    <div class="brand-panel relative hidden flex-col justify-between overflow-hidden p-14 lg:flex lg:w-[520px] lg:flex-shrink-0">
-      <!-- 几何装饰层 -->
-      <div class="pointer-events-none absolute inset-0">
-        <!-- 右上圆环 -->
-        <div class="absolute -right-24 -top-24 h-80 w-80 rounded-full border border-white/10"></div>
-        <div class="absolute -right-10 -top-10 h-48 w-48 rounded-full border border-white/5"></div>
-        <!-- 左下光晕 -->
-        <div class="absolute -bottom-32 -left-24 h-96 w-96 rounded-full bg-[var(--primary)]/20 blur-3xl"></div>
-        <!-- 网格点阵 -->
-        <div class="absolute inset-0 opacity-[0.06]" style="background-image: radial-gradient(circle, #fff 1px, transparent 1px); background-size: 28px 28px"></div>
-      </div>
-
-      <!-- Logo 与品牌名 -->
-      <div class="relative z-10 flex items-center gap-3">
-        <img src="/logo.svg" alt="BareZen" class="h-9 w-9" />
-        <span class="text-xl font-semibold tracking-wide text-white">BareZen</span>
-      </div>
-
-      <!-- 主标语区 -->
-      <div class="relative z-10">
-        <h2 class="mb-4 text-[32px] font-semibold leading-snug tracking-tight text-white">
-          {{ $t('login.enterprisePlatform') }}
-        </h2>
-        <p class="max-w-[380px] text-sm leading-relaxed text-white/70">
-          {{ $t('login.description') }}
-        </p>
-
-        <!-- 特性标签 -->
-        <div class="mt-12 flex flex-wrap gap-3">
-          <div
-            v-for="item in features"
-            :key="item"
-            class="flex items-center gap-2 rounded-md border border-white/15 bg-white/5 px-4 py-2 text-sm text-white/85 backdrop-blur-sm"
-          >
-            <icon-check-circle class="text-[var(--primary-foreground)]" />
-            <span>{{ item }}</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- 底部版权 -->
-      <div class="relative z-10 border-t border-white/10 pt-6 text-xs text-white/50">
-        © {{ new Date().getFullYear() }} BareZen · {{ $t('login.internalSystem') }}
+  <div class="login-page" :class="{ 'mode-register': mode === 'register' }">
+    <!-- 图片面板：登录时在左，注册时滑到右 -->
+    <div class="login-visual">
+      <div class="login-visual__inner">
+        <img src="/login-visual.png" alt="BareZen" class="login-visual__img" />
+        <p class="login-visual__caption">{{ mode === 'login' ? $t('login.enterprisePlatform') : $t('login.registerTitle') }}</p>
       </div>
     </div>
 
-    <!-- 右侧登录表单 -->
-    <div class="flex flex-1 items-center justify-center bg-[var(--muted)] p-6">
-      <div class="w-full max-w-[400px] rounded-xl bg-[var(--card)] p-10 shadow-sm ring-1 ring-[var(--border)]">
-        <!-- 移动端 Logo -->
-        <div class="mb-8 text-center lg:hidden">
-          <img src="/logo.svg" alt="BareZen" class="mx-auto mb-3 h-9 w-9" />
-          <h1 class="text-lg font-semibold text-[var(--foreground)]">BareZen</h1>
+    <!-- 表单面板：登录时在右，注册时滑到左 -->
+    <div class="login-form-panel">
+      <div class="login-form-wrap">
+        <!-- 品牌头 -->
+        <div class="login-brand">
+          <img src="/logo.png" alt="BareZen" class="login-brand__logo" />
+          <div class="login-brand__text">
+            <h1 class="login-brand__title">BareZen</h1>
+            <p class="login-brand__subtitle">{{ $t('login.title') }}</p>
+          </div>
         </div>
 
-        <div class="mb-8">
-          <h2 class="mb-1.5 text-xl font-semibold tracking-tight text-[var(--foreground)]">{{ $t('login.login') }}</h2>
-          <p class="text-sm text-[var(--muted-foreground)]">{{ $t('login.loginInfo') }}</p>
-        </div>
-
-        <a-form :model="formData" layout="vertical" @submit-success="onSubmit" class="space-y-4">
-          <a-form-item field="username" :label="$t('login.username')" :rules="[{ required: true, message: $t('login.usernameRequired') }]">
-            <a-input
-              v-model="formData.username"
-              :placeholder="$t('login.usernameRequired')"
-              size="large"
-              allow-clear
-            />
-          </a-form-item>
-
-          <a-form-item field="password" :label="$t('login.password')" :rules="[{ required: true, message: $t('login.passwordRequired') }]">
-            <a-input-password
-              v-model="formData.password"
-              :placeholder="$t('login.passwordRequired')"
-              size="large"
-            />
-          </a-form-item>
-
-          <a-form-item field="captchaCode" :label="$t('login.captcha')" :rules="[{ required: true, message: $t('login.captchaRequired') }]">
-            <div class="flex w-full items-center gap-3">
-              <a-input
-                v-model="formData.captchaCode"
-                :placeholder="$t('login.captchaRequired')"
-                size="large"
-                class="flex-1"
-                @keyup.enter="onSubmit"
-              />
-              <div
-                class="flex h-10 min-w-[120px] shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded border border-[var(--border)] bg-[var(--muted)]"
-                :title="$t('common.refresh')"
-                @click="refreshCaptcha"
-              >
-                <img v-if="captchaImg" :src="captchaImg" :alt="$t('login.captcha')" class="h-full w-[120px]" />
-                <span v-else class="text-xs text-[var(--muted-foreground)]">{{ $t('common.loading') }}</span>
-              </div>
+        <!-- 登录 / 注册 双层表单：翻转过程中交叉淡入淡出 -->
+        <div class="form-stack">
+          <!-- ===== 登录 ===== -->
+          <div class="form-layer" :class="{ 'form-layer--active': mode === 'login' }" :aria-hidden="mode !== 'login'">
+            <div class="mb-6">
+              <h2 class="text-lg font-semibold text-[var(--wecom-text-primary)]">{{ $t('login.login') }}</h2>
+              <p class="mt-1 text-sm text-[var(--wecom-text-tertiary)]">{{ $t('login.loginInfo') }}</p>
             </div>
-          </a-form-item>
 
-          <div class="flex items-center justify-between">
-            <a-checkbox v-model="formData.remember" class="text-sm text-[var(--muted-foreground)]">{{ $t('login.rememberMe') }}</a-checkbox>
+            <a-form :model="formData" layout="vertical" @submit-success="onSubmit" class="space-y-2">
+              <a-form-item field="username" :label="$t('login.username')" :rules="[{ required: true, message: $t('login.usernameRequired') }]">
+                <a-input v-model="formData.username" :placeholder="$t('login.usernameRequired')" size="large" allow-clear />
+              </a-form-item>
+
+              <a-form-item field="password" :label="$t('login.password')" :rules="[{ required: true, message: $t('login.passwordRequired') }]">
+                <a-input-password v-model="formData.password" :placeholder="$t('login.passwordRequired')" size="large" />
+              </a-form-item>
+
+              <a-form-item field="captchaCode" :label="$t('login.captcha')" :rules="[{ required: true, message: $t('login.captchaRequired') }]">
+                <div class="flex w-full items-center gap-3">
+                  <a-input
+                    v-model="formData.captchaCode"
+                    :placeholder="$t('login.captchaRequired')"
+                    size="large"
+                    class="flex-1"
+                    @keyup.enter="onSubmit"
+                  />
+                  <div class="login-captcha" :title="$t('common.refresh')" @click="refreshCaptcha">
+                    <img v-if="captchaImg" :src="captchaImg" :alt="$t('login.captcha')" class="h-full w-[120px]" />
+                    <span v-else class="text-xs text-[var(--wecom-text-tertiary)]">{{ $t('common.loading') }}</span>
+                  </div>
+                </div>
+              </a-form-item>
+
+              <a-checkbox v-model="formData.remember" class="login-remember">{{ $t('login.rememberMe') }}</a-checkbox>
+
+              <a-form-item class="!mb-0 mt-2">
+                <a-button type="primary" html-type="submit" long size="large" :loading="loading">
+                  {{ $t('login.login') }}
+                </a-button>
+              </a-form-item>
+            </a-form>
+
+            <p class="login-switch">
+              {{ $t('login.noAccount') }}
+              <button type="button" class="login-switch__link" @click="switchMode('register')">{{ $t('login.register') }}</button>
+            </p>
           </div>
 
-          <a-form-item class="!mb-0">
-            <a-button
-              type="primary"
-              html-type="submit"
-              long
-              size="large"
-              :loading="loading"
-            >
-              {{ $t('login.login') }}
-            </a-button>
-          </a-form-item>
-        </a-form>
+          <!-- ===== 注册 ===== -->
+          <div class="form-layer" :class="{ 'form-layer--active': mode === 'register' }" :aria-hidden="mode !== 'register'">
+            <div class="mb-6">
+              <h2 class="text-lg font-semibold text-[var(--wecom-text-primary)]">{{ $t('login.registerTitle') }}</h2>
+              <p class="mt-1 text-sm text-[var(--wecom-text-tertiary)]">{{ $t('login.registerInfo') }}</p>
+            </div>
+
+            <a-form ref="registerFormRef" :model="registerData" layout="vertical" class="space-y-2">
+              <a-form-item field="userName" :label="$t('login.username')" :rules="[{ required: true, message: $t('login.usernameRequired') }]">
+                <a-input v-model="registerData.userName" :placeholder="$t('login.usernameRequired')" size="large" allow-clear />
+              </a-form-item>
+
+              <a-form-item field="nickName" :label="$t('login.nickName')">
+                <a-input v-model="registerData.nickName" :placeholder="$t('login.nickNameRequired')" size="large" allow-clear />
+              </a-form-item>
+
+              <a-form-item
+                field="password"
+                :label="$t('login.password')"
+                :rules="[{ required: true, message: $t('login.passwordRequired') }, { minLength: 8, message: $t('login.pwdPolicyHint') }]"
+              >
+                <a-input-password v-model="registerData.password" :placeholder="$t('login.pwdPolicyHint')" size="large" />
+              </a-form-item>
+
+              <a-form-item
+                field="confirmPassword"
+                :label="$t('login.confirmPassword')"
+                :rules="[{ required: true, message: $t('login.confirmPasswordRequired') }, { validator: validateConfirm }]"
+              >
+                <a-input-password v-model="registerData.confirmPassword" :placeholder="$t('login.confirmPasswordRequired')" size="large" @keyup.enter="onRegister" />
+              </a-form-item>
+
+              <a-form-item class="!mb-0 mt-2">
+                <a-button type="primary" long size="large" :loading="registering" @click="onRegister">
+                  {{ $t('login.registerNow') }}
+                </a-button>
+              </a-form-item>
+            </a-form>
+
+            <p class="login-switch">
+              {{ $t('login.haveAccount') }}
+              <button type="button" class="login-switch__link" @click="switchMode('login')">{{ $t('login.backToLogin') }}</button>
+            </p>
+          </div>
+        </div>
+
+        <p class="login-copyright">© {{ new Date().getFullYear() }} BareZen · {{ $t('login.internalSystem') }}</p>
       </div>
     </div>
   </div>
@@ -124,8 +125,8 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
-import { getCaptchaApi } from '@/api/auth'
-import { Message } from '@arco-design/web-vue'
+import { getCaptchaApi, registerApi } from '@/api/auth'
+import { Message, type FormInstance } from '@arco-design/web-vue'
 import { useI18n } from 'vue-i18n'
 import type { LoginParams } from '@/types/api'
 import { safeRedirect } from '@/utils/url'
@@ -135,9 +136,14 @@ const router = useRouter()
 const route = useRoute()
 const userStore = useUserStore()
 
+/** 当前面板：login 图左表单右；register 左右互换（CSS transform 过渡） */
+const mode = ref<'login' | 'register'>('login')
+
 const loading = ref(false)
+const registering = ref(false)
 const captchaImg = ref('')
 const captchaUuid = ref('')
+const registerFormRef = ref<FormInstance>()
 
 const formData = reactive({
   username: '',
@@ -146,7 +152,25 @@ const formData = reactive({
   remember: false,
 })
 
-const features = [t('login.features.0'), t('login.features.1'), t('login.features.2')]
+const registerData = reactive({
+  userName: '',
+  nickName: '',
+  password: '',
+  confirmPassword: '',
+})
+
+function switchMode(next: 'login' | 'register') {
+  if (mode.value === next) return
+  mode.value = next
+}
+
+function validateConfirm(value: string, callback: (error?: string) => void) {
+  if (value && value !== registerData.password) {
+    callback(t('login.passwordMismatch'))
+  } else {
+    callback()
+  }
+}
 
 async function refreshCaptcha() {
   try {
@@ -192,6 +216,37 @@ async function onSubmit() {
   }
 }
 
+async function onRegister() {
+  const errors = await registerFormRef.value?.validate()
+  if (errors) return
+  if (!registerData.userName || !registerData.password || !registerData.confirmPassword) {
+    Message.warning(t('login.fullRegisterInfo'))
+    return
+  }
+
+  registering.value = true
+  try {
+    await registerApi({
+      userName: registerData.userName,
+      nickName: registerData.nickName || undefined,
+      password: registerData.password,
+    })
+    Message.success(t('login.registerSuccess'))
+    // 注册成功：回填用户名并翻回登录面板
+    formData.username = registerData.userName
+    formData.password = ''
+    registerData.userName = ''
+    registerData.nickName = ''
+    registerData.password = ''
+    registerData.confirmPassword = ''
+    switchMode('login')
+  } catch {
+    // 错误（含「注册功能已关闭」）已在拦截器中提示
+  } finally {
+    registering.value = false
+  }
+}
+
 onMounted(() => {
   refreshCaptcha()
   const saved = localStorage.getItem('bz_admin_remember')
@@ -208,8 +263,182 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.brand-panel {
-  /* 深色渐变品牌区：避免大面积纯色块，符合企业级信息层级 */
-  background: linear-gradient(160deg, #1d2b4d 0%, #17223c 55%, #101a30 100%);
+/* ============================================================
+   左右分栏登录页：
+   - 登录态：图片面板在左、表单面板在右
+   - 注册态：两面板 translateX 互换位置（0.6s 平滑过渡）
+   - 表单内容在翻转中途交叉淡切
+   ============================================================ */
+.login-page {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+/* ---- 面板通用 ---- */
+.login-visual,
+.login-form-panel {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 50%;
+  transition: transform 0.6s cubic-bezier(0.65, 0, 0.35, 1);
+  will-change: transform;
+}
+
+/* ---- 图片面板（白底，与 design-system/brand/logo-on-white.png 白底无缝融合） ---- */
+.login-visual {
+  left: 0;
+  background: var(--wecom-bg-card);
+  border-right: 1px solid var(--wecom-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.mode-register .login-visual {
+  transform: translateX(100%);
+}
+.login-visual__inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--wecom-spacing-lg);
+  padding: var(--wecom-spacing-xxl);
+}
+.login-visual__img {
+  width: min(56vh, 420px);
+  max-width: 80%;
+  height: auto;
+}
+.login-visual__caption {
+  font-size: 14px;
+  color: var(--wecom-text-tertiary);
+  letter-spacing: 0.5px;
+}
+
+/* ---- 表单面板 ---- */
+.login-form-panel {
+  left: 50%;
+  background: var(--wecom-bg-page);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--wecom-spacing-xl);
+}
+.mode-register .login-form-panel {
+  transform: translateX(-100%);
+}
+
+.login-form-wrap {
+  width: 100%;
+  max-width: 400px;
+}
+
+.login-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: var(--wecom-spacing-xl);
+}
+.login-brand__logo {
+  width: 40px;
+  height: 40px;
+}
+.login-brand__title {
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--wecom-text-primary);
+}
+.login-brand__subtitle {
+  margin-top: 2px;
+  font-size: 13px;
+  color: var(--wecom-text-tertiary);
+}
+
+/* ---- 双层表单：绝对堆叠，翻转中途交叉淡切 ---- */
+.form-stack {
+  position: relative;
+  min-height: 520px;
+}
+.form-layer {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transform: translateY(10px);
+  pointer-events: none;
+  transition: opacity 0.28s ease-in-out 0.22s, transform 0.28s ease-in-out 0.22s;
+}
+.form-layer--active {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.login-captcha {
+  display: flex;
+  height: 40px;
+  min-width: 120px;
+  flex-shrink: 0;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 1px solid var(--wecom-border);
+  border-radius: var(--wecom-radius-sm);
+  background: var(--wecom-bg-container);
+}
+
+.login-remember {
+  font-size: 14px;
+  color: var(--wecom-text-secondary);
+}
+
+.login-switch {
+  margin-top: var(--wecom-spacing-lg);
+  text-align: center;
+  font-size: 14px;
+  color: var(--wecom-text-tertiary);
+}
+.login-switch__link {
+  color: var(--wecom-primary);
+  font-weight: 500;
+}
+.login-switch__link:hover {
+  color: var(--wecom-primary-hover);
+}
+
+.login-copyright {
+  margin-top: var(--wecom-spacing-xl);
+  text-align: center;
+  font-size: 12px;
+  color: var(--wecom-text-tertiary);
+}
+
+/* ---- 窄屏：隐藏图片面板，仅做表单交叉淡切 ---- */
+@media (max-width: 900px) {
+  .login-visual {
+    display: none;
+  }
+  .login-form-panel {
+    left: 0;
+    width: 100%;
+  }
+  .mode-register .login-form-panel {
+    transform: none;
+  }
+  .form-layer {
+    transition-delay: 0s;
+  }
+}
+
+/* ---- 尊重系统「减少动效」偏好 ---- */
+@media (prefers-reduced-motion: reduce) {
+  .login-visual,
+  .login-form-panel,
+  .form-layer {
+    transition-duration: 0.01ms;
+    transition-delay: 0s;
+  }
 }
 </style>

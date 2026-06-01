@@ -4,7 +4,7 @@
       <div class="flex items-center justify-between">
         <div>
           <h3 class="text-base font-medium">{{ $t('monitor.backup.backupTitle') }}</h3>
-          <p class="text-sm text-gray-500 mt-1">{{ $t('monitor.backup.backupDesc') }}</p>
+          <p class="text-sm text-wecom-text-tertiary mt-1">{{ $t('monitor.backup.backupDesc') }}</p>
         </div>
         <a-button v-permission="PERM.system.backupAdd" type="primary" :loading="creating" @click="handleCreate">
           <template #icon><icon-plus /></template>

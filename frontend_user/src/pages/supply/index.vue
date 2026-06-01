@@ -1,7 +1,7 @@
 <template>
   <div class="mx-auto max-w-6xl px-6 py-8">
     <div class="mb-6">
-      <h1 class="text-2xl font-bold text-[var(--foreground)]">{{ $t('supplyApply.title') }}</h1>
+      <h1 class="text-xl font-semibold text-[var(--wecom-text-primary)]">{{ $t('supplyApply.title') }}</h1>
       <p class="mt-1 text-sm text-[var(--muted-foreground)]">{{ $t('supplyApply.subtitle') }}</p>
     </div>
 
@@ -20,7 +20,7 @@
       </div>
       <a-spin :loading="supplyLoading">
         <div v-if="supplies.length" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <div v-for="item in supplies" :key="item.id" class="rounded-lg border border-[var(--border)] bg-[var(--card)] p-5">
+          <div v-for="item in supplies" :key="item.id" class="rounded-wecom-md border border-[var(--wecom-border)] bg-[var(--wecom-bg-card)] p-5">
             <div class="flex items-start justify-between">
               <div>
                 <h3 class="font-semibold text-[var(--foreground)]">{{ item.supplyName }}</h3>
@@ -44,7 +44,7 @@
     <div v-else>
       <a-spin :loading="requestLoading">
         <div v-if="requests.length" class="space-y-3">
-          <div v-for="item in requests" :key="item.id" class="flex items-start gap-4 rounded-lg border border-[var(--border)] bg-[var(--card)] p-5">
+          <div v-for="item in requests" :key="item.id" class="flex items-start gap-4 rounded-wecom-md border border-[var(--wecom-border)] bg-[var(--wecom-bg-card)] p-5">
             <div class="min-w-0 flex-1">
               <div class="mb-1 flex items-center gap-2">
                 <a-tag :color="statusColor(item.status)">{{ statusText(item.status) }}</a-tag>

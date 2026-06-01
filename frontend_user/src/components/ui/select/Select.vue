@@ -21,7 +21,7 @@ const value = computed({
 <template>
   <select
     v-model="value"
-    class="h-9 w-full rounded border border-[var(--border)] bg-white px-3 text-sm text-[var(--foreground)] focus:border-[var(--primary)]"
+    class="h-9 w-full rounded border border-[var(--border)] bg-[var(--wecom-bg-card)] px-3 text-sm text-[var(--foreground)] focus:border-[var(--primary)]"
   >
     <option v-if="placeholder" value="">{{ placeholder }}</option>
     <option v-for="opt in options" :key="String(opt.value)" :value="opt.value">{{ opt.label }}</option>

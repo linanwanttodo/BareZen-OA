@@ -26,7 +26,7 @@ function select(value: string | number | '') {
         'rounded border px-3 py-1.5 text-sm',
         modelValue === opt.value
           ? 'border-[var(--primary)] bg-[var(--primary)] text-[var(--primary-foreground)]'
-          : 'border-[var(--border)] bg-white text-[var(--foreground)]',
+          : 'border-[var(--border)] bg-[var(--wecom-bg-card)] text-[var(--foreground)]',
       )"
     >
       {{ opt.label }}

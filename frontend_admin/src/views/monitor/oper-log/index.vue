@@ -94,7 +94,7 @@
               </a-table-column>
               <a-table-column :title="$t('monitor.operLog.costTime')">
                 <template #cell="{ record }">
-                  <span :class="record.costTime > 1000 ? 'text-orange-500' : 'text-green-600'">{{ record.costTime }}ms</span>
+                  <span :class="record.costTime > 1000 ? 'text-wecom-warning' : 'text-wecom-success'">{{ record.costTime }}ms</span>
                 </template>
               </a-table-column>
               <a-table-column :title="$t('monitor.operLog.operTime')" data-index="operTime" />
@@ -151,7 +151,7 @@
           <div>
             <dt class="text-xs text-[var(--muted-foreground)]">{{ $t('monitor.operLog.costTime') }}</dt>
             <dd class="mt-1">
-              <span :class="detailData.costTime > 1000 ? 'text-orange-500' : 'text-green-600'">{{ detailData.costTime }}ms</span>
+              <span :class="detailData.costTime > 1000 ? 'text-wecom-warning' : 'text-wecom-success'">{{ detailData.costTime }}ms</span>
             </dd>
           </div>
           <div>
@@ -219,7 +219,7 @@ const { t } = useI18n()
 function tagColor(v: string): string | undefined {
   if (v === 'default') return 'arcoblue'
   if (v === 'destructive') return 'red'
-  if (v === 'secondary') return 'purple'
+  if (v === 'secondary') return 'gray'
   return undefined
 }
 

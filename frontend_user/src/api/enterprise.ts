@@ -122,6 +122,16 @@ export function submitWorkLogApi(data: Partial<WorkLog>) {
   return request.post<any, ApiResult<void>>('/app/v1/worklogs', data)
 }
 
+/** 更新工作日志 */
+export function updateWorkLogApi(data: Partial<WorkLog>) {
+  return request.put<any, ApiResult<void>>('/app/v1/worklogs', data)
+}
+
+/** 删除工作日志 */
+export function deleteWorkLogApi(id: string | number) {
+  return request.delete<any, ApiResult<void>>(`/app/v1/worklogs/${encodeURIComponent(String(id))}`)
+}
+
 // ==================== 个人日程 ====================
 
 /** 我的日程列表 */

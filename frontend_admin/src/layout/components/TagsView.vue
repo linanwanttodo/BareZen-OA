@@ -94,9 +94,9 @@ function onTagRemove(path: string) {
   display: flex;
   align-items: center;
   gap: 4px;
-  padding: 8px 32px;
-  background: #FFFFFF;
-  border-bottom: 1px solid #E5E6EB;
+  padding: 8px var(--wecom-spacing-xl);
+  background: var(--wecom-bg-card);
+  border-bottom: 1px solid var(--wecom-border);
 }
 
 .tags-view__item {
@@ -105,18 +105,21 @@ function onTagRemove(path: string) {
   gap: 4px;
   padding: 4px 12px;
   font-size: 12px;
-  color: #86909C;
-  background: #F7F8FA;
-  border-radius: 4px;
+  color: var(--wecom-text-tertiary);
+  background: var(--wecom-bg-container);
+  border: 1px solid transparent;
+  border-radius: var(--wecom-radius-sm);
   cursor: pointer;
   user-select: none;
+  transition: color var(--wecom-transition-fast), background var(--wecom-transition-fast);
 }
 .tags-view__item:hover {
-  color: #4E5969;
+  color: var(--wecom-text-secondary);
+  background: var(--wecom-bg-active);
 }
 .tags-view__item--active {
-  color: var(--primary);
-  background: var(--color-primary-light-1);
+  color: var(--wecom-primary);
+  background: var(--wecom-primary-light);
 }
 
 .tags-view__close {

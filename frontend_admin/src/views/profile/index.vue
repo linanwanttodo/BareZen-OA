@@ -7,8 +7,8 @@
           {{ userInitial }}
         </a-avatar>
         <div class="flex-1 min-w-0">
-          <h2 class="text-xl font-bold" style="color: #1D2129">{{ userStore.userInfo?.nickName || $t('user.adminUser') }}</h2>
-          <p class="text-sm mt-1" style="color: #86909C">@{{ userStore.userInfo?.userName || '-' }}</p>
+          <h2 class="text-xl font-semibold" style="color: var(--wecom-text-primary)">{{ userStore.userInfo?.nickName || $t('user.adminUser') }}</h2>
+          <p class="text-sm mt-1" style="color: var(--wecom-text-tertiary)">@{{ userStore.userInfo?.userName || '-' }}</p>
           <div class="flex items-center gap-2 mt-2">
             <a-tag v-for="role in userStore.roles" :key="role" color="blue">{{ role }}</a-tag>
           </div>

@@ -15,7 +15,7 @@
         <div
           v-for="contact in contacts"
           :key="contact.userId"
-          class="flex items-center gap-4 rounded-lg border border-[var(--border)] bg-[var(--card)] p-5"
+          class="flex items-center gap-4 rounded-wecom-md border border-[var(--wecom-border)] bg-[var(--wecom-bg-card)] p-5"
         >
           <a-avatar :style="{ background: 'var(--primary)' }" :size="48">{{ (contact.nickName || contact.userName || '?').charAt(0).toUpperCase() }}</a-avatar>
           <div class="min-w-0 flex-1">

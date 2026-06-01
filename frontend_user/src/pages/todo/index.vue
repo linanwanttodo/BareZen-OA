@@ -2,8 +2,8 @@
   <div class="mx-auto max-w-6xl px-6 py-8">
     <div class="mb-6 flex items-center justify-between">
       <div>
-        <h1 class="text-2xl font-bold text-[var(--foreground)]">{{ $t('todo.title') }}</h1>
-        <p class="mt-1 text-sm text-[var(--muted-foreground)]">管理你的工作待办</p>
+        <h1 class="text-xl font-semibold text-[var(--wecom-text-primary)]">{{ $t('todo.title') }}</h1>
+        <p class="mt-1 text-sm text-[var(--muted-foreground)]">{{ $t('todo.subtitle') }}</p>
       </div>
       <a-button type="primary" @click="openAddDialog">
         <template #icon><icon-plus /></template>
@@ -27,7 +27,7 @@
         <div
           v-for="todo in todos"
           :key="todo.id"
-          class="flex items-start gap-4 rounded-lg border border-[var(--border)] bg-[var(--card)] p-5"
+          class="flex items-start gap-4 rounded-wecom-md border border-[var(--wecom-border)] bg-[var(--wecom-bg-card)] p-5"
           :class="{ 'opacity-60': todo.status === 2 || todo.status === 3 }"
         >
           <div class="mt-0.5 shrink-0">
@@ -81,11 +81,11 @@
       @cancel="dialogVisible = false"
     >
       <a-form :model="formData" layout="vertical">
-        <a-form-item field="title" :label="$t('todo.titleLabel')" :rules="[{ required: true, message: '请输入待办标题' }]">
-          <a-input v-model="formData.title" placeholder="请输入待办标题" />
+        <a-form-item field="title" :label="$t('todo.titleLabel')" :rules="[{ required: true, message: t('todo.titleRequired') }]">
+          <a-input v-model="formData.title" :placeholder="$t('todo.titlePlaceholder')" />
         </a-form-item>
         <a-form-item field="description" :label="$t('todo.descriptionLabel')">
-          <a-textarea v-model="formData.description" placeholder="请输入待办描述（可选）" />
+          <a-textarea v-model="formData.description" :placeholder="$t('todo.descriptionPlaceholder')" />
         </a-form-item>
         <a-row :gutter="16">
           <a-col :span="12">
@@ -94,7 +94,7 @@
                 <a-option :value="0">{{ $t('todo.priorityLow') }}</a-option>
                 <a-option :value="1">{{ $t('todo.priorityMedium') }}</a-option>
                 <a-option :value="2">{{ $t('todo.priorityHigh') }}</a-option>
-                <a-option :value="3">紧急</a-option>
+                <a-option :value="3">{{ $t('todo.priorityUrgent') }}</a-option>
               </a-select>
             </a-form-item>
           </a-col>
@@ -104,7 +104,7 @@
                 <a-option :value="0">{{ $t('todo.statusTodo') }}</a-option>
                 <a-option :value="1">{{ $t('todo.statusInProgress') }}</a-option>
                 <a-option :value="2">{{ $t('todo.statusDone') }}</a-option>
-                <a-option :value="3">已取消</a-option>
+                <a-option :value="3">{{ $t('todo.statusCancelled') }}</a-option>
               </a-select>
             </a-form-item>
           </a-col>
@@ -149,13 +149,13 @@ const formData = reactive({
 })
 
 function priorityLabel(p: number) {
-  return { 0: t('todo.priorityLow'), 1: t('todo.priorityMedium'), 2: t('todo.priorityHigh'), 3: '紧急' }[p] || t('todo.priorityMedium')
+  return { 0: t('todo.priorityLow'), 1: t('todo.priorityMedium'), 2: t('todo.priorityHigh'), 3: t('todo.priorityUrgent') }[p] || t('todo.priorityMedium')
 }
 function priorityColor(p: number) {
   return ({ 0: 'gray', 1: 'blue', 2: 'orange', 3: 'red' } as Record<number, string>)[p] || 'blue'
 }
 function statusLabel(s: number) {
-  return { 0: t('todo.statusTodo'), 1: t('todo.statusInProgress'), 2: t('todo.statusDone'), 3: '已取消' }[s] || t('todo.statusTodo')
+  return { 0: t('todo.statusTodo'), 1: t('todo.statusInProgress'), 2: t('todo.statusDone'), 3: t('todo.statusCancelled') }[s] || t('todo.statusTodo')
 }
 function statusColor(s: number) {
   return ({ 0: 'gray', 1: 'blue', 2: 'green', 3: 'red' } as Record<number, string>)[s] || 'gray'
@@ -239,7 +239,7 @@ async function onSubmit() {
         dueDate: formData.dueDate,
       })
     }
-    Message.success('操作成功')
+    Message.success(t('todo.saveSuccess'))
     dialogVisible.value = false
     resetForm()
     loadTodos()
@@ -251,7 +251,7 @@ async function onSubmit() {
 async function onDelete(id: string) {
   try {
     await deleteTodoApi(id)
-    Message.success('删除成功')
+    Message.success(t('todo.deleteSuccess'))
     loadTodos()
   } catch (err) {
     console.error('todo delete error:', err)

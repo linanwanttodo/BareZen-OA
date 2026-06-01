@@ -20,7 +20,7 @@ function toggle() {
     @click="toggle"
     :class="cn(
       'flex h-5 w-5 items-center justify-center rounded border',
-      modelValue ? 'border-[var(--primary)] bg-[var(--primary)] text-white' : 'border-[var(--border)] bg-white',
+      modelValue ? 'border-[var(--primary)] bg-[var(--primary)] text-white' : 'border-[var(--border)] bg-[var(--wecom-bg-card)]',
     )"
   >
     <Check v-if="modelValue" class="h-3.5 w-3.5" />

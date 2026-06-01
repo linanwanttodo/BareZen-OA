@@ -56,11 +56,14 @@
                   />
                 </template>
               </a-table-column>
-              <a-table-column :title="$t('common.operate')" :width="100" align="right">
+              <a-table-column :title="$t('common.operate')" :width="160" align="right">
                 <template #cell="{ record }">
-                  <a-popconfirm :content="$t('common.deleteConfirm')" @ok="handleKeyDelete(record)">
-                    <a-button v-permission="PERM.system.apiKeyDelete" size="small" status="danger">{{ $t('common.delete') }}</a-button>
-                  </a-popconfirm>
+                  <a-space>
+                    <a-button v-permission="PERM.system.apiKeyEdit" size="small" @click="openKeyEdit(record)">{{ $t('common.edit') }}</a-button>
+                    <a-popconfirm :content="$t('common.deleteConfirm')" @ok="handleKeyDelete(record)">
+                      <a-button v-permission="PERM.system.apiKeyDelete" size="small" status="danger">{{ $t('common.delete') }}</a-button>
+                    </a-popconfirm>
+                  </a-space>
                 </template>
               </a-table-column>
             </template>
@@ -116,7 +119,10 @@
               </a-table-column>
               <a-table-column :title="$t('openapi.events')" data-index="events" :width="200" ellipsis />
               <a-table-column :title="$t('openapi.secret')" :width="90">
-                <template #cell="{ record }">{{ record.secret || '-' }}</template>
+                <template #cell="{ record }">
+                  <span v-if="record.secret" class="font-mono text-sm">****{{ record.secret.slice(-4) }}</span>
+                  <span v-else>-</span>
+                </template>
               </a-table-column>
               <a-table-column :title="$t('common.status')" :width="80">
                 <template #cell="{ record }">
@@ -126,11 +132,14 @@
                   />
                 </template>
               </a-table-column>
-              <a-table-column :title="$t('common.operate')" :width="100" align="right">
+              <a-table-column :title="$t('common.operate')" :width="160" align="right">
                 <template #cell="{ record }">
-                  <a-popconfirm :content="$t('common.deleteConfirm')" @ok="handleHookDelete(record)">
-                    <a-button v-permission="PERM.system.webhookDelete" size="small" status="danger">{{ $t('common.delete') }}</a-button>
-                  </a-popconfirm>
+                  <a-space>
+                    <a-button v-permission="PERM.system.webhookEdit" size="small" @click="openHookEdit(record)">{{ $t('common.edit') }}</a-button>
+                    <a-popconfirm :content="$t('common.deleteConfirm')" @ok="handleHookDelete(record)">
+                      <a-button v-permission="PERM.system.webhookDelete" size="small" status="danger">{{ $t('common.delete') }}</a-button>
+                    </a-popconfirm>
+                  </a-space>
                 </template>
               </a-table-column>
             </template>
@@ -159,6 +168,21 @@
         </a-form-item>
         <a-form-item field="expireTime" :label="$t('openapi.expireTime')">
           <a-date-picker v-model="keyCreateForm.expireTime" show-time style="width: 100%" :placeholder="$t('openapi.expireTimePlaceholder')" />
+        </a-form-item>
+      </a-form>
+    </a-modal>
+
+    <!-- 编辑 API Key 弹窗 -->
+    <a-modal v-model:visible="keyEditVisible" :title="$t('openapi.editApiKey')" @ok="handleKeyEdit" @cancel="keyEditVisible = false">
+      <a-form :model="keyEditForm" auto-label-width>
+        <a-form-item field="keyName" :label="$t('openapi.keyName')" required>
+          <a-input v-model="keyEditForm.keyName" :max-length="50" :placeholder="$t('openapi.keyNamePlaceholder')" />
+        </a-form-item>
+        <a-form-item field="scopes" :label="$t('openapi.scopes')">
+          <a-input v-model="keyEditForm.scopes" :placeholder="$t('openapi.scopesPlaceholder')" />
+        </a-form-item>
+        <a-form-item field="expireTime" :label="$t('openapi.expireTime')">
+          <a-date-picker v-model="keyEditForm.expireTime" show-time style="width: 100%" :placeholder="$t('openapi.expireTimePlaceholder')" allow-clear />
         </a-form-item>
       </a-form>
     </a-modal>
@@ -196,6 +220,24 @@
         </a-form-item>
       </a-form>
     </a-modal>
+
+    <!-- 编辑 Webhook 弹窗 -->
+    <a-modal v-model:visible="hookEditVisible" :title="$t('openapi.editWebhook')" @ok="handleHookEdit" @cancel="hookEditVisible = false">
+      <a-form :model="hookEditForm" auto-label-width>
+        <a-form-item field="name" :label="$t('openapi.name')" required>
+          <a-input v-model="hookEditForm.name" :max-length="50" :placeholder="$t('openapi.namePlaceholder')" />
+        </a-form-item>
+        <a-form-item field="url" :label="$t('openapi.url')" required>
+          <a-input v-model="hookEditForm.url" :placeholder="$t('openapi.urlPlaceholder')" />
+        </a-form-item>
+        <a-form-item field="events" :label="$t('openapi.events')" required>
+          <a-input v-model="hookEditForm.events" :placeholder="$t('openapi.eventsPlaceholder')" />
+        </a-form-item>
+        <a-form-item field="secret" :label="$t('openapi.secret')">
+          <a-input-password v-model="hookEditForm.secret" :placeholder="$t('openapi.secretTip')" />
+        </a-form-item>
+      </a-form>
+    </a-modal>
   </div>
 </template>
 
@@ -207,10 +249,12 @@ import { useI18n } from 'vue-i18n'
 import {
   getApiKeyPageApi,
   createApiKeyApi,
+  updateApiKeyApi,
   changeApiKeyStatusApi,
   deleteApiKeyApi,
   getWebhookPageApi,
   createWebhookApi,
+  updateWebhookApi,
   changeWebhookStatusApi,
   deleteWebhookApi,
   type ApiKeyItem,
@@ -231,6 +275,9 @@ const keyCreateVisible = ref(false)
 const keyCreateForm = reactive({ keyName: '', scopes: '', expireTime: '' })
 const keyResultVisible = ref(false)
 const createdPlainKey = ref('')
+
+const keyEditVisible = ref(false)
+const keyEditForm = reactive({ id: '', keyName: '', scopes: '', expireTime: '' as string | undefined })
 
 onMounted(() => loadKeys())
 
@@ -272,6 +319,29 @@ async function handleKeyCreate() {
   loadKeys()
 }
 
+function openKeyEdit(row: ApiKeyItem) {
+  keyEditForm.id = row.id
+  keyEditForm.keyName = row.keyName
+  keyEditForm.scopes = row.scopes || ''
+  keyEditForm.expireTime = row.expireTime || undefined
+  keyEditVisible.value = true
+}
+
+async function handleKeyEdit() {
+  if (!keyEditForm.keyName.trim()) {
+    Message.warning(t('openapi.keyNameRequired'))
+    return
+  }
+  await updateApiKeyApi(keyEditForm.id, {
+    keyName: keyEditForm.keyName.trim(),
+    scopes: keyEditForm.scopes.trim() || undefined,
+    expireTime: keyEditForm.expireTime || undefined,
+  })
+  keyEditVisible.value = false
+  Message.success(t('openapi.editSuccess'))
+  loadKeys()
+}
+
 async function handleKeyStatusChange(row: ApiKeyItem, val: boolean) {
   await changeApiKeyStatusApi(row.id, val ? '0' : '1')
   Message.success(t('openapi.statusUpdated'))
@@ -301,6 +371,9 @@ const hookSearchForm = reactive({ name: '' })
 
 const hookCreateVisible = ref(false)
 const hookCreateForm = reactive({ name: '', url: '', events: '', secret: '' })
+
+const hookEditVisible = ref(false)
+const hookEditForm = reactive({ id: '', name: '', url: '', events: '', secret: '' })
 
 async function loadHooks() {
   hookLoading.value = true
@@ -341,6 +414,35 @@ async function handleHookCreate() {
   })
   hookCreateVisible.value = false
   Message.success(t('openapi.createWebhookSuccess'))
+  loadHooks()
+}
+
+function openHookEdit(row: WebhookItem) {
+  hookEditForm.id = row.id
+  hookEditForm.name = row.name
+  hookEditForm.url = row.url
+  hookEditForm.events = row.events
+  hookEditForm.secret = ''
+  hookEditVisible.value = true
+}
+
+async function handleHookEdit() {
+  if (!hookEditForm.name.trim() || !hookEditForm.url.trim() || !hookEditForm.events.trim()) {
+    Message.warning(t('openapi.hookRequired'))
+    return
+  }
+  if (!/^https?:\/\//.test(hookEditForm.url.trim())) {
+    Message.warning(t('openapi.urlProtocol'))
+    return
+  }
+  await updateWebhookApi(hookEditForm.id, {
+    name: hookEditForm.name.trim(),
+    url: hookEditForm.url.trim(),
+    events: hookEditForm.events.trim(),
+    secret: hookEditForm.secret.trim() || undefined,
+  })
+  hookEditVisible.value = false
+  Message.success(t('openapi.editSuccess'))
   loadHooks()
 }
 

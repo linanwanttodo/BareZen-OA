@@ -6,13 +6,13 @@
   <div v-else class="dashboard-container">
     <!-- 统计卡片 -->
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      <a-card v-for="card in statCards" :key="card.title" class="p-5" :style="{ borderLeft: `3px solid ${card.color}` }">
+      <a-card v-for="card in statCards" :key="card.title" class="p-5">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm text-[var(--muted-foreground)]">{{ $t(card.titleKey) }}</p>
-            <p class="mt-1 text-2xl font-semibold tracking-tight text-[var(--foreground)]">{{ card.value }}</p>
+            <p class="text-sm text-[var(--wecom-text-tertiary)]">{{ $t(card.titleKey) }}</p>
+            <p class="mt-1 text-2xl font-semibold text-[var(--wecom-text-primary)]">{{ card.value }}</p>
           </div>
-          <component :is="card.icon" :size="20" :style="{ color: card.color }" />
+          <component :is="card.icon" :size="20" class="text-[var(--wecom-text-disabled)]" />
         </div>
       </a-card>
     </div>
@@ -42,19 +42,19 @@
         <span class="text-xs text-[var(--muted-foreground)]">{{ $t('dashboard.approvalStatsHint') }}</span>
       </div>
       <div v-if="approvalStats.length" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        <div v-for="s in approvalStats" :key="s.type" class="rounded-lg border border-[var(--border)] p-4">
-          <p class="text-sm font-medium text-[var(--foreground)]">{{ s.typeName }}</p>
+        <div v-for="s in approvalStats" :key="s.type" class="rounded-wecom-md border border-[var(--wecom-border)] p-4">
+          <p class="text-sm font-medium text-[var(--wecom-text-primary)]">{{ s.typeName }}</p>
           <p class="mt-2 flex items-baseline gap-3">
-            <span class="text-xl font-semibold text-[var(--foreground)]">{{ s.pending }}</span>
-            <span class="text-xs text-[var(--muted-foreground)]">{{ $t('dashboard.pendingApproval') }}</span>
+            <span class="text-xl font-semibold text-[var(--wecom-text-primary)]">{{ s.pending }}</span>
+            <span class="text-xs text-[var(--wecom-text-tertiary)]">{{ $t('dashboard.pendingApproval') }}</span>
           </p>
-          <p class="mt-2 text-xs text-[var(--muted-foreground)]">
-            {{ $t('dashboard.avgHours') }}: <span class="text-[var(--foreground)]">{{ s.avgHours }}h</span>
-            · {{ $t('dashboard.rejectRate') }}: <span class="text-[var(--foreground)]">{{ s.rejectRate }}%</span>
+          <p class="mt-2 text-xs text-[var(--wecom-text-tertiary)]">
+            {{ $t('dashboard.avgHours') }}: <span class="text-[var(--wecom-text-primary)]">{{ s.avgHours }}h</span>
+            · {{ $t('dashboard.rejectRate') }}: <span class="text-[var(--wecom-text-primary)]">{{ s.rejectRate }}%</span>
           </p>
         </div>
       </div>
-      <p v-else class="py-6 text-center text-sm text-[var(--muted-foreground)]">{{ $t('dashboard.noApprovalStats') }}</p>
+      <p v-else class="py-6 text-center text-sm text-[var(--wecom-text-tertiary)]">{{ $t('dashboard.noApprovalStats') }}</p>
     </a-card>
 
     <!-- 公告 + 最近操作 -->
@@ -67,7 +67,7 @@
         <div v-if="notices.length" class="divide-y divide-[var(--border)]">
           <div v-for="item in notices" :key="item.id" class="flex items-center justify-between py-3">
             <div class="flex items-center gap-2 min-w-0">
-              <a-tag :color="item.noticeType === '1' ? 'arcoblue' : 'purple'" class="shrink-0 text-xs">
+              <a-tag :color="item.noticeType === '1' ? 'arcoblue' : 'gray'" class="shrink-0 text-xs">
                 {{ item.noticeType === '1' ? $t('notice.typeNotice') : $t('notice.typeAnnouncement') }}
               </a-tag>
               <span class="truncate text-sm text-[var(--foreground)]" @click="handleNoticeClick(item)">{{ item.noticeTitle }}</span>
@@ -91,7 +91,7 @@
             </div>
             <p class="mt-1 text-xs text-[var(--muted-foreground)]">
               {{ item.operUser }} · {{ item.requestMethod }} ·
-              <span :class="item.status === 0 ? 'text-green-600' : 'text-red-500'">{{ operStatusText(item.status) }}</span>
+              <span :class="item.status === 0 ? 'text-[var(--wecom-success)]' : 'text-[var(--wecom-error)]'">{{ operStatusText(item.status) }}</span>
               · {{ item.costTime }}ms
             </p>
           </div>
@@ -105,7 +105,7 @@
     <a-modal v-model:visible="noticeDialogVisible" :title="currentNotice?.noticeTitle || $t('dashboard.noticeDetail')" @cancel="noticeDialogVisible = false">
       <div v-if="currentNotice" class="notice-detail">
         <div class="notice-detail-meta">
-          <a-tag :color="currentNotice.noticeType === '1' ? 'arcoblue' : 'purple'">
+          <a-tag :color="currentNotice.noticeType === '1' ? 'arcoblue' : 'gray'">
             {{ currentNotice.noticeType === '1' ? $t('notice.typeNotice') : $t('notice.typeAnnouncement') }}
           </a-tag>
           <a-tag v-if="currentNotice.status === '1'" color="arcoblue">{{ $t('notice.noticeStatusPublished') }}</a-tag>
@@ -149,11 +149,11 @@ const loading = ref(true)
 
 // ============ 统计卡片 ============
 const statCards = ref([
-  { title: t('dashboard.userCount'), titleKey: 'dashboard.userCount', key: 'userCount', value: '-', icon: IconUser, color: 'var(--primary)' },
-  { title: t('dashboard.roleCount'), titleKey: 'dashboard.roleCount', key: 'roleCount', value: '-', icon: IconUserGroup, color: '#00B42A' },
-  { title: t('dashboard.menuCount'), titleKey: 'dashboard.menuCount', key: 'menuCount', value: '-', icon: IconApps, color: '#FF7D00' },
-  { title: t('dashboard.onlineCount'), titleKey: 'dashboard.onlineCount', key: 'onlineCount', value: '-', icon: IconEye, color: '#722ED1' },
-  { title: t('dashboard.noticeCount'), titleKey: 'dashboard.noticeCount', key: 'noticeCount', value: '-', icon: IconNotification, color: '#F7BA1E' },
+  { title: t('dashboard.userCount'), titleKey: 'dashboard.userCount', key: 'userCount', value: '-', icon: IconUser },
+  { title: t('dashboard.roleCount'), titleKey: 'dashboard.roleCount', key: 'roleCount', value: '-', icon: IconUserGroup },
+  { title: t('dashboard.menuCount'), titleKey: 'dashboard.menuCount', key: 'menuCount', value: '-', icon: IconApps },
+  { title: t('dashboard.onlineCount'), titleKey: 'dashboard.onlineCount', key: 'onlineCount', value: '-', icon: IconEye },
+  { title: t('dashboard.noticeCount'), titleKey: 'dashboard.noticeCount', key: 'noticeCount', value: '-', icon: IconNotification },
 ])
 
 function setStat(key: string, val: string) {
@@ -177,11 +177,19 @@ const operLogs = ref<SysOperLog[]>([])
 // ============ 审批效率 ============
 const approvalStats = ref<ApprovalStat[]>([])
 
-// ============ 图表 ============
+// ============ 图表（企业微信色板，ECharts 不解析 CSS 变量，使用字面量） ============
 const lineChartRef = ref<HTMLElement>()
 const pieChartRef = ref<HTMLElement>()
 let lineChart: echarts.ECharts | null = null
 let pieChart: echarts.ECharts | null = null
+
+const CHART_PRIMARY = '#2B7CE9'
+const CHART_TEXT = '#8C8C8C'
+const CHART_TEXT_STRONG = '#262626'
+const CHART_BORDER = '#E8E8E8'
+const CHART_SPLIT = '#F5F5F5'
+// 饼图：蓝色系渐进 + 中性灰收尾，避免彩虹配色
+const CHART_SERIES_COLORS = ['#2B7CE9', '#5C9CEF', '#8FBCF5', '#C0DBFA', '#595959', '#8C8C8C', '#BFBFBF']
 
 function initLineChart(visitTrend: { date: string; count: number }[]) {
   if (!lineChartRef.value) return
@@ -189,20 +197,20 @@ function initLineChart(visitTrend: { date: string; count: number }[]) {
   const days = visitTrend.map((d) => d.date.substring(5))
   const counts = visitTrend.map((d) => d.count)
   lineChart.setOption({
-    tooltip: { trigger: 'axis', backgroundColor: '#FFFFFF', borderColor: '#E5E6EB', textStyle: { color: '#1D2129' } },
-    legend: { data: [t('dashboard.visitTrend')], top: 0, right: 0, textStyle: { fontSize: 12, color: '#86909C' } },
+    tooltip: { trigger: 'axis', backgroundColor: '#FFFFFF', borderColor: CHART_BORDER, textStyle: { color: CHART_TEXT_STRONG } },
+    legend: { data: [t('dashboard.visitTrend')], top: 0, right: 0, textStyle: { fontSize: 12, color: CHART_TEXT } },
     grid: { left: 40, right: 20, bottom: 30, top: 40 },
-    xAxis: { type: 'category', data: days, axisLine: { lineStyle: { color: '#E5E6EB' } }, axisLabel: { color: '#86909C' } },
-    yAxis: { type: 'value', splitLine: { lineStyle: { color: '#F2F3F5' } }, axisLabel: { color: '#86909C' } },
+    xAxis: { type: 'category', data: days, axisLine: { lineStyle: { color: CHART_BORDER } }, axisLabel: { color: CHART_TEXT } },
+    yAxis: { type: 'value', splitLine: { lineStyle: { color: CHART_SPLIT } }, axisLabel: { color: CHART_TEXT } },
     series: [
       {
         name: t('dashboard.visitTrend'),
         type: 'line',
         smooth: true,
         data: counts,
-        lineStyle: { width: 2, color: 'var(--primary)' },
-        areaStyle: { color: 'rgba(51,112,255,0.12)' },
-        itemStyle: { color: 'var(--primary)' },
+        lineStyle: { width: 2, color: CHART_PRIMARY },
+        areaStyle: { color: 'rgba(43,124,233,0.08)' },
+        itemStyle: { color: CHART_PRIMARY },
         symbol: 'circle',
         symbolSize: 6,
       },
@@ -213,15 +221,14 @@ function initLineChart(visitTrend: { date: string; count: number }[]) {
 function initPieChart(roleDistribution: { name: string; value: number }[]) {
   if (!pieChartRef.value) return
   pieChart = echarts.init(pieChartRef.value)
-  const colors = ['var(--primary)', '#00B42A', '#FF7D00', '#722ED1', '#F53F3F', '#F7BA1E', 'var(--color-cyan-6)']
   const data = roleDistribution.map((item, i) => ({
     value: item.value,
     name: item.name,
-    itemStyle: { color: colors[i % colors.length] },
+    itemStyle: { color: CHART_SERIES_COLORS[i % CHART_SERIES_COLORS.length] },
   }))
   pieChart.setOption({
-    tooltip: { trigger: 'item', backgroundColor: '#FFFFFF', borderColor: '#E5E6EB', textStyle: { color: '#1D2129' } },
-    legend: { orient: 'horizontal', bottom: 0, textStyle: { fontSize: 12, color: '#4E5969' } },
+    tooltip: { trigger: 'item', backgroundColor: '#FFFFFF', borderColor: CHART_BORDER, textStyle: { color: CHART_TEXT_STRONG } },
+    legend: { orient: 'horizontal', bottom: 0, textStyle: { fontSize: 12, color: CHART_TEXT } },
     series: [
       {
         type: 'pie',
@@ -322,12 +329,10 @@ onMounted(async () => {
 })
 
 onActivated(async () => {
-  // keep-alive 缓存后重新进入时刷新图表
-  if (lineChartRef.value && pieChartRef.value) {
-    await nextTick()
-    initLineChart()
-    initPieChart()
-  }
+  // keep-alive 缓存后重新进入时，容器尺寸可能变化，重算图表布局
+  await nextTick()
+  lineChart?.resize()
+  pieChart?.resize()
 })
 
 onUnmounted(() => {

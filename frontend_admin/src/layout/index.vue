@@ -29,6 +29,6 @@ import TagsView from './components/TagsView.vue'
 <style scoped>
 .bz-content {
   padding: 0;
-  background: #F7F8FA;
+  background: var(--wecom-bg-page);
 }
 </style>

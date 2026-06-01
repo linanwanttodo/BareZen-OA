@@ -2,7 +2,7 @@
   <div class="top-navbar">
     <!-- 左侧：Logo + 品牌名 -->
     <div class="top-navbar__left">
-      <img src="/logo-icon.svg" alt="BareZen" class="top-navbar__logo" />
+      <img src="/logo.png" alt="BareZen" class="top-navbar__logo" />
       <span class="top-navbar__brand">BareZen</span>
     </div>
 
@@ -21,7 +21,7 @@
             :class="{ 'top-navbar__nav-item--active': isActive(item) }"
           >
             {{ getMenuTranslation(item) }}
-            <span class="top-navbar__arrow" :class="{ 'top-navbar__arrow--open': dropdownOpen[item.id] }">›</span>
+            <icon-down class="top-navbar__arrow" :class="{ 'top-navbar__arrow--open': dropdownOpen[item.id] }" />
           </a>
           <div v-show="dropdownOpen[item.id]" class="top-navbar__dropdown-menu">
             <a
@@ -93,10 +93,12 @@
           <p class="mt-1 text-xs" :class="strengthTextClass">{{ strengthText }}</p>
         </div>
         <!-- 校验规则清单 -->
-        <div v-if="pwdForm.newPassword" class="mb-2 rounded-md bg-[var(--muted)] p-3 text-xs">
+        <div v-if="pwdForm.newPassword" class="mb-2 rounded-wecom-md bg-[var(--wecom-bg-container)] p-3 text-xs">
           <p class="mb-1 font-medium">{{ $t('user.pwdPolicyTitle') }}</p>
-          <p v-for="rule in passwordRules" :key="rule.label" :class="rule.valid ? 'text-[var(--bz-success)]' : 'text-[var(--muted-foreground)]'">
-            {{ rule.valid ? '已满足' : '未满足' }} {{ rule.label }}
+          <p v-for="rule in passwordRules" :key="rule.label" class="flex items-center gap-1.5" :class="rule.valid ? 'text-[var(--wecom-success)]' : 'text-[var(--wecom-text-tertiary)]'">
+            <icon-check v-if="rule.valid" :size="12" />
+            <icon-minus v-else :size="12" />
+            <span>{{ rule.label }}</span>
           </p>
         </div>
         <a-form-item field="confirmPassword" :label="$t('profile.confirmPassword')">
@@ -111,6 +113,7 @@
 import { computed, ref, reactive } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Message } from '@arco-design/web-vue'
+import { IconDown, IconCheck, IconMinus } from '@arco-design/web-vue/es/icon'
 import { useI18n } from 'vue-i18n'
 import { useUserStore } from '@/stores/user'
 import { usePermissionStore } from '@/stores/permission'
@@ -260,17 +263,27 @@ const strengthText = computed(() => {
 })
 
 const strengthTextClass = computed(() => {
-  const map = ['text-red-500', 'text-orange-500', 'text-yellow-600', 'text-green-500']
+  const map = [
+    'text-[var(--wecom-error)]',
+    'text-[var(--wecom-warning)]',
+    'text-[var(--wecom-warning)]',
+    'text-[var(--wecom-success)]',
+  ]
   return map[strengthLevel.value]
 })
 
 function strengthBarClass(barIndex: number): string {
   const level = strengthLevel.value
   if (barIndex <= level) {
-    const colors = ['bg-red-400', 'bg-orange-400', 'bg-yellow-500', 'bg-green-500']
+    const colors = [
+      'bg-[var(--wecom-error)]',
+      'bg-[var(--wecom-warning)]',
+      'bg-[var(--wecom-warning)]',
+      'bg-[var(--wecom-success)]',
+    ]
     return colors[level]
   }
-  return 'bg-[var(--border)]'
+  return 'bg-[var(--wecom-border)]'
 }
 
 async function onPwdSubmit() {
@@ -309,25 +322,25 @@ async function onPwdSubmit() {
 .top-navbar {
   display: flex;
   align-items: center;
-  height: 56px;
-  padding: 0 20px;
-  border-bottom: 1px solid var(--border);
-  background: var(--bg-color, #fff);
+  height: var(--wecom-header-height);
+  padding: 0 var(--wecom-spacing-xl);
+  border-bottom: 1px solid var(--wecom-border);
+  background: var(--wecom-bg-card);
 }
 .top-navbar__left {
   display: flex;
   align-items: center;
-  margin-right: 24px;
+  margin-right: var(--wecom-spacing-xl);
 }
 .top-navbar__logo {
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   margin-right: 10px;
 }
 .top-navbar__brand {
   font-weight: 600;
   font-size: 16px;
-  color: var(--foreground);
+  color: var(--wecom-text-primary);
 }
 .top-navbar__nav {
   display: flex;
@@ -338,31 +351,31 @@ async function onPwdSubmit() {
 .top-navbar__nav-item {
   display: inline-flex;
   align-items: center;
-  padding: 8px 12px;
-  border-radius: 6px;
+  padding: 6px 12px;
+  border-radius: var(--wecom-radius-md);
   font-size: 14px;
   cursor: pointer;
-  color: var(--muted-foreground, #666);
+  color: var(--wecom-text-secondary);
   text-decoration: none;
-  transition: background .15s, color .15s;
+  transition: background var(--wecom-transition-fast), color var(--wecom-transition-fast);
 }
 .top-navbar__nav-item:hover {
-  background: var(--hover-bg, #f0f0f0);
-  color: var(--foreground, #333);
+  background: var(--wecom-bg-hover);
+  color: var(--wecom-text-primary);
 }
 .top-navbar__nav-item--active,
 .top-navbar__nav-item--active:hover {
-  background: var(--color-primary-light-1);
-  color: var(--primary);
+  background: var(--wecom-primary-light);
+  color: var(--wecom-primary);
   font-weight: 500;
 }
 .top-navbar__arrow {
   margin-left: 4px;
-  font-size: 14px;
-  transition: transform .2s;
+  font-size: 12px;
+  transition: transform var(--wecom-transition-base);
 }
 .top-navbar__arrow--open {
-  transform: rotate(90deg);
+  transform: rotate(180deg);
 }
 .top-navbar__dropdown {
   position: relative;
@@ -373,28 +386,28 @@ async function onPwdSubmit() {
   left: 0;
   min-width: 160px;
   padding: 4px;
-  border: 1px solid var(--border, #e5e6eb);
-  border-radius: 8px;
-  background: var(--bg-color, #fff);
-  box-shadow: 0 4px 12px rgba(0,0,0,.08);
+  border: 1px solid var(--wecom-border);
+  border-radius: var(--wecom-radius-md);
+  background: var(--wecom-bg-card);
+  box-shadow: var(--wecom-shadow-md);
   z-index: 1000;
 }
 .top-navbar__dropdown-item {
   display: block;
   padding: 8px 12px;
-  border-radius: 6px;
+  border-radius: var(--wecom-radius-sm);
   font-size: 14px;
   cursor: pointer;
-  color: var(--foreground, #333);
+  color: var(--wecom-text-primary);
   text-decoration: none;
   white-space: nowrap;
 }
 .top-navbar__dropdown-item:hover {
-  background: var(--hover-bg, #f5f5f5);
+  background: var(--wecom-bg-hover);
 }
 .top-navbar__dropdown-item--active {
-  color: var(--primary);
-  background: var(--color-primary-light-1);
+  color: var(--wecom-primary);
+  background: var(--wecom-primary-light);
 }
 .top-navbar__right {
   display: flex;
@@ -406,15 +419,15 @@ async function onPwdSubmit() {
   gap: 8px;
   cursor: pointer;
   padding: 4px 8px;
-  border-radius: 6px;
+  border-radius: var(--wecom-radius-md);
 }
 .top-navbar__user:hover {
-  background: var(--hover-bg, #f5f5f5);
+  background: var(--wecom-bg-hover);
 }
 .top-navbar__avatar {
   width: 28px; height: 28px;
-  border-radius: 50%;
-  background: var(--primary);
+  border-radius: var(--wecom-radius-md);
+  background: var(--wecom-primary);
   color: #fff;
   display: flex;
   align-items: center;
@@ -424,6 +437,6 @@ async function onPwdSubmit() {
 }
 .top-navbar__username {
   font-size: 14px;
-  color: var(--foreground);
+  color: var(--wecom-text-primary);
 }
 </style>

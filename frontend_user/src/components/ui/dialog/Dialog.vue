@@ -31,7 +31,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
       <div
         role="dialog"
         aria-modal="true"
-        class="relative z-10 w-full max-w-lg rounded-lg border border-[var(--border)] bg-[var(--card)] p-6"
+        class="relative z-10 w-full max-w-lg rounded-wecom-md border border-[var(--wecom-border)] bg-[var(--wecom-bg-card)] p-6"
       >
         <div class="mb-4 flex items-center justify-between">
           <h3 class="text-lg font-semibold text-[var(--foreground)]">{{ title }}</h3>

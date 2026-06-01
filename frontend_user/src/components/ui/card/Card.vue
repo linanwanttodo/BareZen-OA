@@ -1,5 +1,5 @@
 <template>
-  <div class="rounded-lg border border-[var(--border)] bg-[var(--card)] text-[var(--card-foreground)]">
+  <div class="rounded-wecom-md border border-[var(--wecom-border)] bg-[var(--wecom-bg-card)] text-[var(--wecom-text-primary)] shadow-wecom-sm">
     <slot />
   </div>
 </template>
