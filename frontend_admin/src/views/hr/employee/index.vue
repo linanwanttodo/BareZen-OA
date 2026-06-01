@@ -205,6 +205,7 @@ const { t } = useI18n()
 const loading = ref(false)
 const saving = ref(false)
 const tableData = ref<HrEmployee[]>([])
+let requestSeq = 0
 const editVisible = ref(false)
 const isEdit = ref(false)
 const deptTreeData = ref<SysDept[]>([])
@@ -247,6 +248,7 @@ function statusColor(status: string | undefined): string {
 }
 
 async function loadData() {
+  const seq = ++requestSeq
   loading.value = true
   try {
     const res = await getEmployeePageApi({
@@ -254,10 +256,12 @@ async function loadData() {
       pageSize: pagination.pageSize,
       ...searchForm,
     })
+    // 仅最新请求的结果写入状态，避免旧响应覆盖新结果（搜索/翻页竞态）
+    if (seq !== requestSeq) return
     tableData.value = res.data.list || []
     pagination.total = res.data.total || 0
   } finally {
-    loading.value = false
+    if (seq === requestSeq) loading.value = false
   }
 }
 
