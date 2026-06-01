@@ -120,7 +120,7 @@
 
 <script setup lang="ts">
 import { PERM } from '@/utils/constants'
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, onActivated } from 'vue'
 import { Message } from '@arco-design/web-vue'
 import { getTodoPageApi, getTodoSummaryApi, type TodoItem } from '@/api/todo'
 import { approveLeaveApi } from '@/api/leave'
@@ -188,4 +188,5 @@ onMounted(() => {
   loadData()
   loadSummary()
 })
+onActivated(() => { loadData(); loadSummary() })
 </script>

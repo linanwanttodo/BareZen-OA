@@ -164,7 +164,7 @@
 
 <script setup lang="ts">
 import { PERM } from '@/utils/constants'
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, onActivated } from 'vue'
 import { Message } from '@arco-design/web-vue'
 import { getLeavePageApi, submitLeaveApi, approveLeaveApi, revokeLeaveApi, deleteLeaveApi, type AttLeaveRequest } from '@/api/leave'
 import { getFlowLogsApi, getFlowTasksApi, type ApprovalFlowNode, type ApprovalFlowTask } from '@/api/flowlog'
@@ -372,4 +372,5 @@ async function openFlow(record: AttLeaveRequest) {
 }
 
 onMounted(loadData)
+onActivated(loadData)
 </script>

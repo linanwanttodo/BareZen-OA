@@ -12,7 +12,7 @@
     <main class="bz-content flex-1 overflow-y-auto">
       <router-view v-slot="{ Component, route }">
         <transition name="fade" mode="out-in">
-          <keep-alive>
+          <keep-alive :max="10">
             <component :is="Component" :key="route.path" />
           </keep-alive>
         </transition>

@@ -157,7 +157,7 @@
 
 <script setup lang="ts">
 import { PERM } from '@/utils/constants'
-import { ref, reactive, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted, onActivated, computed } from 'vue'
 import { Message } from '@arco-design/web-vue'
 import {
   getRoomPageApi, getAvailableRoomsApi, addRoomApi, updateRoomApi, deleteRoomApi,
@@ -363,4 +363,5 @@ onMounted(() => {
   loadRooms()
   loadBookings()
 })
+onActivated(() => { loadRooms(); loadBookings() })
 </script>

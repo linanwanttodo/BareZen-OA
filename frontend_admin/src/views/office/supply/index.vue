@@ -212,7 +212,7 @@
 
 <script setup lang="ts">
 import { PERM } from '@/utils/constants'
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, onActivated } from 'vue'
 import { useRoute } from 'vue-router'
 import { Message } from '@arco-design/web-vue'
 import {
@@ -363,4 +363,5 @@ async function openFlow(record: OfficeSupplyRequest) {
 }
 
 onMounted(() => { loadSupplies(); loadRequests() })
+onActivated(() => { loadSupplies(); loadRequests() })
 </script>
