@@ -4,6 +4,7 @@ import { getToken, removeToken, setToken } from '@/utils/auth'
 import { Toast } from '@/utils/toast'
 import router from '@/router'
 import type { ApiResult } from '@/types/api'
+import { useUserStore } from '@/stores/user'
 
 const BASE_URL = import.meta.env.VITE_APP_BASE_API || '/api'
 
@@ -66,8 +67,11 @@ service.interceptors.response.use(
     // 未登录或 Token 过期（HTTP 401）— 清除 Token 并跳转登录页。
     // 必须先于 blob 提前返回分支处理：blob 请求 401 同样需要清理会话
     if (status === 401) {
-      removeToken()
-      router.push('/auth/login')
+      // 完整清理本地状态：token、用户信息、Pinia 状态、WebSocket 连接
+      useUserStore().resetState()
+      // 跳转登录页并带上当前地址，登出后可以跳转回来
+      const redirect = router.currentRoute.value.fullPath
+      router.push({ path: '/auth/login', query: redirect !== '/auth/login' ? { redirect } : {} })
       Toast.warning('登录已过期，请重新登录')
       return Promise.reject(new Error(res?.msg || '未登录'))
     }
