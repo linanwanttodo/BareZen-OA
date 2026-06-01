@@ -9,6 +9,9 @@ import org.springframework.web.socket.config.annotation.WebSocketConfigurer;
 import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry;
 import org.springframework.web.socket.server.standard.ServletServerContainerFactoryBean;
 
+import jakarta.annotation.PostConstruct;
+import java.util.Arrays;
+
 /**
  * WebSocket 配置
  *
@@ -36,6 +39,29 @@ public class WebSocketConfig implements WebSocketConfigurer {
     /** 逗号分隔的允许来源，如 https://admin.example.com,https://app.example.com */
     @Value("${websocket.allowed-origins:}")
     private String allowedOrigins;
+
+    /** 启用的 Spring profile（逗号分隔，用于 prod 环境判定） */
+    @Value("${spring.profiles.active:}")
+    private String activeProfiles;
+
+    /**
+     * 生产环境 WebSocket 白名单 fail-fast 校验（与 WebMvcConfig 的 CORS 校验模式一致）。
+     *
+     * <p>生产模式下若未配置 {@code websocket.allowed-origins}，注册端点会回落到
+     * 开发环境的 localhost 白名单——容器/外网部署下前端将连不上 WS；反之宽泛放行
+     * 则有跨站 WebSocket 风险。因此在启动阶段即抛错终止，禁止生产带病启动。</p>
+     */
+    @PostConstruct
+    public void validateProdWsOrigins() {
+        boolean prod = Arrays.stream(activeProfiles.split(","))
+                .map(String::trim)
+                .anyMatch("prod"::equalsIgnoreCase);
+        if (prod && !StringUtils.hasText(allowedOrigins)) {
+            throw new IllegalStateException(
+                    "生产环境必须显式配置 websocket.allowed-origins（WEBSOCKET_ALLOWED_ORIGINS），"
+                            + "未配置时 WS 端点将回落到 localhost 白名单导致无法连接，应用启动失败。");
+        }
+    }
 
     public WebSocketConfig(NotificationWebSocketHandler handler,
                            WebSocketAuthInterceptor authInterceptor) {

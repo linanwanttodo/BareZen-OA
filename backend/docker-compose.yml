@@ -75,6 +75,8 @@ services:
       # 业务配置
       AUTH_REGISTER_ENABLED: ${AUTH_REGISTER_ENABLED:-false}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-}
+      # WebSocket 允许来源（生产必须配置，缺失时应用启动 fail-fast）
+      WEBSOCKET_ALLOWED_ORIGINS: ${WEBSOCKET_ALLOWED_ORIGINS:-}
       BAREZEN_UPLOAD_PATH: /app/uploads
       # 时区
       TZ: Asia/Shanghai
