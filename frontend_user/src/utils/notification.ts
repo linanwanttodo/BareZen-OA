@@ -21,9 +21,17 @@ interface NotificationMessage {
 let sock: WebSocket | null = null
 let reconnectTimer: number | null = null
 let manualClose = false
+/** 连续断线次数（成功连接后清零），用于指数退避计算 */
+let reconnectAttempts = 0
 
-/** 断线重连间隔（毫秒） */
-const RECONNECT_INTERVAL = 5000
+/** 断线重连基础间隔（毫秒），按 5s、10s、20s、40s… 指数退避，封顶 60s */
+const RECONNECT_BASE_MS = 5000
+const RECONNECT_MAX_MS = 60000
+
+/** 计算第 attempt 次重连（从 0 开始）的等待毫秒数（导出仅供测试） */
+export function reconnectDelay(attempt: number): number {
+  return Math.min(RECONNECT_BASE_MS * 2 ** Math.max(0, attempt), RECONNECT_MAX_MS)
+}
 
 function showNotification(msg: NotificationMessage) {
   // 广播公告：标题 + 内容首行（Toast.info 仅接收消息文本，时长走内部默认值）
@@ -45,6 +53,7 @@ function connectSocket() {
   sock = sockJs as unknown as WebSocket
 
   sockJs.onopen = () => {
+    reconnectAttempts = 0
     if (reconnectTimer) {
       window.clearTimeout(reconnectTimer)
       reconnectTimer = null
@@ -61,10 +70,16 @@ function connectSocket() {
   }
 
   sockJs.onclose = () => {
+    // 仅当关闭的是"当前连接"时才清理与调度重连：
+    // 旧连接的迟到 onclose 不得清空新连接引用，否则会产生重复连接/重复 Toast
+    if (sock !== sockJs) return
     sock = null
     if (!manualClose && getToken()) {
-      // 自动重连（指数退避，避免高频重连）
-      reconnectTimer = window.setTimeout(connectSocket, RECONNECT_INTERVAL)
+      // 指数退避重连，避免服务端故障时高频重连
+      reconnectTimer = window.setTimeout(() => {
+        reconnectTimer = null
+        connectSocket()
+      }, reconnectDelay(reconnectAttempts++))
     }
   }
 
@@ -75,13 +90,15 @@ function connectSocket() {
 
 /** 建立连接（登录后调用） */
 export function connectNotification(): void {
-  if (sock) return
+  // 已有活动连接或重连定时器挂起时直接返回，避免创建第二连接
+  if (sock || reconnectTimer) return
   connectSocket()
 }
 
 /** 断开连接（登出/令牌失效时调用） */
 export function disconnectNotification(): void {
   manualClose = true
+  reconnectAttempts = 0
   if (reconnectTimer) {
     window.clearTimeout(reconnectTimer)
     reconnectTimer = null
