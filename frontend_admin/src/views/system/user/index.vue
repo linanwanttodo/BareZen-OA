@@ -526,6 +526,10 @@ function handleResetPwd(row: SysUser) {
 
 async function onResetPwdConfirm() {
   if (!currentUser.value) return
+  if (!passwordRules.value.every((r) => r.valid)) {
+    Message.warning(t('user.batchPwdError', { name: currentUser.value.userName }))
+    return
+  }
   try {
     await resetUserPasswordApi(currentUser.value.id, resetPwdData.password)
     Message.success(t('user.resetPwdSuccess'))

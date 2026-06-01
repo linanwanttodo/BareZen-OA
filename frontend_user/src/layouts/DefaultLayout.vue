@@ -280,6 +280,11 @@ async function onPwdSubmit() {
     Message.warning('请填写完整信息')
     return
   }
+  // 与后端 PasswordUtil.validatePasswordPolicy 完全一致的五项校验
+  if (!passwordRules.value.every((r) => r.valid)) {
+    Message.warning('密码不满足强度要求，请检查所有规则')
+    return
+  }
   if (pwdForm.newPassword !== pwdForm.confirmPassword) {
     Message.warning('两次输入的新密码不一致')
     return

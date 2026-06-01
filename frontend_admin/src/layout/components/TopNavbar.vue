@@ -291,8 +291,9 @@ async function onPwdSubmit() {
     Message.warning(t('login.passwordInfoIncomplete'))
     return
   }
-  if (pwdForm.newPassword.length < 6) {
-    Message.warning(t('login.passwordTooShort'))
+  // 与后端 PasswordUtil.validatePasswordPolicy 完全一致的五项校验
+  if (!passwordRules.value.every((r) => r.valid)) {
+    Message.warning(t('user.batchPwdError', { name: '' }))
     return
   }
   if (pwdForm.newPassword !== pwdForm.confirmPassword) {
