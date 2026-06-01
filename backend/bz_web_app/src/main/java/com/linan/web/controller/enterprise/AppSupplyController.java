@@ -14,6 +14,7 @@ import com.linan.office.service.IOfficeSupplyRequestService;
 import com.linan.office.service.IOfficeSupplyService;
 import com.linan.system.service.ApprovalFlowFacade;
 import lombok.RequiredArgsConstructor;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -116,6 +117,7 @@ public class AppSupplyController {
      */
     @Operation(summary = "提交申领")
     @PostMapping("/requests")
+    @Transactional(rollbackFor = Exception.class)
     public Result<Void> submitRequest(@RequestBody OfficeSupplyRequest request) {
         Long userId = AuthInterceptor.getCurrentUserId();
         if (userId == null) {
@@ -135,17 +137,25 @@ public class AppSupplyController {
             return Result.error("库存不足，当前库存 " + supply.getStock());
         }
         request.setSupplyName(supply.getSupplyName());
+        // 强制清空客户端可能预置的敏感字段（防主键冲突、审批字段污染）
+        request.setId(null);
+        request.setApproverId(null);
+        request.setApproverName(null);
+        request.setApproveTime(null);
+        request.setApproveRemark(null);
         // 身份字段服务端强制覆盖，不信任请求体（防身份伪造）
         request.setUserId(userId);
         request.setUserName(AuthInterceptor.getCurrentUsername());
         request.setStatus("0");
         boolean ok = requestService.save(request);
-        if (ok) {
-            // 审批编排统一收口：启动引擎首节点 + 记录提交日志（同一事务）
-            flowFacade.submit("supply", request.getId(), request.getAssigneeId(), request.getAssigneeName(),
-                    userId, request.getUserName());
+        if (!ok) {
+            return Result.error("提交失败");
         }
-        return ok ? Result.success(null) : Result.error("提交失败");
+        // 审批编排统一收口：启动引擎首节点 + 记录提交日志（同一事务）。
+        // submit 抛异常时向上传播，整个事务回滚（包括已保存的申领记录）
+        flowFacade.submit("supply", request.getId(), request.getAssigneeId(), request.getAssigneeName(),
+                userId, request.getUserName());
+        return Result.success(null);
     }
 
     /**

@@ -229,6 +229,7 @@ public class AppAttendanceController {
      */
     @Operation(summary = "提交加班申请")
     @PostMapping("/overtimes")
+    @Transactional(rollbackFor = Exception.class)
     public Result<Void> submitOvertime(@RequestBody AttOvertimeRequest request) {
         Long userId = AuthInterceptor.getCurrentUserId();
         if (userId == null) {
@@ -240,17 +241,25 @@ public class AppAttendanceController {
         if (request.getStartTime().compareTo(request.getEndTime()) >= 0) {
             return Result.error("结束时间必须晚于开始时间");
         }
+        // 强制清空客户端可能预置的敏感字段（防主键冲突、审批字段污染）
+        request.setId(null);
+        request.setApproverId(null);
+        request.setApproverName(null);
+        request.setApproveTime(null);
+        request.setApproveRemark(null);
         // 身份字段服务端强制覆盖，不信任请求体（防身份伪造）
         request.setUserId(userId);
         request.setUserName(AuthInterceptor.getCurrentUsername());
         request.setStatus("0");
         boolean ok = overtimeService.save(request);
-            if (ok) {
-                // 审批编排统一收口：启动引擎首节点 + 记录提交日志（同一事务）
-                flowFacade.submit("overtime", request.getId(), request.getAssigneeId(), request.getAssigneeName(),
-                        userId, request.getUserName());
-            }
-            return ok ? Result.success(null) : Result.error("提交失败");
+        if (!ok) {
+            return Result.error("提交失败");
+        }
+        // 审批编排统一收口：启动引擎首节点 + 记录提交日志（同一事务）。
+        // submit 抛异常时向上传播，整个事务回滚（包括已保存的加班记录）
+        flowFacade.submit("overtime", request.getId(), request.getAssigneeId(), request.getAssigneeName(),
+                userId, request.getUserName());
+        return Result.success(null);
     }
 
     /**
@@ -335,6 +344,7 @@ public class AppAttendanceController {
      */
     @Operation(summary = "提交出差申请")
     @PostMapping("/travels")
+    @Transactional(rollbackFor = Exception.class)
     public Result<Void> submitTravel(@RequestBody AttTravelRequest request) {
         Long userId = AuthInterceptor.getCurrentUserId();
         if (userId == null) {
@@ -346,17 +356,25 @@ public class AppAttendanceController {
         if (request.getStartTime().compareTo(request.getEndTime()) >= 0) {
             return Result.error("结束时间必须晚于开始时间");
         }
+        // 强制清空客户端可能预置的敏感字段（防主键冲突、审批字段污染）
+        request.setId(null);
+        request.setApproverId(null);
+        request.setApproverName(null);
+        request.setApproveTime(null);
+        request.setApproveRemark(null);
         // 身份字段服务端强制覆盖，不信任请求体（防身份伪造）
         request.setUserId(userId);
         request.setUserName(AuthInterceptor.getCurrentUsername());
         request.setStatus("0");
         boolean ok = travelService.save(request);
-            if (ok) {
-                // 审批编排统一收口：启动引擎首节点 + 记录提交日志（同一事务）
-                flowFacade.submit("travel", request.getId(), request.getAssigneeId(), request.getAssigneeName(),
-                        userId, request.getUserName());
-            }
-            return ok ? Result.success(null) : Result.error("提交失败");
+        if (!ok) {
+            return Result.error("提交失败");
+        }
+        // 审批编排统一收口：启动引擎首节点 + 记录提交日志（同一事务）。
+        // submit 抛异常时向上传播，整个事务回滚（包括已保存的出差记录）
+        flowFacade.submit("travel", request.getId(), request.getAssigneeId(), request.getAssigneeName(),
+                userId, request.getUserName());
+        return Result.success(null);
     }
 
     /**

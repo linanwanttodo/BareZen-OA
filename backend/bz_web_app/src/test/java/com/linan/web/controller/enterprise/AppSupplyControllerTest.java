@@ -25,9 +25,13 @@ import java.lang.reflect.Field;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -165,5 +169,67 @@ class AppSupplyControllerTest {
         // 提交留痕与引擎启动由 Facade 统一编排，操作人为覆盖后的真实值
         verify(flowFacade).submit(eq("supply"), eq(request.getId()), eq(request.getAssigneeId()),
                 eq(request.getAssigneeName()), eq(9L), eq("supplyUser"));
+    }
+
+    // ==================== T1.3：审批字段清理与流程失败传播 ====================
+
+    @Test
+    @DisplayName("提交申领：预置 id/审批字段被服务端强制清空")
+    void submitRequest_forgedApprovalFields_cleared() throws Exception {
+        setThreadLocal("currentUserIdHolder", 9L);
+        setThreadLocal("currentUsernameHolder", "supplyUser");
+        OfficeSupply supply = new OfficeSupply();
+        supply.setId(1L);
+        supply.setSupplyName("A4纸");
+        supply.setStock(100);
+        when(supplyService.getById(1L)).thenReturn(supply);
+
+        OfficeSupplyRequest request = new OfficeSupplyRequest();
+        request.setSupplyId(1L);
+        request.setQuantity(2);
+        request.setId(54321L);                 // 预置主键
+        request.setApproverId(66L);            // 预置审批人
+        request.setApproverName("审批人");
+        request.setApproveTime("2026-08-10 19:00");
+        request.setApproveRemark("已同意");
+        when(requestService.save(any(OfficeSupplyRequest.class))).thenReturn(true);
+
+        var result = controller.submitRequest(request);
+
+        assertEquals(200, result.getCode());
+        assertNull(request.getId(), "id 必须被清空（防主键冲突/覆盖）");
+        assertNull(request.getApproverId(), "approverId 必须被清空");
+        assertNull(request.getApproverName(), "approverName 必须被清空");
+        assertNull(request.getApproveTime(), "approveTime 必须被清空");
+        assertNull(request.getApproveRemark(), "approveRemark 必须被清空");
+    }
+
+    @Test
+    @DisplayName("提交申领：审批流程失败时必须抛异常（触发事务回滚）")
+    void submitRequest_flowFailure_propagatesException() throws Exception {
+        setThreadLocal("currentUserIdHolder", 9L);
+        setThreadLocal("currentUsernameHolder", "supplyUser");
+        OfficeSupply supply = new OfficeSupply();
+        supply.setId(1L);
+        supply.setSupplyName("A4纸");
+        supply.setStock(100);
+        when(supplyService.getById(1L)).thenReturn(supply);
+        when(requestService.save(any(OfficeSupplyRequest.class))).thenReturn(true);
+        doThrow(new IllegalStateException("审批引擎不可用"))
+                .when(flowFacade).submit(anyString(), any(), any(), any(), any(), any());
+
+        OfficeSupplyRequest request = new OfficeSupplyRequest();
+        request.setSupplyId(1L);
+        request.setQuantity(2);
+        assertThrows(RuntimeException.class, () -> controller.submitRequest(request),
+                "流程失败必须向上抛异常，事务才能回滚已保存的单据");
+    }
+
+    @Test
+    @DisplayName("提交申领方法声明 @Transactional（事务一致性）")
+    void submitRequest_hasTransactionalAnnotation() throws Exception {
+        assertNotNull(AppSupplyController.class
+                .getMethod("submitRequest", OfficeSupplyRequest.class)
+                .getAnnotation(org.springframework.transaction.annotation.Transactional.class));
     }
 }

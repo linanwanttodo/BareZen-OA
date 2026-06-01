@@ -29,9 +29,13 @@ import java.lang.reflect.Field;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -274,5 +278,101 @@ class AppAttendanceControllerTest {
         verify(leaveService).update(any(LambdaUpdateWrapper.class));
         verify(leaveService, never()).updateById(any(AttLeaveRequest.class));
         assertEquals(ApprovalStatus.PENDING.getValue(), captor.getValue().currentStatus());
+    }
+
+    // ==================== T1.3：审批字段清理与流程失败传播 ====================
+
+    @Test
+    @DisplayName("提交加班申请：预置 id/审批字段被服务端强制清空")
+    void submitOvertime_forgedApprovalFields_cleared() throws Exception {
+        setThreadLocal("currentUserIdHolder", 7L);
+        setThreadLocal("currentUsernameHolder", "realUser");
+        AttOvertimeRequest request = new AttOvertimeRequest();
+        request.setStartTime("2026-08-10 09:00");
+        request.setEndTime("2026-08-10 18:00");
+        request.setId(12345L);                 // 预置主键
+        request.setApproverId(66L);            // 预置审批人
+        request.setApproverName("审批人");
+        request.setApproveTime("2026-08-10 19:00");
+        request.setApproveRemark("已同意");
+        when(overtimeService.save(any(AttOvertimeRequest.class))).thenReturn(true);
+
+        var result = controller.submitOvertime(request);
+
+        assertEquals(200, result.getCode());
+        assertNull(request.getId(), "id 必须被清空（防主键冲突/覆盖）");
+        assertNull(request.getApproverId(), "approverId 必须被清空");
+        assertNull(request.getApproverName(), "approverName 必须被清空");
+        assertNull(request.getApproveTime(), "approveTime 必须被清空");
+        assertNull(request.getApproveRemark(), "approveRemark 必须被清空");
+    }
+
+    @Test
+    @DisplayName("提交出差申请：预置 id/审批字段被服务端强制清空")
+    void submitTravel_forgedApprovalFields_cleared() throws Exception {
+        setThreadLocal("currentUserIdHolder", 8L);
+        setThreadLocal("currentUsernameHolder", "travelUser");
+        AttTravelRequest request = new AttTravelRequest();
+        request.setStartTime("2026-08-11 09:00");
+        request.setEndTime("2026-08-11 18:00");
+        request.setId(12345L);
+        request.setApproverId(66L);
+        request.setApproverName("审批人");
+        request.setApproveTime("2026-08-11 19:00");
+        request.setApproveRemark("已同意");
+        when(travelService.save(any(AttTravelRequest.class))).thenReturn(true);
+
+        var result = controller.submitTravel(request);
+
+        assertEquals(200, result.getCode());
+        assertNull(request.getId());
+        assertNull(request.getApproverId());
+        assertNull(request.getApproverName());
+        assertNull(request.getApproveTime());
+        assertNull(request.getApproveRemark());
+    }
+
+    @Test
+    @DisplayName("提交加班申请：审批流程失败时必须抛异常（触发事务回滚）")
+    void submitOvertime_flowFailure_propagatesException() throws Exception {
+        setThreadLocal("currentUserIdHolder", 7L);
+        setThreadLocal("currentUsernameHolder", "realUser");
+        AttOvertimeRequest request = new AttOvertimeRequest();
+        request.setStartTime("2026-08-10 09:00");
+        request.setEndTime("2026-08-10 18:00");
+        when(overtimeService.save(any(AttOvertimeRequest.class))).thenReturn(true);
+        doThrow(new IllegalStateException("审批引擎不可用"))
+                .when(flowFacade).submit(anyString(), any(), any(), any(), any(), any());
+
+        assertThrows(RuntimeException.class, () -> controller.submitOvertime(request),
+                "流程失败必须向上抛异常，事务才能回滚已保存的单据");
+        verify(flowFacade).submit(any(), any(), any(), any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("提交出差申请：审批流程失败时必须抛异常（触发事务回滚）")
+    void submitTravel_flowFailure_propagatesException() throws Exception {
+        setThreadLocal("currentUserIdHolder", 8L);
+        setThreadLocal("currentUsernameHolder", "travelUser");
+        AttTravelRequest request = new AttTravelRequest();
+        request.setStartTime("2026-08-11 09:00");
+        request.setEndTime("2026-08-11 18:00");
+        when(travelService.save(any(AttTravelRequest.class))).thenReturn(true);
+        doThrow(new IllegalStateException("审批引擎不可用"))
+                .when(flowFacade).submit(anyString(), any(), any(), any(), any(), any());
+
+        assertThrows(RuntimeException.class, () -> controller.submitTravel(request),
+                "流程失败必须向上抛异常，事务才能回滚已保存的单据");
+    }
+
+    @Test
+    @DisplayName("提交加班/出差方法声明 @Transactional（事务一致性）")
+    void submitMethods_haveTransactionalAnnotation() throws Exception {
+        assertNotNull(AppAttendanceController.class
+                .getMethod("submitOvertime", AttOvertimeRequest.class)
+                .getAnnotation(org.springframework.transaction.annotation.Transactional.class));
+        assertNotNull(AppAttendanceController.class
+                .getMethod("submitTravel", AttTravelRequest.class)
+                .getAnnotation(org.springframework.transaction.annotation.Transactional.class));
     }
 }
