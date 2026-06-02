@@ -1,33 +1,35 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
-// Arco 按需导入：组件由 vite 构建时 ArcoResolver 自动引入（见 vite.config.ts），
-// 此处只保留：①实际使用的图标全局注册（仅 23 种，替代全量 ~200 种图标）
-// ②命令式 API（Message/Modal）的样式导入（resolver 不覆盖命令式调用）
+// Arco 按需导入：组件由 vite 构建时 ArcoResolver 自动引入（见 vite.config.ts）。
+// 图标已切换为 TDesign：以原 IconXxx 同名注册 tdesign-icons-vue-next 图标，
+// 模板 <icon-xxx> 标签零改动；命令式 API（Message/Modal）样式仍走 Arco（P4 移除）。
 import {
-  IconApps,
-  IconBranch,
-  IconCheck,
-  IconCheckCircle,
-  IconCommand,
-  IconDelete,
-  IconDown,
-  IconEdit,
-  IconEye,
-  IconFile,
-  IconFolder,
-  IconLeft,
-  IconMenu,
-  IconMinus,
-  IconMore,
-  IconNotification,
-  IconPlus,
-  IconPoweroff,
-  IconRefresh,
-  IconRight,
-  IconUpload,
-  IconUser,
-  IconUserGroup,
-} from '@arco-design/web-vue/es/icon'
+  AddIcon,
+  AppIcon,
+  BrowseIcon,
+  CheckCircleIcon,
+  CheckIcon,
+  ChevronDownIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  CommandIcon,
+  DeleteIcon,
+  EditIcon,
+  EllipsisIcon,
+  FileIcon,
+  FolderIcon,
+  GitBranchIcon,
+  PoweroffIcon,
+  RefreshIcon,
+  RemoveIcon,
+  UploadIcon,
+  UsergroupIcon,
+  UserIcon,
+  ViewListIcon,
+  NotificationIcon,
+} from 'tdesign-icons-vue-next'
+import 'tdesign-vue-next/es/style/index.css'
+import './styles/tdesign-theme.css'
 import '@arco-design/web-vue/es/message/style/index.css'
 import '@arco-design/web-vue/es/modal/style/index.css'
 import App from './App.vue'
@@ -43,31 +45,31 @@ app.use(createPinia())
 app.use(router)
 app.use(i18n)
 
-// 全局注册实际使用的图标（按需，非全量）
+// 全局注册实际使用的图标（TDesign 实现，沿用原 IconXxx 名称，模板零改动）
 const icons = {
-  IconApps,
-  IconBranch,
-  IconCheck,
-  IconCheckCircle,
-  IconCommand,
-  IconDelete,
-  IconDown,
-  IconEdit,
-  IconEye,
-  IconFile,
-  IconFolder,
-  IconLeft,
-  IconMenu,
-  IconMinus,
-  IconMore,
-  IconNotification,
-  IconPlus,
-  IconPoweroff,
-  IconRefresh,
-  IconRight,
-  IconUpload,
-  IconUser,
-  IconUserGroup,
+  IconApps: AppIcon,
+  IconBranch: GitBranchIcon,
+  IconCheck: CheckIcon,
+  IconCheckCircle: CheckCircleIcon,
+  IconCommand: CommandIcon,
+  IconDelete: DeleteIcon,
+  IconDown: ChevronDownIcon,
+  IconEdit: EditIcon,
+  IconEye: BrowseIcon,
+  IconFile: FileIcon,
+  IconFolder: FolderIcon,
+  IconLeft: ChevronLeftIcon,
+  IconMenu: ViewListIcon,
+  IconMinus: RemoveIcon,
+  IconMore: EllipsisIcon,
+  IconNotification: NotificationIcon,
+  IconPlus: AddIcon,
+  IconPoweroff: PoweroffIcon,
+  IconRefresh: RefreshIcon,
+  IconRight: ChevronRightIcon,
+  IconUpload: UploadIcon,
+  IconUser: UserIcon,
+  IconUserGroup: UsergroupIcon,
 }
 for (const [name, comp] of Object.entries(icons)) {
   app.component(name, comp)

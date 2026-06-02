@@ -1,0 +1,120 @@
+/**
+ * TDesign 主题 token —— 企业微信风格（wecom 色板 → TDesign 变量映射）
+ *
+ * 双端同源文件：frontend_admin 与 frontend_user 各存一份，内容保持一致。
+ * 色板来源见 src/styles/index.css 的 --wecom-* 变量与 design-system 文档。
+ * 覆盖 TDesign 默认 CSS 变量（参考 https://tdesign.tencent.com/design/color），
+ * 保证迁移后视觉与 Arco + wecom 时期一致：主色 #2B7CE9、Ant 系灰阶、扁平风。
+ */
+:root {
+  /* ── 品牌色（wecom-primary #2B7CE9，hover #1A6FD8，active #0F5FC2）── */
+  --td-brand-color-1: #F0F7FF;
+  --td-brand-color-2: #E6F4FF;
+  --td-brand-color-3: #A9CDF7;
+  --td-brand-color-4: #7FB2F1;
+  --td-brand-color-5: #5595EC;
+  --td-brand-color-6: #3E86EA;
+  --td-brand-color-7: #2B7CE9;
+  --td-brand-color-8: #1A6FD8;
+  --td-brand-color-9: #0F5FC2;
+  --td-brand-color-10: #0A4A9E;
+  --td-brand-color: var(--td-brand-color-7);
+  --td-brand-color-light: var(--td-brand-color-1);
+  --td-brand-color-light-hover: var(--td-brand-color-1);
+  --td-brand-color-focus: var(--td-brand-color-2);
+  --td-brand-color-disabled: var(--td-brand-color-3);
+  --td-brand-color-hover: var(--td-brand-color-8);
+  --td-brand-color-active: var(--td-brand-color-9);
+
+  /* ── 成功色（wecom-success #52C41A）── */
+  --td-success-color-1: #F6FFED;
+  --td-success-color-2: #D9F7BE;
+  --td-success-color-3: #B7EB8F;
+  --td-success-color-4: #95DE64;
+  --td-success-color-5: #73D13D;
+  --td-success-color-6: #52C41A;
+  --td-success-color-7: #52C41A;
+  --td-success-color-8: #46A80F;
+  --td-success-color-9: #389E0D;
+  --td-success-color-10: #237804;
+  --td-success-color: var(--td-success-color-6);
+  --td-success-color-light: var(--td-success-color-1);
+  --td-success-color-light-hover: var(--td-success-color-1);
+  --td-success-color-focus: var(--td-success-color-2);
+  --td-success-color-disabled: var(--td-success-color-3);
+  --td-success-color-hover: var(--td-success-color-8);
+  --td-success-color-active: var(--td-success-color-9);
+
+  /* ── 警告色（wecom-warning #FAAD14）── */
+  --td-warning-color-1: #FFFBE6;
+  --td-warning-color-2: #FFF1B8;
+  --td-warning-color-3: #FFE58F;
+  --td-warning-color-4: #FFD666;
+  --td-warning-color-5: #FFC53D;
+  --td-warning-color-6: #FAAD14;
+  --td-warning-color-7: #FAAD14;
+  --td-warning-color-8: #D89A0F;
+  --td-warning-color-9: #B8860B;
+  --td-warning-color-10: #8C6A0A;
+  --td-warning-color: var(--td-warning-color-6);
+  --td-warning-color-light: var(--td-warning-color-1);
+  --td-warning-color-light-hover: var(--td-warning-color-1);
+  --td-warning-color-focus: var(--td-warning-color-2);
+  --td-warning-color-disabled: var(--td-warning-color-3);
+  --td-warning-color-hover: var(--td-warning-color-8);
+  --td-warning-color-active: var(--td-warning-color-9);
+
+  /* ── 错误色（wecom-error #F5222D）── */
+  --td-error-color-1: #FFF1F0;
+  --td-error-color-2: #FFCCC7;
+  --td-error-color-3: #FFA39E;
+  --td-error-color-4: #FF7875;
+  --td-error-color-5: #FF4D4F;
+  --td-error-color-6: #F5222D;
+  --td-error-color-7: #F5222D;
+  --td-error-color-8: #D91D1D;
+  --td-error-color-9: #BA1A1A;
+  --td-error-color-10: #8C1414;
+  --td-error-color: var(--td-error-color-6);
+  --td-error-color-light: var(--td-error-color-1);
+  --td-error-color-light-hover: var(--td-error-color-1);
+  --td-error-color-focus: var(--td-error-color-2);
+  --td-error-color-disabled: var(--td-error-color-3);
+  --td-error-color-hover: var(--td-error-color-8);
+  --td-error-color-active: var(--td-error-color-9);
+
+  /* ── 文字色（wecom-text-*）── */
+  --td-text-color-primary: #262626;
+  --td-text-color-secondary: #595959;
+  --td-text-color-placeholder: #8C8C8C;
+  --td-text-color-disabled: #BFBFBF;
+  --td-text-color-anti: #FFFFFF;
+
+  /* ── 背景色（wecom-bg-*）── */
+  --td-bg-color-page: #F5F5F5;
+  --td-bg-color-container: #FFFFFF;
+  --td-bg-color-secondarycontainer: #FAFAFA;
+  --td-bg-color-container-hover: #F0F0F0;
+  --td-bg-color-secondarycontainer-hover: #F0F0F0;
+  --td-bg-color-active: #F0F0F0;
+
+  /* ── 边框/分割线（wecom-border）── */
+  --td-component-stroke: #E8E8E8;
+  --td-component-border: #E8E8E8;
+  --td-border-level-1-color: #E8E8E8;
+  --td-border-level-2-color: #D9D9D9;
+
+  /* ── 圆角：企微风偏大圆角 ── */
+  --td-radius-small: 3px;
+  --td-radius-default: 6px;
+  --td-radius-medium: 6px;
+  --td-radius-large: 9px;
+  --td-radius-extraLarge: 12px;
+  --td-radius-round: 999px;
+  --td-radius-circle: 50%;
+
+  /* ── 阴影：企微扁平风，仅保留极轻投影 ── */
+  --td-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --td-shadow-2: 0 2px 8px rgba(0, 0, 0, 0.06);
+  --td-shadow-3: 0 4px 16px rgba(0, 0, 0, 0.08);
+}

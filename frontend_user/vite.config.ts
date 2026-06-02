@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import Components from 'unplugin-vue-components/vite'
-import { ArcoResolver } from 'unplugin-vue-components/resolvers'
+import { ArcoResolver, TDesignResolver } from 'unplugin-vue-components/resolvers'
 import { fileURLToPath, URL } from 'node:url'
 
 export default defineConfig({
@@ -9,7 +9,12 @@ export default defineConfig({
     vue(),
     // Arco 按需导入：模板中 <a-xxx> 自动引入对应组件与样式，替代全量注册
     Components({
-      resolvers: [ArcoResolver({ sideEffect: true })],
+      resolvers: [
+        ArcoResolver({ sideEffect: true }),
+        // TDesign 迁移期共存：a-* 走 ArcoResolver，t-* 走 TDesignResolver，P4 收尾时移除 ArcoResolver
+        // 注：TDesignResolver 无 sideEffect 选项，样式随 es/index.mjs 的 css.mjs 链自动导入
+        TDesignResolver({ library: 'vue-next' }),
+      ],
       dts: false,
     }),
   ],
