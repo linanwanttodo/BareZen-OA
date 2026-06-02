@@ -10,9 +10,7 @@ export default defineConfig({
     // Arco 按需导入：模板中 <a-xxx> 自动引入对应组件与样式，替代全量注册
     Components({
       resolvers: [
-        ArcoResolver({ sideEffect: true }),
-        // TDesign 迁移期共存：a-* 走 ArcoResolver，t-* 走 TDesignResolver，P4 收尾时移除 ArcoResolver
-        // 注：TDesignResolver 无 sideEffect 选项，样式随 es/index.mjs 的 css.mjs 链自动导入
+        // TDesign 按需导入：模板 t-* 组件与样式自动引入
         TDesignResolver({ library: 'vue-next' }),
       ],
       dts: false,
