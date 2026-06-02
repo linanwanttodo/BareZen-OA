@@ -1,72 +1,47 @@
 <template>
   <div class="page-container">
     <!-- 搜索区域 -->
-    <a-card class="mb-4">
-      <a-form :model="searchForm" layout="inline" @submit-success="handleSearch">
-        <a-form-item field="userName" :label="$t('schedule.userName')">
-          <a-input v-model="searchForm.userName" :placeholder="$t('common.inputPlaceholder')" allow-clear style="width: 160px" />
-        </a-form-item>
-        <a-form-item field="status" :label="$t('schedule.status')">
-          <a-select v-model="searchForm.status" :placeholder="$t('common.all')" allow-clear style="width: 140px">
-            <a-option value="0">{{ $t('schedule.statusTodo') }}</a-option>
-            <a-option value="1">{{ $t('schedule.statusDoing') }}</a-option>
-            <a-option value="2">{{ $t('schedule.statusDone') }}</a-option>
-            <a-option value="3">{{ $t('schedule.statusCancelled') }}</a-option>
-          </a-select>
-        </a-form-item>
-        <a-form-item field="dateRange" :label="$t('schedule.dateRange')">
-          <a-date-picker v-model="searchForm.dateRange" type="daterange" style="width: 260px" />
-        </a-form-item>
-        <a-form-item>
-          <a-space>
-            <a-button type="primary" html-type="submit">{{ $t('common.search') }}</a-button>
-            <a-button @click="handleReset">{{ $t('common.reset') }}</a-button>
-          </a-space>
-        </a-form-item>
-      </a-form>
-    </a-card>
+    <t-card class="mb-4">
+      <t-form :model="searchForm" layout="inline" @submit-success="handleSearch">
+        <t-form-item field="userName" :label="$t('schedule.userName')">
+          <t-input v-model="searchForm.userName" :placeholder="$t('common.inputPlaceholder')" allow-clear style="width: 160px" />
+        </t-form-item>
+        <t-form-item field="status" :label="$t('schedule.status')">
+          <t-select v-model="searchForm.status" :placeholder="$t('common.all')" allow-clear style="width: 140px">
+            <t-option value="0">{{ $t('schedule.statusTodo') }}</t-option>
+            <t-option value="1">{{ $t('schedule.statusDoing') }}</t-option>
+            <t-option value="2">{{ $t('schedule.statusDone') }}</t-option>
+            <t-option value="3">{{ $t('schedule.statusCancelled') }}</t-option>
+          </t-select>
+        </t-form-item>
+        <t-form-item field="dateRange" :label="$t('schedule.dateRange')">
+          
+<!-- TODO(date-picker): 核对返回值格式（原 Arco 为字符串） --><t-date-picker v-model="searchForm.dateRange" type="daterange" style="width: 260px" />
+        </t-form-item>
+        <t-form-item>
+          <t-space>
+            <t-button theme="primary" html-type="submit">{{ $t('common.search') }}</t-button>
+            <t-button @click="handleReset">{{ $t('common.reset') }}</t-button>
+          </t-space>
+        </t-form-item>
+      </t-form>
+    </t-card>
 
     <!-- 表格 -->
-    <a-card>
+    <t-card>
       <template #title>
         <span>{{ $t('schedule.title') }}</span>
-        <a-button v-permission="PERM.hr.scheduleAdd" class="ml-4" type="primary" size="small" @click="openAdd">
+        <t-button v-permission="PERM.hr.scheduleAdd" class="ml-4" theme="primary" size="small" @click="openAdd">
           {{ $t('common.add') }}
-        </a-button>
+        </t-button>
       </template>
 
-      <a-spin :loading="loading">
-        <a-table :data="tableData" :pagination="false" row-key="id">
-          <template #columns>
-            <a-table-column :title="$t('schedule.userName')" data-index="userName" :width="110" />
-            <a-table-column :title="$t('schedule.title')" data-index="title" ellipsis :min-width="160" />
-            <a-table-column :title="$t('schedule.startTime')" data-index="startTime" :width="150" />
-            <a-table-column :title="$t('schedule.endTime')" data-index="endTime" :width="150" />
-            <a-table-column :title="$t('schedule.status')" :width="90">
-              <template #cell="{ record }">
-                <a-tag :color="statusColor(record.status)">{{ statusText(record.status) }}</a-tag>
-              </template>
-            </a-table-column>
-            <a-table-column :title="$t('schedule.location')" data-index="location" :width="120">
-              <template #cell="{ record }">{{ record.location || '-' }}</template>
-            </a-table-column>
-            <a-table-column :title="$t('common.operate')" :width="120" align="right">
-              <template #cell="{ record }">
-                <a-space>
-                  <a-button v-permission="PERM.hr.scheduleEdit" size="small" @click="openEdit(record)">
-                    {{ $t('common.edit') }}
-                  </a-button>
-                  <a-button v-permission="PERM.hr.scheduleDelete" size="small" status="danger" @click="handleDelete(record)">
-                    {{ $t('common.delete') }}
-                  </a-button>
-                </a-space>
-              </template>
-            </a-table-column>
-          </template>
-        </a-table>
+      <t-loading :loading="loading">
+          <t-table row-key="id" :data="tableData" :columns="tableColumns" :pagination="false">
+  </t-table>
 
         <div v-if="pagination.total > 0" class="mt-4 flex justify-end">
-          <a-pagination
+          <t-pagination
             v-model:current="pagination.current"
             :total="pagination.total"
             :page-size="pagination.pageSize"
@@ -74,46 +49,48 @@
             @change="loadData"
           />
         </div>
-      </a-spin>
-    </a-card>
+      </t-loading>
+    </t-card>
 
     <!-- 新增/编辑弹窗 -->
-    <a-modal v-model:visible="dialogVisible" :title="isEdit ? $t('common.edit') : $t('common.add')" :width="560" :unmount-on-close="true" @before-ok="handleSave">
-      <a-form :model="form" layout="vertical">
-        <a-form-item field="title" :label="$t('schedule.title')" required>
-          <a-input v-model="form.title" :placeholder="$t('common.inputPlaceholder')" />
-        </a-form-item>
-        <a-form-item field="userName" :label="$t('schedule.userName')">
-          <a-input v-model="form.userName" :placeholder="$t('schedule.userNamePlaceholder')" />
-        </a-form-item>
-        <a-form-item field="timeRange" :label="$t('schedule.timeRange')" required>
-          <a-date-picker v-model="form.startTime" show-time style="width: calc(50% - 12px)" :placeholder="$t('schedule.startTime')" />
+    <t-dialog v-model="dialogVisible" :title="isEdit ? $t('common.edit') : $t('common.add')" :width="560" :unmount-on-close="true" @before-ok="handleSave">
+      <t-form :model="form" layout="vertical">
+        <t-form-item field="title" :label="$t('schedule.title')" required>
+          <t-input v-model="form.title" :placeholder="$t('common.inputPlaceholder')" />
+        </t-form-item>
+        <t-form-item field="userName" :label="$t('schedule.userName')">
+          <t-input v-model="form.userName" :placeholder="$t('schedule.userNamePlaceholder')" />
+        </t-form-item>
+        <t-form-item field="timeRange" :label="$t('schedule.timeRange')" required>
+          
+<!-- TODO(date-picker): 核对返回值格式（原 Arco 为字符串） --><t-date-picker v-model="form.startTime" show-time style="width: calc(50% - 12px)" :placeholder="$t('schedule.startTime')" />
           <span class="mx-2">~</span>
-          <a-date-picker v-model="form.endTime" show-time style="width: calc(50% - 12px)" :placeholder="$t('schedule.endTime')" />
-        </a-form-item>
-        <a-form-item field="location" :label="$t('schedule.location')">
-          <a-input v-model="form.location" :placeholder="$t('common.inputPlaceholder')" />
-        </a-form-item>
-        <a-form-item field="status" :label="$t('schedule.status')">
-          <a-select v-model="form.status">
-            <a-option value="0">{{ $t('schedule.statusTodo') }}</a-option>
-            <a-option value="1">{{ $t('schedule.statusDoing') }}</a-option>
-            <a-option value="2">{{ $t('schedule.statusDone') }}</a-option>
-            <a-option value="3">{{ $t('schedule.statusCancelled') }}</a-option>
-          </a-select>
-        </a-form-item>
-        <a-form-item field="description" :label="$t('schedule.description')">
-          <a-textarea v-model="form.description" :placeholder="$t('common.inputPlaceholder')" :max-length="1000" show-word-limit />
-        </a-form-item>
-      </a-form>
-    </a-modal>
+          
+<!-- TODO(date-picker): 核对返回值格式（原 Arco 为字符串） --><t-date-picker v-model="form.endTime" show-time style="width: calc(50% - 12px)" :placeholder="$t('schedule.endTime')" />
+        </t-form-item>
+        <t-form-item field="location" :label="$t('schedule.location')">
+          <t-input v-model="form.location" :placeholder="$t('common.inputPlaceholder')" />
+        </t-form-item>
+        <t-form-item field="status" :label="$t('schedule.status')">
+          <t-select v-model="form.status">
+            <t-option value="0">{{ $t('schedule.statusTodo') }}</t-option>
+            <t-option value="1">{{ $t('schedule.statusDoing') }}</t-option>
+            <t-option value="2">{{ $t('schedule.statusDone') }}</t-option>
+            <t-option value="3">{{ $t('schedule.statusCancelled') }}</t-option>
+          </t-select>
+        </t-form-item>
+        <t-form-item field="description" :label="$t('schedule.description')">
+          <t-textarea v-model="form.description" :placeholder="$t('common.inputPlaceholder')" :max-length="1000" show-word-limit />
+        </t-form-item>
+      </t-form>
+    </t-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { PERM } from '@/utils/constants'
-import { ref, reactive, onMounted } from 'vue'
-import { Message } from '@arco-design/web-vue'
+import { ref, computed, reactive, onMounted } from 'vue'
+import { MessagePlugin as Message } from 'tdesign-vue-next'
 import { useI18n } from 'vue-i18n'
 import { getSchedulePageApi, addScheduleApi, updateScheduleApi, deleteScheduleApi, type HrSchedule } from '@/api/schedule'
 
@@ -234,4 +211,10 @@ async function handleDelete(record: HrSchedule) {
 }
 
 onMounted(loadData)
+
+/** 表格列定义（由 Arco 列模板迁移，自定义单元格见模板同名插槽） */
+const tableColumns = computed(() => [
+    ,
+  ])
+
 </script>

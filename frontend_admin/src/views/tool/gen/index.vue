@@ -1,73 +1,61 @@
 <template>
   <div class="page-container">
-    <a-card class="mb-4">
-      <a-form :model="{ tableName: searchKey }" layout="inline" @submit-success="handleSearch">
-        <a-form-item field="tableName" :label="$t('tool.gen.tableNameLabel')">
-          <a-input v-model="searchKey" :placeholder="$t('tool.gen.searchPlaceholder')" allow-clear style="width: 240px" />
-        </a-form-item>
-        <a-form-item>
-          <a-space>
-            <a-button type="primary" html-type="submit">{{ $t('common.search') }}</a-button>
-            <a-button @click="searchKey = ''; handleSearch()">{{ $t('common.reset') }}</a-button>
-          </a-space>
-        </a-form-item>
-      </a-form>
-    </a-card>
+    <t-card class="mb-4">
+      <t-form :model="{ tableName: searchKey }" layout="inline" @submit-success="handleSearch">
+        <t-form-item field="tableName" :label="$t('tool.gen.tableNameLabel')">
+          <t-input v-model="searchKey" :placeholder="$t('tool.gen.searchPlaceholder')" allow-clear style="width: 240px" />
+        </t-form-item>
+        <t-form-item>
+          <t-space>
+            <t-button theme="primary" html-type="submit">{{ $t('common.search') }}</t-button>
+            <t-button @click="searchKey = ''; handleSearch()">{{ $t('common.reset') }}</t-button>
+          </t-space>
+        </t-form-item>
+      </t-form>
+    </t-card>
 
-    <a-card>
+    <t-card>
       <template #title>
         <span>{{ $t('tool.gen.title') }}</span>
       </template>
 
-      <a-spin :loading="loading">
-        <a-table :data="tableList" :pagination="false" row-key="tableName">
-          <template #columns>
-            <a-table-column :title="$t('tool.gen.tableName')" data-index="tableName" :width="200">
-              <template #cell="{ record }">
-                <span class="font-mono">{{ record.tableName }}</span>
+      <t-loading :loading="loading">
+          <t-table row-key="tableName" :data="tableList" :columns="tableColumns" :pagination="false">
+    <template #tableName="{ row }">
+                <span class="font-mono">{{ row.tableName }}</span>
               </template>
-            </a-table-column>
-            <a-table-column :title="$t('tool.gen.tableComment')" data-index="tableComment" />
-            <a-table-column :title="$t('tool.gen.entityName')" data-index="className" :width="160">
-              <template #cell="{ record }">
-                <span class="text-wecom-primary">{{ record.className }}</span>
+    <template #className="{ row }">
+                <span class="text-wecom-primary">{{ row.className }}</span>
               </template>
-            </a-table-column>
-            <a-table-column :title="$t('common.operate')" :width="180" align="right">
-              <template #cell="{ record }">
-                <a-space>
-                  <a-button size="small" @click="handlePreview(record)">{{ $t('tool.gen.preview') }}</a-button>
-                  <a-button size="small" type="primary" @click="handleGenerate(record)">{{ $t('tool.gen.generate') }}</a-button>
-                </a-space>
+    <template #col_3="{ row }">
+                <t-space>
+                  <t-button size="small" @click="handlePreview(row)">{{ $t('tool.gen.preview') }}</t-button>
+                  <t-button size="small" theme="primary" @click="handleGenerate(row)">{{ $t('tool.gen.generate') }}</t-button>
+                </t-space>
               </template>
-            </a-table-column>
-          </template>
-          <template #empty>
-            <a-empty :description="$t('tool.gen.noTables')" />
-          </template>
-        </a-table>
-      </a-spin>
-    </a-card>
+  </t-table>
+      </t-loading>
+    </t-card>
 
     <!-- 代码预览弹窗 -->
-    <a-modal v-model:visible="previewVisible" :title="$t('tool.gen.codePreview')" :footer="false" :style="{ width: '80%' }" @cancel="previewVisible = false">
-      <a-tabs v-if="previewData">
-        <a-tab-pane v-for="(code, filename) in previewData" :key="filename" :title="getFileName(filename)">
+    <t-dialog v-model="previewVisible" :title="$t('tool.gen.codePreview')" :footer="false" :style="{ width: '80%' }" @cancel="previewVisible = false">
+      <t-tabs v-if="previewData">
+        <t-tab-panel v-for="(code, filename) in previewData" :key="filename" :title="getFileName(filename)">
           <div class="flex justify-between mb-2">
             <span class="text-sm text-wecom-text-tertiary">{{ filename }}</span>
-            <a-button size="mini" @click="copyCode(code)">{{ $t('tool.gen.copy') }}</a-button>
+            <t-button size="mini" @click="copyCode(code)">{{ $t('tool.gen.copy') }}</t-button>
           </div>
           <pre class="code-preview"><code>{{ code }}</code></pre>
-        </a-tab-pane>
-      </a-tabs>
-    </a-modal>
+        </t-tab-panel>
+      </t-tabs>
+    </t-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Message } from '@arco-design/web-vue'
+import { MessagePlugin as Message } from 'tdesign-vue-next'
 import { getGenTableListApi, generateCodeApi, type TableInfo } from '@/api/gen'
 
 const { t } = useI18n()
@@ -141,6 +129,15 @@ async function copyCode(code: string) {
     Message.error(t('tool.gen.copyFailed'))
   }
 }
+
+/** 表格列定义（由 Arco 列模板迁移，自定义单元格见模板同名插槽） */
+const tableColumns = computed(() => [
+    { colKey: 'tableName', title: t('tool.gen.tableName'), width: 200 },
+    { colKey: 'tableComment', title: t('tool.gen.tableComment') },
+    { colKey: 'className', title: t('tool.gen.entityName'), width: 160 },
+    { colKey: 'col_3', title: t('common.operate'), width: 180, align: 'right' },
+  ])
+
 </script>
 
 <style scoped>

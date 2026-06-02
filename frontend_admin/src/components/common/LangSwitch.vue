@@ -1,5 +1,5 @@
 <template>
-  <a-dropdown trigger="click" @select="handleSelect">
+  <t-dropdown trigger="click" @select="handleSelect">
     <div class="lang-switch">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <circle cx="12" cy="12" r="10"/>
@@ -9,10 +9,12 @@
       <span class="lang-switch__label">{{ currentLangLabel }}</span>
     </div>
     <template #content>
-      <a-doption value="zh-CN">简体中文</a-doption>
-      <a-doption value="en-US">English</a-doption>
+      <t-dropdown-menu>
+        <t-dropdown-item value="zh-CN">简体中文</t-dropdown-item>
+        <t-dropdown-item value="en-US">English</t-dropdown-item>
+      </t-dropdown-menu>
     </template>
-  </a-dropdown>
+  </t-dropdown>
 </template>
 
 <script setup lang="ts">

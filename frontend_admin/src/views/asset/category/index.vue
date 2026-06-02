@@ -17,31 +17,23 @@
         <span>{{ $t('asset.category') }}</span>
       </template>
 
-      <a-spin :loading="loading">
-        <a-table :data="tableData" :pagination="false" row-key="id">
-          <template #columns>
-            <a-table-column :title="$t('asset.categoryName')" data-index="name" :width="200" />
-            <a-table-column :title="$t('asset.categorySort')" data-index="sort" :width="100" align="center" />
-            <a-table-column :title="$t('common.status')" :width="100" align="center">
-              <template #cell="{ record }">
-                <t-tag :color="record.status === 1 ? 'green' : 'default'">
-                  {{ record.status === 1 ? $t('common.enabled') : $t('common.disabled') }}
+      <t-loading :loading="loading">
+          <t-table row-key="id" :data="tableData" :columns="tableColumns" :pagination="false">
+    <template #status="{ row }">
+                <t-tag :color="row.status === 1 ? 'green' : 'default'">
+                  {{ row.status === 1 ? $t('common.enabled') : $t('common.disabled') }}
                 </t-tag>
               </template>
-            </a-table-column>
-            <a-table-column :title="$t('common.operate')" :width="160" align="right">
-              <template #cell="{ record }">
+    <template #col_3="{ row }">
                 <t-space>
-                  <t-button v-permission="PERM.asset.categoryEdit" size="small" @click="handleEdit(record)">{{ $t('common.edit') }}</t-button>
-                  <t-popconfirm :content="$t('common.deleteConfirm')" @confirm="handleDelete(record)">
+                  <t-button v-permission="PERM.asset.categoryEdit" size="small" @click="handleEdit(row)">{{ $t('common.edit') }}</t-button>
+                  <t-popconfirm :content="$t('common.deleteConfirm')" @confirm="handleDelete(row)">
                     <t-button v-permission="PERM.asset.categoryDelete" size="small" theme="danger">{{ $t('common.delete') }}</t-button>
                   </t-popconfirm>
                 </t-space>
               </template>
-            </a-table-column>
-          </template>
-        </a-table>
-      </a-spin>
+  </t-table>
+      </t-loading>
     </t-card>
 
     <!-- 新增/编辑弹窗 -->
@@ -67,7 +59,7 @@
 
 <script setup lang="ts">
 import { PERM } from '@/utils/constants'
-import { ref, reactive, onMounted } from 'vue'
+import { ref, computed, reactive, onMounted } from 'vue'
 import {  MessagePlugin  } from 'tdesign-vue-next'
 import { useI18n } from 'vue-i18n'
 import { getCategoryListApi, addCategoryApi, updateCategoryApi, deleteCategoryApi, type AssetCategory } from '@/api/asset'
@@ -132,4 +124,13 @@ async function handleDelete(record: AssetCategory) {
 }
 
 onMounted(loadData)
+
+/** 表格列定义（由 Arco 列模板迁移，自定义单元格见模板同名插槽） */
+const tableColumns = computed(() => [
+    { colKey: 'name', title: t('asset.categoryName'), width: 200 },
+    { colKey: 'sort', title: t('asset.categorySort'), width: 100, align: 'center' },
+    { colKey: 'status', title: t('common.status'), width: 100, align: 'center' },
+    { colKey: 'col_3', title: t('common.operate'), width: 160, align: 'right' },
+  ])
+
 </script>

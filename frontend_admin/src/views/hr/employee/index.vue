@@ -1,117 +1,102 @@
 <template>
   <div class="page-container">
     <!-- 搜索区域 -->
-    <a-card class="mb-4">
-      <a-form :model="searchForm" layout="inline" @submit-success="handleSearch">
-        <a-form-item field="name" :label="$t('hr.name')">
-          <a-input v-model="searchForm.name" :placeholder="$t('common.inputPlaceholder')" allow-clear style="width: 180px" />
-        </a-form-item>
-        <a-form-item field="empNo" :label="$t('hr.empNo')">
-          <a-input v-model="searchForm.empNo" :placeholder="$t('common.inputPlaceholder')" allow-clear style="width: 180px" />
-        </a-form-item>
-        <a-form-item field="status" :label="$t('common.status')">
-          <a-select v-model="searchForm.status" :placeholder="$t('common.all')" allow-clear style="width: 140px">
-            <a-option value="0">{{ $t('hr.statusProbation') }}</a-option>
-            <a-option value="1">{{ $t('hr.statusActive') }}</a-option>
-            <a-option value="2">{{ $t('hr.statusLeft') }}</a-option>
-          </a-select>
-        </a-form-item>
-        <a-form-item>
-          <a-space>
-            <a-button type="primary" html-type="submit">{{ $t('common.search') }}</a-button>
-            <a-button @click="handleReset">{{ $t('common.reset') }}</a-button>
-          </a-space>
-        </a-form-item>
-      </a-form>
-    </a-card>
+    <t-card class="mb-4">
+      <t-form :model="searchForm" layout="inline" @submit-success="handleSearch">
+        <t-form-item field="name" :label="$t('hr.name')">
+          <t-input v-model="searchForm.name" :placeholder="$t('common.inputPlaceholder')" allow-clear style="width: 180px" />
+        </t-form-item>
+        <t-form-item field="empNo" :label="$t('hr.empNo')">
+          <t-input v-model="searchForm.empNo" :placeholder="$t('common.inputPlaceholder')" allow-clear style="width: 180px" />
+        </t-form-item>
+        <t-form-item field="status" :label="$t('common.status')">
+          <t-select v-model="searchForm.status" :placeholder="$t('common.all')" allow-clear style="width: 140px">
+            <t-option value="0">{{ $t('hr.statusProbation') }}</t-option>
+            <t-option value="1">{{ $t('hr.statusActive') }}</t-option>
+            <t-option value="2">{{ $t('hr.statusLeft') }}</t-option>
+          </t-select>
+        </t-form-item>
+        <t-form-item>
+          <t-space>
+            <t-button theme="primary" html-type="submit">{{ $t('common.search') }}</t-button>
+            <t-button @click="handleReset">{{ $t('common.reset') }}</t-button>
+          </t-space>
+        </t-form-item>
+      </t-form>
+    </t-card>
 
     <!-- 表格 -->
-    <a-card>
+    <t-card>
       <template #title>
         <div class="flex items-center justify-between w-full">
           <span>{{ $t('hr.employeeList') }}</span>
-          <a-button v-permission="PERM.hr.employeeAdd" type="primary" @click="handleAdd">
+          <t-button v-permission="PERM.hr.employeeAdd" theme="primary" @click="handleAdd">
             <template #icon><icon-plus /></template>
             {{ $t('common.add') }}
-          </a-button>
+          </t-button>
         </div>
       </template>
 
-      <a-spin :loading="loading">
-        <a-table :data="tableData" :pagination="false" row-key="id">
-          <template #columns>
-            <a-table-column :title="$t('hr.empNo')" data-index="empNo" :width="110" />
-            <a-table-column :title="$t('hr.name')" data-index="name" :width="100" />
-            <a-table-column :title="$t('hr.gender')" :width="70">
-              <template #cell="{ record }">
-                {{ genderText(record.gender) }}
+      <t-loading :loading="loading">
+          <t-table row-key="id" :data="tableData" :columns="tableColumns" :pagination="false">
+    <template #gender="{ row }">
+                {{ genderText(row.gender) }}
               </template>
-            </a-table-column>
-            <a-table-column :title="$t('hr.deptName')" data-index="deptName" :width="130" />
-            <a-table-column :title="$t('hr.position')" data-index="position" :width="130" />
-            <a-table-column :title="$t('hr.phone')" data-index="phone" :width="130" />
-            <a-table-column :title="$t('hr.hireDate')" data-index="hireDate" :width="110" />
-            <a-table-column :title="$t('hr.employmentType')" :width="90">
-              <template #cell="{ record }">
-                {{ employmentText(record.employmentType) }}
+    <template #employmentType="{ row }">
+                {{ employmentText(row.employmentType) }}
               </template>
-            </a-table-column>
-            <a-table-column :title="$t('common.status')" :width="80">
-              <template #cell="{ record }">
-                <a-tag :color="statusColor(record.status)">{{ statusText(record.status) }}</a-tag>
+    <template #status="{ row }">
+                <t-tag :color="statusColor(row.status)">{{ statusText(row.status) }}</t-tag>
               </template>
-            </a-table-column>
-            <a-table-column :title="$t('common.operate')" :width="150" align="right">
-              <template #cell="{ record }">
-                <a-space>
-                  <a-button v-permission="PERM.hr.employeeEdit" size="small" @click="handleEdit(record)">{{ $t('common.edit') }}</a-button>
-                  <a-popconfirm :content="$t('common.deleteConfirm')" @ok="handleDelete(record)">
-                    <a-button v-permission="PERM.hr.employeeDelete" size="small" status="danger">{{ $t('common.delete') }}</a-button>
-                  </a-popconfirm>
-                </a-space>
+    <template #col_9="{ row }">
+                <t-space>
+                  <t-button v-permission="PERM.hr.employeeEdit" size="small" @click="handleEdit(row)">{{ $t('common.edit') }}</t-button>
+                  <t-popconfirm :content="$t('common.deleteConfirm')" @confirm="handleDelete(row)">
+                    <t-button v-permission="PERM.hr.employeeDelete" size="small" theme="danger">{{ $t('common.delete') }}</t-button>
+                  </t-popconfirm>
+                </t-space>
               </template>
-            </a-table-column>
-          </template>
-        </a-table>
+  </t-table>
 
         <div v-if="pagination.total > 0" class="mt-4 flex justify-end">
-          <a-pagination
+          <t-pagination
             v-model:current="pagination.current"
             :total="pagination.total"
             :page-size="pagination.pageSize"
             @change="loadData"
           />
         </div>
-      </a-spin>
-    </a-card>
+      </t-loading>
+    </t-card>
 
     <!-- 编辑弹窗 -->
-    <a-modal v-model:visible="editVisible" :title="isEdit ? $t('hr.editEmployee') : $t('hr.addEmployee')"
-             :width="600" @ok="handleSave" @cancel="editVisible = false" :ok-loading="saving">
-      <a-form :model="form" layout="vertical">
-        <a-row :gutter="16">
-          <a-col :span="12">
-            <a-form-item field="empNo" :label="$t('hr.empNo')" required>
-              <a-input v-model="form.empNo" :placeholder="$t('common.inputPlaceholder')" />
-            </a-form-item>
-          </a-col>
-          <a-col :span="12">
-            <a-form-item field="name" :label="$t('hr.name')" required>
-              <a-input v-model="form.name" :placeholder="$t('common.inputPlaceholder')" />
-            </a-form-item>
-          </a-col>
-          <a-col :span="12">
-            <a-form-item field="gender" :label="$t('hr.gender')">
-              <a-select v-model="form.gender">
-                <a-option value="0">{{ $t('hr.genderMale') }}</a-option>
-                <a-option value="1">{{ $t('hr.genderFemale') }}</a-option>
-                <a-option value="2">{{ $t('hr.genderUnknown') }}</a-option>
-              </a-select>
-            </a-form-item>
-          </a-col>
-          <a-col :span="12">
-            <a-form-item field="deptId" :label="$t('hr.deptName')">
-              <a-tree-select
+    <t-dialog v-model="editVisible" :title="isEdit ? $t('hr.editEmployee') : $t('hr.addEmployee')"
+             :width="600" @confirm="handleSave" @cancel="editVisible = false" :ok-loading="saving">
+      <t-form :model="form" layout="vertical">
+        <t-row :gutter="16">
+          <t-col :span="12">
+            <t-form-item field="empNo" :label="$t('hr.empNo')" required>
+              <t-input v-model="form.empNo" :placeholder="$t('common.inputPlaceholder')" />
+            </t-form-item>
+          </t-col>
+          <t-col :span="12">
+            <t-form-item field="name" :label="$t('hr.name')" required>
+              <t-input v-model="form.name" :placeholder="$t('common.inputPlaceholder')" />
+            </t-form-item>
+          </t-col>
+          <t-col :span="12">
+            <t-form-item field="gender" :label="$t('hr.gender')">
+              <t-select v-model="form.gender">
+                <t-option value="0">{{ $t('hr.genderMale') }}</t-option>
+                <t-option value="1">{{ $t('hr.genderFemale') }}</t-option>
+                <t-option value="2">{{ $t('hr.genderUnknown') }}</t-option>
+              </t-select>
+            </t-form-item>
+          </t-col>
+          <t-col :span="12">
+            <t-form-item field="deptId" :label="$t('hr.deptName')">
+              
+<!-- TODO(tree-select): data 字段 key/title 需转为 value/label --><t-tree-select
                 v-model="form.deptId"
                 :data="deptTreeData"
                 :field-names="{ key: 'id', title: 'deptName', children: 'children' }"
@@ -120,83 +105,85 @@
                 allow-search
                 style="width: 100%"
               />
-            </a-form-item>
-          </a-col>
-          <a-col :span="12">
-            <a-form-item field="position" :label="$t('hr.position')">
-              <a-input v-model="form.position" :placeholder="$t('common.inputPlaceholder')" />
-            </a-form-item>
-          </a-col>
-          <a-col :span="12">
-            <a-form-item field="phone" :label="$t('hr.phone')">
-              <a-input v-model="form.phone" :placeholder="$t('common.inputPlaceholder')" />
-            </a-form-item>
-          </a-col>
-          <a-col :span="12">
-            <a-form-item field="email" :label="$t('hr.email')">
-              <a-input v-model="form.email" :placeholder="$t('common.inputPlaceholder')" />
-            </a-form-item>
-          </a-col>
-          <a-col :span="12">
-            <a-form-item field="idCard" :label="$t('hr.idCard')">
-              <a-input v-model="form.idCard" :placeholder="$t('common.inputPlaceholder')" />
-            </a-form-item>
-          </a-col>
-          <a-col :span="12">
-            <a-form-item field="hireDate" :label="$t('hr.hireDate')">
-              <a-date-picker v-model="form.hireDate" style="width: 100%" />
-            </a-form-item>
-          </a-col>
-          <a-col :span="12">
-            <a-form-item field="leaveDate" :label="$t('hr.leaveDate')">
-              <a-date-picker v-model="form.leaveDate" style="width: 100%" />
-            </a-form-item>
-          </a-col>
-          <a-col :span="12">
-            <a-form-item field="employmentType" :label="$t('hr.employmentType')">
-              <a-select v-model="form.employmentType">
-                <a-option value="0">{{ $t('hr.empFullTime') }}</a-option>
-                <a-option value="1">{{ $t('hr.empIntern') }}</a-option>
-                <a-option value="2">{{ $t('hr.empPartTime') }}</a-option>
-                <a-option value="3">{{ $t('hr.empLabor') }}</a-option>
-              </a-select>
-            </a-form-item>
-          </a-col>
-          <a-col :span="12">
-            <a-form-item field="education" :label="$t('hr.education')">
-              <a-select v-model="form.education" allow-clear>
-                <a-option value="高中">高中</a-option>
-                <a-option value="大专">大专</a-option>
-                <a-option value="本科">本科</a-option>
-                <a-option value="硕士">硕士</a-option>
-                <a-option value="博士">博士</a-option>
-              </a-select>
-            </a-form-item>
-          </a-col>
-          <a-col :span="12">
-            <a-form-item field="status" :label="$t('common.status')">
-              <a-select v-model="form.status">
-                <a-option value="0">{{ $t('hr.statusProbation') }}</a-option>
-                <a-option value="1">{{ $t('hr.statusActive') }}</a-option>
-                <a-option value="2">{{ $t('hr.statusLeft') }}</a-option>
-              </a-select>
-            </a-form-item>
-          </a-col>
-          <a-col :span="24">
-            <a-form-item field="remark" :label="$t('common.remark')">
-              <a-textarea v-model="form.remark" :placeholder="$t('common.inputPlaceholder')" :max-length="500" show-word-limit />
-            </a-form-item>
-          </a-col>
-        </a-row>
-      </a-form>
-    </a-modal>
+            </t-form-item>
+          </t-col>
+          <t-col :span="12">
+            <t-form-item field="position" :label="$t('hr.position')">
+              <t-input v-model="form.position" :placeholder="$t('common.inputPlaceholder')" />
+            </t-form-item>
+          </t-col>
+          <t-col :span="12">
+            <t-form-item field="phone" :label="$t('hr.phone')">
+              <t-input v-model="form.phone" :placeholder="$t('common.inputPlaceholder')" />
+            </t-form-item>
+          </t-col>
+          <t-col :span="12">
+            <t-form-item field="email" :label="$t('hr.email')">
+              <t-input v-model="form.email" :placeholder="$t('common.inputPlaceholder')" />
+            </t-form-item>
+          </t-col>
+          <t-col :span="12">
+            <t-form-item field="idCard" :label="$t('hr.idCard')">
+              <t-input v-model="form.idCard" :placeholder="$t('common.inputPlaceholder')" />
+            </t-form-item>
+          </t-col>
+          <t-col :span="12">
+            <t-form-item field="hireDate" :label="$t('hr.hireDate')">
+              
+<!-- TODO(date-picker): 核对返回值格式（原 Arco 为字符串） --><t-date-picker v-model="form.hireDate" style="width: 100%" />
+            </t-form-item>
+          </t-col>
+          <t-col :span="12">
+            <t-form-item field="leaveDate" :label="$t('hr.leaveDate')">
+              
+<!-- TODO(date-picker): 核对返回值格式（原 Arco 为字符串） --><t-date-picker v-model="form.leaveDate" style="width: 100%" />
+            </t-form-item>
+          </t-col>
+          <t-col :span="12">
+            <t-form-item field="employmentType" :label="$t('hr.employmentType')">
+              <t-select v-model="form.employmentType">
+                <t-option value="0">{{ $t('hr.empFullTime') }}</t-option>
+                <t-option value="1">{{ $t('hr.empIntern') }}</t-option>
+                <t-option value="2">{{ $t('hr.empPartTime') }}</t-option>
+                <t-option value="3">{{ $t('hr.empLabor') }}</t-option>
+              </t-select>
+            </t-form-item>
+          </t-col>
+          <t-col :span="12">
+            <t-form-item field="education" :label="$t('hr.education')">
+              <t-select v-model="form.education" allow-clear>
+                <t-option value="高中">高中</t-option>
+                <t-option value="大专">大专</t-option>
+                <t-option value="本科">本科</t-option>
+                <t-option value="硕士">硕士</t-option>
+                <t-option value="博士">博士</t-option>
+              </t-select>
+            </t-form-item>
+          </t-col>
+          <t-col :span="12">
+            <t-form-item field="status" :label="$t('common.status')">
+              <t-select v-model="form.status">
+                <t-option value="0">{{ $t('hr.statusProbation') }}</t-option>
+                <t-option value="1">{{ $t('hr.statusActive') }}</t-option>
+                <t-option value="2">{{ $t('hr.statusLeft') }}</t-option>
+              </t-select>
+            </t-form-item>
+          </t-col>
+          <t-col :span="24">
+            <t-form-item field="remark" :label="$t('common.remark')">
+              <t-textarea v-model="form.remark" :placeholder="$t('common.inputPlaceholder')" :max-length="500" show-word-limit />
+            </t-form-item>
+          </t-col>
+        </t-row>
+      </t-form>
+    </t-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { PERM } from '@/utils/constants'
-import { ref, reactive, onMounted } from 'vue'
-import { Message } from '@arco-design/web-vue'
+import { ref, computed, reactive, onMounted } from 'vue'
+import { MessagePlugin as Message } from 'tdesign-vue-next'
 import { getEmployeePageApi, addEmployeeApi, updateEmployeeApi, deleteEmployeeApi, type HrEmployee } from '@/api/hr'
 import { getDeptTreeApi, type SysDept } from '@/api/dept'
 import { useI18n } from 'vue-i18n'
@@ -334,4 +321,19 @@ onMounted(() => {
   loadDeptTree()
   loadData()
 })
+
+/** 表格列定义（由 Arco 列模板迁移，自定义单元格见模板同名插槽） */
+const tableColumns = computed(() => [
+    { colKey: 'empNo', title: t('hr.empNo'), width: 110 },
+    { colKey: 'name', title: t('hr.name'), width: 100 },
+    { colKey: 'gender', title: t('hr.gender'), width: 70 },
+    { colKey: 'deptName', title: t('hr.deptName'), width: 130 },
+    { colKey: 'position', title: t('hr.position'), width: 130 },
+    { colKey: 'phone', title: t('hr.phone'), width: 130 },
+    { colKey: 'hireDate', title: t('hr.hireDate'), width: 110 },
+    { colKey: 'employmentType', title: t('hr.employmentType'), width: 90 },
+    { colKey: 'status', title: t('common.status'), width: 80 },
+    { colKey: 'col_9', title: t('common.operate'), width: 150, align: 'right' },
+  ])
+
 </script>

@@ -35,22 +35,14 @@
         </div>
       </template>
 
-      <a-spin :loading="loading">
-        <a-table :data="tableData" :pagination="false" row-key="id">
-          <template #columns>
-            <a-table-column :title="$t('monitor.logininfor.userName')" data-index="userName" :width="120" />
-            <a-table-column :title="$t('monitor.logininfor.ipAddr')" data-index="ipAddr" :width="140" />
-            <a-table-column :title="$t('monitor.logininfor.status')" :width="90">
-              <template #cell="{ record }">
-                <t-tag :color="record.status === '0' ? 'green' : 'red'">
-                  {{ record.status === '0' ? $t('monitor.logininfor.success') : $t('monitor.logininfor.fail') }}
+      <t-loading :loading="loading">
+          <t-table row-key="id" :data="tableData" :columns="tableColumns" :pagination="false">
+    <template #status="{ row }">
+                <t-tag :color="row.status === '0' ? 'green' : 'red'">
+                  {{ row.status === '0' ? $t('monitor.logininfor.success') : $t('monitor.logininfor.fail') }}
                 </t-tag>
               </template>
-            </a-table-column>
-            <a-table-column :title="$t('monitor.logininfor.msg')" data-index="msg" />
-            <a-table-column :title="$t('monitor.logininfor.loginTime')" data-index="loginTime" :width="170" />
-          </template>
-        </a-table>
+  </t-table>
 
         <div v-if="pagination.total > pagination.pageSize" class="mt-4 flex justify-end">
           <t-pagination
@@ -60,14 +52,14 @@
             @change="loadData"
           />
         </div>
-      </a-spin>
+      </t-loading>
     </t-card>
   </div>
 </template>
 
 <script setup lang="ts">
 import { PERM } from '@/utils/constants'
-import { ref, reactive, onMounted } from 'vue'
+import { ref, computed, reactive, onMounted } from 'vue'
 import {  MessagePlugin  } from 'tdesign-vue-next'
 import { useI18n } from 'vue-i18n'
 import { getLoginLogPageApi, cleanLoginLogApi, type SysLogininfor } from '@/api/logininfor'
@@ -99,4 +91,14 @@ async function handleClean() {
   MessagePlugin.success(t('monitor.logininfor.cleanSuccess'))
   loadData()
 }
+
+/** 表格列定义（由 Arco 列模板迁移，自定义单元格见模板同名插槽） */
+const tableColumns = computed(() => [
+    { colKey: 'userName', title: t('monitor.logininfor.userName'), width: 120 },
+    { colKey: 'ipAddr', title: t('monitor.logininfor.ipAddr'), width: 140 },
+    { colKey: 'status', title: t('monitor.logininfor.status'), width: 90 },
+    { colKey: 'msg', title: t('monitor.logininfor.msg') },
+    { colKey: 'loginTime', title: t('monitor.logininfor.loginTime'), width: 170 },
+  ])
+
 </script>

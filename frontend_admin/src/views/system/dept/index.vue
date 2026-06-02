@@ -1,155 +1,132 @@
 <template>
   <div class="page-container">
     <!-- 搜索区域 -->
-    <a-card class="mb-4" :bordered="true">
-      <a-form :model="searchForm" layout="inline" @submit-success="handleSearch">
-        <a-form-item field="deptName" :label="$t('dept.deptName')">
-          <a-input v-model="searchForm.deptName" :placeholder="$t('dept.deptName')" allow-clear style="width: 200px" />
-        </a-form-item>
-        <a-form-item field="status" :label="$t('common.status')">
-          <a-select v-model="searchForm.status" :placeholder="$t('common.selectPlaceholder')" allow-clear style="width: 120px">
-            <a-option value="0">{{ $t('dept.statusNormal') }}</a-option>
-            <a-option value="1">{{ $t('dept.statusDisabled') }}</a-option>
-          </a-select>
-        </a-form-item>
-        <a-form-item>
-          <a-space>
-            <a-button type="primary" html-type="submit">{{ $t('common.search') }}</a-button>
-            <a-button @click="handleReset">{{ $t('common.reset') }}</a-button>
-          </a-space>
-        </a-form-item>
-      </a-form>
-    </a-card>
+    <t-card class="mb-4" :bordered="true">
+      <t-form :model="searchForm" layout="inline" @submit-success="handleSearch">
+        <t-form-item field="deptName" :label="$t('dept.deptName')">
+          <t-input v-model="searchForm.deptName" :placeholder="$t('dept.deptName')" allow-clear style="width: 200px" />
+        </t-form-item>
+        <t-form-item field="status" :label="$t('common.status')">
+          <t-select v-model="searchForm.status" :placeholder="$t('common.selectPlaceholder')" allow-clear style="width: 120px">
+            <t-option value="0">{{ $t('dept.statusNormal') }}</t-option>
+            <t-option value="1">{{ $t('dept.statusDisabled') }}</t-option>
+          </t-select>
+        </t-form-item>
+        <t-form-item>
+          <t-space>
+            <t-button theme="primary" html-type="submit">{{ $t('common.search') }}</t-button>
+            <t-button @click="handleReset">{{ $t('common.reset') }}</t-button>
+          </t-space>
+        </t-form-item>
+      </t-form>
+    </t-card>
 
     <!-- 树形表格区域 -->
-    <a-card :bordered="true">
+    <t-card :bordered="true">
       <template #title>
         <div class="flex items-center justify-between w-full">
           <span>{{ $t('dept.title') }}</span>
-          <a-space>
-            <a-button @click="toggleExpandAll">
+          <t-space>
+            <t-button @click="toggleExpandAll">
               {{ isAllExpanded ? $t('common.collapseAll') : $t('common.expandAll') }}
-            </a-button>
-            <a-button v-permission="PERM.system.deptAdd" type="primary" @click="handleAdd()">
+            </t-button>
+            <t-button v-permission="PERM.system.deptAdd" theme="primary" @click="handleAdd()">
               <template #icon><icon-plus /></template>
               {{ $t('common.add') }}
-            </a-button>
-          </a-space>
+            </t-button>
+          </t-space>
         </div>
       </template>
 
-      <a-spin :loading="loading">
-        <a-table :data="flatRows" :pagination="false" :row-key="'id'">
-          <template #columns>
-            <a-table-column :title="$t('common.operate')" :width="80">
-              <template #cell="{ record }">{{ record.node.id }}</template>
-            </a-table-column>
-            <a-table-column :title="$t('dept.deptName')">
-              <template #cell="{ record }">
-                <div class="flex items-center" :style="{ paddingLeft: record.depth * 16 + 'px' }">
-                  <icon-right v-if="record.hasChildren && !isExpanded(record.node.id)" class="cursor-pointer mr-1" @click="toggleExpand(record.node.id)" />
-                  <icon-down v-if="record.hasChildren && isExpanded(record.node.id)" class="cursor-pointer mr-1" @click="toggleExpand(record.node.id)" />
-                  <span v-if="!record.hasChildren" class="inline-block w-5" />
-                  <span>{{ record.node.deptName }}</span>
+      <t-loading :loading="loading">
+          <t-table row-key="id" :data="flatRows" :columns="tableColumns" :pagination="false">
+    <template #depth="{ row }">
+                <div class="flex items-center" :style="{ paddingLeft: row.depth * 16 + 'px' }">
+                  <icon-right v-if="row.hasChildren && !isExpanded(row.node.id)" class="cursor-pointer mr-1" @click="toggleExpand(row.node.id)" />
+                  <icon-down v-if="row.hasChildren && isExpanded(row.node.id)" class="cursor-pointer mr-1" @click="toggleExpand(row.node.id)" />
+                  <span v-if="!row.hasChildren" class="inline-block w-5" />
+                  <span>{{ row.node.deptName }}</span>
                 </div>
               </template>
-            </a-table-column>
-            <a-table-column :title="$t('dept.orderNum')" :width="80">
-              <template #cell="{ record }">{{ record.node.sort }}</template>
-            </a-table-column>
-            <a-table-column :title="$t('dept.leader')">
-              <template #cell="{ record }">{{ record.node.leader }}</template>
-            </a-table-column>
-            <a-table-column :title="$t('user.phone')">
-              <template #cell="{ record }">{{ record.node.phone }}</template>
-            </a-table-column>
-            <a-table-column :title="$t('user.email')">
-              <template #cell="{ record }">{{ record.node.email }}</template>
-            </a-table-column>
-            <a-table-column :title="$t('common.status')" :width="100">
-              <template #cell="{ record }">
-                <a-tag :color="record.node.status === '0' ? 'green' : 'red'">
-                  {{ record.node.status === '0' ? $t('dept.statusNormal') : $t('dept.statusDisabled') }}
-                </a-tag>
+    <template #orderNum="{ row }">{{ row.node.sort }}</template>
+    <template #leader="{ row }">{{ row.node.leader }}</template>
+    <template #phone="{ row }">{{ row.node.phone }}</template>
+    <template #email="{ row }">{{ row.node.email }}</template>
+    <template #status="{ row }">
+                <t-tag :color="row.node.status === '0' ? 'green' : 'red'">
+                  {{ row.node.status === '0' ? $t('dept.statusNormal') : $t('dept.statusDisabled') }}
+                </t-tag>
               </template>
-            </a-table-column>
-            <a-table-column :title="$t('common.operate')" :width="180" align="right">
-              <template #cell="{ record }">
-                <a-space>
-                  <a-button v-permission="PERM.system.deptAdd" size="small" @click="handleAdd(record.node)">{{ $t('common.add') }}</a-button>
-                  <a-button v-permission="PERM.system.deptEdit" size="small" @click="handleEdit(record.node)">{{ $t('common.edit') }}</a-button>
-                  <a-popconfirm v-permission="PERM.system.deptDelete" :content="$t('dept.deleteConfirm')" @ok="handleDelete(record.node)">
-                    <a-button size="small" status="danger">{{ $t('common.delete') }}</a-button>
-                  </a-popconfirm>
-                </a-space>
+    <template #node="{ row }">
+                <t-space>
+                  <t-button v-permission="PERM.system.deptAdd" size="small" @click="handleAdd(row.node)">{{ $t('common.add') }}</t-button>
+                  <t-button v-permission="PERM.system.deptEdit" size="small" @click="handleEdit(row.node)">{{ $t('common.edit') }}</t-button>
+                  <t-popconfirm v-permission="PERM.system.deptDelete" :content="$t('dept.deleteConfirm')" @confirm="handleDelete(row.node)">
+                    <t-button size="small" theme="danger">{{ $t('common.delete') }}</t-button>
+                  </t-popconfirm>
+                </t-space>
               </template>
-            </a-table-column>
-          </template>
-        </a-table>
-      </a-spin>
-    </a-card>
+  </t-table>
+      </t-loading>
+    </t-card>
 
     <!-- 新增/编辑弹窗 -->
-    <a-modal
-      v-model:visible="formVisible"
+    <t-dialog
+      v-model="formVisible"
       :title="formTitle"
       :width="520"
       :mask-closable="false"
-      @ok="onFormSubmit"
+      @confirm="onFormSubmit"
       @cancel="formVisible = false"
     >
-      <a-form :model="formData" layout="vertical">
-        <a-form-item field="parentId" :label="$t('dept.parentDept')">
-          <a-tree-select
+      <t-form :model="formData" layout="vertical">
+        <t-form-item field="parentId" :label="$t('dept.parentDept')">
+          
+<!-- TODO(tree-select): data 字段 key/title 需转为 value/label --><t-tree-select
             v-model="formData.parentId"
             :data="parentTreeData"
             :placeholder="$t('common.selectPlaceholder')"
             allow-clear
             :field-names="{ key: 'id', title: 'deptName', children: 'children' }"
           />
-        </a-form-item>
-        <a-form-item field="deptName" :label="$t('dept.deptName')" :rules="[{ required: true, message: $t('dept.deptName') }]">
-          <a-input v-model="formData.deptName" :placeholder="$t('dept.deptName')" />
-        </a-form-item>
-        <a-row :gutter="16">
-          <a-col :span="12">
-            <a-form-item field="sort" :label="$t('dept.orderNum')">
-              <a-input-number v-model="formData.sort" placeholder="0" :min="0" style="width: 100%" />
-            </a-form-item>
-          </a-col>
-          <a-col :span="12">
-            <a-form-item field="status" :label="$t('common.status')">
-              <a-radio-group v-model="formData.status">
-                <a-radio value="0">{{ $t('dept.statusNormal') }}</a-radio>
-                <a-radio value="1">{{ $t('dept.statusDisabled') }}</a-radio>
-              </a-radio-group>
-            </a-form-item>
-          </a-col>
-        </a-row>
-        <a-form-item field="leader" :label="$t('dept.leader')">
-          <a-input v-model="formData.leader" :placeholder="$t('dept.leader')" />
-        </a-form-item>
-        <a-form-item field="phone" :label="$t('user.phone')">
-          <a-input v-model="formData.phone" :placeholder="$t('user.phone')" />
-        </a-form-item>
-        <a-form-item field="email" :label="$t('user.email')">
-          <a-input v-model="formData.email" :placeholder="$t('user.email')" />
-        </a-form-item>
-      </a-form>
-    </a-modal>
+        </t-form-item>
+        <t-form-item field="deptName" :label="$t('dept.deptName')" :rules="[{ required: true, message: $t('dept.deptName') }]">
+          <t-input v-model="formData.deptName" :placeholder="$t('dept.deptName')" />
+        </t-form-item>
+        <t-row :gutter="16">
+          <t-col :span="12">
+            <t-form-item field="sort" :label="$t('dept.orderNum')">
+              <t-input-number v-model="formData.sort" placeholder="0" :min="0" style="width: 100%" />
+            </t-form-item>
+          </t-col>
+          <t-col :span="12">
+            <t-form-item field="status" :label="$t('common.status')">
+              <t-radio-group v-model="formData.status">
+                <t-radio value="0">{{ $t('dept.statusNormal') }}</t-radio>
+                <t-radio value="1">{{ $t('dept.statusDisabled') }}</t-radio>
+              </t-radio-group>
+            </t-form-item>
+          </t-col>
+        </t-row>
+        <t-form-item field="leader" :label="$t('dept.leader')">
+          <t-input v-model="formData.leader" :placeholder="$t('dept.leader')" />
+        </t-form-item>
+        <t-form-item field="phone" :label="$t('user.phone')">
+          <t-input v-model="formData.phone" :placeholder="$t('user.phone')" />
+        </t-form-item>
+        <t-form-item field="email" :label="$t('user.email')">
+          <t-input v-model="formData.email" :placeholder="$t('user.email')" />
+        </t-form-item>
+      </t-form>
+    </t-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { PERM } from '@/utils/constants'
 import { ref, onMounted, computed } from 'vue'
-import { Message, Modal } from '@arco-design/web-vue'
+import { MessagePlugin as Message, DialogPlugin as Modal } from 'tdesign-vue-next'
 import { useI18n } from 'vue-i18n'
-import {
-  IconPlus,
-  IconRight,
-  IconDown,
-} from '@arco-design/web-vue/es/icon'
 import { getDeptTreeApi, addDeptApi, updateDeptApi, deleteDeptApi, getDeptApi } from '@/api/dept'
 import type { SysDept } from '@/api/dept'
 
@@ -382,4 +359,16 @@ async function handleDelete(row: SysDept) {
 onMounted(() => {
   loadTable()
 })
+
+/** 表格列定义（由 Arco 列模板迁移，自定义单元格见模板同名插槽） */
+const tableColumns = computed(() => [
+    { colKey: 'deptName', title: t('dept.deptName') },
+    { colKey: 'orderNum', title: t('dept.orderNum'), width: 80 },
+    { colKey: 'leader', title: t('dept.leader') },
+    { colKey: 'phone', title: t('user.phone') },
+    { colKey: 'email', title: t('user.email') },
+    { colKey: 'status', title: t('common.status'), width: 100 },
+    { colKey: 'operate', title: t('common.operate'), width: 180, align: 'right' },
+  ])
+
 </script>

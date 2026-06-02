@@ -1,158 +1,145 @@
 <template>
   <div class="page-container">
     <!-- 搜索区域 -->
-    <a-card class="mb-4">
-      <a-form :model="searchForm" layout="inline" @submit-success="handleSearch">
-        <a-form-item field="status" :label="$t('travel.status')">
-          <a-select v-model="searchForm.status" :placeholder="$t('common.all')" allow-clear style="width: 140px">
-            <a-option value="0">{{ $t('travel.statusPending') }}</a-option>
-            <a-option value="1">{{ $t('travel.statusApproved') }}</a-option>
-            <a-option value="2">{{ $t('travel.statusRejected') }}</a-option>
-            <a-option value="3">{{ $t('travel.statusRevoked') }}</a-option>
-          </a-select>
-        </a-form-item>
-        <a-form-item>
-          <a-space>
-            <a-button type="primary" html-type="submit">{{ $t('common.search') }}</a-button>
-            <a-button @click="handleReset">{{ $t('common.reset') }}</a-button>
-          </a-space>
-        </a-form-item>
-      </a-form>
-    </a-card>
+    <t-card class="mb-4">
+      <t-form :model="searchForm" layout="inline" @submit-success="handleSearch">
+        <t-form-item field="status" :label="$t('travel.status')">
+          <t-select v-model="searchForm.status" :placeholder="$t('common.all')" allow-clear style="width: 140px">
+            <t-option value="0">{{ $t('travel.statusPending') }}</t-option>
+            <t-option value="1">{{ $t('travel.statusApproved') }}</t-option>
+            <t-option value="2">{{ $t('travel.statusRejected') }}</t-option>
+            <t-option value="3">{{ $t('travel.statusRevoked') }}</t-option>
+          </t-select>
+        </t-form-item>
+        <t-form-item>
+          <t-space>
+            <t-button theme="primary" html-type="submit">{{ $t('common.search') }}</t-button>
+            <t-button @click="handleReset">{{ $t('common.reset') }}</t-button>
+          </t-space>
+        </t-form-item>
+      </t-form>
+    </t-card>
 
     <!-- 表格 -->
-    <a-card>
+    <t-card>
       <template #title>
         <div class="flex items-center justify-between w-full">
           <span>{{ $t('travel.title') }}</span>
-          <a-button v-permission="PERM.hr.travelAdd" type="primary" @click="handleAdd">
+          <t-button v-permission="PERM.hr.travelAdd" theme="primary" @click="handleAdd">
             <template #icon><icon-plus /></template>
             {{ $t('travel.apply') }}
-          </a-button>
+          </t-button>
         </div>
       </template>
 
-      <a-spin :loading="loading">
-        <a-table :data="tableData" :pagination="false" row-key="id">
-          <template #columns>
-            <a-table-column :title="$t('travel.userName')" data-index="userName" :width="100" />
-            <a-table-column :title="$t('travel.destination')" data-index="destination" :width="140" />
-            <a-table-column :title="$t('travel.purpose')" data-index="purpose" ellipsis />
-            <a-table-column :title="$t('travel.timeRange')" :width="180">
-              <template #cell="{ record }">
-                <span class="text-sm">{{ record.startTime }}<br />{{ record.endTime }}</span>
+      <t-loading :loading="loading">
+          <t-table row-key="id" :data="tableData" :columns="tableColumns" :pagination="false">
+    <template #startTime="{ row }">
+                <span class="text-sm">{{ row.startTime }}<br />{{ row.endTime }}</span>
               </template>
-            </a-table-column>
-            <a-table-column :title="$t('travel.days')" data-index="days" :width="80" />
-            <a-table-column :title="$t('common.status')" :width="90">
-              <template #cell="{ record }">
-                <a-tag :color="statusColor(record.status)">{{ statusText(record.status) }}</a-tag>
+    <template #status="{ row }">
+                <t-tag :color="statusColor(row.status)">{{ statusText(row.status) }}</t-tag>
               </template>
-            </a-table-column>
-            <a-table-column :title="$t('travel.approverName')" data-index="approverName" :width="100">
-              <template #cell="{ record }">{{ record.approverName || '-' }}</template>
-            </a-table-column>
-            <a-table-column :title="$t('common.operate')" :width="200" align="right">
-              <template #cell="{ record }">
-                <a-space>
-                  <template v-if="record.status === '0'">
-                    <a-button v-permission="PERM.hr.travelApprove" size="small" type="primary" @click="openApprove(record)">
+    <template #approverName="{ row }">{{ row.approverName || '-' }}</template>
+    <template #operate="{ row }">
+                <t-space>
+                  <template v-if="row.status === '0'">
+                    <t-button v-permission="PERM.hr.travelApprove" size="small" theme="primary" @click="openApprove(row)">
                       {{ $t('travel.approve') }}
-                    </a-button>
-                    <a-button v-permission="PERM.hr.travelEdit" size="small" @click="handleRevoke(record)">
+                    </t-button>
+                    <t-button v-permission="PERM.hr.travelEdit" size="small" @click="handleRevoke(row)">
                       {{ $t('travel.revoke') }}
-                    </a-button>
+                    </t-button>
                   </template>
-                  <a-button v-if="record.approveRemark" size="small" @click="showRemark(record)">
+                  <t-button v-if="row.approveRemark" size="small" @click="showRemark(row)">
                     {{ $t('travel.viewRemark') }}
-                  </a-button>
-                  <a-button size="small" @click="openFlow(record)">{{ $t('travel.flow') }}</a-button>
-                  <a-popconfirm :content="$t('common.deleteConfirm')" @ok="handleDelete(record)">
-                    <a-button v-permission="PERM.hr.travelDelete" size="small" status="danger">{{ $t('common.delete') }}</a-button>
-                  </a-popconfirm>
-                </a-space>
+                  </t-button>
+                  <t-button size="small" @click="openFlow(row)">{{ $t('travel.flow') }}</t-button>
+                  <t-popconfirm :content="$t('common.deleteConfirm')" @confirm="handleDelete(row)">
+                    <t-button v-permission="PERM.hr.travelDelete" size="small" theme="danger">{{ $t('common.delete') }}</t-button>
+                  </t-popconfirm>
+                </t-space>
               </template>
-            </a-table-column>
-          </template>
-        </a-table>
+  </t-table>
 
         <div v-if="pagination.total > 0" class="mt-4 flex justify-end">
-          <a-pagination
+          <t-pagination
             v-model:current="pagination.current"
             :total="pagination.total"
             :page-size="pagination.pageSize"
             @change="loadData"
           />
         </div>
-      </a-spin>
-    </a-card>
+      </t-loading>
+    </t-card>
 
     <!-- 流程进度弹窗：优先渲染引擎节点链（任务态），未接入引擎回退事件流 -->
-    <a-modal v-model:visible="flowVisible" :title="$t('travel.flow')" :width="520" footer-only>
-      <a-steps v-if="flowTasks.length" direction="vertical" :current="taskCurrent">
-        <a-step
+    <t-dialog v-model="flowVisible" :title="$t('travel.flow')" :width="520" footer-only>
+      <t-steps v-if="flowTasks.length" direction="vertical" :current="taskCurrent">
+        <t-step-item
           v-for="task in flowTasks"
           :key="task.id"
           :status="taskStepStatus(task.status)"
           :title="task.nodeName"
           :description="taskStepDesc(task)"
         />
-      </a-steps>
-      <a-steps v-else-if="flowNodes.length" direction="vertical" :current="currentStep">
-        <a-step
+      </t-steps>
+      <t-steps v-else-if="flowNodes.length" direction="vertical" :current="currentStep">
+        <t-step-item
           v-for="node in flowNodes"
           :key="node.id"
           :title="node.nodeName"
           :description="`${node.operatorName || '-'} · ${node.createTime}${node.remark ? ' · ' + node.remark : ''}`"
         />
-      </a-steps>
-      <a-empty v-else :description="$t('travel.flowEmpty')" />
-    </a-modal>
+      </t-steps>
+      <t-empty v-else :description="$t('travel.flowEmpty')" />
+    </t-dialog>
 
     <!-- 出差申请弹窗 -->
-    <a-modal v-model:visible="addVisible" :title="$t('travel.apply')" :width="560"
-             @ok="handleSubmit" @cancel="addVisible = false" :ok-loading="submitting">
-      <a-form :model="form" layout="vertical">
-        <a-form-item field="destination" :label="$t('travel.destination')" required>
-          <a-input v-model="form.destination" :placeholder="$t('common.inputPlaceholder')" :max-length="100" />
-        </a-form-item>
-        <a-form-item field="timeRange" :label="$t('travel.timeRange')" required>
-          <a-date-picker v-model="form.startTime" show-time style="width: 260px" :placeholder="$t('travel.startTime')" />
+    <t-dialog v-model="addVisible" :title="$t('travel.apply')" :width="560"
+             @confirm="handleSubmit" @cancel="addVisible = false" :ok-loading="submitting">
+      <t-form :model="form" layout="vertical">
+        <t-form-item field="destination" :label="$t('travel.destination')" required>
+          <t-input v-model="form.destination" :placeholder="$t('common.inputPlaceholder')" :max-length="100" />
+        </t-form-item>
+        <t-form-item field="timeRange" :label="$t('travel.timeRange')" required>
+          
+<!-- TODO(date-picker): 核对返回值格式（原 Arco 为字符串） --><t-date-picker v-model="form.startTime" show-time style="width: 260px" :placeholder="$t('travel.startTime')" />
           <span class="mx-2">~</span>
-          <a-date-picker v-model="form.endTime" show-time style="width: 260px" :placeholder="$t('travel.endTime')" />
-        </a-form-item>
-        <a-form-item field="days" :label="$t('travel.days')">
-          <a-input-number v-model="form.days" :min="0.5" :step="0.5" style="width: 100%" :placeholder="$t('travel.daysPlaceholder')" />
-        </a-form-item>
-        <a-form-item field="purpose" :label="$t('travel.purpose')" required>
-          <a-textarea v-model="form.purpose" :placeholder="$t('common.inputPlaceholder')" :max-length="500" show-word-limit />
-        </a-form-item>
-      </a-form>
-    </a-modal>
+          
+<!-- TODO(date-picker): 核对返回值格式（原 Arco 为字符串） --><t-date-picker v-model="form.endTime" show-time style="width: 260px" :placeholder="$t('travel.endTime')" />
+        </t-form-item>
+        <t-form-item field="days" :label="$t('travel.days')">
+          <t-input-number v-model="form.days" :min="0.5" :step="0.5" style="width: 100%" :placeholder="$t('travel.daysPlaceholder')" />
+        </t-form-item>
+        <t-form-item field="purpose" :label="$t('travel.purpose')" required>
+          <t-textarea v-model="form.purpose" :placeholder="$t('common.inputPlaceholder')" :max-length="500" show-word-limit />
+        </t-form-item>
+      </t-form>
+    </t-dialog>
 
     <!-- 审批弹窗 -->
-    <a-modal v-model:visible="approveVisible" :title="$t('travel.approve')" :width="480"
-             @ok="handleApprove" @cancel="approveVisible = false" :ok-loading="approving">
-      <a-form :model="approveForm" layout="vertical">
-        <a-form-item :label="$t('travel.approveAction')" required>
-          <a-radio-group v-model="approveForm.action" type="button">
-            <a-radio value="pass">{{ $t('travel.approvePass') }}</a-radio>
-            <a-radio value="reject">{{ $t('travel.approveReject') }}</a-radio>
-          </a-radio-group>
-        </a-form-item>
-        <a-form-item field="remark" :label="$t('travel.approveRemark')">
-          <a-textarea v-model="approveForm.remark" :placeholder="$t('common.inputPlaceholder')" :max-length="500" show-word-limit />
-        </a-form-item>
-      </a-form>
-    </a-modal>
+    <t-dialog v-model="approveVisible" :title="$t('travel.approve')" :width="480"
+             @confirm="handleApprove" @cancel="approveVisible = false" :ok-loading="approving">
+      <t-form :model="approveForm" layout="vertical">
+        <t-form-item :label="$t('travel.approveAction')" required>
+          <t-radio-group v-model="approveForm.action" variant="default-filled">
+            <t-radio value="pass">{{ $t('travel.approvePass') }}</t-radio>
+            <t-radio value="reject">{{ $t('travel.approveReject') }}</t-radio>
+          </t-radio-group>
+        </t-form-item>
+        <t-form-item field="remark" :label="$t('travel.approveRemark')">
+          <t-textarea v-model="approveForm.remark" :placeholder="$t('common.inputPlaceholder')" :max-length="500" show-word-limit />
+        </t-form-item>
+      </t-form>
+    </t-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { PERM } from '@/utils/constants'
-import { ref, reactive, onMounted } from 'vue'
-import { Message } from '@arco-design/web-vue'
-import { IconPlus } from '@arco-design/web-vue/es/icon'
+import { ref, computed, reactive, onMounted } from 'vue'
+import { MessagePlugin as Message } from 'tdesign-vue-next'
 import { getTravelPageApi, submitTravelApi, approveTravelApi, revokeTravelApi, deleteTravelApi, type AttTravelRequest } from '@/api/travel'
 import { getFlowLogsApi, getFlowTasksApi, type ApprovalFlowNode, type ApprovalFlowTask } from '@/api/flowlog'
 import { useUserStore } from '@/stores/user'
@@ -322,4 +309,17 @@ async function openFlow(record: AttTravelRequest) {
 }
 
 onMounted(loadData)
+
+/** 表格列定义（由 Arco 列模板迁移，自定义单元格见模板同名插槽） */
+const tableColumns = computed(() => [
+    { colKey: 'userName', title: t('travel.userName'), width: 100 },
+    { colKey: 'destination', title: t('travel.destination'), width: 140 },
+    { colKey: 'purpose', title: t('travel.purpose'), ellipsis: true },
+    { colKey: 'startTime', title: t('travel.timeRange'), width: 180 },
+    { colKey: 'days', title: t('travel.days'), width: 80 },
+    { colKey: 'status', title: t('common.status'), width: 90 },
+    { colKey: 'approverName', title: t('travel.approverName'), width: 100 },
+    { colKey: 'operate', title: t('common.operate'), width: 200, align: 'right' },
+  ])
+
 </script>

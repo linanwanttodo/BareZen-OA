@@ -32,38 +32,26 @@
         </div>
       </template>
 
-      <a-spin :loading="loading">
-        <a-table :data="tableData" :pagination="false" row-key="id">
-          <template #columns>
-            <a-table-column :title="$t('config.configName')" data-index="configName" />
-            <a-table-column :title="$t('config.configKey')" data-index="configKey" :width="220" />
-            <a-table-column :title="$t('config.configValue')" :width="300">
-              <template #cell="{ record }">
-                <span class="font-mono text-sm">{{ record.configValue }}</span>
+      <t-loading :loading="loading">
+          <t-table row-key="id" :data="tableData" :columns="tableColumns" :pagination="false">
+    <template #configValue="{ row }">
+                <span class="font-mono text-sm">{{ row.configValue }}</span>
               </template>
-            </a-table-column>
-            <a-table-column :title="$t('config.configType')" :width="90">
-              <template #cell="{ record }">
-                <t-tag :color="record.configType === 'Y' ? 'blue' : 'default'">
-                  {{ record.configType === 'Y' ? $t('common.yes') : $t('common.no') }}
+    <template #configType="{ row }">
+                <t-tag :color="row.configType === 'Y' ? 'blue' : 'default'">
+                  {{ row.configType === 'Y' ? $t('common.yes') : $t('common.no') }}
                 </t-tag>
               </template>
-            </a-table-column>
-            <a-table-column :title="$t('common.status')" :width="80">
-              <template #cell="{ record }">
+    <template #status="{ row }">
                 <t-switch
-                  :model-value="record.status === '1'"
-                  @change="(val: string | number | boolean) => handleStatusChange(record, Boolean(val))"
+                  :model-value="row.status === '1'"
+                  @change="(val: string | number | boolean) => handleStatusChange(row, Boolean(val))"
                 />
               </template>
-            </a-table-column>
-            <a-table-column :title="$t('common.operate')" :width="180" align="right">
-              <template #cell="{ record }">
-                <t-button v-permission="PERM.system.configEdit" size="small" @click="handleEdit(record)">{{ $t('common.edit') }}</t-button>
+    <template #col_5="{ row }">
+                <t-button v-permission="PERM.system.configEdit" size="small" @click="handleEdit(row)">{{ $t('common.edit') }}</t-button>
               </template>
-            </a-table-column>
-          </template>
-        </a-table>
+  </t-table>
 
         <div v-if="pagination.total > pagination.pageSize" class="mt-4 flex justify-end">
           <t-pagination
@@ -73,7 +61,7 @@
             @change="loadData"
           />
         </div>
-      </a-spin>
+      </t-loading>
     </t-card>
 
     <!-- 编辑弹窗 -->
@@ -104,7 +92,7 @@
 
 <script setup lang="ts">
 import { PERM } from '@/utils/constants'
-import { ref, reactive, onMounted } from 'vue'
+import { ref, computed, reactive, onMounted } from 'vue'
 import {  MessagePlugin  } from 'tdesign-vue-next'
 import { useI18n } from 'vue-i18n'
 import { getConfigPageApi, updateConfigApi, clearConfigCacheApi, type SysConfig } from '@/api/config'
@@ -164,4 +152,15 @@ async function handleClearCache() {
     clearing.value = false
   }
 }
+
+/** 表格列定义（由 Arco 列模板迁移，自定义单元格见模板同名插槽） */
+const tableColumns = computed(() => [
+    { colKey: 'configName', title: t('config.configName') },
+    { colKey: 'configKey', title: t('config.configKey'), width: 220 },
+    { colKey: 'configValue', title: t('config.configValue'), width: 300 },
+    { colKey: 'configType', title: t('config.configType'), width: 90 },
+    { colKey: 'status', title: t('common.status'), width: 80 },
+    { colKey: 'col_5', title: t('common.operate'), width: 180, align: 'right' },
+  ])
+
 </script>

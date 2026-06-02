@@ -1,171 +1,127 @@
 <template>
   <div class="page-container">
     <!-- 搜索区域 -->
-    <a-card class="mb-4">
-      <a-form :model="searchForm" layout="inline" @submit-success="handleSearch">
-        <a-form-item field="status" :label="$t('leave.status')">
-          <a-select v-model="searchForm.status" :placeholder="$t('common.all')" allow-clear style="width: 140px">
-            <a-option value="0">{{ $t('leave.statusPending') }}</a-option>
-            <a-option value="1">{{ $t('leave.statusApproved') }}</a-option>
-            <a-option value="2">{{ $t('leave.statusRejected') }}</a-option>
-            <a-option value="3">{{ $t('leave.statusRevoked') }}</a-option>
-          </a-select>
-        </a-form-item>
-        <a-form-item>
-          <a-space>
-            <a-button type="primary" html-type="submit">{{ $t('common.search') }}</a-button>
-            <a-button @click="handleReset">{{ $t('common.reset') }}</a-button>
-          </a-space>
-        </a-form-item>
-      </a-form>
-    </a-card>
+    <t-card class="mb-4">
+      <t-form :model="searchForm" layout="inline" @submit-success="handleSearch">
+        <t-form-item field="status" :label="$t('leave.status')">
+          <t-select v-model="searchForm.status" :placeholder="$t('common.all')" allow-clear style="width: 140px">
+            <t-option value="0">{{ $t('leave.statusPending') }}</t-option>
+            <t-option value="1">{{ $t('leave.statusApproved') }}</t-option>
+            <t-option value="2">{{ $t('leave.statusRejected') }}</t-option>
+            <t-option value="3">{{ $t('leave.statusRevoked') }}</t-option>
+          </t-select>
+        </t-form-item>
+        <t-form-item>
+          <t-space>
+            <t-button theme="primary" html-type="submit">{{ $t('common.search') }}</t-button>
+            <t-button @click="handleReset">{{ $t('common.reset') }}</t-button>
+          </t-space>
+        </t-form-item>
+      </t-form>
+    </t-card>
 
     <!-- 表格 -->
-    <a-card>
+    <t-card>
       <template #title>
         <div class="flex items-center justify-between w-full">
           <span>{{ $t('leave.title') }}</span>
-          <a-button v-permission="PERM.hr.leaveAdd" type="primary" @click="handleAdd">
+          <t-button v-permission="PERM.hr.leaveAdd" theme="primary" @click="handleAdd">
             <template #icon><icon-plus /></template>
             {{ $t('leave.apply') }}
-          </a-button>
+          </t-button>
         </div>
       </template>
 
-      <a-spin :loading="loading">
-        <a-table :data="tableData" :pagination="false" row-key="id">
-          <template #columns>
-            <a-table-column :title="$t('leave.userName')" data-index="userName" :width="100" />
-            <a-table-column :title="$t('leave.leaveType')" :width="100">
-              <template #cell="{ record }">
-                <a-tag>{{ leaveTypeText(record.leaveType) }}</a-tag>
-              </template>
-            </a-table-column>
-            <a-table-column :title="$t('leave.timeRange')">
-              <template #cell="{ record }">
-                <span class="text-sm">{{ record.startTime }} ~ {{ record.endTime }}</span>
-              </template>
-            </a-table-column>
-            <a-table-column :title="$t('leave.leaveDays')" data-index="leaveDays" :width="80" />
-            <a-table-column :title="$t('leave.reason')" data-index="reason" ellipsis />
-            <a-table-column :title="$t('common.status')" :width="90">
-              <template #cell="{ record }">
-                <a-tag :color="statusColor(record.status)">{{ statusText(record.status) }}</a-tag>
-              </template>
-            </a-table-column>
-            <a-table-column :title="$t('leave.approverName')" data-index="approverName" :width="100">
-              <template #cell="{ record }">{{ record.approverName || '-' }}</template>
-            </a-table-column>
-            <a-table-column :title="$t('common.operate')" :width="200" align="right">
-              <template #cell="{ record }">
-                <a-space>
-                  <!-- 待审批：管理员可审批，申请人可撤销 -->
-                  <template v-if="record.status === '0'">
-                    <a-button v-permission="PERM.hr.leaveApprove" size="small" type="primary" @click="openApprove(record)">
-                      {{ $t('leave.approve') }}
-                    </a-button>
-                    <a-button v-permission="PERM.hr.leaveEdit" size="small" @click="handleRevoke(record)">
-                      {{ $t('leave.revoke') }}
-                    </a-button>
-                  </template>
-                  <!-- 已审批：展示审批意见 -->
-                  <a-button v-if="record.approveRemark" size="small" @click="showRemark(record)">
-                    {{ $t('leave.viewRemark') }}
-                  </a-button>
-                  <a-button size="small" @click="openFlow(record)">{{ $t('leave.flow') }}</a-button>
-                  <a-popconfirm :content="$t('common.deleteConfirm')" @ok="handleDelete(record)">
-                    <a-button v-permission="PERM.hr.leaveDelete" size="small" status="danger">{{ $t('common.delete') }}</a-button>
-                  </a-popconfirm>
-                </a-space>
-              </template>
-            </a-table-column>
-          </template>
-        </a-table>
+      <t-loading :loading="loading">
+          <t-table row-key="id" :data="tableData" :columns="tableColumns" :pagination="false">
+  </t-table>
 
         <div v-if="pagination.total > 0" class="mt-4 flex justify-end">
-          <a-pagination
+          <t-pagination
             v-model:current="pagination.current"
             :total="pagination.total"
             :page-size="pagination.pageSize"
             @change="loadData"
           />
         </div>
-      </a-spin>
-    </a-card>
+      </t-loading>
+    </t-card>
 
     <!-- 流程进度弹窗：优先渲染引擎节点链（任务态），未接入引擎回退事件流 -->
-    <a-modal v-model:visible="flowVisible" :title="$t('leave.flow')" :width="520" footer-only>
-      <a-steps v-if="flowTasks.length" direction="vertical" :current="taskCurrent">
-        <a-step
+    <t-dialog v-model="flowVisible" :title="$t('leave.flow')" :width="520" footer-only>
+      <t-steps v-if="flowTasks.length" direction="vertical" :current="taskCurrent">
+        <t-step-item
           v-for="task in flowTasks"
           :key="task.id"
           :status="taskStepStatus(task.status)"
           :title="task.nodeName"
           :description="taskStepDesc(task)"
         />
-      </a-steps>
-      <a-steps v-else-if="flowNodes.length" direction="vertical" :current="currentStep">
-        <a-step
+      </t-steps>
+      <t-steps v-else-if="flowNodes.length" direction="vertical" :current="currentStep">
+        <t-step-item
           v-for="node in flowNodes"
           :key="node.id"
           :title="node.nodeName"
           :description="`${node.operatorName || '-'} · ${node.createTime}${node.remark ? ' · ' + node.remark : ''}`"
         />
-      </a-steps>
-      <a-empty v-else :description="$t('leave.flowEmpty')" />
-    </a-modal>
+      </t-steps>
+      <t-empty v-else :description="$t('leave.flowEmpty')" />
+    </t-dialog>
 
     <!-- 请假申请弹窗 -->
-    <a-modal v-model:visible="addVisible" :title="$t('leave.apply')" :width="560"
-             @ok="handleSubmit" @cancel="addVisible = false" :ok-loading="submitting">
-      <a-form :model="form" layout="vertical">
-        <a-form-item field="leaveType" :label="$t('leave.leaveType')" required>
-          <a-select v-model="form.leaveType">
-            <a-option value="annual">{{ $t('leave.typeAnnual') }}</a-option>
-            <a-option value="sick">{{ $t('leave.typeSick') }}</a-option>
-            <a-option value="personal">{{ $t('leave.typePersonal') }}</a-option>
-            <a-option value="overtime">{{ $t('leave.typeOvertime') }}</a-option>
-            <a-option value="marriage">{{ $t('leave.typeMarriage') }}</a-option>
-            <a-option value="maternity">{{ $t('leave.typeMaternity') }}</a-option>
-            <a-option value="other">{{ $t('leave.typeOther') }}</a-option>
-          </a-select>
-        </a-form-item>
-        <a-form-item field="timeRange" :label="$t('leave.timeRange')" required>
-          <a-date-picker v-model="form.startTime" show-time style="width: 260px" :placeholder="$t('leave.startTime')" />
+    <t-dialog v-model="addVisible" :title="$t('leave.apply')" :width="560"
+             @confirm="handleSubmit" @cancel="addVisible = false" :ok-loading="submitting">
+      <t-form :model="form" layout="vertical">
+        <t-form-item field="leaveType" :label="$t('leave.leaveType')" required>
+          <t-select v-model="form.leaveType">
+            <t-option value="annual">{{ $t('leave.typeAnnual') }}</t-option>
+            <t-option value="sick">{{ $t('leave.typeSick') }}</t-option>
+            <t-option value="personal">{{ $t('leave.typePersonal') }}</t-option>
+            <t-option value="overtime">{{ $t('leave.typeOvertime') }}</t-option>
+            <t-option value="marriage">{{ $t('leave.typeMarriage') }}</t-option>
+            <t-option value="maternity">{{ $t('leave.typeMaternity') }}</t-option>
+            <t-option value="other">{{ $t('leave.typeOther') }}</t-option>
+          </t-select>
+        </t-form-item>
+        <t-form-item field="timeRange" :label="$t('leave.timeRange')" required>
+          
+<!-- TODO(date-picker): 核对返回值格式（原 Arco 为字符串） --><t-date-picker v-model="form.startTime" show-time style="width: 260px" :placeholder="$t('leave.startTime')" />
           <span class="mx-2">~</span>
-          <a-date-picker v-model="form.endTime" show-time style="width: 260px" :placeholder="$t('leave.endTime')" />
-        </a-form-item>
-        <a-form-item field="leaveDays" :label="$t('leave.leaveDays')">
-          <a-input-number v-model="form.leaveDays" :min="0.5" :step="0.5" style="width: 100%" :placeholder="$t('leave.leaveDaysPlaceholder')" />
-        </a-form-item>
-        <a-form-item field="reason" :label="$t('leave.reason')" required>
-          <a-textarea v-model="form.reason" :placeholder="$t('common.inputPlaceholder')" :max-length="500" show-word-limit />
-        </a-form-item>
-      </a-form>
-    </a-modal>
+          
+<!-- TODO(date-picker): 核对返回值格式（原 Arco 为字符串） --><t-date-picker v-model="form.endTime" show-time style="width: 260px" :placeholder="$t('leave.endTime')" />
+        </t-form-item>
+        <t-form-item field="leaveDays" :label="$t('leave.leaveDays')">
+          <t-input-number v-model="form.leaveDays" :min="0.5" :step="0.5" style="width: 100%" :placeholder="$t('leave.leaveDaysPlaceholder')" />
+        </t-form-item>
+        <t-form-item field="reason" :label="$t('leave.reason')" required>
+          <t-textarea v-model="form.reason" :placeholder="$t('common.inputPlaceholder')" :max-length="500" show-word-limit />
+        </t-form-item>
+      </t-form>
+    </t-dialog>
 
     <!-- 审批弹窗 -->
-    <a-modal v-model:visible="approveVisible" :title="$t('leave.approve')" :width="480"
-             @ok="handleApprove" @cancel="approveVisible = false" :ok-loading="approving">
-      <a-form :model="approveForm" layout="vertical">
-        <a-form-item :label="$t('leave.approveAction')" required>
-          <a-radio-group v-model="approveForm.action" type="button">
-            <a-radio value="pass">{{ $t('leave.approvePass') }}</a-radio>
-            <a-radio value="reject">{{ $t('leave.approveReject') }}</a-radio>
-          </a-radio-group>
-        </a-form-item>
-        <a-form-item field="remark" :label="$t('leave.approveRemark')">
-          <a-textarea v-model="approveForm.remark" :placeholder="$t('common.inputPlaceholder')" :max-length="500" show-word-limit />
-        </a-form-item>
-      </a-form>
-    </a-modal>
+    <t-dialog v-model="approveVisible" :title="$t('leave.approve')" :width="480"
+             @confirm="handleApprove" @cancel="approveVisible = false" :ok-loading="approving">
+      <t-form :model="approveForm" layout="vertical">
+        <t-form-item :label="$t('leave.approveAction')" required>
+          <t-radio-group v-model="approveForm.action" variant="default-filled">
+            <t-radio value="pass">{{ $t('leave.approvePass') }}</t-radio>
+            <t-radio value="reject">{{ $t('leave.approveReject') }}</t-radio>
+          </t-radio-group>
+        </t-form-item>
+        <t-form-item field="remark" :label="$t('leave.approveRemark')">
+          <t-textarea v-model="approveForm.remark" :placeholder="$t('common.inputPlaceholder')" :max-length="500" show-word-limit />
+        </t-form-item>
+      </t-form>
+    </t-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { PERM } from '@/utils/constants'
-import { ref, reactive, onMounted, onActivated } from 'vue'
-import { Message } from '@arco-design/web-vue'
+import { ref, computed, reactive, onMounted, onActivated } from 'vue'
+import { MessagePlugin as Message } from 'tdesign-vue-next'
 import { getLeavePageApi, submitLeaveApi, approveLeaveApi, revokeLeaveApi, deleteLeaveApi, type AttLeaveRequest } from '@/api/leave'
 import { getFlowLogsApi, getFlowTasksApi, type ApprovalFlowNode, type ApprovalFlowTask } from '@/api/flowlog'
 import { useUserStore } from '@/stores/user'
@@ -373,4 +329,10 @@ async function openFlow(record: AttLeaveRequest) {
 
 onMounted(loadData)
 onActivated(loadData)
+
+/** 表格列定义（由 Arco 列模板迁移，自定义单元格见模板同名插槽） */
+const tableColumns = computed(() => [
+    ,
+  ])
+
 </script>

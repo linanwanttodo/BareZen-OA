@@ -18,43 +18,31 @@
         <span>{{ $t('monitor.backup.backupList') }}</span>
       </template>
 
-      <a-spin :loading="loading">
-        <a-table :data="backupList" :pagination="false" row-key="filename">
-          <template #columns>
-            <a-table-column :title="$t('monitor.backup.filename')" data-index="filename">
-              <template #cell="{ record }">
-                <span class="font-mono text-sm">{{ record.filename }}</span>
+      <t-loading :loading="loading">
+          <t-table row-key="filename" :data="backupList" :columns="tableColumns" :pagination="false">
+    <template #filename="{ row }">
+                <span class="font-mono text-sm">{{ row.filename }}</span>
               </template>
-            </a-table-column>
-            <a-table-column :title="$t('monitor.backup.fileSize')" :width="120">
-              <template #cell="{ record }">
-                {{ formatSize(record.fileSize) }}
+    <template #fileSize="{ row }">
+                {{ formatSize(row.fileSize) }}
               </template>
-            </a-table-column>
-            <a-table-column :title="$t('monitor.backup.backupTime')" data-index="createTime" :width="170" />
-            <a-table-column :title="$t('common.operate')" :width="160" align="right">
-              <template #cell="{ record }">
+    <template #col_3="{ row }">
                 <t-space>
-                  <t-button v-permission="PERM.system.backupList" size="small" @click="handleDownload(record)">{{ $t('monitor.backup.download') }}</t-button>
-                  <t-popconfirm v-permission="PERM.system.backupDelete" :content="$t('monitor.backup.deleteConfirm')" @confirm="handleDelete(record)">
+                  <t-button v-permission="PERM.system.backupList" size="small" @click="handleDownload(row)">{{ $t('monitor.backup.download') }}</t-button>
+                  <t-popconfirm v-permission="PERM.system.backupDelete" :content="$t('monitor.backup.deleteConfirm')" @confirm="handleDelete(row)">
                     <t-button size="small" theme="danger">{{ $t('monitor.backup.delete') }}</t-button>
                   </t-popconfirm>
                 </t-space>
               </template>
-            </a-table-column>
-          </template>
-          <template #empty>
-            <t-empty :description="$t('monitor.backup.emptyDesc')" />
-          </template>
-        </a-table>
-      </a-spin>
+  </t-table>
+      </t-loading>
     </t-card>
   </div>
 </template>
 
 <script setup lang="ts">
 import { PERM } from '@/utils/constants'
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {  MessagePlugin  } from 'tdesign-vue-next'
 import { createBackupApi, getBackupListApi, downloadBackupApi, deleteBackupApi, type BackupInfo } from '@/api/backup'
@@ -125,4 +113,13 @@ function formatSize(bytes: number): string {
   }
   return size.toFixed(2) + ' ' + units[i]
 }
+
+/** 表格列定义（由 Arco 列模板迁移，自定义单元格见模板同名插槽） */
+const tableColumns = computed(() => [
+    { colKey: 'filename', title: t('monitor.backup.filename') },
+    { colKey: 'fileSize', title: t('monitor.backup.fileSize'), width: 120 },
+    { colKey: 'createTime', title: t('monitor.backup.backupTime'), width: 170 },
+    { colKey: 'col_3', title: t('common.operate'), width: 160, align: 'right' },
+  ])
+
 </script>

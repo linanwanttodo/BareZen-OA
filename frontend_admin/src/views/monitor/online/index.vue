@@ -24,44 +24,26 @@
           <span class="ml-2 text-[var(--muted-foreground)]">{{ $t('common.loading') }}</span>
         </div>
         <template v-else>
-          <a-table :data="tableData" :pagination="false" :row-key="(record: OnlineUser) => record.tokenDigest || String(record.userId)">
-            <template #columns>
-              <a-table-column :title="$t('common.operate')" :width="50">
-                <template #header>
-                  <t-checkbox :model-value="allSelected" @change="toggleSelectAll" />
+            <t-table row-key="id" :data="tableData" :columns="tableColumns" :pagination="false">
+    <template #col_0="{ row }">
+                  <t-checkbox :model-value="selectedTokens.includes(rowKey(row))" @change="() => toggleRow(rowKey(row))" />
                 </template>
-                <template #cell="{ record }">
-                  <t-checkbox :model-value="selectedTokens.includes(rowKey(record))" @change="() => toggleRow(rowKey(record))" />
-                </template>
-              </a-table-column>
-              <a-table-column title="ID" data-index="userId" />
-              <a-table-column :title="$t('user.nickName')">
-                <template #cell="{ record }">
+    <template #nickName="{ row }">
                   <div class="flex items-center gap-2">
-                    <t-avatar size="24px" :style="{ backgroundColor: 'var(--primary)' }">{{ record.nickName?.charAt(0) || '?' }}</t-avatar>
+                    <t-avatar size="24px" :style="{ backgroundColor: 'var(--primary)' }">{{ row.nickName?.charAt(0) || '?' }}</t-avatar>
                     <div class="flex flex-col">
-                      <span class="text-sm font-medium text-[var(--foreground)]">{{ record.nickName }}</span>
-                      <span class="text-xs text-[var(--muted-foreground)]">{{ record.userName }}</span>
+                      <span class="text-sm font-medium text-[var(--foreground)]">{{ row.nickName }}</span>
+                      <span class="text-xs text-[var(--muted-foreground)]">{{ row.userName }}</span>
                     </div>
                   </div>
                 </template>
-              </a-table-column>
-              <a-table-column :title="$t('monitor.online.ipAddr')" data-index="loginIp" />
-              <a-table-column title="登录地点" data-index="loginLocation" />
-              <a-table-column title="浏览器" data-index="browser" />
-              <a-table-column title="操作系统" data-index="os" />
-              <a-table-column :title="$t('monitor.online.loginTime')">
-                <template #cell="{ record }">
-                  {{ formatDateTime(record.loginTime) }}
+    <template #loginTime="{ row }">
+                  {{ formatDateTime(row.loginTime) }}
                 </template>
-              </a-table-column>
-              <a-table-column :title="$t('common.operate')" align="right">
-                <template #cell="{ record }">
-                  <t-button v-permission="PERM.monitor.onlineDelete" type="text" size="small" @click="handleForceLogout(record)">{{ $t('monitor.online.forceLogout') }}</t-button>
+    <template #col_8="{ row }">
+                  <t-button v-permission="PERM.monitor.onlineDelete" type="text" size="small" @click="handleForceLogout(row)">{{ $t('monitor.online.forceLogout') }}</t-button>
                 </template>
-              </a-table-column>
-            </template>
-          </a-table>
+  </t-table>
 
           <div v-if="pagination.total > pagination.pageSize" class="mt-4 flex justify-end">
             <t-pagination
@@ -203,6 +185,20 @@ function handleBatchForceLogout() {
 onMounted(() => {
   loadTable()
 })
+
+/** 表格列定义（由 Arco 列模板迁移，自定义单元格见模板同名插槽） */
+const tableColumns = computed(() => [
+    { colKey: 'col_0', title: t('common.operate'), width: 50 },
+    { colKey: 'userId', title: '' },
+    { colKey: 'nickName', title: t('user.nickName') },
+    { colKey: 'loginIp', title: t('monitor.online.ipAddr') },
+    { colKey: 'loginLocation', title: '' },
+    { colKey: 'browser', title: '' },
+    { colKey: 'os', title: '' },
+    { colKey: 'loginTime', title: t('monitor.online.loginTime') },
+    { colKey: 'col_8', title: t('common.operate'), align: 'right' },
+  ])
+
 </script>
 
 <style scoped>

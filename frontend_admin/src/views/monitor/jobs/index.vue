@@ -13,38 +13,27 @@
         </div>
       </template>
 
-      <a-spin :loading="loading">
-        <a-table :data="tableData" :pagination="false" row-key="id">
-          <template #columns>
-            <a-table-column :title="$t('monitor.jobs.jobName')" data-index="jobName" :width="140" />
-            <a-table-column :title="$t('monitor.jobs.jobGroup')" data-index="jobGroup" :width="100" />
-            <a-table-column :title="$t('monitor.jobs.invokeTarget')" data-index="invokeTarget" />
-            <a-table-column :title="$t('monitor.jobs.cronExpression')" :width="160">
-              <template #cell="{ record }">
-                <span class="font-mono text-xs">{{ record.cronExpression }}</span>
+      <t-loading :loading="loading">
+          <t-table row-key="id" :data="tableData" :columns="tableColumns" :pagination="false">
+    <template #cronExpression="{ row }">
+                <span class="font-mono text-xs">{{ row.cronExpression }}</span>
               </template>
-            </a-table-column>
-            <a-table-column :title="$t('common.status')" :width="80">
-              <template #cell="{ record }">
+    <template #status="{ row }">
                 <t-switch
-                  :model-value="record.status === '1'"
-                  @change="(val: string | number | boolean) => handleToggle(record, Boolean(val))"
+                  :model-value="row.status === '1'"
+                  @change="(val: string | number | boolean) => handleToggle(row, Boolean(val))"
                 />
               </template>
-            </a-table-column>
-            <a-table-column :title="$t('common.operate')" :width="260" align="right">
-              <template #cell="{ record }">
+    <template #col_5="{ row }">
                 <t-space>
-                  <t-button v-permission="PERM.monitor.jobEdit" size="small" @click="handleRun(record)">{{ $t('monitor.jobs.execute') }}</t-button>
-                  <t-button v-permission="PERM.monitor.jobEdit" size="small" @click="handleEdit(record)">{{ $t('common.edit') }}</t-button>
-                  <t-popconfirm v-permission="PERM.monitor.jobDelete" :content="$t('monitor.jobs.deleteConfirm')" @confirm="handleDelete(record)">
+                  <t-button v-permission="PERM.monitor.jobEdit" size="small" @click="handleRun(row)">{{ $t('monitor.jobs.execute') }}</t-button>
+                  <t-button v-permission="PERM.monitor.jobEdit" size="small" @click="handleEdit(row)">{{ $t('common.edit') }}</t-button>
+                  <t-popconfirm v-permission="PERM.monitor.jobDelete" :content="$t('monitor.jobs.deleteConfirm')" @confirm="handleDelete(row)">
                     <t-button size="small" theme="danger">{{ $t('common.delete') }}</t-button>
                   </t-popconfirm>
                 </t-space>
               </template>
-            </a-table-column>
-          </template>
-        </a-table>
+  </t-table>
 
         <div v-if="pagination.total > pagination.pageSize" class="mt-4 flex justify-end">
           <t-pagination
@@ -54,7 +43,7 @@
             @change="loadData"
           />
         </div>
-      </a-spin>
+      </t-loading>
     </t-card>
 
     <t-dialog v-model="editVisible" :header="isAdd ? $t('monitor.jobs.addJob') : $t('monitor.jobs.editJob')" @confirm="handleSave" @close="editVisible = false">
@@ -84,7 +73,7 @@
 
 <script setup lang="ts">
 import { PERM } from '@/utils/constants'
-import { ref, reactive, onMounted } from 'vue'
+import { ref, computed, reactive, onMounted } from 'vue'
 import {  MessagePlugin  } from 'tdesign-vue-next'
 import { useI18n } from 'vue-i18n'
 import { getJobPageApi, addJobApi, updateJobApi, deleteJobApi, resumeJobApi, pauseJobApi, runJobApi } from '@/api/job'
@@ -154,4 +143,15 @@ async function handleDelete(row: SysJob) {
   await deleteJobApi(row.id)
   MessagePlugin.success(t('monitor.jobs.deleteSuccess')); loadData()
 }
+
+/** 表格列定义（由 Arco 列模板迁移，自定义单元格见模板同名插槽） */
+const tableColumns = computed(() => [
+    { colKey: 'jobName', title: t('monitor.jobs.jobName'), width: 140 },
+    { colKey: 'jobGroup', title: t('monitor.jobs.jobGroup'), width: 100 },
+    { colKey: 'invokeTarget', title: t('monitor.jobs.invokeTarget') },
+    { colKey: 'cronExpression', title: t('monitor.jobs.cronExpression'), width: 160 },
+    { colKey: 'status', title: t('common.status'), width: 80 },
+    { colKey: 'col_5', title: t('common.operate'), width: 260, align: 'right' },
+  ])
+
 </script>

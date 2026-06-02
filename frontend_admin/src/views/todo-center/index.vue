@@ -43,35 +43,25 @@
         <span>{{ $t('todoCenter.pendingList') }}</span>
       </template>
 
-      <a-spin :loading="loading">
-        <a-table :data="tableData" :pagination="false" row-key="id">
-          <template #columns>
-            <a-table-column :title="$t('todoCenter.type')" :width="110">
-              <template #cell="{ record }">
-                <t-tag :color="record.type === 'leave' ? 'blue' : 'orange'">{{ record.typeName }}</t-tag>
+      <t-loading :loading="loading">
+          <t-table row-key="id" :data="tableData" :columns="tableColumns" :pagination="false">
+    <template #type="{ row }">
+                <t-tag :color="row.type === 'leave' ? 'blue' : 'orange'">{{ row.typeName }}</t-tag>
               </template>
-            </a-table-column>
-            <a-table-column :title="$t('todoCenter.title')" data-index="title" />
-            <a-table-column :title="$t('todoCenter.applicant')" data-index="applicantName" :width="110" />
-            <a-table-column :title="$t('todoCenter.timeRange')" :width="180">
-              <template #cell="{ record }">
-                <span class="text-sm">{{ record.startTime }}<br />{{ record.endTime }}</span>
+    <template #startTime="{ row }">
+                <span class="text-sm">{{ row.startTime }}<br />{{ row.endTime }}</span>
               </template>
-            </a-table-column>
-            <a-table-column :title="$t('common.operate')" :width="180" align="right">
-              <template #cell="{ record }">
+    <template #operate="{ row }">
                 <t-space>
-                  <t-button v-permission="PERM.hr.leaveApprove" v-if="record.type === 'leave'" size="small" theme="primary" @click="openApprove(record)">
+                  <t-button v-permission="PERM.hr.leaveApprove" v-if="row.type === 'leave'" size="small" theme="primary" @click="openApprove(row)">
                     {{ $t('todoCenter.approve') }}
                   </t-button>
-                  <t-button v-permission="PERM.office.vehicleApprove" v-if="record.type === 'vehicle'" size="small" theme="primary" @click="openApprove(record)">
+                  <t-button v-permission="PERM.office.vehicleApprove" v-if="row.type === 'vehicle'" size="small" theme="primary" @click="openApprove(row)">
                     {{ $t('todoCenter.approve') }}
                   </t-button>
                 </t-space>
               </template>
-            </a-table-column>
-          </template>
-        </a-table>
+  </t-table>
 
         <div v-if="pagination.total > 0" class="mt-4 flex justify-end">
           <t-pagination
@@ -81,7 +71,7 @@
             @change="loadData"
           />
         </div>
-      </a-spin>
+      </t-loading>
     </t-card>
 
     <!-- 审批弹窗 -->
@@ -120,7 +110,7 @@
 
 <script setup lang="ts">
 import { PERM } from '@/utils/constants'
-import { ref, reactive, onMounted, onActivated } from 'vue'
+import { ref, computed, reactive, onMounted, onActivated } from 'vue'
 import {  MessagePlugin  } from 'tdesign-vue-next'
 import { getTodoPageApi, getTodoSummaryApi, type TodoItem } from '@/api/todo'
 import { approveLeaveApi } from '@/api/leave'
@@ -189,4 +179,14 @@ onMounted(() => {
   loadSummary()
 })
 onActivated(() => { loadData(); loadSummary() })
+
+/** 表格列定义（由 Arco 列模板迁移，自定义单元格见模板同名插槽） */
+const tableColumns = computed(() => [
+    { colKey: 'type', title: t('todoCenter.type'), width: 110 },
+    { colKey: 'title', title: t('todoCenter.title') },
+    { colKey: 'applicantName', title: t('todoCenter.applicant'), width: 110 },
+    { colKey: 'startTime', title: t('todoCenter.timeRange'), width: 180 },
+    { colKey: 'operate', title: t('common.operate'), width: 180, align: 'right' },
+  ])
+
 </script>

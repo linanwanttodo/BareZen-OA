@@ -65,30 +65,20 @@
       </template>
         <t-empty v-if="tableLoading" :description="$t('common.loading')" />
         <template v-else-if="userList.length">
-          <a-table :data="userList" :pagination="false" row-key="id">
-            <template #columns>
-              <a-table-column :title="$t('user.userName')" data-index="userName" />
-              <a-table-column :title="$t('user.nickName')" data-index="nickName" />
-              <a-table-column :title="$t('user.email')" data-index="email" />
-              <a-table-column :title="$t('user.phone')" data-index="phone" />
-              <a-table-column :title="$t('common.status')" align="center">
-                <template #cell="{ record }">
-                  <span class="online-indicator" :class="isOnline(record.loginDate) ? 'online' : 'offline'">
+            <t-table row-key="id" :data="userList" :columns="tableColumns" :pagination="false">
+    <template #loginDate="{ row }">
+                  <span class="online-indicator" :class="isOnline(row.loginDate) ? 'online' : 'offline'">
                     <span class="dot"></span>
-                    {{ isOnline(record.loginDate) ? $t('common.online') : $t('common.offline') }}
+                    {{ isOnline(row.loginDate) ? $t('common.online') : $t('common.offline') }}
                   </span>
                 </template>
-              </a-table-column>
-              <a-table-column :title="$t('common.operate')" align="right">
-                <template #cell="{ record }">
+    <template #col_5="{ row }">
                   <t-space>
-                    <t-button type="text" size="small" @click="openRoleDialog(record)">{{ $t('roleDept.modifyRoleAction') }}</t-button>
-                    <t-button type="text" size="small" @click="openDeptDialog(record)">{{ $t('roleDept.modifyDeptAction') }}</t-button>
+                    <t-button type="text" size="small" @click="openRoleDialog(row)">{{ $t('roleDept.modifyRoleAction') }}</t-button>
+                    <t-button type="text" size="small" @click="openDeptDialog(row)">{{ $t('roleDept.modifyDeptAction') }}</t-button>
                   </t-space>
                 </template>
-              </a-table-column>
-            </template>
-          </a-table>
+  </t-table>
         </template>
         <t-empty v-else :description="$t('roleDept.noUserData')" />
 
@@ -385,6 +375,17 @@ onMounted(() => {
   loadDepts()
   fetchUsers()
 })
+
+/** 表格列定义（由 Arco 列模板迁移，自定义单元格见模板同名插槽） */
+const tableColumns = computed(() => [
+    { colKey: 'userName', title: t('user.userName') },
+    { colKey: 'nickName', title: t('user.nickName') },
+    { colKey: 'email', title: t('user.email') },
+    { colKey: 'phone', title: t('user.phone') },
+    { colKey: 'loginDate', title: t('common.status'), align: 'center' },
+    { colKey: 'col_5', title: t('common.operate'), align: 'right' },
+  ])
+
 </script>
 
 <style scoped>

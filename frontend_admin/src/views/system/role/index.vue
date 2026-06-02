@@ -1,91 +1,72 @@
 <template>
   <div class="page-container">
     <!-- 搜索区域 -->
-    <a-card class="mb-4" :bordered="true">
-      <a-form :model="searchForm" layout="inline" @submit-success="handleSearch">
-        <a-form-item field="roleName" :label="$t('role.roleName')">
-          <a-input v-model="searchForm.roleName" :placeholder="$t('role.roleName')" allow-clear style="width: 200px" />
-        </a-form-item>
-        <a-form-item field="roleKey" :label="$t('role.roleKey')">
-          <a-input v-model="searchForm.roleKey" :placeholder="$t('role.roleKey')" allow-clear style="width: 200px" />
-        </a-form-item>
-        <a-form-item field="status" :label="$t('common.status')">
-          <a-select v-model="searchForm.status" :placeholder="$t('common.selectPlaceholder')" allow-clear style="width: 120px">
-            <a-option value="0">{{ $t('common.normal') }}</a-option>
-            <a-option value="1">{{ $t('common.disable') }}</a-option>
-          </a-select>
-        </a-form-item>
-        <a-form-item>
-          <a-space>
-            <a-button type="primary" html-type="submit">{{ $t('common.search') }}</a-button>
-            <a-button @click="handleReset">{{ $t('common.reset') }}</a-button>
-          </a-space>
-        </a-form-item>
-      </a-form>
-    </a-card>
+    <t-card class="mb-4" :bordered="true">
+      <t-form :model="searchForm" layout="inline" @submit-success="handleSearch">
+        <t-form-item field="roleName" :label="$t('role.roleName')">
+          <t-input v-model="searchForm.roleName" :placeholder="$t('role.roleName')" allow-clear style="width: 200px" />
+        </t-form-item>
+        <t-form-item field="roleKey" :label="$t('role.roleKey')">
+          <t-input v-model="searchForm.roleKey" :placeholder="$t('role.roleKey')" allow-clear style="width: 200px" />
+        </t-form-item>
+        <t-form-item field="status" :label="$t('common.status')">
+          <t-select v-model="searchForm.status" :placeholder="$t('common.selectPlaceholder')" allow-clear style="width: 120px">
+            <t-option value="0">{{ $t('common.normal') }}</t-option>
+            <t-option value="1">{{ $t('common.disable') }}</t-option>
+          </t-select>
+        </t-form-item>
+        <t-form-item>
+          <t-space>
+            <t-button theme="primary" html-type="submit">{{ $t('common.search') }}</t-button>
+            <t-button @click="handleReset">{{ $t('common.reset') }}</t-button>
+          </t-space>
+        </t-form-item>
+      </t-form>
+    </t-card>
 
     <!-- 表格区域 -->
-    <a-card :bordered="true">
+    <t-card :bordered="true">
       <template #title>
         <div class="flex items-center justify-between w-full">
           <span>{{ $t('role.title') }}</span>
-          <a-space>
-            <a-button v-permission="PERM.system.roleAdd" type="primary" @click="handleAdd">
+          <t-space>
+            <t-button v-permission="PERM.system.roleAdd" theme="primary" @click="handleAdd">
               <template #icon><icon-plus /></template>
               {{ $t('common.add') }}
-            </a-button>
-            <a-button v-permission="PERM.system.roleDelete" status="danger" :disabled="!selectedIds.length" @click="handleBatchDelete">
+            </t-button>
+            <t-button v-permission="PERM.system.roleDelete" theme="danger" :disabled="!selectedIds.length" @click="handleBatchDelete">
               <template #icon><icon-delete /></template>
               {{ $t('common.batchDelete') }}
-            </a-button>
-          </a-space>
+            </t-button>
+          </t-space>
         </div>
       </template>
 
-      <a-spin :loading="loading">
-        <a-table
-          :data="tableData"
-          :pagination="false"
-          :row-selection="{ type: 'checkbox', selectedRowKeys: selectedIds }"
-          :row-key="'id'"
-          @selection-change="onSelectionChange"
-        >
-          <template #columns>
-            <a-table-column :title="$t('common.operate')" data-index="id" :width="80" />
-            <a-table-column :title="$t('role.roleName')" data-index="roleName" />
-            <a-table-column :title="$t('role.roleKey')" data-index="roleKey" />
-            <a-table-column :title="$t('role.roleSort')" data-index="roleSort" :width="80" />
-            <a-table-column :title="$t('common.status')" :width="100">
-              <template #cell="{ record }">
-                <a-switch
-                  :model-value="record.status === '0'"
-                  :loading="record._statusLoading"
-                  @change="(val: string | number | boolean) => handleStatusChange(record, Boolean(val))"
+      <t-loading :loading="loading">
+          <t-table row-key="id" :data="tableData" :columns="tableColumns" :pagination="false">
+    <template #status="{ row }">
+                <t-switch
+                  :model-value="row.status === '0'"
+                  :loading="row._statusLoading"
+                  @change="(val: string | number | boolean) => handleStatusChange(row, Boolean(val))"
                 />
               </template>
-            </a-table-column>
-            <a-table-column :title="$t('common.remark')" data-index="remark" />
-            <a-table-column :title="$t('common.createTime')" :width="160">
-              <template #cell="{ record }">
-                {{ formatTime(record.createTime) }}
+    <template #createTime="{ row }">
+                {{ formatTime(row.createTime) }}
               </template>
-            </a-table-column>
-            <a-table-column :title="$t('common.operate')" :width="200" align="right">
-              <template #cell="{ record }">
-                <a-space>
-                  <a-button v-permission="PERM.system.roleEdit" size="small" @click="handleEdit(record)">{{ $t('common.edit') }}</a-button>
-                  <a-button v-permission="PERM.system.roleEdit" size="small" @click="handleAssignMenu(record)">{{ $t('role.assignMenu') }}</a-button>
-                  <a-popconfirm v-permission="PERM.system.roleDelete" :content="$t('role.deleteConfirm')" @ok="handleDelete(record)">
-                    <a-button size="small" status="danger">{{ $t('common.delete') }}</a-button>
-                  </a-popconfirm>
-                </a-space>
+    <template #col_7="{ row }">
+                <t-space>
+                  <t-button v-permission="PERM.system.roleEdit" size="small" @click="handleEdit(row)">{{ $t('common.edit') }}</t-button>
+                  <t-button v-permission="PERM.system.roleEdit" size="small" @click="handleAssignMenu(row)">{{ $t('role.assignMenu') }}</t-button>
+                  <t-popconfirm v-permission="PERM.system.roleDelete" :content="$t('role.deleteConfirm')" @confirm="handleDelete(row)">
+                    <t-button size="small" theme="danger">{{ $t('common.delete') }}</t-button>
+                  </t-popconfirm>
+                </t-space>
               </template>
-            </a-table-column>
-          </template>
-        </a-table>
+  </t-table>
 
         <div class="mt-4 flex justify-end">
-          <a-pagination
+          <t-pagination
             v-model:current="pagination.current"
             v-model:page-size="pagination.pageSize"
             :total="pagination.total"
@@ -94,93 +75,87 @@
             @change="onPageChange"
           />
         </div>
-      </a-spin>
-    </a-card>
+      </t-loading>
+    </t-card>
 
     <!-- 新增/编辑弹窗 -->
-    <a-modal
-      v-model:visible="formDialogVisible"
+    <t-dialog
+      v-model="formDialogVisible"
       :title="formType === 'add' ? $t('role.addRole') : $t('role.editRole')"
       :width="520"
       :mask-closable="false"
-      @ok="onFormConfirm"
+      @confirm="onFormConfirm"
       @cancel="formDialogVisible = false"
     >
-      <a-form :model="formData" layout="vertical">
-        <a-form-item field="roleName" :label="$t('role.roleName')" :rules="[{ required: true, message: $t('role.roleName') }]">
-          <a-input v-model="formData.roleName" :placeholder="$t('role.roleName')" />
-        </a-form-item>
-        <a-form-item field="roleKey" :label="$t('role.roleKey')" :rules="[{ required: true, message: $t('role.roleKey') }]">
-          <a-input v-model="formData.roleKey" :placeholder="$t('role.roleKey') + ', ' + $t('common.inputPlaceholder')" />
-        </a-form-item>
-        <a-row :gutter="16">
-          <a-col :span="12">
-            <a-form-item field="roleSort" :label="$t('role.roleSort')">
-              <a-input-number v-model="formData.roleSort" placeholder="0" :min="0" style="width: 100%" />
-            </a-form-item>
-          </a-col>
-          <a-col :span="12">
-            <a-form-item field="status" :label="$t('common.status')">
-              <a-radio-group v-model="formData.status">
-                <a-radio value="0">{{ $t('common.normal') }}</a-radio>
-                <a-radio value="1">{{ $t('common.disable') }}</a-radio>
-              </a-radio-group>
-            </a-form-item>
-          </a-col>
-        </a-row>
-        <a-form-item field="remark" :label="$t('common.remark')">
-          <a-textarea v-model="formData.remark" :placeholder="$t('common.remark')" :max-length="200" show-word-limit />
-        </a-form-item>
-      </a-form>
-    </a-modal>
+      <t-form :model="formData" layout="vertical">
+        <t-form-item field="roleName" :label="$t('role.roleName')" :rules="[{ required: true, message: $t('role.roleName') }]">
+          <t-input v-model="formData.roleName" :placeholder="$t('role.roleName')" />
+        </t-form-item>
+        <t-form-item field="roleKey" :label="$t('role.roleKey')" :rules="[{ required: true, message: $t('role.roleKey') }]">
+          <t-input v-model="formData.roleKey" :placeholder="$t('role.roleKey') + ', ' + $t('common.inputPlaceholder')" />
+        </t-form-item>
+        <t-row :gutter="16">
+          <t-col :span="12">
+            <t-form-item field="roleSort" :label="$t('role.roleSort')">
+              <t-input-number v-model="formData.roleSort" placeholder="0" :min="0" style="width: 100%" />
+            </t-form-item>
+          </t-col>
+          <t-col :span="12">
+            <t-form-item field="status" :label="$t('common.status')">
+              <t-radio-group v-model="formData.status">
+                <t-radio value="0">{{ $t('common.normal') }}</t-radio>
+                <t-radio value="1">{{ $t('common.disable') }}</t-radio>
+              </t-radio-group>
+            </t-form-item>
+          </t-col>
+        </t-row>
+        <t-form-item field="remark" :label="$t('common.remark')">
+          <t-textarea v-model="formData.remark" :placeholder="$t('common.remark')" :max-length="200" show-word-limit />
+        </t-form-item>
+      </t-form>
+    </t-dialog>
 
     <!-- 分配菜单权限弹窗 -->
-    <a-modal
-      v-model:visible="menuDialogVisible"
+    <t-dialog
+      v-model="menuDialogVisible"
       :title="$t('role.assignMenuTitle')"
       :width="560"
       :mask-closable="false"
-      @ok="onMenuConfirm"
+      @confirm="onMenuConfirm"
       @cancel="menuDialogVisible = false"
     >
       <div v-if="currentRole" class="mb-3">
-        <a-space>
+        <t-space>
           <span style="color: var(--wecom-text-tertiary)">{{ $t('common.currentRole') }}</span>
           <span style="font-weight: 500">{{ currentRole.roleName }}（{{ currentRole.roleKey }}）</span>
-        </a-space>
+        </t-space>
       </div>
-      <a-space class="mb-3">
-        <a-button size="small" @click="handleExpandAll">{{ $t('role.expandCollapse') }}</a-button>
-        <a-button size="small" @click="handleCheckAll">{{ $t('role.checkAll') }}</a-button>
-      </a-space>
+      <t-space class="mb-3">
+        <t-button size="small" @click="handleExpandAll">{{ $t('role.expandCollapse') }}</t-button>
+        <t-button size="small" @click="handleCheckAll">{{ $t('role.checkAll') }}</t-button>
+      </t-space>
       <div class="max-h-[360px] overflow-y-auto border rounded p-2" style="border-color: var(--wecom-border)">
         <div v-for="item in menuFlatRows" :key="item.node.id" class="flex items-center py-1.5" :style="{ paddingLeft: item.depth * 16 + 'px' }">
           <icon-right v-if="item.hasChildren && !menuExpandedIds.includes(item.node.id)" class="cursor-pointer mr-1" @click="toggleMenuExpand(item.node.id)" />
           <icon-down v-if="item.hasChildren && menuExpandedIds.includes(item.node.id)" class="cursor-pointer mr-1" @click="toggleMenuExpand(item.node.id)" />
           <span v-if="!item.hasChildren" class="inline-block w-5" />
-          <a-checkbox :model-value="checkedMenuIds.includes(item.node.id)" @change="() => toggleMenuCheck(item.node.id)">
+          <t-checkbox :model-value="checkedMenuIds.includes(item.node.id)" @change="() => toggleMenuCheck(item.node.id)">
             {{ item.node.menuName }}
-          </a-checkbox>
-          <a-tag size="small" class="ml-2" :color="item.node.menuType === 'M' ? 'blue' : item.node.menuType === 'C' ? 'green' : 'orange'">
+          </t-checkbox>
+          <t-tag size="small" class="ml-2" :color="item.node.menuType === 'M' ? 'blue' : item.node.menuType === 'C' ? 'green' : 'orange'">
             {{ $t(menuTypeKey(item.node.menuType)) }}
-          </a-tag>
+          </t-tag>
         </div>
       </div>
-    </a-modal>
+    </t-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { PERM } from '@/utils/constants'
 import { ref, reactive, computed, onMounted } from 'vue'
-import { Message, Modal } from '@arco-design/web-vue'
+import { MessagePlugin as Message, DialogPlugin as Modal } from 'tdesign-vue-next'
 import { useI18n } from 'vue-i18n'
-import {
-  IconPlus,
-  IconDelete,
-  IconRight,
-  IconDown,
-} from '@arco-design/web-vue/es/icon'
 import {
   getRoleListApi,
   addRoleApi,
@@ -291,9 +266,9 @@ async function handleDelete(row: SysRole) {
 
 async function handleBatchDelete() {
   Modal.confirm({
-    title: t('common.confirmDelete'),
-    content: t('role.batchDeleteConfirm', { count: selectedIds.value.length }),
-    onOk: async () => {
+    header: t('common.confirmDelete'),
+    body: t('role.batchDeleteConfirm', { count: selectedIds.value.length }),
+    onConfirm: async () => {
       try {
         await batchDeleteRoleApi(selectedIds.value)
         Message.success(t('role.batchDeleteSuccess'))
@@ -462,4 +437,17 @@ async function onMenuConfirm() {
 onMounted(() => {
   loadTable()
 })
+
+/** 表格列定义（由 Arco 列模板迁移，自定义单元格见模板同名插槽） */
+const tableColumns = computed(() => [
+    { colKey: 'id', title: t('common.operate'), width: 80 },
+    { colKey: 'roleName', title: t('role.roleName') },
+    { colKey: 'roleKey', title: t('role.roleKey') },
+    { colKey: 'roleSort', title: t('role.roleSort'), width: 80 },
+    { colKey: 'status', title: t('common.status'), width: 100 },
+    { colKey: 'remark', title: t('common.remark') },
+    { colKey: 'createTime', title: t('common.createTime'), width: 160 },
+    { colKey: 'col_7', title: t('common.operate'), width: 200, align: 'right' },
+  ])
+
 </script>

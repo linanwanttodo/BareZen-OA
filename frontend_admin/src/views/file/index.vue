@@ -1,26 +1,26 @@
 <template>
   <div class="page-container">
-    <a-card>
+    <t-card>
       <template #title>
         <div class="flex items-center justify-between w-full">
           <div class="flex items-center gap-2">
             <span>{{ $t('file.title') }}</span>
-            <a-tag color="arcoblue">{{ pagination.total }}</a-tag>
+            <t-tag theme="primary">{{ pagination.total }}</t-tag>
           </div>
           <div class="flex gap-2">
             <input ref="fileInputRef" type="file" class="hidden" multiple @change="onFileSelected" />
-            <a-button v-permission="PERM.system.fileUpload" type="primary" :loading="uploading" @click="triggerUpload">
+            <t-button v-permission="PERM.system.fileUpload" theme="primary" :loading="uploading" @click="triggerUpload">
               <template #icon><icon-upload /></template>
               {{ $t('file.upload') }}
-            </a-button>
-            <a-button v-permission="PERM.system.fileAdd" @click="openCreateFolder">
+            </t-button>
+            <t-button v-permission="PERM.system.fileAdd" @click="openCreateFolder">
               <template #icon><icon-plus /></template>
               {{ $t('file.createFolder') }}
-            </a-button>
-            <a-button @click="loadList">
+            </t-button>
+            <t-button @click="loadList">
               <template #icon><icon-refresh /></template>
               {{ $t('file.refresh') }}
-            </a-button>
+            </t-button>
           </div>
         </div>
       </template>
@@ -41,93 +41,76 @@
           <div class="h-8 w-8 animate-spin rounded-full border-b-2 border-[var(--primary)]"></div>
           <span class="ml-2 text-[var(--muted-foreground)]">{{ $t('common.loading') }}</span>
         </div>
-        <a-table v-else :data="tableData" :pagination="false" row-key="id" :bordered="false">
-          <template #columns>
-            <a-table-column :title="$t('file.fileName')">
-              <template #cell="{ record }">
+          <t-table row-key="id" :data="tableData" :columns="tableColumns" :pagination="false">
+    <template #fileName="{ row }">
                 <div class="flex items-center gap-2">
-                  <icon-folder v-if="record.isFolder === 1" class="text-[var(--bz-warning)]" />
+                  <icon-folder v-if="row.isFolder === 1" class="text-[var(--bz-warning)]" />
                   <icon-file v-else class="text-[var(--muted-foreground)]" />
                   <span
-                    v-if="record.isFolder === 1"
+                    v-if="row.isFolder === 1"
                     class="cursor-pointer text-sm hover:text-[var(--primary)]"
-                    @click="enterFolder(record)"
-                  >{{ record.fileName }}</span>
-                  <span v-else class="text-sm text-[var(--foreground)]">{{ record.originalName || record.fileName }}</span>
+                    @click="enterFolder(row)"
+                  >{{ row.fileName }}</span>
+                  <span v-else class="text-sm text-[var(--foreground)]">{{ row.originalName || row.fileName }}</span>
                 </div>
               </template>
-            </a-table-column>
-            <a-table-column :title="$t('file.fileSize')" :width="120">
-              <template #cell="{ record }">
-                {{ record.isFolder === 1 ? '-' : formatSize(record.fileSize) }}
+    <template #fileSize="{ row }">
+                {{ row.isFolder === 1 ? '-' : formatSize(row.fileSize) }}
               </template>
-            </a-table-column>
-            <a-table-column :title="$t('file.fileType')" :width="100">
-              <template #cell="{ record }">{{ getTypeText(record) }}</template>
-            </a-table-column>
-            <a-table-column :title="$t('file.scope')" :width="90">
-              <template #cell="{ record }">
-                <a-tag :color="record.scope === 'public' ? 'green' : 'gray'" size="small">
-                  {{ record.scope === 'public' ? $t('file.scopePublic') : $t('file.scopeAdmin') }}
-                </a-tag>
+    <template #fileType="{ row }">{{ getTypeText(row) }}</template>
+    <template #scope="{ row }">
+                <t-tag :color="row.scope === 'public' ? 'green' : 'gray'" size="small">
+                  {{ row.scope === 'public' ? $t('file.scopePublic') : $t('file.scopeAdmin') }}
+                </t-tag>
               </template>
-            </a-table-column>
-            <a-table-column :title="$t('common.createTime')" :width="170">
-              <template #cell="{ record }">{{ formatDateTime(record.createTime) }}</template>
-            </a-table-column>
-            <a-table-column :title="$t('common.operate')" align="right" :width="170">
-              <template #cell="{ record }">
+    <template #createTime="{ row }">{{ formatDateTime(row.createTime) }}</template>
+    <template #operate="{ row }">
                 <div class="flex justify-end gap-1">
-                  <a-button v-if="record.isFolder !== 1" v-permission="PERM.system.fileDownload" type="text" size="small" @click="handleDownload(record)">
+                  <t-button v-if="row.isFolder !== 1" v-permission="PERM.system.fileDownload" variant="text" size="small" @click="handleDownload(row)">
                     {{ $t('file.download') }}
-                  </a-button>
-                  <a-button v-permission="PERM.system.fileEdit" type="text" size="small" @click="openRename(record)">
+                  </t-button>
+                  <t-button v-permission="PERM.system.fileEdit" variant="text" size="small" @click="openRename(row)">
                     {{ $t('file.rename') }}
-                  </a-button>
-                  <a-button v-permission="PERM.system.fileDelete" type="text" size="small" status="danger" @click="openDelete(record)">
+                  </t-button>
+                  <t-button v-permission="PERM.system.fileDelete" variant="text" size="small" theme="danger" @click="openDelete(row)">
                     {{ $t('common.delete') }}
-                  </a-button>
+                  </t-button>
                 </div>
               </template>
-            </a-table-column>
-          </template>
-          <template #empty>
-            <a-empty :description="$t('file.emptyFolder')" />
-          </template>
-        </a-table>
+  </t-table>
 
         <div v-if="pagination.total > pagination.pageSize" class="mt-4 flex justify-end">
-          <a-pagination
+          <t-pagination
             v-model:current="pagination.current"
             :total="pagination.total"
             :page-size="pagination.pageSize"
             @change="loadList"
           />
         </div>
-    </a-card>
+    </t-card>
 
     <!-- 新建文件夹 -->
-    <a-modal v-model:visible="createFolderVisible" :title="$t('file.createFolder')" @ok="handleCreateFolder" @cancel="createFolderVisible = false">
-      <a-form :model="folderForm" layout="vertical">
-        <a-form-item field="name" :label="$t('file.folderName')">
-          <a-input v-model="folderForm.name" :placeholder="$t('file.folderNamePlaceholder')" @press-enter="handleCreateFolder" />
-        </a-form-item>
-      </a-form>
-    </a-modal>
+    <t-dialog v-model="createFolderVisible" :title="$t('file.createFolder')" @confirm="handleCreateFolder" @cancel="createFolderVisible = false">
+      <t-form :model="folderForm" layout="vertical">
+        <t-form-item field="name" :label="$t('file.folderName')">
+          <t-input v-model="folderForm.name" :placeholder="$t('file.folderNamePlaceholder')" @press-enter="handleCreateFolder" />
+        </t-form-item>
+      </t-form>
+    </t-dialog>
 
     <!-- 重命名 -->
-    <a-modal v-model:visible="renameVisible" :title="$t('file.rename')" @ok="handleRename" @cancel="renameVisible = false">
-      <a-form :model="renameForm" layout="vertical">
-        <a-form-item field="name" :label="$t('file.fileName')">
-          <a-input v-model="renameForm.name" :placeholder="$t('file.renamePlaceholder')" @press-enter="handleRename" />
-        </a-form-item>
-      </a-form>
-    </a-modal>
+    <t-dialog v-model="renameVisible" :title="$t('file.rename')" @confirm="handleRename" @cancel="renameVisible = false">
+      <t-form :model="renameForm" layout="vertical">
+        <t-form-item field="name" :label="$t('file.fileName')">
+          <t-input v-model="renameForm.name" :placeholder="$t('file.renamePlaceholder')" @press-enter="handleRename" />
+        </t-form-item>
+      </t-form>
+    </t-dialog>
 
     <!-- 删除确认 -->
-    <a-modal v-model:visible="deleteVisible" :title="$t('common.confirm')" @ok="handleDelete" @cancel="deleteVisible = false">
+    <t-dialog v-model="deleteVisible" :title="$t('common.confirm')" @confirm="handleDelete" @cancel="deleteVisible = false">
       <p class="text-sm text-[var(--foreground)]">{{ deleteConfirmText }}</p>
-    </a-modal>
+    </t-dialog>
   </div>
 </template>
 
@@ -135,8 +118,7 @@
 import { PERM } from '@/utils/constants'
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Message } from '@arco-design/web-vue'
-import { IconUpload, IconPlus, IconRefresh, IconFolder, IconFile } from '@arco-design/web-vue/es/icon'
+import { MessagePlugin as Message } from 'tdesign-vue-next'
 import { formatDateTime } from '@/utils/format'
 import {
   uploadFileApi,
@@ -360,4 +342,15 @@ function getTypeText(record: SysFileItem): string {
 }
 
 onMounted(loadList)
+
+/** 表格列定义（由 Arco 列模板迁移，自定义单元格见模板同名插槽） */
+const tableColumns = computed(() => [
+    { colKey: 'fileName', title: t('file.fileName') },
+    { colKey: 'fileSize', title: t('file.fileSize'), width: 120 },
+    { colKey: 'fileType', title: t('file.fileType'), width: 100 },
+    { colKey: 'scope', title: t('file.scope'), width: 90 },
+    { colKey: 'createTime', title: t('common.createTime'), width: 170 },
+    { colKey: 'operate', title: t('common.operate'), width: 170, align: 'right' },
+  ])
+
 </script>

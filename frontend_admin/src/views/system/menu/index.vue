@@ -1,200 +1,173 @@
 <template>
   <div class="page-container">
     <!-- 搜索区域 -->
-    <a-card class="mb-4" :bordered="true">
-      <a-form :model="searchForm" layout="inline" @submit-success="handleSearch">
-        <a-form-item field="menuName" :label="$t('menu.menuName')">
-          <a-input v-model="searchForm.menuName" :placeholder="$t('menu.menuName')" allow-clear style="width: 200px" />
-        </a-form-item>
-        <a-form-item field="status" :label="$t('common.status')">
-          <a-select v-model="searchForm.status" :placeholder="$t('common.selectPlaceholder')" allow-clear style="width: 120px">
-            <a-option value="0">{{ $t('common.normal') }}</a-option>
-            <a-option value="1">{{ $t('common.disable') }}</a-option>
-          </a-select>
-        </a-form-item>
-        <a-form-item>
-          <a-space>
-            <a-button type="primary" html-type="submit">{{ $t('common.search') }}</a-button>
-            <a-button @click="handleReset">{{ $t('common.reset') }}</a-button>
-          </a-space>
-        </a-form-item>
-      </a-form>
-    </a-card>
+    <t-card class="mb-4" :bordered="true">
+      <t-form :model="searchForm" layout="inline" @submit-success="handleSearch">
+        <t-form-item field="menuName" :label="$t('menu.menuName')">
+          <t-input v-model="searchForm.menuName" :placeholder="$t('menu.menuName')" allow-clear style="width: 200px" />
+        </t-form-item>
+        <t-form-item field="status" :label="$t('common.status')">
+          <t-select v-model="searchForm.status" :placeholder="$t('common.selectPlaceholder')" allow-clear style="width: 120px">
+            <t-option value="0">{{ $t('common.normal') }}</t-option>
+            <t-option value="1">{{ $t('common.disable') }}</t-option>
+          </t-select>
+        </t-form-item>
+        <t-form-item>
+          <t-space>
+            <t-button theme="primary" html-type="submit">{{ $t('common.search') }}</t-button>
+            <t-button @click="handleReset">{{ $t('common.reset') }}</t-button>
+          </t-space>
+        </t-form-item>
+      </t-form>
+    </t-card>
 
     <!-- 树形表格区域 -->
-    <a-card :bordered="true">
+    <t-card :bordered="true">
       <template #title>
         <div class="flex items-center justify-between w-full">
           <span>{{ $t('menu.title') }}</span>
-          <a-space>
-            <a-button @click="toggleExpandAll">
+          <t-space>
+            <t-button @click="toggleExpandAll">
               {{ isAllExpanded ? $t('common.collapseAll') : $t('common.expandAll') }}
-            </a-button>
-            <a-button v-permission="PERM.system.menuAdd" type="primary" @click="handleAdd()">
+            </t-button>
+            <t-button v-permission="PERM.system.menuAdd" theme="primary" @click="handleAdd()">
               <template #icon><icon-plus /></template>
               {{ $t('common.add') }}
-            </a-button>
-          </a-space>
+            </t-button>
+          </t-space>
         </div>
       </template>
 
-      <a-spin :loading="loading">
-        <a-table :data="flatRows" :pagination="false" :row-key="'id'">
-          <template #columns>
-            <a-table-column :title="$t('common.operate')" :width="80">
-              <template #cell="{ record }">{{ record.node.id }}</template>
-            </a-table-column>
-            <a-table-column :title="$t('menu.menuName')">
-              <template #cell="{ record }">
-                <div class="flex items-center" :style="{ paddingLeft: record.depth * 16 + 'px' }">
-                  <icon-right v-if="record.hasChildren && !expandedIds.includes(record.node.id)" class="cursor-pointer mr-1" @click="toggleExpand(record.node.id)" />
-                  <icon-down v-if="record.hasChildren && expandedIds.includes(record.node.id)" class="cursor-pointer mr-1" @click="toggleExpand(record.node.id)" />
-                  <span v-if="!record.hasChildren" class="inline-block w-5" />
-                  <icon-folder v-if="record.node.menuType === 'M'" class="mr-1.5" style="color: var(--primary)" />
-                  <icon-menu v-if="record.node.menuType === 'C'" class="mr-1.5" style="color: var(--primary)" />
-                  <icon-command v-if="record.node.menuType === 'F'" class="mr-1.5" style="color: var(--primary)" />
-                  <span>{{ record.node.menuName }}</span>
+      <t-loading :loading="loading">
+          <t-table row-key="id" :data="flatRows" :columns="tableColumns" :pagination="false">
+    <template #depth="{ row }">
+                <div class="flex items-center" :style="{ paddingLeft: row.depth * 16 + 'px' }">
+                  <icon-right v-if="row.hasChildren && !expandedIds.includes(row.node.id)" class="cursor-pointer mr-1" @click="toggleExpand(row.node.id)" />
+                  <icon-down v-if="row.hasChildren && expandedIds.includes(row.node.id)" class="cursor-pointer mr-1" @click="toggleExpand(row.node.id)" />
+                  <span v-if="!row.hasChildren" class="inline-block w-5" />
+                  <icon-folder v-if="row.node.menuType === 'M'" class="mr-1.5" style="color: var(--primary)" />
+                  <icon-menu v-if="row.node.menuType === 'C'" class="mr-1.5" style="color: var(--primary)" />
+                  <icon-command v-if="row.node.menuType === 'F'" class="mr-1.5" style="color: var(--primary)" />
+                  <span>{{ row.node.menuName }}</span>
                 </div>
               </template>
-            </a-table-column>
-            <a-table-column :title="$t('menu.menuType')" :width="100">
-              <template #cell="{ record }">
-                <a-tag :color="record.node.menuType === 'M' ? 'blue' : record.node.menuType === 'C' ? 'green' : 'orange'">
-                  {{ $t(menuTypeKey(record.node.menuType)) }}
-                </a-tag>
+    <template #menuType="{ row }">
+                <t-tag :color="row.node.menuType === 'M' ? 'blue' : row.node.menuType === 'C' ? 'green' : 'orange'">
+                  {{ $t(menuTypeKey(row.node.menuType)) }}
+                </t-tag>
               </template>
-            </a-table-column>
-            <a-table-column :title="$t('menu.icon')" data-index="icon" :width="100" />
-            <a-table-column :title="$t('menu.orderNum')" data-index="orderNum" :width="80" />
-            <a-table-column :title="$t('menu.perms')" data-index="perms" />
-            <a-table-column :title="$t('menu.path')" data-index="path" />
-            <a-table-column :title="$t('menu.component')" data-index="component" />
-            <a-table-column :title="$t('menu.visible')" :width="80">
-              <template #cell="{ record }">
-                <a-tag :color="record.node.visible === '0' ? 'green' : 'red'">
-                  {{ record.node.visible === '0' ? $t('menu.show') : $t('menu.hide') }}
-                </a-tag>
+    <template #visible="{ row }">
+                <t-tag :color="row.node.visible === '0' ? 'green' : 'red'">
+                  {{ row.node.visible === '0' ? $t('menu.show') : $t('menu.hide') }}
+                </t-tag>
               </template>
-            </a-table-column>
-            <a-table-column :title="$t('menu.status')" :width="80">
-              <template #cell="{ record }">
-                <a-tag :color="record.node.status === '0' ? 'green' : 'red'">
-                  {{ record.node.status === '0' ? $t('common.normal') : $t('common.disable') }}
-                </a-tag>
+    <template #status="{ row }">
+                <t-tag :color="row.node.status === '0' ? 'green' : 'red'">
+                  {{ row.node.status === '0' ? $t('common.normal') : $t('common.disable') }}
+                </t-tag>
               </template>
-            </a-table-column>
-            <a-table-column :title="$t('common.operate')" :width="180" align="right">
-              <template #cell="{ record }">
-                <a-space>
-                  <a-button v-permission="PERM.system.menuAdd" v-if="record.node.menuType !== 'F'" size="small" @click="handleAdd(record.node)">{{ $t('common.add') }}</a-button>
-                  <a-button v-permission="PERM.system.menuEdit" size="small" @click="handleEdit(record.node)">{{ $t('common.edit') }}</a-button>
-                  <a-popconfirm v-permission="PERM.system.menuDelete" :content="$t('menu.deleteConfirm', { name: record.node.menuName })" @ok="handleDelete(record.node)">
-                    <a-button size="small" status="danger">{{ $t('common.delete') }}</a-button>
-                  </a-popconfirm>
-                </a-space>
+    <template #operate="{ row }">
+                <t-space>
+                  <t-button v-permission="PERM.system.menuAdd" v-if="row.node.menuType !== 'F'" size="small" @click="handleAdd(row.node)">{{ $t('common.add') }}</t-button>
+                  <t-button v-permission="PERM.system.menuEdit" size="small" @click="handleEdit(row.node)">{{ $t('common.edit') }}</t-button>
+                  <t-popconfirm v-permission="PERM.system.menuDelete" :content="$t('menu.deleteConfirm', { name: row.node.menuName })" @confirm="handleDelete(row.node)">
+                    <t-button size="small" theme="danger">{{ $t('common.delete') }}</t-button>
+                  </t-popconfirm>
+                </t-space>
               </template>
-            </a-table-column>
-          </template>
-        </a-table>
-      </a-spin>
-    </a-card>
+  </t-table>
+      </t-loading>
+    </t-card>
 
     <!-- 新增/编辑弹窗 -->
-    <a-modal
-      v-model:visible="formDialogVisible"
+    <t-dialog
+      v-model="formDialogVisible"
       :title="formType === 'add' ? $t('menu.addMenu') : $t('menu.editMenu')"
       :width="640"
       :mask-closable="false"
-      @ok="onFormConfirm"
+      @confirm="onFormConfirm"
       @cancel="formDialogVisible = false"
     >
-      <a-form :model="formData" layout="vertical">
-        <a-form-item field="parentId" :label="$t('menu.parentMenu')">
-          <a-tree-select
+      <t-form :model="formData" layout="vertical">
+        <t-form-item field="parentId" :label="$t('menu.parentMenu')">
+          
+<!-- TODO(tree-select): data 字段 key/title 需转为 value/label --><t-tree-select
             v-model="formData.parentId"
             :data="parentTreeData"
             :placeholder="$t('menu.parentMenuPlaceholder')"
             allow-clear
             :field-names="{ key: 'id', title: 'menuName', children: 'children' }"
           />
-        </a-form-item>
-        <a-form-item field="menuType" :label="$t('menu.menuType')">
-          <a-radio-group v-model="formData.menuType" @change="onMenuTypeChange">
-            <a-radio value="M">{{ $t('menu.directory') }}</a-radio>
-            <a-radio value="C">{{ $t('menu.menu') }}</a-radio>
-            <a-radio value="F">{{ $t('menu.button') }}</a-radio>
-          </a-radio-group>
-        </a-form-item>
-        <a-row :gutter="16">
-          <a-col :span="8">
-            <a-form-item field="menuName" :label="$t('menu.menuName')" :rules="[{ required: true, message: $t('menu.menuName') }]">
-              <a-input v-model="formData.menuName" :placeholder="$t('menu.menuName')" />
-            </a-form-item>
-          </a-col>
-          <a-col :span="8">
-            <a-form-item field="orderNum" :label="$t('menu.orderNum')" :rules="[{ required: true, message: $t('menu.orderNum') }]">
-              <a-input-number v-model="formData.orderNum" placeholder="0" :min="0" style="width: 100%" />
-            </a-form-item>
-          </a-col>
-          <a-col v-if="formData.menuType !== 'F'" :span="8">
-            <a-form-item field="icon" :label="$t('menu.icon')">
-              <a-input v-model="formData.icon" :placeholder="$t('menu.icon')" />
-            </a-form-item>
-          </a-col>
-        </a-row>
+        </t-form-item>
+        <t-form-item field="menuType" :label="$t('menu.menuType')">
+          <t-radio-group v-model="formData.menuType" @change="onMenuTypeChange">
+            <t-radio value="M">{{ $t('menu.directory') }}</t-radio>
+            <t-radio value="C">{{ $t('menu.menu') }}</t-radio>
+            <t-radio value="F">{{ $t('menu.button') }}</t-radio>
+          </t-radio-group>
+        </t-form-item>
+        <t-row :gutter="16">
+          <t-col :span="8">
+            <t-form-item field="menuName" :label="$t('menu.menuName')" :rules="[{ required: true, message: $t('menu.menuName') }]">
+              <t-input v-model="formData.menuName" :placeholder="$t('menu.menuName')" />
+            </t-form-item>
+          </t-col>
+          <t-col :span="8">
+            <t-form-item field="orderNum" :label="$t('menu.orderNum')" :rules="[{ required: true, message: $t('menu.orderNum') }]">
+              <t-input-number v-model="formData.orderNum" placeholder="0" :min="0" style="width: 100%" />
+            </t-form-item>
+          </t-col>
+          <t-col v-if="formData.menuType !== 'F'" :span="8">
+            <t-form-item field="icon" :label="$t('menu.icon')">
+              <t-input v-model="formData.icon" :placeholder="$t('menu.icon')" />
+            </t-form-item>
+          </t-col>
+        </t-row>
         <template v-if="formData.menuType !== 'F'">
-          <a-row :gutter="16">
-            <a-col :span="12">
-              <a-form-item field="path" :label="$t('menu.path')">
-                <a-input v-model="formData.path" :placeholder="$t('menu.path')" />
-              </a-form-item>
-            </a-col>
-            <a-col v-if="formData.menuType === 'C'" :span="12">
-              <a-form-item field="component" :label="$t('menu.component')">
-                <a-input v-model="formData.component" :placeholder="$t('menu.component')" />
-              </a-form-item>
-            </a-col>
-          </a-row>
-          <a-form-item field="visible" :label="$t('menu.visible')">
-            <a-radio-group v-model="formData.visible">
-              <a-radio value="0">{{ $t('menu.show') }}</a-radio>
-              <a-radio value="1">{{ $t('menu.hide') }}</a-radio>
-            </a-radio-group>
-          </a-form-item>
+          <t-row :gutter="16">
+            <t-col :span="12">
+              <t-form-item field="path" :label="$t('menu.path')">
+                <t-input v-model="formData.path" :placeholder="$t('menu.path')" />
+              </t-form-item>
+            </t-col>
+            <t-col v-if="formData.menuType === 'C'" :span="12">
+              <t-form-item field="component" :label="$t('menu.component')">
+                <t-input v-model="formData.component" :placeholder="$t('menu.component')" />
+              </t-form-item>
+            </t-col>
+          </t-row>
+          <t-form-item field="visible" :label="$t('menu.visible')">
+            <t-radio-group v-model="formData.visible">
+              <t-radio value="0">{{ $t('menu.show') }}</t-radio>
+              <t-radio value="1">{{ $t('menu.hide') }}</t-radio>
+            </t-radio-group>
+          </t-form-item>
         </template>
-        <a-row :gutter="16">
-          <a-col v-if="formData.menuType === 'C' || formData.menuType === 'F'" :span="12">
-            <a-form-item field="perms" :label="$t('menu.perms')">
-              <a-input v-model="formData.perms" :placeholder="$t('menu.perms')" />
-            </a-form-item>
-          </a-col>
-          <a-col :span="12">
-            <a-form-item field="status" :label="$t('menu.status')">
-              <a-radio-group v-model="formData.status">
-                <a-radio value="0">{{ $t('common.normal') }}</a-radio>
-                <a-radio value="1">{{ $t('common.disable') }}</a-radio>
-              </a-radio-group>
-            </a-form-item>
-          </a-col>
-        </a-row>
-      </a-form>
-    </a-modal>
+        <t-row :gutter="16">
+          <t-col v-if="formData.menuType === 'C' || formData.menuType === 'F'" :span="12">
+            <t-form-item field="perms" :label="$t('menu.perms')">
+              <t-input v-model="formData.perms" :placeholder="$t('menu.perms')" />
+            </t-form-item>
+          </t-col>
+          <t-col :span="12">
+            <t-form-item field="status" :label="$t('menu.status')">
+              <t-radio-group v-model="formData.status">
+                <t-radio value="0">{{ $t('common.normal') }}</t-radio>
+                <t-radio value="1">{{ $t('common.disable') }}</t-radio>
+              </t-radio-group>
+            </t-form-item>
+          </t-col>
+        </t-row>
+      </t-form>
+    </t-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { PERM } from '@/utils/constants'
 import { ref, reactive, computed, onMounted } from 'vue'
-import { Message, Modal } from '@arco-design/web-vue'
+import { MessagePlugin as Message, DialogPlugin as Modal } from 'tdesign-vue-next'
 import { useI18n } from 'vue-i18n'
-import {
-  IconPlus,
-  IconRight,
-  IconDown,
-  IconFolder,
-  IconMenu,
-  IconCommand,
-} from '@arco-design/web-vue/es/icon'
 import {
   getMenuListApi,
   getMenuTreeSelectApi,
@@ -412,4 +385,19 @@ async function onFormConfirm() {
 onMounted(() => {
   loadTable()
 })
+
+/** 表格列定义（由 Arco 列模板迁移，自定义单元格见模板同名插槽） */
+const tableColumns = computed(() => [
+    { colKey: 'menuName', title: t('menu.menuName') },
+    { colKey: 'menuType', title: t('menu.menuType'), width: 100 },
+    { colKey: 'icon', title: t('menu.icon'), width: 100 },
+    { colKey: 'orderNum', title: t('menu.orderNum'), width: 80 },
+    { colKey: 'perms', title: t('menu.perms') },
+    { colKey: 'path', title: t('menu.path') },
+    { colKey: 'component', title: t('menu.component') },
+    { colKey: 'visible', title: t('menu.visible'), width: 80 },
+    { colKey: 'status', title: t('menu.status'), width: 80 },
+    { colKey: 'operate', title: t('common.operate'), width: 180, align: 'right' },
+  ])
+
 </script>

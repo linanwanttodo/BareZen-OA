@@ -11,66 +11,60 @@
  */
 import fs from 'node:fs'
 
-const file = process.argv[2]
+const files = process.argv.slice(2)
+for (const file of files) {
 let src = fs.readFileSync(file, 'utf8')
 const before = src
 const generatedColumns = []
 
-// ---- 1. 定位所有 a-table 块并转换 ----
-// 逐个处理 <a-table ...> ... </a-table>（不含嵌套 a-table 场景，本仓无）
-const tableRe = /<a-table([^>]*)>([\s\S]*?)<\/a-table>/g
+// ---- 1. 定位所有 a-table 块并转换（支持 #columns 插槽包裹与多行属性）----
+const tableRe = /<a-table((?:\s[^>]*)?)>([\s\S]*?)<\/a-table>/g
 let tableIndex = 0
-let varNameSeed = 'tableColumns'
+const varNameSeed = 'tableColumns'
 
 src = src.replace(tableRe, (full, attrs, inner) => {
   tableIndex++
   const varName = tableIndex === 1 ? varNameSeed : `${varNameSeed}${tableIndex}`
 
-  // 解析原 <a-table> 属性：data/pagination/loading/row-key
-  const dataAttr = attrs.match(/:data="([^"]+)"/)
-  const dataRef = dataAttr ? dataAttr[1] : 'tableData'
-  const rowKeyRaw = attrs.match(/:?row-key="([^"]+)"/)?.[1] || 'id'
-  // :row-key="'id'" 表达式会捕获到 'id'（含引号），剥掉
-  const rowKey = rowKeyRaw.replace(/^['"]|['"]$/g, '')
+  // 剥掉 #columns 插槽包裹（如有）
+  const colsWrap = inner.match(/<template\s+#columns>([\s\S]*)<\/template>/)
+  if (colsWrap) inner = colsWrap[1]
+
+  // 解析原 <a-table> 属性
+  const dataRef = attrs.match(/:data="([^"]+)"/)?.[1] || 'tableData'
+  const rowKey = (attrs.match(/:?row-key="([^"]+)"/)?.[1] || 'id').replace(/^['"]|['"]$/g, '')
   const hasPagination = !/[:\s]pagination="false"/.test(attrs)
   const loadingAttr = attrs.match(/:loading="([^"]+)"/)?.[1]
 
-  // 解析列
-  const colRe = /<a-table-column([^>]*?)(?:\/>|>([\s\S]*?)<\/a-table-column>)/g
+  // 列扫描：支持多行属性；列体按配对 </a-table-column> 截取（列不嵌套）
   const columns = []
   let cellTemplates = ''
+  const openRe = /<a-table-column\b((?:[^>"]|"[^"]*")*)>/g
   let m
-
-  while ((m = colRe.exec(inner)) !== null) {
+  while ((m = openRe.exec(inner)) !== null) {
     const colAttrs = m[1] || ''
-    const colBody = m[2] || ''
+    const colStart = m.index + m[0].length
+    const selfClose = /\/\s*$/.test(colAttrs)
+    const closeIdx = selfClose ? -1 : inner.indexOf('</a-table-column>', colStart)
+    const colBody = selfClose ? '' : closeIdx > -1 ? inner.slice(colStart, closeIdx) : ''
+    if (closeIdx > -1) openRe.lastIndex = closeIdx + '</a-table-column>'.length
+
     const title = colAttrs.match(/:title="([^"]+)"/)?.[1] || "''"
     const colKey = colAttrs.match(/data-index="([^"]+)"/)?.[1]
     const width = colAttrs.match(/:width="(\d+)"/)?.[1]
     const align = colAttrs.match(/align="(\w+)"/)?.[1]
     const ellipsis = /ellipsis/.test(colAttrs)
 
-    // 提取自定义单元格：#cell="{ record }" → 模板内 record 改 row
-    const cellMatch = colBody.match(/<template\s+#cell="[^"]*">([\s\S]*?)<\/template>/)
+    // 单元格：取列体内最后一个 #cell 模板（Arco 列只有一个）
+    const cellMatch = colBody.match(/<template\s+#cell="[^"]*">([\s\S]*?)<\/template>\s*$/)
     let slotName = null
     let cellHtml = ''
     if (cellMatch) {
-      cellHtml = cellMatch[1]
-        .replace(/\brecord\b/g, 'row')
-        .replace(/<\/?template[^>]*>/g, '')
-      // 生成插槽名：优先 data-index，否则用 col_{i}
-      slotName = colKey || `col_${columns.length}`
-      // record.xxx 引用字段：若无 data-index 但 cell 引用 row.field，从字段推断 colKey
-      if (!colKey) {
-        const f = cellHtml.match(/row\.(\w+)/)?.[1]
-        if (f) slotName = f
-      }
+      cellHtml = cellMatch[1].replace(/\brecord\b/g, 'row')
+      slotName = colKey || cellHtml.match(/row\.(\w+)/)?.[1] || `col_${columns.length}`
     }
 
-    const col = {
-      colKey: colKey || slotName || `col_${columns.length}`,
-      title,
-    }
+    const col = { colKey: colKey || slotName || `col_${columns.length}`, title }
     if (width) col.width = Number(width)
     if (align) col.align = align
     if (ellipsis) col.ellipsis = true
@@ -85,20 +79,13 @@ src = src.replace(tableRe, (full, attrs, inner) => {
   let tAttrs = `row-key="${rowKey}"`
   tAttrs += ` :data="${dataRef}"`
   tAttrs += ` :columns="${varName}"`
-  if (hasPagination) {
-    // Arco 分页对象结构 { current, pageSize, total } 与 TDesign pagination 兼容字段：
-    // TDesign 用 current/pageSize/total + @page-change
-    tAttrs += ` :pagination="pagination"`
-  } else {
-    tAttrs += ` :pagination="false"`
-  }
+  tAttrs += hasPagination ? ` :pagination="pagination"` : ` :pagination="false"`
   if (loadingAttr) tAttrs += ` :loading="${loadingAttr}"`
 
   let result = `  <t-table ${tAttrs}>\n`
   if (cellTemplates) result += cellTemplates
   result += `  </t-table>`
 
-  // 记录生成的 columns 数组代码
   generatedColumns.push({ varName, dataRef, columns })
   return result
 })
@@ -130,3 +117,4 @@ if (generatedColumns.length > 0) {
 
 fs.writeFileSync(file, src)
 console.log(`tables converted: ${generatedColumns.length}, file: ${file}`)
+}

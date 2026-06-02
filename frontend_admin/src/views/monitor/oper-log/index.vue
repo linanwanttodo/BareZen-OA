@@ -64,51 +64,28 @@
           <span class="ml-2 text-[var(--muted-foreground)]">{{ $t('common.loading') }}</span>
         </div>
         <template v-else-if="tableData.length">
-          <a-table
-            :data="tableData"
-            :pagination="false"
-            row-key="id"
-            :row-selection="{ type: 'checkbox', selectedRowKeys: selectedIds }"
-            @selection-change="onSelectionChange"
-          >
-            <template #columns>
-              <a-table-column :title="$t('common.id')" data-index="id" />
-              <a-table-column :title="$t('monitor.operLog.title')" data-index="title" />
-              <a-table-column :title="$t('monitor.operLog.businessType')">
-                <template #cell="{ record }">
-                  <t-tag :color="tagColor(businessTypeVariant(record.businessType))" :bordered="tagBordered(businessTypeVariant(record.businessType))">{{ businessTypeText(record.businessType) }}</t-tag>
+            <t-table row-key="id" :data="tableData" :columns="tableColumns" :pagination="false">
+    <template #businessType="{ row }">
+                  <t-tag :color="tagColor(businessTypeVariant(row.businessType))" :bordered="tagBordered(businessTypeVariant(row.businessType))">{{ businessTypeText(row.businessType) }}</t-tag>
                 </template>
-              </a-table-column>
-              <a-table-column :title="$t('monitor.operLog.requestMethod')">
-                <template #cell="{ record }">
-                  <t-tag :color="tagColor(methodVariant(record.requestMethod))" :bordered="tagBordered(methodVariant(record.requestMethod))">{{ record.requestMethod }}</t-tag>
+    <template #requestMethod="{ row }">
+                  <t-tag :color="tagColor(methodVariant(row.requestMethod))" :bordered="tagBordered(methodVariant(row.requestMethod))">{{ row.requestMethod }}</t-tag>
                 </template>
-              </a-table-column>
-              <a-table-column :title="$t('monitor.operLog.operName')" data-index="operUser" />
-              <a-table-column :title="$t('monitor.operLog.operUrl')" data-index="operUrl" />
-              <a-table-column :title="$t('common.status')">
-                <template #cell="{ record }">
-                  <t-tag :color="tagColor(operStatusVariant(record.status))" :bordered="tagBordered(operStatusVariant(record.status))">{{ operStatusText(record.status) }}</t-tag>
+    <template #status="{ row }">
+                  <t-tag :color="tagColor(operStatusVariant(row.status))" :bordered="tagBordered(operStatusVariant(row.status))">{{ operStatusText(row.status) }}</t-tag>
                 </template>
-              </a-table-column>
-              <a-table-column :title="$t('monitor.operLog.costTime')">
-                <template #cell="{ record }">
-                  <span :class="record.costTime > 1000 ? 'text-wecom-warning' : 'text-wecom-success'">{{ record.costTime }}ms</span>
+    <template #costTime="{ row }">
+                  <span :class="row.costTime > 1000 ? 'text-wecom-warning' : 'text-wecom-success'">{{ row.costTime }}ms</span>
                 </template>
-              </a-table-column>
-              <a-table-column :title="$t('monitor.operLog.operTime')" data-index="operTime" />
-              <a-table-column :title="$t('common.operate')" align="right">
-                <template #cell="{ record }">
+    <template #col_9="{ row }">
                   <t-space>
-                    <t-popconfirm :content="$t('monitor.operLog.deleteConfirm')" @confirm="handleDelete(record)">
+                    <t-popconfirm :content="$t('monitor.operLog.deleteConfirm')" @confirm="handleDelete(row)">
                       <t-button v-permission="PERM.monitor.operlogDelete" type="text" size="small" theme="danger">{{ $t('common.delete') }}</t-button>
                     </t-popconfirm>
-                    <t-button v-permission="PERM.monitor.operlogList" type="text" size="small" @click="handleDetail(record)">{{ $t('monitor.operLog.detail') }}</t-button>
+                    <t-button v-permission="PERM.monitor.operlogList" type="text" size="small" @click="handleDetail(row)">{{ $t('monitor.operLog.detail') }}</t-button>
                   </t-space>
                 </template>
-              </a-table-column>
-            </template>
-          </a-table>
+  </t-table>
 
           <div class="mt-4 flex justify-end">
             <t-pagination
@@ -197,7 +174,7 @@
 
 <script setup lang="ts">
 import { PERM } from '@/utils/constants'
-import { ref, reactive, onMounted } from 'vue'
+import { ref, computed, reactive, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {  MessagePlugin  } from 'tdesign-vue-next'
 import { formatDateTime, businessTypeText, operStatusText, operStatusVariant, businessTypeVariant, methodVariant } from '@/utils/format'
@@ -344,6 +321,21 @@ async function handleClean() {
 onMounted(() => {
   loadTable()
 })
+
+/** 表格列定义（由 Arco 列模板迁移，自定义单元格见模板同名插槽） */
+const tableColumns = computed(() => [
+    { colKey: 'id', title: t('common.id') },
+    { colKey: 'title', title: t('monitor.operLog.title') },
+    { colKey: 'businessType', title: t('monitor.operLog.businessType') },
+    { colKey: 'requestMethod', title: t('monitor.operLog.requestMethod') },
+    { colKey: 'operUser', title: t('monitor.operLog.operName') },
+    { colKey: 'operUrl', title: t('monitor.operLog.operUrl') },
+    { colKey: 'status', title: t('common.status') },
+    { colKey: 'costTime', title: t('monitor.operLog.costTime') },
+    { colKey: 'operTime', title: t('monitor.operLog.operTime') },
+    { colKey: 'col_9', title: t('common.operate'), align: 'right' },
+  ])
+
 </script>
 
 <style scoped>

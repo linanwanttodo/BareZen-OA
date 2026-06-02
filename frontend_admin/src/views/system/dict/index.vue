@@ -13,7 +13,7 @@
           </div>
         </template>
         <div class="mb-3">
-          <a-input-search v-model="typeSearch" :placeholder="$t('dict.searchPlaceholder')" allow-clear />
+          <t-input v-model="typeSearch" :placeholder="$t('dict.searchPlaceholder')" allow-clear />
         </div>
         <div class="dict-type-list flex-1 overflow-y-auto" style="max-height: 500px">
           <div
@@ -28,13 +28,13 @@
               <span class="dict-type-item__key">{{ item.dictType }}</span>
             </div>
             <t-tag v-if="item.status === '0'" color="red" size="small">{{ $t('common.disable') }}</t-tag>
-            <a-dropdown>
+            <t-dropdown>
               <icon-more class="cursor-pointer" style="color: var(--wecom-text-tertiary)" />
               <template #content>
                 <t-dropdown-item v-permission="PERM.system.dictEdit" @click="handleEditType(item)">{{ $t('common.edit') }}</t-dropdown-item>
                 <t-dropdown-item v-permission="PERM.system.dictDelete" @click="handleDeleteType(item)" status="danger">{{ $t('common.delete') }}</t-dropdown-item>
               </template>
-            </a-dropdown>
+            </t-dropdown>
           </div>
           <t-empty v-if="!filteredDictTypes.length" :description="$t('common.noData')" />
         </div>
@@ -69,39 +69,27 @@
             <t-button theme="primary" size="small" @click="loadData">{{ $t('common.search') }}</t-button>
           </div>
 
-          <a-spin :loading="dataLoading">
-            <a-table :data="dataTable" :pagination="false" :row-key="'id'">
-              <template #columns>
-                <a-table-column :title="$t('common.operate')" data-index="id" :width="60" />
-                <a-table-column :title="$t('dict.dictLabel')" data-index="dictLabel" />
-                <a-table-column :title="$t('dict.dictValue')" data-index="dictValue" />
-                <a-table-column :title="$t('dept.orderNum')" data-index="dictSort" :width="60" />
-                <a-table-column :title="$t('dict.isDefault')" :width="60">
-                  <template #cell="{ record }">
-                    <t-tag :color="record.isDefault === 'Y' ? 'blue' : 'gray'" size="small">
-                      {{ record.isDefault === 'Y' ? $t('common.yes') : $t('common.no') }}
+          <t-loading :loading="dataLoading">
+              <t-table row-key="id" :data="dataTable" :columns="tableColumns" :pagination="false">
+    <template #isDefault="{ row }">
+                    <t-tag :color="row.isDefault === 'Y' ? 'blue' : 'gray'" size="small">
+                      {{ row.isDefault === 'Y' ? $t('common.yes') : $t('common.no') }}
                     </t-tag>
                   </template>
-                </a-table-column>
-                <a-table-column :title="$t('common.status')" :width="80">
-                  <template #cell="{ record }">
-                    <t-tag :color="record.status === '1' ? 'green' : 'red'" size="small">
-                      {{ record.status === '1' ? $t('common.normal') : $t('common.disable') }}
+    <template #status="{ row }">
+                    <t-tag :color="row.status === '1' ? 'green' : 'red'" size="small">
+                      {{ row.status === '1' ? $t('common.normal') : $t('common.disable') }}
                     </t-tag>
                   </template>
-                </a-table-column>
-                <a-table-column :title="$t('common.operate')" :width="120" align="right">
-                  <template #cell="{ record }">
+    <template #col_6="{ row }">
                     <t-space>
-                      <t-button v-permission="PERM.system.dictEdit" size="small" @click="handleEditData(record)">{{ $t('common.edit') }}</t-button>
-                      <t-popconfirm v-permission="PERM.system.dictDelete" :content="$t('dict.deleteDataConfirm')" @confirm="handleDeleteData(record)">
+                      <t-button v-permission="PERM.system.dictEdit" size="small" @click="handleEditData(row)">{{ $t('common.edit') }}</t-button>
+                      <t-popconfirm v-permission="PERM.system.dictDelete" :content="$t('dict.deleteDataConfirm')" @confirm="handleDeleteData(row)">
                         <t-button size="small" theme="danger">{{ $t('common.delete') }}</t-button>
                       </t-popconfirm>
                     </t-space>
                   </template>
-                </a-table-column>
-              </template>
-            </a-table>
+  </t-table>
 
             <div v-if="dataPagination.total > dataPagination.pageSize" class="mt-3 flex justify-end">
               <t-pagination
@@ -112,7 +100,7 @@
                 @change="onDataPageChange"
               />
             </div>
-          </a-spin>
+          </t-loading>
         </template>
         <t-empty v-else :description="$t('dict.selectTypeHint')" />
       </t-card>
@@ -429,6 +417,18 @@ async function handleDeleteData(row: SysDictData) {
 onMounted(() => {
   loadTypes()
 })
+
+/** 表格列定义（由 Arco 列模板迁移，自定义单元格见模板同名插槽） */
+const tableColumns = computed(() => [
+    { colKey: 'id', title: t('common.operate'), width: 60 },
+    { colKey: 'dictLabel', title: t('dict.dictLabel') },
+    { colKey: 'dictValue', title: t('dict.dictValue') },
+    { colKey: 'dictSort', title: t('dept.orderNum'), width: 60 },
+    { colKey: 'isDefault', title: t('dict.isDefault'), width: 60 },
+    { colKey: 'status', title: t('common.status'), width: 80 },
+    { colKey: 'col_6', title: t('common.operate'), width: 120, align: 'right' },
+  ])
+
 </script>
 
 <style scoped>

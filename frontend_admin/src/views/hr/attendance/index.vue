@@ -1,15 +1,16 @@
 <template>
   <div class="page-container">
     <!-- 搜索区域 -->
-    <a-card class="mb-4">
-      <a-form :model="searchForm" layout="inline" @submit-success="handleSearch">
-        <a-form-item field="month" :label="$t('attendanceStat.month')">
-          <a-select v-model="searchForm.month" style="width: 140px" @change="handleSearch">
-            <a-option v-for="m in monthOptions" :key="m.value" :value="m.value">{{ m.label }}</a-option>
-          </a-select>
-        </a-form-item>
-        <a-form-item field="deptId" :label="$t('attendanceStat.dept')">
-          <a-tree-select
+    <t-card class="mb-4">
+      <t-form :model="searchForm" layout="inline" @submit-success="handleSearch">
+        <t-form-item field="month" :label="$t('attendanceStat.month')">
+          <t-select v-model="searchForm.month" style="width: 140px" @change="handleSearch">
+            <t-option v-for="m in monthOptions" :key="m.value" :value="m.value">{{ m.label }}</t-option>
+          </t-select>
+        </t-form-item>
+        <t-form-item field="deptId" :label="$t('attendanceStat.dept')">
+          
+<!-- TODO(tree-select): data 字段 key/title 需转为 value/label --><t-tree-select
             v-model="searchForm.deptId"
             :data="deptTree"
             :field-names="{ key: 'id', title: 'deptName', children: 'children' }"
@@ -17,77 +18,68 @@
             allow-clear
             style="width: 200px"
           />
-        </a-form-item>
-        <a-form-item field="userName" :label="$t('attendanceStat.userName')">
-          <a-input
+        </t-form-item>
+        <t-form-item field="userName" :label="$t('attendanceStat.userName')">
+          <t-input
             v-model="searchForm.userName"
             :placeholder="$t('attendanceStat.userNamePlaceholder')"
             allow-clear
             style="width: 180px"
             @press-enter="handleSearch"
           />
-        </a-form-item>
-        <a-form-item>
-          <a-space>
-            <a-button type="primary" html-type="submit">{{ $t('common.search') }}</a-button>
-            <a-button @click="handleReset">{{ $t('common.reset') }}</a-button>
-          </a-space>
-        </a-form-item>
-      </a-form>
-    </a-card>
+        </t-form-item>
+        <t-form-item>
+          <t-space>
+            <t-button theme="primary" html-type="submit">{{ $t('common.search') }}</t-button>
+            <t-button @click="handleReset">{{ $t('common.reset') }}</t-button>
+          </t-space>
+        </t-form-item>
+      </t-form>
+    </t-card>
 
     <!-- 统计表格 -->
-    <a-card>
+    <t-card>
       <template #title>
         <div class="flex items-center justify-between w-full">
           <span>{{ $t('attendanceStat.title') }}</span>
         </div>
       </template>
 
-      <a-spin :loading="loading">
-        <a-table :data="tableData" :pagination="false" row-key="userId">
-          <template #columns>
-            <a-table-column :title="$t('attendanceStat.userName')" data-index="userName" :width="140" />
-            <a-table-column :title="$t('attendanceStat.dept')" data-index="deptName" :width="160">
-              <template #cell="{ record }">{{ record.deptName || '-' }}</template>
-            </a-table-column>
-            <a-table-column :title="$t('attendanceStat.workDays')" data-index="workDays" :width="100" align="center" />
-            <a-table-column :title="$t('attendanceStat.lateCount')" data-index="lateCount" :width="100" align="center">
-              <template #cell="{ record }">
-                <span :class="record.lateCount > 0 ? 'text-[var(--wecom-warning)]' : ''">{{ record.lateCount }}</span>
+      <t-loading :loading="loading">
+          <t-table row-key="userId" :data="tableData" :columns="tableColumns" :pagination="false">
+    <template #deptName="{ row }">{{ row.deptName || '-' }}</template>
+    <template #lateCount="{ row }">
+                <span :class="row.lateCount > 0 ? 'text-[var(--wecom-warning)]' : ''">{{ row.lateCount }}</span>
               </template>
-            </a-table-column>
-            <a-table-column :title="$t('attendanceStat.earlyCount')" data-index="earlyCount" :width="100" align="center">
-              <template #cell="{ record }">
-                <span :class="record.earlyCount > 0 ? 'text-[var(--wecom-warning)]' : ''">{{ record.earlyCount }}</span>
+    <template #earlyCount="{ row }">
+                <span :class="row.earlyCount > 0 ? 'text-[var(--wecom-warning)]' : ''">{{ row.earlyCount }}</span>
               </template>
-            </a-table-column>
-            <a-table-column :title="$t('attendanceStat.absentCount')" data-index="absentCount" :width="100" align="center">
-              <template #cell="{ record }">
-                <span :class="record.absentCount > 0 ? 'text-[var(--wecom-error)]' : ''">{{ record.absentCount }}</span>
+    <template #absentCount="{ row }">
+                <span :class="row.absentCount > 0 ? 'text-[var(--wecom-error)]' : ''">{{ row.absentCount }}</span>
               </template>
-            </a-table-column>
-          </template>
-        </a-table>
+  </t-table>
 
         <div v-if="pagination.total > 0" class="mt-4 flex justify-end">
-          <a-pagination
+          <t-pagination
             v-model:current="pagination.current"
             :total="pagination.total"
             :page-size="pagination.pageSize"
             @change="loadData"
           />
         </div>
-        <a-empty v-if="!loading && !tableData.length" :description="$t('common.noData')" class="mt-4" />
-      </a-spin>
-    </a-card>
+        <t-empty v-if="!loading && !tableData.length" :description="$t('common.noData')" class="mt-4" />
+      </t-loading>
+    </t-card>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { getClockStatPageApi, type AttClockMonthlyStat } from '@/api/attendance'
 import { getDeptTreeApi, type SysDept } from '@/api/dept'
+
+const { t } = useI18n()
 
 const loading = ref(false)
 const tableData = ref<AttClockMonthlyStat[]>([])
@@ -149,4 +141,15 @@ onMounted(() => {
   loadDeptTree()
   loadData()
 })
+
+/** 表格列定义（由 Arco 列模板迁移，自定义单元格见模板同名插槽） */
+const tableColumns = computed(() => [
+    { colKey: 'userName', title: t('attendanceStat.userName'), width: 140 },
+    { colKey: 'deptName', title: t('attendanceStat.dept'), width: 160 },
+    { colKey: 'workDays', title: t('attendanceStat.workDays'), width: 100, align: 'center' },
+    { colKey: 'lateCount', title: t('attendanceStat.lateCount'), width: 100, align: 'center' },
+    { colKey: 'earlyCount', title: t('attendanceStat.earlyCount'), width: 100, align: 'center' },
+    { colKey: 'absentCount', title: t('attendanceStat.absentCount'), width: 100, align: 'center' },
+  ])
+
 </script>

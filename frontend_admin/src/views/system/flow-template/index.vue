@@ -1,110 +1,99 @@
 <template>
   <div class="page-container">
     <!-- 搜索区域 -->
-    <a-card class="mb-4">
-      <a-form :model="searchForm" layout="inline" @submit-success="handleSearch">
-        <a-form-item field="bizType" :label="$t('flowTemplate.bizType')">
-          <a-select v-model="searchForm.bizType" :placeholder="$t('common.inputPlaceholder')" allow-clear style="width: 200px">
-            <a-option v-for="item in bizTypeOptions" :key="item.value" :value="item.value">{{ item.label }}</a-option>
-          </a-select>
-        </a-form-item>
-        <a-form-item>
-          <a-space>
-            <a-button type="primary" html-type="submit">{{ $t('common.search') }}</a-button>
-            <a-button @click="handleReset">{{ $t('common.reset') }}</a-button>
-          </a-space>
-        </a-form-item>
-      </a-form>
-    </a-card>
+    <t-card class="mb-4">
+      <t-form :model="searchForm" layout="inline" @submit-success="handleSearch">
+        <t-form-item field="bizType" :label="$t('flowTemplate.bizType')">
+          <t-select v-model="searchForm.bizType" :placeholder="$t('common.inputPlaceholder')" allow-clear style="width: 200px">
+            <t-option v-for="item in bizTypeOptions" :key="item.value" :value="item.value">{{ item.label }}</t-option>
+          </t-select>
+        </t-form-item>
+        <t-form-item>
+          <t-space>
+            <t-button theme="primary" html-type="submit">{{ $t('common.search') }}</t-button>
+            <t-button @click="handleReset">{{ $t('common.reset') }}</t-button>
+          </t-space>
+        </t-form-item>
+      </t-form>
+    </t-card>
 
     <!-- 表格 -->
-    <a-card>
+    <t-card>
       <template #title>
         <div class="flex items-center justify-between w-full">
           <span>{{ $t('flowTemplate.title') }}</span>
-          <a-button v-permission="PERM.system.flowTemplateAdd" type="primary" @click="handleAdd">
+          <t-button v-permission="PERM.system.flowTemplateAdd" theme="primary" @click="handleAdd">
             <template #icon><icon-plus /></template>
             {{ $t('common.add') }}
-          </a-button>
+          </t-button>
         </div>
       </template>
 
-      <a-alert class="mb-4" :title="$t('flowTemplate.tip')" type="info" />
+      <t-alert class="mb-4" :title="$t('flowTemplate.tip')" type="info" />
 
-      <a-spin :loading="loading">
-        <a-table :data="tableData" :pagination="false" row-key="id">
-          <template #columns>
-            <a-table-column :title="$t('flowTemplate.bizType')" :width="140">
-              <template #cell="{ record }">
-                <a-tag color="arcoblue">{{ bizTypeLabel(record.bizType) }}</a-tag>
+      <t-loading :loading="loading">
+          <t-table row-key="id" :data="tableData" :columns="tableColumns" :pagination="false">
+    <template #bizType="{ row }">
+                <t-tag theme="primary">{{ bizTypeLabel(row.bizType) }}</t-tag>
               </template>
-            </a-table-column>
-            <a-table-column :title="$t('flowTemplate.nodeSeq')" data-index="nodeSeq" :width="100" align="center" />
-            <a-table-column :title="$t('flowTemplate.nodeName')" data-index="nodeName" />
-            <a-table-column :title="$t('common.status')" :width="100" align="center">
-              <template #cell="{ record }">
-                <a-switch
+    <template #enabled="{ row }">
+                <t-switch
                   v-permission="PERM.system.flowTemplateEdit"
-                  :model-value="record.enabled === 1"
-                  @change="(val: string | number | boolean) => handleEnableChange(record, Boolean(val))"
+                  :model-value="row.enabled === 1"
+                  @change="(val: string | number | boolean) => handleEnableChange(row, Boolean(val))"
                 />
               </template>
-            </a-table-column>
-            <a-table-column :title="$t('common.createTime')" data-index="createTime" :width="170" />
-            <a-table-column :title="$t('common.operate')" :width="140" align="right">
-              <template #cell="{ record }">
-                <a-space>
-                  <a-button v-permission="PERM.system.flowTemplateEdit" size="small" @click="handleEdit(record)">{{ $t('common.edit') }}</a-button>
-                  <a-popconfirm :content="$t('common.deleteConfirm')" @ok="handleDelete(record)">
-                    <a-button v-permission="PERM.system.flowTemplateDelete" size="small" status="danger">{{ $t('common.delete') }}</a-button>
-                  </a-popconfirm>
-                </a-space>
+    <template #col_5="{ row }">
+                <t-space>
+                  <t-button v-permission="PERM.system.flowTemplateEdit" size="small" @click="handleEdit(row)">{{ $t('common.edit') }}</t-button>
+                  <t-popconfirm :content="$t('common.deleteConfirm')" @confirm="handleDelete(row)">
+                    <t-button v-permission="PERM.system.flowTemplateDelete" size="small" theme="danger">{{ $t('common.delete') }}</t-button>
+                  </t-popconfirm>
+                </t-space>
               </template>
-            </a-table-column>
-          </template>
-        </a-table>
+  </t-table>
 
         <div v-if="pagination.total > pagination.pageSize" class="mt-4 flex justify-end">
-          <a-pagination
+          <t-pagination
             v-model:current="pagination.current"
             :total="pagination.total"
             :page-size="pagination.pageSize"
             @change="loadData"
           />
         </div>
-      </a-spin>
-    </a-card>
+      </t-loading>
+    </t-card>
 
     <!-- 新增/编辑弹窗 -->
-    <a-modal v-model:visible="editVisible" :title="isEdit ? $t('flowTemplate.editNode') : $t('flowTemplate.addNode')"
-             :width="480" @ok="handleSave" @cancel="editVisible = false" :ok-loading="saving">
-      <a-form :model="form" layout="vertical">
-        <a-form-item field="bizType" :label="$t('flowTemplate.bizType')" required>
-          <a-select v-model="form.bizType" :disabled="isEdit" :placeholder="$t('flowTemplate.bizTypePlaceholder')">
-            <a-option v-for="item in bizTypeOptions" :key="item.value" :value="item.value">{{ item.label }}</a-option>
-          </a-select>
-        </a-form-item>
-        <a-form-item field="nodeSeq" :label="$t('flowTemplate.nodeSeq')" required>
-          <a-input-number v-model="form.nodeSeq" :min="1" :max="99" :disabled="isEdit" style="width: 100%" />
-        </a-form-item>
-        <a-form-item field="nodeName" :label="$t('flowTemplate.nodeName')" required>
-          <a-input v-model="form.nodeName" :placeholder="$t('common.inputPlaceholder')" />
-        </a-form-item>
-        <a-form-item field="enabled" :label="$t('common.status')">
-          <a-radio-group v-model="form.enabled">
-            <a-radio :value="1">{{ $t('common.enabled') }}</a-radio>
-            <a-radio :value="0">{{ $t('common.disabled') }}</a-radio>
-          </a-radio-group>
-        </a-form-item>
-      </a-form>
-    </a-modal>
+    <t-dialog v-model="editVisible" :title="isEdit ? $t('flowTemplate.editNode') : $t('flowTemplate.addNode')"
+             :width="480" @confirm="handleSave" @cancel="editVisible = false" :ok-loading="saving">
+      <t-form :model="form" layout="vertical">
+        <t-form-item field="bizType" :label="$t('flowTemplate.bizType')" required>
+          <t-select v-model="form.bizType" :disabled="isEdit" :placeholder="$t('flowTemplate.bizTypePlaceholder')">
+            <t-option v-for="item in bizTypeOptions" :key="item.value" :value="item.value">{{ item.label }}</t-option>
+          </t-select>
+        </t-form-item>
+        <t-form-item field="nodeSeq" :label="$t('flowTemplate.nodeSeq')" required>
+          <t-input-number v-model="form.nodeSeq" :min="1" :max="99" :disabled="isEdit" style="width: 100%" />
+        </t-form-item>
+        <t-form-item field="nodeName" :label="$t('flowTemplate.nodeName')" required>
+          <t-input v-model="form.nodeName" :placeholder="$t('common.inputPlaceholder')" />
+        </t-form-item>
+        <t-form-item field="enabled" :label="$t('common.status')">
+          <t-radio-group v-model="form.enabled">
+            <t-radio :value="1">{{ $t('common.enabled') }}</t-radio>
+            <t-radio :value="0">{{ $t('common.disabled') }}</t-radio>
+          </t-radio-group>
+        </t-form-item>
+      </t-form>
+    </t-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { PERM } from '@/utils/constants'
-import { ref, reactive, onMounted } from 'vue'
-import { Message } from '@arco-design/web-vue'
+import { ref, computed, reactive, onMounted } from 'vue'
+import { MessagePlugin as Message } from 'tdesign-vue-next'
 import { useI18n } from 'vue-i18n'
 import { getFlowTemplatePageApi, addFlowTemplateApi, updateFlowTemplateApi, deleteFlowTemplateApi, type FlowTemplate } from '@/api/flow-template'
 
@@ -192,4 +181,15 @@ async function handleEnableChange(record: FlowTemplate, val: boolean) {
   Message.success(t('common.saveSuccess'))
   record.enabled = val ? 1 : 0
 }
+
+/** 表格列定义（由 Arco 列模板迁移，自定义单元格见模板同名插槽） */
+const tableColumns = computed(() => [
+    { colKey: 'bizType', title: t('flowTemplate.bizType'), width: 140 },
+    { colKey: 'nodeSeq', title: t('flowTemplate.nodeSeq'), width: 100, align: 'center' },
+    { colKey: 'nodeName', title: t('flowTemplate.nodeName') },
+    { colKey: 'enabled', title: t('common.status'), width: 100, align: 'center' },
+    { colKey: 'createTime', title: t('common.createTime'), width: 170 },
+    { colKey: 'col_5', title: t('common.operate'), width: 140, align: 'right' },
+  ])
+
 </script>
