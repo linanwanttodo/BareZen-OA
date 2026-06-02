@@ -214,8 +214,8 @@
         <div v-if="resetPwdData.password" class="mb-4 rounded-wecom-md bg-[var(--wecom-bg-container)] p-3 text-xs">
           <p class="mb-1 font-medium">{{ $t('user.pwdPolicyTitle') }}</p>
           <p v-for="rule in passwordRules" :key="rule.label" class="flex items-center gap-1.5" :class="rule.valid ? 'text-[var(--wecom-success)]' : 'text-[var(--wecom-text-tertiary)]'">
-            <icon-check v-if="rule.valid" :size="12" />
-            <icon-minus v-else :size="12" />
+            <icon-check v-if="rule.valid" size="12px" />
+            <icon-minus v-else size="12px" />
             <span>{{ rule.label }}</span>
           </p>
         </div>
@@ -241,8 +241,8 @@
       <div class="mt-3 rounded-wecom-md bg-[var(--wecom-bg-container)] p-3 text-xs">
         <p class="mb-1 font-medium">{{ $t('user.pwdPolicyTitle') }}</p>
         <p v-for="rule in batchPasswordRules" :key="rule.label" class="flex items-center gap-1.5" :class="rule.valid ? 'text-[var(--wecom-success)]' : 'text-[var(--wecom-text-tertiary)]'">
-          <icon-check v-if="rule.valid" :size="12" />
-          <icon-minus v-else :size="12" />
+          <icon-check v-if="rule.valid" size="12px" />
+          <icon-minus v-else size="12px" />
           <span>{{ rule.label }}</span>
         </p>
       </div>

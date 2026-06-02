@@ -6,37 +6,37 @@
   <div v-else class="dashboard-container">
     <!-- 统计卡片 -->
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      <a-card v-for="card in statCards" :key="card.title" class="p-5">
+      <t-card v-for="card in statCards" :key="card.title" class="p-5">
         <div class="flex items-center justify-between">
           <div>
             <p class="text-sm text-[var(--wecom-text-tertiary)]">{{ $t(card.titleKey) }}</p>
             <p class="mt-1 text-2xl font-semibold text-[var(--wecom-text-primary)]">{{ card.value }}</p>
           </div>
-          <component :is="card.icon" :size="20" class="text-[var(--wecom-text-disabled)]" />
+          <component :is="card.icon" size="20px" class="text-[var(--wecom-text-disabled)]" />
         </div>
-      </a-card>
+      </t-card>
     </div>
 
     <!-- 图表区域 -->
     <div class="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-12">
-      <a-card class="p-5 lg:col-span-8">
+      <t-card class="p-5 lg:col-span-8">
         <div class="mb-2 flex items-baseline justify-between">
           <h3 class="text-base font-semibold text-[var(--foreground)]">{{ $t('dashboard.visitTrend') }}</h3>
           <span class="text-xs text-[var(--muted-foreground)]">{{ $t('dashboard.last7Days') }}</span>
         </div>
         <div ref="lineChartRef" class="chart-container"></div>
-      </a-card>
-      <a-card class="p-5 lg:col-span-4">
+      </t-card>
+      <t-card class="p-5 lg:col-span-4">
         <div class="mb-2 flex items-baseline justify-between">
           <h3 class="text-base font-semibold text-[var(--foreground)]">{{ $t('dashboard.userDistribution') }}</h3>
           <span class="text-xs text-[var(--muted-foreground)]">{{ $t('dashboard.byRole') }}</span>
         </div>
         <div ref="pieChartRef" class="chart-container"></div>
-      </a-card>
+      </t-card>
     </div>
 
     <!-- 审批效率 -->
-    <a-card class="mt-4 p-5">
+    <t-card class="mt-4 p-5">
       <div class="mb-3 flex items-center justify-between">
         <h3 class="text-base font-semibold text-[var(--foreground)]">{{ $t('dashboard.approvalStats') }}</h3>
         <span class="text-xs text-[var(--muted-foreground)]">{{ $t('dashboard.approvalStatsHint') }}</span>
@@ -55,11 +55,11 @@
         </div>
       </div>
       <p v-else class="py-6 text-center text-sm text-[var(--wecom-text-tertiary)]">{{ $t('dashboard.noApprovalStats') }}</p>
-    </a-card>
+    </t-card>
 
     <!-- 公告 + 最近操作 -->
     <div class="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
-      <a-card class="p-5">
+      <t-card class="p-5">
         <div class="mb-3 flex items-center justify-between">
           <h3 class="text-sm font-medium text-[var(--foreground)]">{{ $t('dashboard.latestNotices') }}</h3>
           <button class="text-xs text-[var(--muted-foreground)] hover:text-[var(--foreground)]" @click="router.push('/notice')">{{ $t('common.viewAll') }}</button>
@@ -67,18 +67,18 @@
         <div v-if="notices.length" class="divide-y divide-[var(--border)]">
           <div v-for="item in notices" :key="item.id" class="flex items-center justify-between py-3">
             <div class="flex items-center gap-2 min-w-0">
-              <a-tag :color="item.noticeType === '1' ? 'arcoblue' : 'gray'" class="shrink-0 text-xs">
+              <t-tag :color="item.noticeType === '1' ? 'arcoblue' : 'gray'" class="shrink-0 text-xs">
                 {{ item.noticeType === '1' ? $t('notice.typeNotice') : $t('notice.typeAnnouncement') }}
-              </a-tag>
+              </t-tag>
               <span class="truncate text-sm text-[var(--foreground)]" @click="handleNoticeClick(item)">{{ item.noticeTitle }}</span>
             </div>
             <span class="shrink-0 text-xs text-[var(--muted-foreground)]">{{ formatDateTime(item.createTime) }}</span>
           </div>
         </div>
         <p v-else class="py-8 text-center text-sm text-[var(--muted-foreground)]">{{ $t('dashboard.noNotices') }}</p>
-      </a-card>
+      </t-card>
 
-      <a-card class="p-5">
+      <t-card class="p-5">
         <div class="mb-3 flex items-center justify-between">
           <h3 class="text-sm font-medium text-[var(--foreground)]">{{ $t('dashboard.recentLogs') }}</h3>
           <button class="text-xs text-[var(--muted-foreground)] hover:text-[var(--foreground)]" @click="router.push('/monitor/oper-log')">{{ $t('common.viewAll') }}</button>
@@ -86,7 +86,7 @@
         <div v-if="operLogs.length" class="divide-y divide-[var(--border)]">
           <div v-for="item in operLogs" :key="item.id" class="py-3">
             <div class="flex items-center gap-2">
-              <a-tag :color="businessTypeVariant(item.businessType) === 'default' ? 'arcoblue' : businessTypeVariant(item.businessType) === 'destructive' ? 'red' : 'arcoblue'" class="text-xs">{{ businessTypeText(item.businessType) }}</a-tag>
+              <t-tag :color="businessTypeVariant(item.businessType) === 'default' ? 'arcoblue' : businessTypeVariant(item.businessType) === 'destructive' ? 'red' : 'arcoblue'" class="text-xs">{{ businessTypeText(item.businessType) }}</t-tag>
               <span class="text-sm text-[var(--foreground)]">{{ item.title }}</span>
             </div>
             <p class="mt-1 text-xs text-[var(--muted-foreground)]">
@@ -97,26 +97,26 @@
           </div>
         </div>
         <p v-else class="py-8 text-center text-sm text-[var(--muted-foreground)]">{{ $t('dashboard.noLogs') }}</p>
-      </a-card>
+      </t-card>
     </div>
 
 
     <!-- 公告详情弹窗 -->
-    <a-modal v-model:visible="noticeDialogVisible" :title="currentNotice?.noticeTitle || $t('dashboard.noticeDetail')" @cancel="noticeDialogVisible = false">
+    <t-dialog v-model="noticeDialogVisible" :header="currentNotice?.noticeTitle || $t('dashboard.noticeDetail')" @close="noticeDialogVisible = false">
       <div v-if="currentNotice" class="notice-detail">
         <div class="notice-detail-meta">
-          <a-tag :color="currentNotice.noticeType === '1' ? 'arcoblue' : 'gray'">
+          <t-tag :color="currentNotice.noticeType === '1' ? 'arcoblue' : 'gray'">
             {{ currentNotice.noticeType === '1' ? $t('notice.typeNotice') : $t('notice.typeAnnouncement') }}
-          </a-tag>
-          <a-tag v-if="currentNotice.status === '1'" color="arcoblue">{{ $t('notice.noticeStatusPublished') }}</a-tag>
-          <a-tag v-else-if="currentNotice.status === '0'" bordered>{{ $t('notice.noticeStatusDraft') }}</a-tag>
-          <a-tag v-else color="red">{{ $t('notice.noticeStatusRevoked') }}</a-tag>
+          </t-tag>
+          <t-tag v-if="currentNotice.status === '1'" color="arcoblue">{{ $t('notice.noticeStatusPublished') }}</t-tag>
+          <t-tag v-else-if="currentNotice.status === '0'" bordered>{{ $t('notice.noticeStatusDraft') }}</t-tag>
+          <t-tag v-else color="red">{{ $t('notice.noticeStatusRevoked') }}</t-tag>
           <span class="notice-detail-time">{{ formatDateTime(currentNotice.createTime) }}</span>
         </div>
-        <a-divider class="my-4" />
+        <t-divider class="my-4" />
         <div class="notice-detail-content" v-html="sanitizeHtml(currentNotice.noticeContent)"></div>
       </div>
-    </a-modal>
+    </t-dialog>
   </div>
 </template>
 
@@ -132,16 +132,15 @@ import {
   LegendComponent,
 } from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
+import {
+  UserIcon as IconUser,
+  UsergroupIcon as IconUserGroup,
+  AppIcon as IconApps,
+  BrowseIcon as IconEye,
+  NotificationIcon as IconNotification,
+} from 'tdesign-icons-vue-next'
 echarts.use([LineChart, PieChart, GridComponent, TooltipComponent, LegendComponent, CanvasRenderer])
 import { formatDateTime, businessTypeText, operStatusText, businessTypeVariant } from '@/utils/format'
-import {
-  IconUser,
-  IconUserGroup,
-  IconApps,
-  IconEye,
-  IconFile,
-  IconNotification,
-} from '@arco-design/web-vue/es/icon'
 import { getUserListApi } from '@/api/user'
 import { getRoleListApi } from '@/api/role'
 import { getMenuListApi } from '@/api/menu'

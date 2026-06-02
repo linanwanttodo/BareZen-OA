@@ -1,21 +1,21 @@
 <template>
   <div class="page-container">
-    <a-card>
+    <t-card>
       <template #title>
         <div class="flex items-center justify-between w-full">
           <div class="flex items-center gap-2">
             <span>{{ $t('monitor.online.title') }}</span>
-            <a-tag color="arcoblue">{{ $t('monitor.online.onlineCount', { count: onlineCount }) }}</a-tag>
+            <t-tag color="arcoblue">{{ $t('monitor.online.onlineCount', { count: onlineCount }) }}</t-tag>
           </div>
           <div class="flex gap-2">
-            <a-button @click="loadTable">
+            <t-button @click="loadTable">
               <template #icon><icon-refresh /></template>
               {{ $t('monitor.online.refresh') }}
-            </a-button>
-            <a-button v-permission="PERM.monitor.onlineDelete" status="danger" :disabled="!selectedTokens.length" @click="handleBatchForceLogout">
+            </t-button>
+            <t-button v-permission="PERM.monitor.onlineDelete" theme="danger" :disabled="!selectedTokens.length" @click="handleBatchForceLogout">
               <template #icon><icon-poweroff /></template>
               {{ $t('monitor.online.batchLogout') }}
-            </a-button>
+            </t-button>
           </div>
         </div>
       </template>
@@ -28,17 +28,17 @@
             <template #columns>
               <a-table-column :title="$t('common.operate')" :width="50">
                 <template #header>
-                  <a-checkbox :model-value="allSelected" @change="toggleSelectAll" />
+                  <t-checkbox :model-value="allSelected" @change="toggleSelectAll" />
                 </template>
                 <template #cell="{ record }">
-                  <a-checkbox :model-value="selectedTokens.includes(rowKey(record))" @change="() => toggleRow(rowKey(record))" />
+                  <t-checkbox :model-value="selectedTokens.includes(rowKey(record))" @change="() => toggleRow(rowKey(record))" />
                 </template>
               </a-table-column>
               <a-table-column title="ID" data-index="userId" />
               <a-table-column :title="$t('user.nickName')">
                 <template #cell="{ record }">
                   <div class="flex items-center gap-2">
-                    <a-avatar :size="24" :style="{ backgroundColor: 'var(--primary)' }">{{ record.nickName?.charAt(0) || '?' }}</a-avatar>
+                    <t-avatar size="24px" :style="{ backgroundColor: 'var(--primary)' }">{{ record.nickName?.charAt(0) || '?' }}</t-avatar>
                     <div class="flex flex-col">
                       <span class="text-sm font-medium text-[var(--foreground)]">{{ record.nickName }}</span>
                       <span class="text-xs text-[var(--muted-foreground)]">{{ record.userName }}</span>
@@ -57,14 +57,14 @@
               </a-table-column>
               <a-table-column :title="$t('common.operate')" align="right">
                 <template #cell="{ record }">
-                  <a-button v-permission="PERM.monitor.onlineDelete" type="text" size="small" @click="handleForceLogout(record)">{{ $t('monitor.online.forceLogout') }}</a-button>
+                  <t-button v-permission="PERM.monitor.onlineDelete" type="text" size="small" @click="handleForceLogout(record)">{{ $t('monitor.online.forceLogout') }}</t-button>
                 </template>
               </a-table-column>
             </template>
           </a-table>
 
           <div v-if="pagination.total > pagination.pageSize" class="mt-4 flex justify-end">
-            <a-pagination
+            <t-pagination
               v-model:current="pagination.current"
               :total="pagination.total"
               :page-size="pagination.pageSize"
@@ -72,17 +72,17 @@
             />
           </div>
         </template>
-    </a-card>
+    </t-card>
 
-    <a-modal v-model:visible="confirmDialogVisible" :title="$t('common.confirm')" @cancel="confirmDialogVisible = false">
+    <t-dialog v-model="confirmDialogVisible" :header="$t('common.confirm')" @close="confirmDialogVisible = false">
       <p class="text-sm text-[var(--foreground)]">{{ confirmDialogTitle }}</p>
       <template #footer>
         <div class="flex justify-end gap-2">
-          <a-button @click="confirmDialogVisible = false">{{ $t('common.cancel') }}</a-button>
-          <a-button type="primary" @click="onConfirm">{{ $t('common.confirm') }}</a-button>
+          <t-button @click="confirmDialogVisible = false">{{ $t('common.cancel') }}</t-button>
+          <t-button theme="primary" @click="onConfirm">{{ $t('common.confirm') }}</t-button>
         </div>
       </template>
-    </a-modal>
+    </t-dialog>
   </div>
 </template>
 
@@ -90,7 +90,6 @@
 import { PERM } from '@/utils/constants'
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { IconRefresh, IconPoweroff } from '@arco-design/web-vue/es/icon'
 import { formatDateTime } from '@/utils/format'
 import {
   getOnlineUserListApi,

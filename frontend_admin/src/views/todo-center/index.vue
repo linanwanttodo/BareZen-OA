@@ -1,9 +1,9 @@
 <template>
   <div class="page-container">
     <!-- 统计卡片 -->
-    <a-row :gutter="16" class="mb-4">
-      <a-col :span="8">
-        <a-card class="stat-card">
+    <t-row :gutter="16" class="mb-4">
+      <t-col :span="8">
+        <t-card class="stat-card">
           <div class="flex items-center justify-between">
             <div>
               <div class="text-sm text-[var(--muted-foreground)]">{{ $t('todoCenter.total') }}</div>
@@ -11,10 +11,10 @@
             </div>
             <icon-notification class="text-2xl" style="color: var(--primary)" />
           </div>
-        </a-card>
-      </a-col>
-      <a-col :span="8">
-        <a-card class="stat-card">
+        </t-card>
+      </t-col>
+      <t-col :span="8">
+        <t-card class="stat-card">
           <div class="flex items-center justify-between">
             <div>
               <div class="text-sm text-[var(--muted-foreground)]">{{ $t('todoCenter.leave') }}</div>
@@ -22,10 +22,10 @@
             </div>
             <icon-calendar class="text-2xl" style="color: var(--primary)" />
           </div>
-        </a-card>
-      </a-col>
-      <a-col :span="8">
-        <a-card class="stat-card">
+        </t-card>
+      </t-col>
+      <t-col :span="8">
+        <t-card class="stat-card">
           <div class="flex items-center justify-between">
             <div>
               <div class="text-sm text-[var(--muted-foreground)]">{{ $t('todoCenter.vehicle') }}</div>
@@ -33,12 +33,12 @@
             </div>
             <icon-drive class="text-2xl" style="color: var(--primary)" />
           </div>
-        </a-card>
-      </a-col>
-    </a-row>
+        </t-card>
+      </t-col>
+    </t-row>
 
     <!-- 待办列表 -->
-    <a-card>
+    <t-card>
       <template #title>
         <span>{{ $t('todoCenter.pendingList') }}</span>
       </template>
@@ -48,7 +48,7 @@
           <template #columns>
             <a-table-column :title="$t('todoCenter.type')" :width="110">
               <template #cell="{ record }">
-                <a-tag :color="record.type === 'leave' ? 'blue' : 'orange'">{{ record.typeName }}</a-tag>
+                <t-tag :color="record.type === 'leave' ? 'blue' : 'orange'">{{ record.typeName }}</t-tag>
               </template>
             </a-table-column>
             <a-table-column :title="$t('todoCenter.title')" data-index="title" />
@@ -60,21 +60,21 @@
             </a-table-column>
             <a-table-column :title="$t('common.operate')" :width="180" align="right">
               <template #cell="{ record }">
-                <a-space>
-                  <a-button v-permission="PERM.hr.leaveApprove" v-if="record.type === 'leave'" size="small" type="primary" @click="openApprove(record)">
+                <t-space>
+                  <t-button v-permission="PERM.hr.leaveApprove" v-if="record.type === 'leave'" size="small" theme="primary" @click="openApprove(record)">
                     {{ $t('todoCenter.approve') }}
-                  </a-button>
-                  <a-button v-permission="PERM.office.vehicleApprove" v-if="record.type === 'vehicle'" size="small" type="primary" @click="openApprove(record)">
+                  </t-button>
+                  <t-button v-permission="PERM.office.vehicleApprove" v-if="record.type === 'vehicle'" size="small" theme="primary" @click="openApprove(record)">
                     {{ $t('todoCenter.approve') }}
-                  </a-button>
-                </a-space>
+                  </t-button>
+                </t-space>
               </template>
             </a-table-column>
           </template>
         </a-table>
 
         <div v-if="pagination.total > 0" class="mt-4 flex justify-end">
-          <a-pagination
+          <t-pagination
             v-model:current="pagination.current"
             :total="pagination.total"
             :page-size="pagination.pageSize"
@@ -82,46 +82,46 @@
           />
         </div>
       </a-spin>
-    </a-card>
+    </t-card>
 
     <!-- 审批弹窗 -->
-    <a-modal v-model:visible="approveVisible" :title="$t('todoCenter.approve')" :width="520"
-             @ok="handleApprove" @cancel="approveVisible = false" :ok-loading="approving"
+    <t-dialog v-model="approveVisible" :header="$t('todoCenter.approve')" width="520px"
+             @confirm="handleApprove" @close="approveVisible = false" :ok-loading="approving"
              :ok-button-props="{ disabled: !approveForm.item }">
       <template v-if="approveForm.item">
-        <a-card class="mb-4" :bordered="false" style="background: var(--wecom-bg-container)">
-          <a-descriptions :column="2" size="small" layout="horizontal">
-            <a-descriptions-item :label="$t('todoCenter.type')" :span="2">
-              <a-tag :color="approveForm.item.type === 'leave' ? 'blue' : 'orange'">{{ approveForm.item.typeName }}</a-tag>
-            </a-descriptions-item>
-            <a-descriptions-item :label="$t('todoCenter.title')" :span="2">{{ approveForm.item.title }}</a-descriptions-item>
-            <a-descriptions-item :label="$t('todoCenter.applicant')">{{ approveForm.item.applicantName }}</a-descriptions-item>
-            <a-descriptions-item :label="$t('todoCenter.applyTime')">{{ approveForm.item.createTime }}</a-descriptions-item>
-            <a-descriptions-item :label="$t('todoCenter.timeRange')" :span="2">
+        <t-card class="mb-4" :bordered="false" style="background: var(--wecom-bg-container)">
+          <t-descriptions :column="2" size="small" layout="horizontal">
+            <t-descriptions-item :label="$t('todoCenter.type')" :span="2">
+              <t-tag :color="approveForm.item.type === 'leave' ? 'blue' : 'orange'">{{ approveForm.item.typeName }}</t-tag>
+            </t-descriptions-item>
+            <t-descriptions-item :label="$t('todoCenter.title')" :span="2">{{ approveForm.item.title }}</t-descriptions-item>
+            <t-descriptions-item :label="$t('todoCenter.applicant')">{{ approveForm.item.applicantName }}</t-descriptions-item>
+            <t-descriptions-item :label="$t('todoCenter.applyTime')">{{ approveForm.item.createTime }}</t-descriptions-item>
+            <t-descriptions-item :label="$t('todoCenter.timeRange')" :span="2">
               {{ approveForm.item.startTime }} ~ {{ approveForm.item.endTime }}
-            </a-descriptions-item>
-          </a-descriptions>
-        </a-card>
+            </t-descriptions-item>
+          </t-descriptions>
+        </t-card>
       </template>
-      <a-form :model="approveForm" layout="vertical">
-        <a-form-item :label="$t('todoCenter.approveAction')" required>
-          <a-radio-group v-model="approveForm.action" type="button">
-            <a-radio value="pass">{{ $t('todoCenter.approvePass') }}</a-radio>
-            <a-radio value="reject">{{ $t('todoCenter.approveReject') }}</a-radio>
-          </a-radio-group>
-        </a-form-item>
-        <a-form-item field="remark" :label="$t('todoCenter.approveRemark')">
-          <a-textarea v-model="approveForm.remark" :placeholder="$t('common.inputPlaceholder')" :max-length="500" show-word-limit />
-        </a-form-item>
-      </a-form>
-    </a-modal>
+      <t-form :model="approveForm" layout="vertical">
+        <t-form-item :label="$t('todoCenter.approveAction')" required>
+          <t-radio-group v-model="approveForm.action" variant="default-filled">
+            <t-radio value="pass">{{ $t('todoCenter.approvePass') }}</t-radio>
+            <t-radio value="reject">{{ $t('todoCenter.approveReject') }}</t-radio>
+          </t-radio-group>
+        </t-form-item>
+        <t-form-item name="remark" :label="$t('todoCenter.approveRemark')">
+          <t-textarea v-model="approveForm.remark" :placeholder="$t('common.inputPlaceholder')" :max-length="500" show-word-limit />
+        </t-form-item>
+      </t-form>
+    </t-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { PERM } from '@/utils/constants'
 import { ref, reactive, onMounted, onActivated } from 'vue'
-import { Message } from '@arco-design/web-vue'
+import {  MessagePlugin  } from 'tdesign-vue-next'
 import { getTodoPageApi, getTodoSummaryApi, type TodoItem } from '@/api/todo'
 import { approveLeaveApi } from '@/api/leave'
 import { approveVehicleApi } from '@/api/office'
@@ -175,7 +175,7 @@ async function handleApprove() {
     } else if (item.type === 'vehicle') {
       await approveVehicleApi(item.id, approveForm.action, approveForm.remark)
     }
-    Message.success(t('common.msg.approveDone'))
+    MessagePlugin.success(t('common.msg.approveDone'))
     approveVisible.value = false
     loadData()
     loadSummary()

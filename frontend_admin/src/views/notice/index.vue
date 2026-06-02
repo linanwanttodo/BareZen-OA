@@ -1,31 +1,31 @@
 <template>
   <div class="page-container">
-    <a-card>
+    <t-card>
         <div class="flex flex-wrap items-end gap-3">
-          <a-form-item :label="$t('notice.noticeTitle')">
-            <a-input v-model="searchForm.noticeTitle" :placeholder="$t('notice.noticePlaceholder')" style="width: 200px" />
-          </a-form-item>
-          <a-form-item :label="$t('notice.noticeType')">
-            <a-select v-model="searchForm.noticeType" :placeholder="$t('common.selectPlaceholder')" style="width: 120px" :options="noticeTypeOptions" />
-          </a-form-item>
-          <a-form-item :label="$t('common.status')">
-            <a-select v-model="searchForm.status" :placeholder="$t('common.selectPlaceholder')" style="width: 120px" :options="noticeStatusOptions" />
-          </a-form-item>
+          <t-form-item :label="$t('notice.noticeTitle')">
+            <t-input v-model="searchForm.noticeTitle" :placeholder="$t('notice.noticePlaceholder')" style="width: 200px" />
+          </t-form-item>
+          <t-form-item :label="$t('notice.noticeType')">
+            <t-select v-model="searchForm.noticeType" :placeholder="$t('common.selectPlaceholder')" style="width: 120px" :options="noticeTypeOptions" />
+          </t-form-item>
+          <t-form-item :label="$t('common.status')">
+            <t-select v-model="searchForm.status" :placeholder="$t('common.selectPlaceholder')" style="width: 120px" :options="noticeStatusOptions" />
+          </t-form-item>
           <div class="flex gap-2">
-            <a-button @click="handleSearch">{{ $t('common.search') }}</a-button>
-            <a-button @click="handleReset">{{ $t('common.reset') }}</a-button>
+            <t-button @click="handleSearch">{{ $t('common.search') }}</t-button>
+            <t-button @click="handleReset">{{ $t('common.reset') }}</t-button>
           </div>
         </div>
-    </a-card>
+    </t-card>
 
-    <a-card class="mt-4">
+    <t-card class="mt-4">
       <template #title>
         <div class="flex items-center justify-between w-full">
           <span>{{ $t('notice.title') }}</span>
-          <a-button v-permission="PERM.system.noticeAdd" type="primary" @click="handleAdd">
+          <t-button v-permission="PERM.system.noticeAdd" theme="primary" @click="handleAdd">
             <template #icon><icon-plus /></template>
             {{ $t('common.add') }}
-          </a-button>
+          </t-button>
         </div>
       </template>
         <div v-if="loading" class="flex items-center justify-center h-64">
@@ -43,51 +43,51 @@
               </a-table-column>
               <a-table-column :title="$t('notice.noticeType')" :width="100">
                 <template #cell="{ record }">
-                  <a-tag :color="record.noticeType === '1' ? 'arcoblue' : 'gray'">{{ record.noticeType === '1' ? $t('notice.typeNotice') : $t('notice.typeAnnouncement') }}</a-tag>
+                  <t-tag :color="record.noticeType === '1' ? 'arcoblue' : 'gray'">{{ record.noticeType === '1' ? $t('notice.typeNotice') : $t('notice.typeAnnouncement') }}</t-tag>
                 </template>
               </a-table-column>
               <a-table-column :title="$t('notice.scope')" :width="120">
                 <template #cell="{ record }">
-                  <a-tag bordered>{{ record.scope === 'public' ? $t('notice.public') : record.scope === 'internal' ? $t('notice.internal') : $t('user.unknown') }}</a-tag>
+                  <t-tag bordered>{{ record.scope === 'public' ? $t('notice.public') : record.scope === 'internal' ? $t('notice.internal') : $t('user.unknown') }}</t-tag>
                 </template>
               </a-table-column>
               <a-table-column :title="$t('notice.requireRead')" :width="100">
                 <template #cell="{ record }">
-                  <a-tag v-if="record.requireRead === 'Y'" color="red">{{ $t('notice.requireReadYes') }}</a-tag>
-                  <a-tag v-else bordered>{{ $t('notice.requireReadNo') }}</a-tag>
+                  <t-tag v-if="record.requireRead === 'Y'" color="red">{{ $t('notice.requireReadYes') }}</t-tag>
+                  <t-tag v-else bordered>{{ $t('notice.requireReadNo') }}</t-tag>
                 </template>
               </a-table-column>
               <a-table-column :title="$t('notice.sendEmail')" :width="110">
                 <template #cell="{ record }">
-                  <a-tag v-if="record.sendEmail === 'Y'" color="arcoblue">{{ $t('notice.sendEmailYes') }}</a-tag>
-                  <a-tag v-else bordered>{{ $t('notice.sendEmailNo') }}</a-tag>
+                  <t-tag v-if="record.sendEmail === 'Y'" color="arcoblue">{{ $t('notice.sendEmailYes') }}</t-tag>
+                  <t-tag v-else bordered>{{ $t('notice.sendEmailNo') }}</t-tag>
                 </template>
               </a-table-column>
               <a-table-column :title="$t('common.status')" :width="100">
                 <template #cell="{ record }">
-                  <a-tag v-if="record.status === '1'" color="arcoblue">{{ noticeStatusText(record.status) }}</a-tag>
-                  <a-tag v-else-if="record.status === '2'" color="red">{{ noticeStatusText(record.status) }}</a-tag>
-                  <a-tag v-else bordered>{{ noticeStatusText(record.status) }}</a-tag>
+                  <t-tag v-if="record.status === '1'" color="arcoblue">{{ noticeStatusText(record.status) }}</t-tag>
+                  <t-tag v-else-if="record.status === '2'" color="red">{{ noticeStatusText(record.status) }}</t-tag>
+                  <t-tag v-else bordered>{{ noticeStatusText(record.status) }}</t-tag>
                 </template>
               </a-table-column>
               <a-table-column :title="$t('common.createTime')" data-index="createTime" :width="160" />
               <a-table-column :title="$t('common.operate')" :width="280" align="right">
                 <template #cell="{ record }">
-                  <a-space>
-                    <a-button type="text" size="small" @click="handleView(record)">{{ $t('common.detail') }}</a-button>
-                    <a-button v-permission="PERM.system.noticeEdit" type="text" size="small" @click="handleEdit(record)">{{ $t('common.edit') }}</a-button>
-                    <a-button v-if="record.status === '0'" v-permission="PERM.system.noticeEdit" type="text" size="small" @click="handlePublish(record)">{{ $t('notice.publish') }}</a-button>
-                    <a-button v-if="record.status === '1'" v-permission="PERM.system.noticeEdit" type="text" size="small" @click="handleRevoke(record)">{{ $t('notice.revoke') }}</a-button>
-                    <a-button v-permission="PERM.system.noticeList" type="text" size="small" @click="handleReadReceipt(record)">{{ $t('notice.readReceipt') }}</a-button>
-                    <a-button v-permission="PERM.system.noticeDelete" type="text" size="small" @click="handleDelete(record)">{{ $t('common.delete') }}</a-button>
-                  </a-space>
+                  <t-space>
+                    <t-button type="text" size="small" @click="handleView(record)">{{ $t('common.detail') }}</t-button>
+                    <t-button v-permission="PERM.system.noticeEdit" type="text" size="small" @click="handleEdit(record)">{{ $t('common.edit') }}</t-button>
+                    <t-button v-if="record.status === '0'" v-permission="PERM.system.noticeEdit" type="text" size="small" @click="handlePublish(record)">{{ $t('notice.publish') }}</t-button>
+                    <t-button v-if="record.status === '1'" v-permission="PERM.system.noticeEdit" type="text" size="small" @click="handleRevoke(record)">{{ $t('notice.revoke') }}</t-button>
+                    <t-button v-permission="PERM.system.noticeList" type="text" size="small" @click="handleReadReceipt(record)">{{ $t('notice.readReceipt') }}</t-button>
+                    <t-button v-permission="PERM.system.noticeDelete" type="text" size="small" @click="handleDelete(record)">{{ $t('common.delete') }}</t-button>
+                  </t-space>
                 </template>
               </a-table-column>
             </template>
           </a-table>
 
           <div v-if="pagination.total > pagination.pageSize" class="mt-4 flex justify-end">
-            <a-pagination
+            <t-pagination
               v-model:current="pagination.current"
               :total="pagination.total"
               :page-size="pagination.pageSize"
@@ -95,19 +95,19 @@
             />
           </div>
         </template>
-    </a-card>
+    </t-card>
 
-    <a-modal v-model:visible="formDialogVisible" :title="formType === 'add' ? $t('notice.addNotice') : $t('notice.editNotice')" @cancel="formDialogVisible = false">
+    <t-dialog v-model="formDialogVisible" :header="formType === 'add' ? $t('notice.addNotice') : $t('notice.editNotice')" @close="formDialogVisible = false">
       <div class="flex flex-col gap-4">
         <div v-if="formError" class="rounded border border-wecom-error-light bg-wecom-error-light px-3 py-2 text-sm text-wecom-error">{{ formError }}</div>
         <div class="grid grid-cols-3 gap-4">
           <div class="col-span-2 flex flex-col gap-1.5">
             <span class="text-sm text-[var(--foreground)]">{{ $t('notice.noticeTitle') }} <span class="text-wecom-error">*</span></span>
-            <a-input v-model="formData.noticeTitle" :placeholder="$t('notice.noticePlaceholder')" />
+            <t-input v-model="formData.noticeTitle" :placeholder="$t('notice.noticePlaceholder')" />
           </div>
           <div class="flex flex-col gap-1.5">
             <span class="text-sm text-[var(--foreground)]">{{ $t('notice.noticeType') }}</span>
-            <a-select v-model="formData.noticeType" :options="[
+            <t-select v-model="formData.noticeType" :options="[
               { label: $t('notice.typeNotice'), value: '1' },
               { label: $t('notice.typeAnnouncement'), value: '2' },
             ]" />
@@ -115,81 +115,80 @@
         </div>
         <div class="flex flex-col gap-1.5">
           <span class="text-sm text-[var(--foreground)]">{{ $t('notice.noticeContent') }} <span class="text-wecom-error">*</span></span>
-          <a-textarea v-model="formData.noticeContent" :placeholder="$t('notice.noticeContent')" style="min-height: 120px" />
+          <t-textarea v-model="formData.noticeContent" :placeholder="$t('notice.noticeContent')" style="min-height: 120px" />
         </div>
         <div class="flex flex-col gap-1.5">
           <span class="text-sm text-[var(--foreground)]">{{ $t('notice.scope') }}</span>
-          <a-radio-group v-model="formData.scope" :options="[
+          <t-radio-group v-model="formData.scope" :options="[
             { label: $t('notice.scopeAll'), value: 'public' },
             { label: $t('notice.scopeInternal'), value: 'internal' },
           ]" />
         </div>
         <div class="flex flex-col gap-1.5">
           <span class="text-sm text-[var(--foreground)]">{{ $t('notice.requireRead') }}</span>
-          <a-switch v-model="formData.requireRead" :checked-value="'Y'" :unchecked-value="'N'" />
+          <t-switch v-model="formData.requireRead" :checked-value="'Y'" :unchecked-value="'N'" />
           <span class="text-xs text-[var(--muted-foreground)]">{{ $t('notice.requireReadTip') }}</span>
         </div>
         <div class="flex flex-col gap-1.5">
           <span class="text-sm text-[var(--foreground)]">{{ $t('notice.sendEmail') }}</span>
-          <a-switch v-model="formData.sendEmail" :checked-value="'Y'" :unchecked-value="'N'" />
+          <t-switch v-model="formData.sendEmail" :checked-value="'Y'" :unchecked-value="'N'" />
           <span class="text-xs text-[var(--muted-foreground)]">{{ $t('notice.sendEmailTip') }}</span>
         </div>
       </div>
       <template #footer>
         <div class="flex justify-end gap-2">
-          <a-button @click="formDialogVisible = false">{{ $t('common.cancel') }}</a-button>
-          <a-button type="primary" @click="onFormConfirm">{{ $t('common.confirm') }}</a-button>
+          <t-button @click="formDialogVisible = false">{{ $t('common.cancel') }}</t-button>
+          <t-button theme="primary" @click="onFormConfirm">{{ $t('common.confirm') }}</t-button>
         </div>
       </template>
-    </a-modal>
+    </t-dialog>
 
-    <a-modal v-model:visible="detailVisible" :title="detailData?.noticeTitle || $t('notice.title')" @cancel="detailVisible = false">
+    <t-dialog v-model="detailVisible" :header="detailData?.noticeTitle || $t('notice.title')" @close="detailVisible = false">
       <div v-if="detailData">
         <div class="mb-4 flex flex-wrap items-center gap-2">
-          <a-tag :color="detailData.noticeType === '1' ? 'arcoblue' : 'gray'">{{ detailData.noticeType === '1' ? $t('notice.typeNotice') : $t('notice.typeAnnouncement') }}</a-tag>
-          <a-tag bordered>{{ detailData.scope === 'public' ? $t('notice.public') : detailData.scope === 'internal' ? $t('notice.internal') : $t('user.unknown') }}</a-tag>
-          <a-tag v-if="detailData.status === '1'" color="arcoblue">{{ noticeStatusText(detailData.status) }}</a-tag>
-          <a-tag v-else bordered>{{ noticeStatusText(detailData.status) }}</a-tag>
+          <t-tag :color="detailData.noticeType === '1' ? 'arcoblue' : 'gray'">{{ detailData.noticeType === '1' ? $t('notice.typeNotice') : $t('notice.typeAnnouncement') }}</t-tag>
+          <t-tag bordered>{{ detailData.scope === 'public' ? $t('notice.public') : detailData.scope === 'internal' ? $t('notice.internal') : $t('user.unknown') }}</t-tag>
+          <t-tag v-if="detailData.status === '1'" color="arcoblue">{{ noticeStatusText(detailData.status) }}</t-tag>
+          <t-tag v-else bordered>{{ noticeStatusText(detailData.status) }}</t-tag>
           <span class="ml-auto text-xs text-[var(--muted-foreground)]">{{ $t('notice.published') }}：{{ formatDateTime(detailData.createTime) }}</span>
         </div>
-        <a-divider class="my-4" />
+        <t-divider class="my-4" />
         <div class="notice-detail-content" v-html="sanitizeHtml(detailData.noticeContent)"></div>
       </div>
-    </a-modal>
+    </t-dialog>
 
-    <a-modal v-model:visible="receiptVisible" :title="receiptTitle" :width="560" @cancel="receiptVisible = false">
+    <t-dialog v-model="receiptVisible" :header="receiptTitle" width="560px" @close="receiptVisible = false">
       <div v-if="receiptData">
         <div class="mb-4 flex items-center gap-4">
           <a-statistic :title="$t('notice.readCount')" :value="receiptData.readCount" />
-          <a-tag v-if="receiptData.requireRead === 'Y'" color="red">{{ $t('notice.requireReadYes') }}</a-tag>
+          <t-tag v-if="receiptData.requireRead === 'Y'" color="red">{{ $t('notice.requireReadYes') }}</t-tag>
         </div>
-        <a-divider class="my-3" />
+        <t-divider class="my-3" />
         <div v-if="receiptData.reads.length" class="max-h-72 space-y-2 overflow-y-auto">
           <div v-for="(r, i) in receiptData.reads" :key="i" class="flex items-center justify-between rounded bg-[var(--muted)] px-3 py-2 text-sm">
             <span>{{ $t('notice.userIdLabel') }}：{{ r.userId }}</span>
             <span class="text-xs text-[var(--muted-foreground)]">{{ formatDateTime(r.readTime) }}</span>
           </div>
         </div>
-        <a-empty v-else :description="$t('notice.noReadYet')" />
+        <t-empty v-else :description="$t('notice.noReadYet')" />
       </div>
-    </a-modal>
+    </t-dialog>
 
-    <a-modal v-model:visible="deleteConfirmVisible" :title="$t('common.confirmDelete')" @cancel="deleteConfirmVisible = false">
+    <t-dialog v-model="deleteConfirmVisible" :header="$t('common.confirmDelete')" @close="deleteConfirmVisible = false">
       <p class="text-sm text-[var(--foreground)]">{{ $t('notice.deleteConfirm', { title: deleteTarget?.noticeTitle }) }}</p>
       <template #footer>
         <div class="flex justify-end gap-2">
-          <a-button @click="deleteConfirmVisible = false">{{ $t('common.cancel') }}</a-button>
-          <a-button type="primary" status="danger" @click="confirmDelete">{{ $t('common.confirm') }}</a-button>
+          <t-button @click="deleteConfirmVisible = false">{{ $t('common.cancel') }}</t-button>
+          <t-button theme="danger" @click="confirmDelete">{{ $t('common.confirm') }}</t-button>
         </div>
       </template>
-    </a-modal>
+    </t-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { PERM } from '@/utils/constants'
 import { ref, reactive, onMounted } from 'vue'
-import { IconPlus } from '@arco-design/web-vue/es/icon'
 import { useI18n } from 'vue-i18n'
 import { formatDateTime, noticeStatusText } from '@/utils/format'
 import { Toast } from '@/utils/toast'

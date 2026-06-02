@@ -29,18 +29,18 @@
               <p class="mt-1 text-sm text-[var(--wecom-text-tertiary)]">{{ $t('login.loginInfo') }}</p>
             </div>
 
-            <a-form :model="formData" layout="vertical" @submit-success="onSubmit" class="space-y-2">
-              <a-form-item field="username" :label="$t('login.username')" :rules="[{ required: true, message: $t('login.usernameRequired') }]">
-                <a-input v-model="formData.username" :placeholder="$t('login.usernameRequired')" size="large" allow-clear />
-              </a-form-item>
+            <t-form :model="formData" layout="vertical" @submit-success="onSubmit" class="space-y-2">
+              <t-form-item name="username" :label="$t('login.username')" :rules="[{ required: true, message: $t('login.usernameRequired') }]">
+                <t-input v-model="formData.username" :placeholder="$t('login.usernameRequired')" size="large" clearable />
+              </t-form-item>
 
-              <a-form-item field="password" :label="$t('login.password')" :rules="[{ required: true, message: $t('login.passwordRequired') }]">
-                <a-input-password v-model="formData.password" :placeholder="$t('login.passwordRequired')" size="large" />
-              </a-form-item>
+              <t-form-item name="password" :label="$t('login.password')" :rules="[{ required: true, message: $t('login.passwordRequired') }]">
+                <t-input v-model="formData.password" :placeholder="$t('login.passwordRequired')" size="large" />
+              </t-form-item>
 
-              <a-form-item field="captchaCode" :label="$t('login.captcha')" :rules="[{ required: true, message: $t('login.captchaRequired') }]">
+              <t-form-item name="captchaCode" :label="$t('login.captcha')" :rules="[{ required: true, message: $t('login.captchaRequired') }]">
                 <div class="flex w-full items-center gap-3">
-                  <a-input
+                  <t-input
                     v-model="formData.captchaCode"
                     :placeholder="$t('login.captchaRequired')"
                     size="large"
@@ -52,16 +52,16 @@
                     <span v-else class="text-xs text-[var(--wecom-text-tertiary)]">{{ $t('common.loading') }}</span>
                   </div>
                 </div>
-              </a-form-item>
+              </t-form-item>
 
-              <a-checkbox v-model="formData.remember" class="login-remember">{{ $t('login.rememberMe') }}</a-checkbox>
+              <t-checkbox v-model="formData.remember" class="login-remember">{{ $t('login.rememberMe') }}</t-checkbox>
 
-              <a-form-item class="!mb-0 mt-2">
-                <a-button type="primary" html-type="submit" long size="large" :loading="loading">
+              <t-form-item class="!mb-0 mt-2">
+                <t-button theme="primary" type="submit" block size="large" :loading="loading">
                   {{ $t('login.login') }}
-                </a-button>
-              </a-form-item>
-            </a-form>
+                </t-button>
+              </t-form-item>
+            </t-form>
 
             <p class="login-switch">
               {{ $t('login.noAccount') }}
@@ -76,37 +76,37 @@
               <p class="mt-1 text-sm text-[var(--wecom-text-tertiary)]">{{ $t('login.registerInfo') }}</p>
             </div>
 
-            <a-form ref="registerFormRef" :model="registerData" layout="vertical" class="space-y-2">
-              <a-form-item field="userName" :label="$t('login.username')" :rules="[{ required: true, message: $t('login.usernameRequired') }]">
-                <a-input v-model="registerData.userName" :placeholder="$t('login.usernameRequired')" size="large" allow-clear />
-              </a-form-item>
+            <t-form ref="registerFormRef" :model="registerData" layout="vertical" class="space-y-2">
+              <t-form-item name="userName" :label="$t('login.username')" :rules="[{ required: true, message: $t('login.usernameRequired') }]">
+                <t-input v-model="registerData.userName" :placeholder="$t('login.usernameRequired')" size="large" clearable />
+              </t-form-item>
 
-              <a-form-item field="nickName" :label="$t('login.nickName')">
-                <a-input v-model="registerData.nickName" :placeholder="$t('login.nickNameRequired')" size="large" allow-clear />
-              </a-form-item>
+              <t-form-item name="nickName" :label="$t('login.nickName')">
+                <t-input v-model="registerData.nickName" :placeholder="$t('login.nickNameRequired')" size="large" clearable />
+              </t-form-item>
 
-              <a-form-item
-                field="password"
+              <t-form-item
+                name="password"
                 :label="$t('login.password')"
                 :rules="[{ required: true, message: $t('login.passwordRequired') }, { minLength: 8, message: $t('login.pwdPolicyHint') }]"
               >
-                <a-input-password v-model="registerData.password" :placeholder="$t('login.pwdPolicyHint')" size="large" />
-              </a-form-item>
+                <t-input v-model="registerData.password" :placeholder="$t('login.pwdPolicyHint')" size="large" />
+              </t-form-item>
 
-              <a-form-item
-                field="confirmPassword"
+              <t-form-item
+                name="confirmPassword"
                 :label="$t('login.confirmPassword')"
                 :rules="[{ required: true, message: $t('login.confirmPasswordRequired') }, { validator: validateConfirm }]"
               >
-                <a-input-password v-model="registerData.confirmPassword" :placeholder="$t('login.confirmPasswordRequired')" size="large" @keyup.enter="onRegister" />
-              </a-form-item>
+                <t-input v-model="registerData.confirmPassword" :placeholder="$t('login.confirmPasswordRequired')" size="large" @keyup.enter="onRegister" />
+              </t-form-item>
 
-              <a-form-item class="!mb-0 mt-2">
-                <a-button type="primary" long size="large" :loading="registering" @click="onRegister">
+              <t-form-item class="!mb-0 mt-2">
+                <t-button theme="primary" block size="large" :loading="registering" @click="onRegister">
                   {{ $t('login.registerNow') }}
-                </a-button>
-              </a-form-item>
-            </a-form>
+                </t-button>
+              </t-form-item>
+            </t-form>
 
             <p class="login-switch">
               {{ $t('login.haveAccount') }}
@@ -126,7 +126,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { getCaptchaApi, registerApi } from '@/api/auth'
-import { Message, type FormInstance } from '@arco-design/web-vue'
+import { MessagePlugin, type FormInstanceFunctions } from 'tdesign-vue-next'
 import { useI18n } from 'vue-i18n'
 import type { LoginParams } from '@/types/api'
 import { safeRedirect } from '@/utils/url'
@@ -143,7 +143,7 @@ const loading = ref(false)
 const registering = ref(false)
 const captchaImg = ref('')
 const captchaUuid = ref('')
-const registerFormRef = ref<FormInstance>()
+const registerFormRef = ref<FormInstanceFunctions>()
 
 const formData = reactive({
   username: '',
@@ -184,7 +184,7 @@ async function refreshCaptcha() {
 
 async function onSubmit() {
   if (!formData.username || !formData.password || !formData.captchaCode) {
-    Message.warning(t('login.fullLoginInfo'))
+    MessagePlugin.warning(t('login.fullLoginInfo'))
     return
   }
 
@@ -203,7 +203,7 @@ async function onSubmit() {
       localStorage.removeItem('bz_admin_remember')
     }
 
-    Message.success(t('login.loginSuccess'))
+    MessagePlugin.success(t('login.loginSuccess'))
     // 直接跳转真实存在的目标页：默认仪表盘（动态路由已由守卫加载），
     // 不要 push 到 '/'——它带有登录态重定向，已登录场景会被 vue-router
     // 判定为重复导航而卡在登录页
@@ -220,7 +220,7 @@ async function onRegister() {
   const errors = await registerFormRef.value?.validate()
   if (errors) return
   if (!registerData.userName || !registerData.password || !registerData.confirmPassword) {
-    Message.warning(t('login.fullRegisterInfo'))
+    MessagePlugin.warning(t('login.fullRegisterInfo'))
     return
   }
 
@@ -231,7 +231,7 @@ async function onRegister() {
       nickName: registerData.nickName || undefined,
       password: registerData.password,
     })
-    Message.success(t('login.registerSuccess'))
+    MessagePlugin.success(t('login.registerSuccess'))
     // 注册成功：回填用户名并翻回登录面板
     formData.username = registerData.userName
     formData.password = ''

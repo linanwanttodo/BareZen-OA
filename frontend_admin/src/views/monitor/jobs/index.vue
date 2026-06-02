@@ -1,15 +1,15 @@
 <template>
   <div class="page-container">
-    <a-card>
+    <t-card>
       <template #title>
         <div class="flex items-center justify-between w-full">
           <span>{{ $t('monitor.jobs.title') }}</span>
-          <a-space>
-            <a-button v-permission="PERM.monitor.jobAdd" type="primary" size="small" @click="handleAdd">
+          <t-space>
+            <t-button v-permission="PERM.monitor.jobAdd" theme="primary" size="small" @click="handleAdd">
               <template #icon><icon-plus /></template>
               {{ $t('common.add') }}
-            </a-button>
-          </a-space>
+            </t-button>
+          </t-space>
         </div>
       </template>
 
@@ -26,7 +26,7 @@
             </a-table-column>
             <a-table-column :title="$t('common.status')" :width="80">
               <template #cell="{ record }">
-                <a-switch
+                <t-switch
                   :model-value="record.status === '1'"
                   @change="(val: string | number | boolean) => handleToggle(record, Boolean(val))"
                 />
@@ -34,20 +34,20 @@
             </a-table-column>
             <a-table-column :title="$t('common.operate')" :width="260" align="right">
               <template #cell="{ record }">
-                <a-space>
-                  <a-button v-permission="PERM.monitor.jobEdit" size="small" @click="handleRun(record)">{{ $t('monitor.jobs.execute') }}</a-button>
-                  <a-button v-permission="PERM.monitor.jobEdit" size="small" @click="handleEdit(record)">{{ $t('common.edit') }}</a-button>
-                  <a-popconfirm v-permission="PERM.monitor.jobDelete" :content="$t('monitor.jobs.deleteConfirm')" @ok="handleDelete(record)">
-                    <a-button size="small" status="danger">{{ $t('common.delete') }}</a-button>
-                  </a-popconfirm>
-                </a-space>
+                <t-space>
+                  <t-button v-permission="PERM.monitor.jobEdit" size="small" @click="handleRun(record)">{{ $t('monitor.jobs.execute') }}</t-button>
+                  <t-button v-permission="PERM.monitor.jobEdit" size="small" @click="handleEdit(record)">{{ $t('common.edit') }}</t-button>
+                  <t-popconfirm v-permission="PERM.monitor.jobDelete" :content="$t('monitor.jobs.deleteConfirm')" @confirm="handleDelete(record)">
+                    <t-button size="small" theme="danger">{{ $t('common.delete') }}</t-button>
+                  </t-popconfirm>
+                </t-space>
               </template>
             </a-table-column>
           </template>
         </a-table>
 
         <div v-if="pagination.total > pagination.pageSize" class="mt-4 flex justify-end">
-          <a-pagination
+          <t-pagination
             v-model:current="pagination.current"
             :total="pagination.total"
             :page-size="pagination.pageSize"
@@ -55,37 +55,37 @@
           />
         </div>
       </a-spin>
-    </a-card>
+    </t-card>
 
-    <a-modal v-model:visible="editVisible" :title="isAdd ? $t('monitor.jobs.addJob') : $t('monitor.jobs.editJob')" @ok="handleSave" @cancel="editVisible = false">
-      <a-form :model="editForm" auto-label-width>
-        <a-form-item field="jobName" :label="$t('monitor.jobs.jobName')">
-          <a-input v-model="editForm.jobName" :placeholder="$t('common.inputPlaceholder')" />
-        </a-form-item>
-        <a-form-item field="invokeTarget" :label="$t('monitor.jobs.invokeTarget')">
-          <a-input v-model="editForm.invokeTarget" placeholder="例: cleanTask.cleanOperLog()" />
-        </a-form-item>
-        <a-form-item field="cronExpression" :label="$t('monitor.jobs.cronExpression')">
-          <a-input v-model="editForm.cronExpression" placeholder="例: 0 0 2 * * ?" />
-        </a-form-item>
-        <a-form-item field="status" :label="$t('common.status')">
-          <a-radio-group v-model="editForm.status">
-            <a-radio value="1">{{ $t('common.normal') }}</a-radio>
-            <a-radio value="0">{{ $t('common.disable') }}</a-radio>
-          </a-radio-group>
-        </a-form-item>
-        <a-form-item field="remark" :label="$t('common.remark')">
-          <a-textarea v-model="editForm.remark" />
-        </a-form-item>
-      </a-form>
-    </a-modal>
+    <t-dialog v-model="editVisible" :header="isAdd ? $t('monitor.jobs.addJob') : $t('monitor.jobs.editJob')" @confirm="handleSave" @close="editVisible = false">
+      <t-form :model="editForm" auto-label-width>
+        <t-form-item name="jobName" :label="$t('monitor.jobs.jobName')">
+          <t-input v-model="editForm.jobName" :placeholder="$t('common.inputPlaceholder')" />
+        </t-form-item>
+        <t-form-item name="invokeTarget" :label="$t('monitor.jobs.invokeTarget')">
+          <t-input v-model="editForm.invokeTarget" placeholder="例: cleanTask.cleanOperLog()" />
+        </t-form-item>
+        <t-form-item name="cronExpression" :label="$t('monitor.jobs.cronExpression')">
+          <t-input v-model="editForm.cronExpression" placeholder="例: 0 0 2 * * ?" />
+        </t-form-item>
+        <t-form-item name="status" :label="$t('common.status')">
+          <t-radio-group v-model="editForm.status">
+            <t-radio value="1">{{ $t('common.normal') }}</t-radio>
+            <t-radio value="0">{{ $t('common.disable') }}</t-radio>
+          </t-radio-group>
+        </t-form-item>
+        <t-form-item name="remark" :label="$t('common.remark')">
+          <t-textarea v-model="editForm.remark" />
+        </t-form-item>
+      </t-form>
+    </t-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { PERM } from '@/utils/constants'
 import { ref, reactive, onMounted } from 'vue'
-import { Message } from '@arco-design/web-vue'
+import {  MessagePlugin  } from 'tdesign-vue-next'
 import { useI18n } from 'vue-i18n'
 import { getJobPageApi, addJobApi, updateJobApi, deleteJobApi, resumeJobApi, pauseJobApi, runJobApi } from '@/api/job'
 import type { SysJob } from '@/api/job'
@@ -128,10 +128,10 @@ function handleEdit(row: SysJob) {
 async function handleSave() {
   if (isAdd.value) {
     await addJobApi(editForm)
-    Message.success(t('monitor.jobs.addSuccess'))
+    MessagePlugin.success(t('monitor.jobs.addSuccess'))
   } else {
     await updateJobApi({ id: editingId!, ...editForm })
-    Message.success(t('monitor.jobs.updateSuccess'))
+    MessagePlugin.success(t('monitor.jobs.updateSuccess'))
   }
   editVisible.value = false; loadData()
 }
@@ -142,16 +142,16 @@ async function handleToggle(row: SysJob, val: boolean) {
   } else {
     await pauseJobApi(row.id)
   }
-  Message.success(val ? t('monitor.jobs.resumeSuccess') : t('monitor.jobs.pauseSuccess')); loadData()
+  MessagePlugin.success(val ? t('monitor.jobs.resumeSuccess') : t('monitor.jobs.pauseSuccess')); loadData()
 }
 
 async function handleRun(row: SysJob) {
   await runJobApi(row.id)
-  Message.success(t('monitor.jobs.runSuccess'))
+  MessagePlugin.success(t('monitor.jobs.runSuccess'))
 }
 
 async function handleDelete(row: SysJob) {
   await deleteJobApi(row.id)
-  Message.success(t('monitor.jobs.deleteSuccess')); loadData()
+  MessagePlugin.success(t('monitor.jobs.deleteSuccess')); loadData()
 }
 </script>

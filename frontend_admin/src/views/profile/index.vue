@@ -1,65 +1,64 @@
 <template>
   <div class="profile-page p-6 max-w-4xl mx-auto">
     <!-- 个人信息头部 -->
-    <a-card :bordered="true" class="mb-6">
+    <t-card :bordered="true" class="mb-6">
       <div class="flex items-center gap-6">
-        <a-avatar :size="64" style="background-color: var(--primary)">
+        <t-avatar size="64px" style="background-color: var(--primary)">
           {{ userInitial }}
-        </a-avatar>
+        </t-avatar>
         <div class="flex-1 min-w-0">
           <h2 class="text-xl font-semibold" style="color: var(--wecom-text-primary)">{{ userStore.userInfo?.nickName || $t('user.adminUser') }}</h2>
           <p class="text-sm mt-1" style="color: var(--wecom-text-tertiary)">@{{ userStore.userInfo?.userName || '-' }}</p>
           <div class="flex items-center gap-2 mt-2">
-            <a-tag v-for="role in userStore.roles" :key="role" color="blue">{{ role }}</a-tag>
+            <t-tag v-for="role in userStore.roles" :key="role" color="blue">{{ role }}</t-tag>
           </div>
         </div>
-        <a-button @click="showEditDialog = true">
+        <t-button @click="showEditDialog = true">
           <template #icon><icon-edit /></template>
           {{ $t('profile.editProfile') }}
-        </a-button>
+        </t-button>
       </div>
-    </a-card>
+    </t-card>
 
     <!-- 基本信息 -->
-    <a-card :bordered="true" class="mb-6">
+    <t-card :bordered="true" class="mb-6">
       <template #title>
         <div class="flex items-center gap-2">
           <icon-user style="color: var(--primary)" />
           <span>{{ $t('profile.basicInfo') }}</span>
         </div>
       </template>
-      <a-descriptions :column="2" :data="profileData" layout="inline-vertical" />
-    </a-card>
+      <t-descriptions :column="2" :data="profileData" layout="inline-vertical" />
+    </t-card>
 
     <!-- 编辑资料弹窗 -->
-    <a-modal
-      v-model:visible="showEditDialog"
-      :title="$t('profile.editProfileTitle')"
-      :width="480"
-      :mask-closable="false"
-      @ok="onEditSubmit"
-      @cancel="showEditDialog = false"
+    <t-dialog
+      v-model="showEditDialog"
+      :header="$t('profile.editProfileTitle')"
+      width="480px"
+      :close-on-overlay-click="false"
+      @confirm="onEditSubmit"
+      @close="showEditDialog = false"
     >
-      <a-form :model="editForm" layout="vertical">
-        <a-form-item field="nickName" :label="$t('profile.nickName')" :rules="formRules.nickName">
-          <a-input v-model="editForm.nickName" :placeholder="$t('profile.nickNamePlaceholder')" />
-        </a-form-item>
-        <a-form-item field="email" :label="$t('profile.email')">
-          <a-input v-model="editForm.email" :placeholder="$t('profile.emailPlaceholder')" />
-        </a-form-item>
-        <a-form-item field="phone" :label="$t('profile.phone')">
-          <a-input v-model="editForm.phone" :placeholder="$t('profile.phonePlaceholder')" />
-        </a-form-item>
-      </a-form>
-    </a-modal>
+      <t-form :model="editForm" layout="vertical">
+        <t-form-item name="nickName" :label="$t('profile.nickName')" :rules="formRules.nickName">
+          <t-input v-model="editForm.nickName" :placeholder="$t('profile.nickNamePlaceholder')" />
+        </t-form-item>
+        <t-form-item name="email" :label="$t('profile.email')">
+          <t-input v-model="editForm.email" :placeholder="$t('profile.emailPlaceholder')" />
+        </t-form-item>
+        <t-form-item name="phone" :label="$t('profile.phone')">
+          <t-input v-model="editForm.phone" :placeholder="$t('profile.phonePlaceholder')" />
+        </t-form-item>
+      </t-form>
+    </t-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, ref, reactive, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Message } from '@arco-design/web-vue'
-import { IconEdit, IconUser } from '@arco-design/web-vue/es/icon'
+import {  MessagePlugin  } from 'tdesign-vue-next'
 import { useUserStore } from '@/stores/user'
 import { updateUserApi } from '@/api/user'
 
@@ -110,7 +109,7 @@ async function onEditSubmit() {
       email: editForm.email,
       phone: editForm.phone,
     })
-    Message.success(t('profile.updateSuccess'))
+    MessagePlugin.success(t('profile.updateSuccess'))
     showEditDialog.value = false
     await userStore.fetchUserInfo()
   } catch {

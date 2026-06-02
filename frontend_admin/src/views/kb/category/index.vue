@@ -1,18 +1,18 @@
 <template>
   <div class="page-container">
     <!-- 工具栏 -->
-    <a-card class="mb-4">
+    <t-card class="mb-4">
       <div class="flex items-center justify-between">
         <span class="text-sm text-[var(--wecom-text-secondary)]">{{ $t('kb.categoryDesc') }}</span>
-        <a-button v-permission="PERM.kb.categoryAdd" type="primary" @click="handleAdd">
+        <t-button v-permission="PERM.kb.categoryAdd" theme="primary" @click="handleAdd">
           <template #icon><icon-plus /></template>
           {{ $t('common.add') }}
-        </a-button>
+        </t-button>
       </div>
-    </a-card>
+    </t-card>
 
     <!-- 分类列表 -->
-    <a-card>
+    <t-card>
       <template #title>
         <span>{{ $t('kb.category') }}</span>
       </template>
@@ -24,51 +24,51 @@
             <a-table-column :title="$t('kb.categorySort')" data-index="sort" :width="100" align="center" />
             <a-table-column :title="$t('common.status')" :width="100" align="center">
               <template #cell="{ record }">
-                <a-tag :color="record.status === 1 ? 'green' : 'default'">
+                <t-tag :color="record.status === 1 ? 'green' : 'default'">
                   {{ record.status === 1 ? $t('common.enabled') : $t('common.disabled') }}
-                </a-tag>
+                </t-tag>
               </template>
             </a-table-column>
             <a-table-column :title="$t('common.operate')" :width="160" align="right">
               <template #cell="{ record }">
-                <a-space>
-                  <a-button v-permission="PERM.kb.categoryEdit" size="small" @click="handleEdit(record)">{{ $t('common.edit') }}</a-button>
-                  <a-popconfirm :content="$t('common.deleteConfirm')" @ok="handleDelete(record)">
-                    <a-button v-permission="PERM.kb.categoryDelete" size="small" status="danger">{{ $t('common.delete') }}</a-button>
-                  </a-popconfirm>
-                </a-space>
+                <t-space>
+                  <t-button v-permission="PERM.kb.categoryEdit" size="small" @click="handleEdit(record)">{{ $t('common.edit') }}</t-button>
+                  <t-popconfirm :content="$t('common.deleteConfirm')" @confirm="handleDelete(record)">
+                    <t-button v-permission="PERM.kb.categoryDelete" size="small" theme="danger">{{ $t('common.delete') }}</t-button>
+                  </t-popconfirm>
+                </t-space>
               </template>
             </a-table-column>
           </template>
         </a-table>
       </a-spin>
-    </a-card>
+    </t-card>
 
     <!-- 新增/编辑弹窗 -->
-    <a-modal v-model:visible="editVisible" :title="isEdit ? $t('kb.editCategory') : $t('kb.addCategory')"
-             :width="480" @ok="handleSave" @cancel="editVisible = false" :ok-loading="saving">
-      <a-form :model="form" layout="vertical">
-        <a-form-item field="name" :label="$t('kb.categoryName')" required>
-          <a-input v-model="form.name" :placeholder="$t('common.inputPlaceholder')" />
-        </a-form-item>
-        <a-form-item field="sort" :label="$t('kb.categorySort')">
-          <a-input-number v-model="form.sort" :min="0" style="width: 100%" />
-        </a-form-item>
-        <a-form-item field="status" :label="$t('common.status')">
-          <a-select v-model="form.status">
-            <a-option :value="1">{{ $t('common.enabled') }}</a-option>
-            <a-option :value="0">{{ $t('common.disabled') }}</a-option>
-          </a-select>
-        </a-form-item>
-      </a-form>
-    </a-modal>
+    <t-dialog v-model="editVisible" :header="isEdit ? $t('kb.editCategory') : $t('kb.addCategory')"
+             width="480px" @confirm="handleSave" @close="editVisible = false" :ok-loading="saving">
+      <t-form :model="form" layout="vertical">
+        <t-form-item name="name" :label="$t('kb.categoryName')" required>
+          <t-input v-model="form.name" :placeholder="$t('common.inputPlaceholder')" />
+        </t-form-item>
+        <t-form-item name="sort" :label="$t('kb.categorySort')">
+          <t-input-number v-model="form.sort" :min="0" style="width: 100%" />
+        </t-form-item>
+        <t-form-item name="status" :label="$t('common.status')">
+          <t-select v-model="form.status">
+            <t-option :value="1">{{ $t('common.enabled') }}</t-option>
+            <t-option :value="0">{{ $t('common.disabled') }}</t-option>
+          </t-select>
+        </t-form-item>
+      </t-form>
+    </t-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { PERM } from '@/utils/constants'
 import { ref, reactive, onMounted } from 'vue'
-import { Message } from '@arco-design/web-vue'
+import {  MessagePlugin  } from 'tdesign-vue-next'
 import { useI18n } from 'vue-i18n'
 import { getKbCategoryListApi, addKbCategoryApi, updateKbCategoryApi, deleteKbCategoryApi, type KbCategory } from '@/api/kb'
 
@@ -107,7 +107,7 @@ function handleEdit(record: KbCategory) {
 
 async function handleSave() {
   if (!form.name) {
-    Message.warning(t('kb.categoryNameRequired'))
+    MessagePlugin.warning(t('kb.categoryNameRequired'))
     return
   }
   saving.value = true
@@ -117,7 +117,7 @@ async function handleSave() {
     } else {
       await addKbCategoryApi(form)
     }
-    Message.success(t('common.saveSuccess'))
+    MessagePlugin.success(t('common.saveSuccess'))
     editVisible.value = false
     loadData()
   } finally {
@@ -127,7 +127,7 @@ async function handleSave() {
 
 async function handleDelete(record: KbCategory) {
   await deleteKbCategoryApi(record.id)
-  Message.success(t('common.deleteSuccess'))
+  MessagePlugin.success(t('common.deleteSuccess'))
   loadData()
 }
 

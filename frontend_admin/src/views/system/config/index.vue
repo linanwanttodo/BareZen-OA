@@ -1,34 +1,34 @@
 <template>
   <div class="page-container">
     <!-- 搜索区域 -->
-    <a-card class="mb-4">
-      <a-form :model="searchForm" layout="inline" @submit-success="handleSearch">
-        <a-form-item field="configName" :label="$t('config.configName')">
-          <a-input v-model="searchForm.configName" :placeholder="$t('common.inputPlaceholder')" allow-clear style="width: 200px" />
-        </a-form-item>
-        <a-form-item field="configKey" :label="$t('config.configKey')">
-          <a-input v-model="searchForm.configKey" :placeholder="$t('common.inputPlaceholder')" allow-clear style="width: 200px" />
-        </a-form-item>
-        <a-form-item>
-          <a-space>
-            <a-button type="primary" html-type="submit">{{ $t('common.search') }}</a-button>
-            <a-button @click="handleReset">{{ $t('common.reset') }}</a-button>
-          </a-space>
-        </a-form-item>
-      </a-form>
-    </a-card>
+    <t-card class="mb-4">
+      <t-form :model="searchForm" layout="inline" @submit-success="handleSearch">
+        <t-form-item name="configName" :label="$t('config.configName')">
+          <t-input v-model="searchForm.configName" :placeholder="$t('common.inputPlaceholder')" clearable style="width: 200px" />
+        </t-form-item>
+        <t-form-item name="configKey" :label="$t('config.configKey')">
+          <t-input v-model="searchForm.configKey" :placeholder="$t('common.inputPlaceholder')" clearable style="width: 200px" />
+        </t-form-item>
+        <t-form-item>
+          <t-space>
+            <t-button theme="primary" type="submit">{{ $t('common.search') }}</t-button>
+            <t-button @click="handleReset">{{ $t('common.reset') }}</t-button>
+          </t-space>
+        </t-form-item>
+      </t-form>
+    </t-card>
 
     <!-- 表格 -->
-    <a-card>
+    <t-card>
       <template #title>
         <div class="flex items-center justify-between w-full">
           <span>{{ $t('config.systemConfig') }}</span>
-          <a-space>
-            <a-button v-permission="PERM.system.configEdit" @click="handleClearCache" :loading="clearing">
+          <t-space>
+            <t-button v-permission="PERM.system.configEdit" @click="handleClearCache" :loading="clearing">
               <template #icon><icon-refresh /></template>
               {{ $t('config.clearCache') }}
-            </a-button>
-          </a-space>
+            </t-button>
+          </t-space>
         </div>
       </template>
 
@@ -44,14 +44,14 @@
             </a-table-column>
             <a-table-column :title="$t('config.configType')" :width="90">
               <template #cell="{ record }">
-                <a-tag :color="record.configType === 'Y' ? 'blue' : 'default'">
+                <t-tag :color="record.configType === 'Y' ? 'blue' : 'default'">
                   {{ record.configType === 'Y' ? $t('common.yes') : $t('common.no') }}
-                </a-tag>
+                </t-tag>
               </template>
             </a-table-column>
             <a-table-column :title="$t('common.status')" :width="80">
               <template #cell="{ record }">
-                <a-switch
+                <t-switch
                   :model-value="record.status === '1'"
                   @change="(val: string | number | boolean) => handleStatusChange(record, Boolean(val))"
                 />
@@ -59,14 +59,14 @@
             </a-table-column>
             <a-table-column :title="$t('common.operate')" :width="180" align="right">
               <template #cell="{ record }">
-                <a-button v-permission="PERM.system.configEdit" size="small" @click="handleEdit(record)">{{ $t('common.edit') }}</a-button>
+                <t-button v-permission="PERM.system.configEdit" size="small" @click="handleEdit(record)">{{ $t('common.edit') }}</t-button>
               </template>
             </a-table-column>
           </template>
         </a-table>
 
         <div v-if="pagination.total > pagination.pageSize" class="mt-4 flex justify-end">
-          <a-pagination
+          <t-pagination
             v-model:current="pagination.current"
             :total="pagination.total"
             :page-size="pagination.pageSize"
@@ -74,38 +74,38 @@
           />
         </div>
       </a-spin>
-    </a-card>
+    </t-card>
 
     <!-- 编辑弹窗 -->
-    <a-modal v-model:visible="editVisible" :title="$t('config.editConfig')" @ok="handleSave" @cancel="editVisible = false">
-      <a-form :model="editForm" auto-label-width>
-        <a-form-item field="configName" :label="$t('config.configName')">
-          <a-input v-model="editForm.configName" disabled />
-        </a-form-item>
-        <a-form-item field="configKey" :label="$t('config.configKey')">
-          <a-input v-model="editForm.configKey" disabled />
-        </a-form-item>
-        <a-form-item field="configValue" :label="$t('config.configValue')">
-          <a-input v-model="editForm.configValue" />
-        </a-form-item>
-        <a-form-item field="status" :label="$t('common.status')">
-          <a-radio-group v-model="editForm.status">
-            <a-radio value="1">{{ $t('common.normal') }}</a-radio>
-            <a-radio value="0">{{ $t('common.disable') }}</a-radio>
-          </a-radio-group>
-        </a-form-item>
-        <a-form-item field="remark" :label="$t('common.remark')">
-          <a-textarea v-model="editForm.remark" />
-        </a-form-item>
-      </a-form>
-    </a-modal>
+    <t-dialog v-model="editVisible" :header="$t('config.editConfig')" @confirm="handleSave" @close="editVisible = false">
+      <t-form :model="editForm" auto-label-width>
+        <t-form-item name="configName" :label="$t('config.configName')">
+          <t-input v-model="editForm.configName" disabled />
+        </t-form-item>
+        <t-form-item name="configKey" :label="$t('config.configKey')">
+          <t-input v-model="editForm.configKey" disabled />
+        </t-form-item>
+        <t-form-item name="configValue" :label="$t('config.configValue')">
+          <t-input v-model="editForm.configValue" />
+        </t-form-item>
+        <t-form-item name="status" :label="$t('common.status')">
+          <t-radio-group v-model="editForm.status">
+            <t-radio value="1">{{ $t('common.normal') }}</t-radio>
+            <t-radio value="0">{{ $t('common.disable') }}</t-radio>
+          </t-radio-group>
+        </t-form-item>
+        <t-form-item name="remark" :label="$t('common.remark')">
+          <t-textarea v-model="editForm.remark" />
+        </t-form-item>
+      </t-form>
+    </t-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { PERM } from '@/utils/constants'
 import { ref, reactive, onMounted } from 'vue'
-import { Message } from '@arco-design/web-vue'
+import {  MessagePlugin  } from 'tdesign-vue-next'
 import { useI18n } from 'vue-i18n'
 import { getConfigPageApi, updateConfigApi, clearConfigCacheApi, type SysConfig } from '@/api/config'
 
@@ -141,14 +141,14 @@ function handleEdit(row: SysConfig) {
 
 async function handleSave() {
   await updateConfigApi({ id: editForm.id, configValue: editForm.configValue, status: editForm.status, remark: editForm.remark })
-  Message.success(t('config.updateSuccess'))
+  MessagePlugin.success(t('config.updateSuccess'))
   editVisible.value = false
   loadData()
 }
 
 async function handleStatusChange(row: SysConfig, val: boolean) {
   await updateConfigApi({ id: row.id, status: val ? '1' : '0' })
-  Message.success(t('config.statusUpdated'))
+  MessagePlugin.success(t('config.statusUpdated'))
   loadData()
 }
 
@@ -159,7 +159,7 @@ async function handleClearCache() {
     for (const key of keys) {
       await clearConfigCacheApi(key)
     }
-    Message.success(t('config.cacheCleared'))
+    MessagePlugin.success(t('config.cacheCleared'))
   } finally {
     clearing.value = false
   }

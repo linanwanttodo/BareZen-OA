@@ -1,62 +1,62 @@
 <template>
   <div class="page-container">
     <!-- 搜索区域 -->
-    <a-card class="mb-4">
+    <t-card class="mb-4">
       <div class="pt-6">
         <div class="flex flex-wrap items-end gap-4">
-          <a-form-item :label="$t('monitor.operLog.title')">
-            <a-input v-model="searchForm.title" :placeholder="$t('monitor.operLog.title')" style="width: 176px" />
-          </a-form-item>
-          <a-form-item :label="$t('monitor.operLog.operName')">
-            <a-input v-model="searchForm.operUser" :placeholder="$t('monitor.operLog.operName')" style="width: 144px" />
-          </a-form-item>
-          <a-form-item :label="$t('monitor.operLog.businessType')">
-            <a-select
+          <t-form-item :label="$t('monitor.operLog.title')">
+            <t-input v-model="searchForm.title" :placeholder="$t('monitor.operLog.title')" style="width: 176px" />
+          </t-form-item>
+          <t-form-item :label="$t('monitor.operLog.operName')">
+            <t-input v-model="searchForm.operUser" :placeholder="$t('monitor.operLog.operName')" style="width: 144px" />
+          </t-form-item>
+          <t-form-item :label="$t('monitor.operLog.businessType')">
+            <t-select
               v-model="searchForm.businessType"
               :options="bizOptions"
               :placeholder="$t('common.selectPlaceholder')"
               style="width: 128px"
               allow-clear
             />
-          </a-form-item>
-          <a-form-item :label="$t('common.status')">
-            <a-select
+          </t-form-item>
+          <t-form-item :label="$t('common.status')">
+            <t-select
               v-model="searchForm.status"
               :options="statusOptions"
               :placeholder="$t('common.selectPlaceholder')"
               style="width: 128px"
               allow-clear
             />
-          </a-form-item>
+          </t-form-item>
           <div class="flex gap-2">
-            <a-button @click="handleSearch">{{ $t('common.search') }}</a-button>
-            <a-button @click="handleReset">{{ $t('common.reset') }}</a-button>
+            <t-button @click="handleSearch">{{ $t('common.search') }}</t-button>
+            <t-button @click="handleReset">{{ $t('common.reset') }}</t-button>
           </div>
         </div>
       </div>
-    </a-card>
+    </t-card>
 
     <!-- 表格区域 -->
-    <a-card>
+    <t-card>
       <template #title>
         <div class="flex items-center justify-between w-full">
           <span>{{ $t('monitor.operLog.title') }}</span>
-          <a-space>
-            <a-button @click="loadTable">
+          <t-space>
+            <t-button @click="loadTable">
               <template #icon><icon-refresh /></template>
               {{ $t('monitor.operLog.refresh') }}
-            </a-button>
-            <a-button v-permission="PERM.monitor.operlogDelete" status="danger" :disabled="!selectedIds.length" @click="handleBatchDelete">
+            </t-button>
+            <t-button v-permission="PERM.monitor.operlogDelete" theme="danger" :disabled="!selectedIds.length" @click="handleBatchDelete">
               <template #icon><icon-delete /></template>
               {{ $t('common.batchDelete') }}
-            </a-button>
-            <a-popconfirm v-permission="PERM.monitor.operlogDelete" :content="$t('monitor.operLog.cleanConfirm', { beforeDays: 30 })" @ok="handleClean">
-              <a-button status="danger">
+            </t-button>
+            <t-popconfirm v-permission="PERM.monitor.operlogDelete" :content="$t('monitor.operLog.cleanConfirm', { beforeDays: 30 })" @confirm="handleClean">
+              <t-button theme="danger">
                 <template #icon><icon-delete /></template>
                 {{ $t('monitor.operLog.clean') }}
-              </a-button>
-            </a-popconfirm>
-          </a-space>
+              </t-button>
+            </t-popconfirm>
+          </t-space>
         </div>
       </template>
         <div v-if="loading" class="flex items-center justify-center h-64">
@@ -76,19 +76,19 @@
               <a-table-column :title="$t('monitor.operLog.title')" data-index="title" />
               <a-table-column :title="$t('monitor.operLog.businessType')">
                 <template #cell="{ record }">
-                  <a-tag :color="tagColor(businessTypeVariant(record.businessType))" :bordered="tagBordered(businessTypeVariant(record.businessType))">{{ businessTypeText(record.businessType) }}</a-tag>
+                  <t-tag :color="tagColor(businessTypeVariant(record.businessType))" :bordered="tagBordered(businessTypeVariant(record.businessType))">{{ businessTypeText(record.businessType) }}</t-tag>
                 </template>
               </a-table-column>
               <a-table-column :title="$t('monitor.operLog.requestMethod')">
                 <template #cell="{ record }">
-                  <a-tag :color="tagColor(methodVariant(record.requestMethod))" :bordered="tagBordered(methodVariant(record.requestMethod))">{{ record.requestMethod }}</a-tag>
+                  <t-tag :color="tagColor(methodVariant(record.requestMethod))" :bordered="tagBordered(methodVariant(record.requestMethod))">{{ record.requestMethod }}</t-tag>
                 </template>
               </a-table-column>
               <a-table-column :title="$t('monitor.operLog.operName')" data-index="operUser" />
               <a-table-column :title="$t('monitor.operLog.operUrl')" data-index="operUrl" />
               <a-table-column :title="$t('common.status')">
                 <template #cell="{ record }">
-                  <a-tag :color="tagColor(operStatusVariant(record.status))" :bordered="tagBordered(operStatusVariant(record.status))">{{ operStatusText(record.status) }}</a-tag>
+                  <t-tag :color="tagColor(operStatusVariant(record.status))" :bordered="tagBordered(operStatusVariant(record.status))">{{ operStatusText(record.status) }}</t-tag>
                 </template>
               </a-table-column>
               <a-table-column :title="$t('monitor.operLog.costTime')">
@@ -99,19 +99,19 @@
               <a-table-column :title="$t('monitor.operLog.operTime')" data-index="operTime" />
               <a-table-column :title="$t('common.operate')" align="right">
                 <template #cell="{ record }">
-                  <a-space>
-                    <a-popconfirm :content="$t('monitor.operLog.deleteConfirm')" @ok="handleDelete(record)">
-                      <a-button v-permission="PERM.monitor.operlogDelete" type="text" size="small" status="danger">{{ $t('common.delete') }}</a-button>
-                    </a-popconfirm>
-                    <a-button v-permission="PERM.monitor.operlogList" type="text" size="small" @click="handleDetail(record)">{{ $t('monitor.operLog.detail') }}</a-button>
-                  </a-space>
+                  <t-space>
+                    <t-popconfirm :content="$t('monitor.operLog.deleteConfirm')" @confirm="handleDelete(record)">
+                      <t-button v-permission="PERM.monitor.operlogDelete" type="text" size="small" theme="danger">{{ $t('common.delete') }}</t-button>
+                    </t-popconfirm>
+                    <t-button v-permission="PERM.monitor.operlogList" type="text" size="small" @click="handleDetail(record)">{{ $t('monitor.operLog.detail') }}</t-button>
+                  </t-space>
                 </template>
               </a-table-column>
             </template>
           </a-table>
 
           <div class="mt-4 flex justify-end">
-            <a-pagination
+            <t-pagination
               v-model:current="pagination.current"
               :total="pagination.total"
               :page-size="pagination.pageSize"
@@ -119,11 +119,11 @@
             />
           </div>
         </template>
-        <a-empty v-else :description="$t('monitor.operLog.noLogs')" />
-    </a-card>
+        <t-empty v-else :description="$t('monitor.operLog.noLogs')" />
+    </t-card>
 
     <!-- 详情弹窗 -->
-    <a-modal v-model:visible="detailVisible" :title="$t('monitor.operLog.detailTitle')" @cancel="detailVisible = false">
+    <t-dialog v-model="detailVisible" :header="$t('monitor.operLog.detailTitle')" @close="detailVisible = false">
       <div v-if="detailData" class="log-detail">
         <dl class="grid grid-cols-2 gap-x-8 gap-y-4">
           <div>
@@ -132,7 +132,7 @@
           </div>
           <div>
             <dt class="text-xs text-[var(--muted-foreground)]">{{ $t('monitor.operLog.businessType') }}</dt>
-            <dd class="mt-1"><a-tag :color="tagColor(businessTypeVariant(detailData.businessType))" :bordered="tagBordered(businessTypeVariant(detailData.businessType))">{{ businessTypeText(detailData.businessType) }}</a-tag></dd>
+            <dd class="mt-1"><t-tag :color="tagColor(businessTypeVariant(detailData.businessType))" :bordered="tagBordered(businessTypeVariant(detailData.businessType))">{{ businessTypeText(detailData.businessType) }}</t-tag></dd>
           </div>
           <div>
             <dt class="text-xs text-[var(--muted-foreground)]">{{ $t('monitor.operLog.operName') }}</dt>
@@ -144,7 +144,7 @@
           </div>
           <div>
             <dt class="text-xs text-[var(--muted-foreground)]">{{ $t('monitor.operLog.requestMethod') }}</dt>
-            <dd class="mt-1"><a-tag :color="tagColor(methodVariant(detailData.requestMethod))" :bordered="tagBordered(methodVariant(detailData.requestMethod))">{{ detailData.requestMethod }}</a-tag></dd>
+            <dd class="mt-1"><t-tag :color="tagColor(methodVariant(detailData.requestMethod))" :bordered="tagBordered(methodVariant(detailData.requestMethod))">{{ detailData.requestMethod }}</t-tag></dd>
           </div>
           <div>
             <dt class="text-xs text-[var(--muted-foreground)]">{{ $t('monitor.operLog.costTime') }}</dt>
@@ -154,7 +154,7 @@
           </div>
           <div>
             <dt class="text-xs text-[var(--muted-foreground)]">{{ $t('common.status') }}</dt>
-            <dd class="mt-1"><a-tag :color="tagColor(operStatusVariant(detailData.status))" :bordered="tagBordered(operStatusVariant(detailData.status))">{{ operStatusText(detailData.status) }}</a-tag></dd>
+            <dd class="mt-1"><t-tag :color="tagColor(operStatusVariant(detailData.status))" :bordered="tagBordered(operStatusVariant(detailData.status))">{{ operStatusText(detailData.status) }}</t-tag></dd>
           </div>
           <div>
             <dt class="text-xs text-[var(--muted-foreground)]">{{ $t('monitor.operLog.operTime') }}</dt>
@@ -191,7 +191,7 @@
           <div class="log-detail-code log-detail-code--error">{{ detailData.errorMsg }}</div>
         </div>
       </div>
-    </a-modal>
+    </t-dialog>
   </div>
 </template>
 
@@ -199,8 +199,7 @@
 import { PERM } from '@/utils/constants'
 import { ref, reactive, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Message } from '@arco-design/web-vue'
-import { IconRefresh, IconDelete } from '@arco-design/web-vue/es/icon'
+import {  MessagePlugin  } from 'tdesign-vue-next'
 import { formatDateTime, businessTypeText, operStatusText, operStatusVariant, businessTypeVariant, methodVariant } from '@/utils/format'
 import {
   getOperLogPageApi,
@@ -322,21 +321,21 @@ async function handleDetail(row: SysOperLog) {
 // ============ 删除 / 批量删除 / 清空 ============
 async function handleDelete(row: SysOperLog) {
   await deleteOperLogApi(String(row.id))
-  Message.success(t('monitor.operLog.deleteSuccess'))
+  MessagePlugin.success(t('monitor.operLog.deleteSuccess'))
   loadTable()
 }
 
 async function handleBatchDelete() {
   if (!selectedIds.value.length) return
   await batchDeleteOperLogApi(selectedIds.value)
-  Message.success(t('monitor.operLog.batchDeleteSuccess', { count: selectedIds.value.length }))
+  MessagePlugin.success(t('monitor.operLog.batchDeleteSuccess', { count: selectedIds.value.length }))
   selectedIds.value = []
   loadTable()
 }
 
 async function handleClean() {
   await cleanOperLogApi()
-  Message.success(t('monitor.operLog.cleanSuccess'))
+  MessagePlugin.success(t('monitor.operLog.cleanSuccess'))
   selectedIds.value = []
   loadTable()
 }

@@ -1,19 +1,19 @@
 <template>
   <div class="page-container">
-    <a-card class="mb-4">
+    <t-card class="mb-4">
       <div class="flex items-center justify-between">
         <div>
           <h3 class="text-base font-medium">{{ $t('monitor.backup.backupTitle') }}</h3>
           <p class="text-sm text-wecom-text-tertiary mt-1">{{ $t('monitor.backup.backupDesc') }}</p>
         </div>
-        <a-button v-permission="PERM.system.backupAdd" type="primary" :loading="creating" @click="handleCreate">
+        <t-button v-permission="PERM.system.backupAdd" theme="primary" :loading="creating" @click="handleCreate">
           <template #icon><icon-plus /></template>
           {{ $t('monitor.backup.createBackup') }}
-        </a-button>
+        </t-button>
       </div>
-    </a-card>
+    </t-card>
 
-    <a-card>
+    <t-card>
       <template #title>
         <span>{{ $t('monitor.backup.backupList') }}</span>
       </template>
@@ -34,21 +34,21 @@
             <a-table-column :title="$t('monitor.backup.backupTime')" data-index="createTime" :width="170" />
             <a-table-column :title="$t('common.operate')" :width="160" align="right">
               <template #cell="{ record }">
-                <a-space>
-                  <a-button v-permission="PERM.system.backupList" size="small" @click="handleDownload(record)">{{ $t('monitor.backup.download') }}</a-button>
-                  <a-popconfirm v-permission="PERM.system.backupDelete" :content="$t('monitor.backup.deleteConfirm')" @ok="handleDelete(record)">
-                    <a-button size="small" status="danger">{{ $t('monitor.backup.delete') }}</a-button>
-                  </a-popconfirm>
-                </a-space>
+                <t-space>
+                  <t-button v-permission="PERM.system.backupList" size="small" @click="handleDownload(record)">{{ $t('monitor.backup.download') }}</t-button>
+                  <t-popconfirm v-permission="PERM.system.backupDelete" :content="$t('monitor.backup.deleteConfirm')" @confirm="handleDelete(record)">
+                    <t-button size="small" theme="danger">{{ $t('monitor.backup.delete') }}</t-button>
+                  </t-popconfirm>
+                </t-space>
               </template>
             </a-table-column>
           </template>
           <template #empty>
-            <a-empty :description="$t('monitor.backup.emptyDesc')" />
+            <t-empty :description="$t('monitor.backup.emptyDesc')" />
           </template>
         </a-table>
       </a-spin>
-    </a-card>
+    </t-card>
   </div>
 </template>
 
@@ -56,7 +56,7 @@
 import { PERM } from '@/utils/constants'
 import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Message } from '@arco-design/web-vue'
+import {  MessagePlugin  } from 'tdesign-vue-next'
 import { createBackupApi, getBackupListApi, downloadBackupApi, deleteBackupApi, type BackupInfo } from '@/api/backup'
 
 const { t } = useI18n()
@@ -82,10 +82,10 @@ async function handleCreate() {
   try {
     const res = await createBackupApi()
     if (res.data?.success) {
-      Message.success(t('monitor.backup.createSuccess'))
+      MessagePlugin.success(t('monitor.backup.createSuccess'))
       loadList()
     } else {
-      Message.error(res.data?.message || t('monitor.backup.createFailed'))
+      MessagePlugin.error(res.data?.message || t('monitor.backup.createFailed'))
     }
   } finally {
     creating.value = false
@@ -102,15 +102,15 @@ async function handleDownload(record: BackupInfo) {
     a.download = record.filename
     a.click()
     URL.revokeObjectURL(url)
-    Message.success(t('monitor.backup.downloadStart'))
+    MessagePlugin.success(t('monitor.backup.downloadStart'))
   } catch {
-    Message.error(t('monitor.backup.downloadFailed'))
+    MessagePlugin.error(t('monitor.backup.downloadFailed'))
   }
 }
 
 async function handleDelete(record: BackupInfo) {
   await deleteBackupApi(record.filename)
-  Message.success(t('monitor.backup.deleteSuccess'))
+  MessagePlugin.success(t('monitor.backup.deleteSuccess'))
   loadList()
 }
 

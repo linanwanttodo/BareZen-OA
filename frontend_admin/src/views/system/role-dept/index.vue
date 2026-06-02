@@ -1,51 +1,51 @@
 <template>
   <div class="role-dept-layout">
     <!-- 左侧筛选侧边栏 -->
-    <a-card class="filter-sidebar" :style="{ width: '280px', minWidth: '280px' }">
+    <t-card class="filter-sidebar" :style="{ width: '280px', minWidth: '280px' }">
       <template #title>
         <div class="flex items-center justify-between w-full">
           <span>{{ $t('roleDept.filterTitle') }}</span>
-          <a-button type="text" size="small" @click="resetFilters">{{ $t('common.reset') }}</a-button>
+          <t-button type="text" size="small" @click="resetFilters">{{ $t('common.reset') }}</t-button>
         </div>
       </template>
         <!-- 角色筛选 -->
         <div class="filter-section">
           <div class="filter-title">
-            <icon-user-group :size="16" />
+            <icon-user-group size="16px" />
             <span>{{ $t('roleDept.roleFilter') }}</span>
-            <a-tag v-if="selectedRoleIds.length" color="arcoblue">{{ selectedRoleIds.length }}</a-tag>
+            <t-tag v-if="selectedRoleIds.length" color="arcoblue">{{ selectedRoleIds.length }}</t-tag>
           </div>
           <div class="filter-list">
             <label v-for="role in roleList" :key="role.id" class="filter-item flex items-center gap-2">
-              <a-checkbox :model-value="selectedRoleIds.includes(String(role.id))" @change="() => toggleRole(String(role.id))" />
+              <t-checkbox :model-value="selectedRoleIds.includes(String(role.id))" @change="() => toggleRole(String(role.id))" />
               <span class="filter-label">{{ role.roleName }}</span>
-              <a-tag :color="role.status === '0' ? 'arcoblue' : 'red'">{{ role.status === '0' ? $t('common.enable') : $t('common.disable') }}</a-tag>
+              <t-tag :color="role.status === '0' ? 'arcoblue' : 'red'">{{ role.status === '0' ? $t('common.enable') : $t('common.disable') }}</t-tag>
             </label>
             <div v-if="!roleLoading && roleList.length === 0" class="empty-tip">{{ $t('roleDept.noRoleData') }}</div>
           </div>
         </div>
 
-        <a-divider class="my-4" />
+        <t-divider class="my-4" />
 
         <!-- 部门筛选 -->
         <div class="filter-section">
           <div class="filter-title">
-            <icon-branch :size="16" />
+            <icon-branch size="16px" />
             <span>{{ $t('roleDept.deptFilter') }}</span>
-            <a-tag v-if="selectedDeptIds.length" color="arcoblue">{{ selectedDeptIds.length }}</a-tag>
+            <t-tag v-if="selectedDeptIds.length" color="arcoblue">{{ selectedDeptIds.length }}</t-tag>
           </div>
           <div class="filter-list">
             <div v-for="item in deptFlat" :key="item.node.id" class="flex items-center gap-2 py-1" :style="{ paddingLeft: item.depth * 16 + 'px' }">
-              <a-checkbox :model-value="selectedDeptIds.includes(item.node.id)" @change="() => toggleDept(item.node.id)" />
+              <t-checkbox :model-value="selectedDeptIds.includes(item.node.id)" @change="() => toggleDept(item.node.id)" />
               <span class="text-sm text-[var(--foreground)]">{{ item.node.deptName }}</span>
             </div>
             <div v-if="!deptLoading && deptTree.length === 0" class="empty-tip">{{ $t('common.noDeptData') }}</div>
           </div>
         </div>
-    </a-card>
+    </t-card>
 
     <!-- 右侧用户列表 -->
-    <a-card class="user-content">
+    <t-card class="user-content">
       <template #title>
         <div class="flex items-center justify-between w-full">
           <div class="flex items-center gap-3">
@@ -55,7 +55,7 @@
               <template v-if="selectedRoleIds.length || selectedDeptIds.length">{{ $t('roleDept.filtered') }}</template>
             </span>
           </div>
-          <a-input
+          <t-input
             v-model="searchKeyword"
             :placeholder="$t('roleDept.searchPlaceholder')"
             style="width: 224px"
@@ -63,7 +63,7 @@
           />
         </div>
       </template>
-        <a-empty v-if="tableLoading" :description="$t('common.loading')" />
+        <t-empty v-if="tableLoading" :description="$t('common.loading')" />
         <template v-else-if="userList.length">
           <a-table :data="userList" :pagination="false" row-key="id">
             <template #columns>
@@ -81,24 +81,24 @@
               </a-table-column>
               <a-table-column :title="$t('common.operate')" align="right">
                 <template #cell="{ record }">
-                  <a-space>
-                    <a-button type="text" size="small" @click="openRoleDialog(record)">{{ $t('roleDept.modifyRoleAction') }}</a-button>
-                    <a-button type="text" size="small" @click="openDeptDialog(record)">{{ $t('roleDept.modifyDeptAction') }}</a-button>
-                  </a-space>
+                  <t-space>
+                    <t-button type="text" size="small" @click="openRoleDialog(record)">{{ $t('roleDept.modifyRoleAction') }}</t-button>
+                    <t-button type="text" size="small" @click="openDeptDialog(record)">{{ $t('roleDept.modifyDeptAction') }}</t-button>
+                  </t-space>
                 </template>
               </a-table-column>
             </template>
           </a-table>
         </template>
-        <a-empty v-else :description="$t('roleDept.noUserData')" />
+        <t-empty v-else :description="$t('roleDept.noUserData')" />
 
         <div v-if="total > 0" class="pagination-bar">
-          <a-pagination v-model:current="pageNum" :total="total" :page-size="pageSize" @change="onPaginationChange" />
+          <t-pagination v-model:current="pageNum" :total="total" :page-size="pageSize" @change="onPaginationChange" />
         </div>
-    </a-card>
+    </t-card>
 
     <!-- 分配角色对话框 -->
-    <a-modal v-model:visible="roleDialogVisible" :title="$t('roleDept.modifyRole')" @cancel="roleDialogVisible = false">
+    <t-dialog v-model="roleDialogVisible" :header="$t('roleDept.modifyRole')" @close="roleDialogVisible = false">
       <div class="dialog-body">
         <dl class="mb-3 grid grid-cols-2 gap-4">
           <div>
@@ -110,23 +110,23 @@
             <dd class="mt-1 text-sm text-[var(--foreground)]">{{ currentUser?.nickName }}</dd>
           </div>
         </dl>
-        <a-divider class="mb-3" />
+        <t-divider class="mb-3" />
         <div class="role-checkbox-area">
           <label v-for="role in roleList" :key="role.id" class="role-checkbox-item flex items-center gap-2">
-            <a-checkbox :model-value="dialogRoleIds.includes(String(role.id))" @change="() => toggleDialogRole(String(role.id))" />
+            <t-checkbox :model-value="dialogRoleIds.includes(String(role.id))" @change="() => toggleDialogRole(String(role.id))" />
             <span>{{ role.roleName }}</span>
-            <a-tag bordered class="role-key-tag">{{ role.roleKey }}</a-tag>
+            <t-tag bordered class="role-key-tag">{{ role.roleKey }}</t-tag>
           </label>
         </div>
       </div>
       <template #footer>
-        <a-button @click="roleDialogVisible = false">{{ $t('common.cancel') }}</a-button>
-        <a-button type="primary" :disabled="saving" @click="saveUserRoles">{{ $t('common.save') }}</a-button>
+        <t-button @click="roleDialogVisible = false">{{ $t('common.cancel') }}</t-button>
+        <t-button theme="primary" :disabled="saving" @click="saveUserRoles">{{ $t('common.save') }}</t-button>
       </template>
-    </a-modal>
+    </t-dialog>
 
     <!-- 分配部门对话框 -->
-    <a-modal v-model:visible="deptDialogVisible" :title="$t('roleDept.modifyDept')" @cancel="deptDialogVisible = false">
+    <t-dialog v-model="deptDialogVisible" :header="$t('roleDept.modifyDept')" @close="deptDialogVisible = false">
       <div class="dialog-body">
         <dl class="mb-3 grid grid-cols-2 gap-4">
           <div>
@@ -138,27 +138,26 @@
             <dd class="mt-1 text-sm text-[var(--foreground)]">{{ currentUser?.nickName }}</dd>
           </div>
         </dl>
-        <a-divider class="mb-3" />
-        <a-alert type="info" class="mb-3">{{ $t('roleDept.checkDeptAssign') }}</a-alert>
+        <t-divider class="mb-3" />
+        <t-alert theme="info" class="mb-3">{{ $t('roleDept.checkDeptAssign') }}</t-alert>
         <div class="dept-tree-area">
           <div v-for="item in deptFlat" :key="item.node.id" class="flex items-center gap-2 py-1" :style="{ paddingLeft: item.depth * 16 + 'px' }">
-            <a-checkbox :model-value="dialogDeptIds.includes(item.node.id)" @change="() => toggleDialogDept(item.node.id)" />
+            <t-checkbox :model-value="dialogDeptIds.includes(item.node.id)" @change="() => toggleDialogDept(item.node.id)" />
             <span class="text-sm text-[var(--foreground)]">{{ item.node.deptName }}</span>
           </div>
         </div>
       </div>
       <template #footer>
-        <a-button @click="deptDialogVisible = false">{{ $t('common.cancel') }}</a-button>
-        <a-button type="primary" :disabled="saving" @click="saveUserDepts">{{ $t('common.save') }}</a-button>
+        <t-button @click="deptDialogVisible = false">{{ $t('common.cancel') }}</t-button>
+        <t-button theme="primary" :disabled="saving" @click="saveUserDepts">{{ $t('common.save') }}</t-button>
       </template>
-    </a-modal>
+    </t-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { IconUserGroup, IconBranch } from '@arco-design/web-vue/es/icon'
 import { filterUsersApi, getUserRoleIdsApi, assignUserRolesApi } from '@/api/user'
 import { getAllRolesListApi } from '@/api/role'
 import { getDeptTreeApi, getUserDeptsApi, assignUserDeptsApi } from '@/api/dept'

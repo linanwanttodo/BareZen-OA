@@ -2,14 +2,14 @@
   <div class="page-container">
     <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
       <!-- 左侧：字典类型 -->
-      <a-card :bordered="true" class="flex flex-col">
+      <t-card :bordered="true" class="flex flex-col">
         <template #title>
           <div class="flex items-center justify-between w-full">
             <span>{{ $t('dict.title') }}</span>
-            <a-button v-permission="PERM.system.dictAdd" type="primary" size="small" @click="handleAddType">
+            <t-button v-permission="PERM.system.dictAdd" theme="primary" size="small" @click="handleAddType">
               <template #icon><icon-plus /></template>
               {{ $t('common.add') }}
-            </a-button>
+            </t-button>
           </div>
         </template>
         <div class="mb-3">
@@ -27,19 +27,19 @@
               <span class="dict-type-item__name">{{ item.dictName }}</span>
               <span class="dict-type-item__key">{{ item.dictType }}</span>
             </div>
-            <a-tag v-if="item.status === '0'" color="red" size="small">{{ $t('common.disable') }}</a-tag>
+            <t-tag v-if="item.status === '0'" color="red" size="small">{{ $t('common.disable') }}</t-tag>
             <a-dropdown>
               <icon-more class="cursor-pointer" style="color: var(--wecom-text-tertiary)" />
               <template #content>
-                <a-doption v-permission="PERM.system.dictEdit" @click="handleEditType(item)">{{ $t('common.edit') }}</a-doption>
-                <a-doption v-permission="PERM.system.dictDelete" @click="handleDeleteType(item)" status="danger">{{ $t('common.delete') }}</a-doption>
+                <t-dropdown-item v-permission="PERM.system.dictEdit" @click="handleEditType(item)">{{ $t('common.edit') }}</t-dropdown-item>
+                <t-dropdown-item v-permission="PERM.system.dictDelete" @click="handleDeleteType(item)" status="danger">{{ $t('common.delete') }}</t-dropdown-item>
               </template>
             </a-dropdown>
           </div>
-          <a-empty v-if="!filteredDictTypes.length" :description="$t('common.noData')" />
+          <t-empty v-if="!filteredDictTypes.length" :description="$t('common.noData')" />
         </div>
         <div v-if="typePagination.total > typePagination.pageSize" class="mt-3 pt-3" style="border-top: 1px solid var(--wecom-border)">
-          <a-pagination
+          <t-pagination
             v-model:current="typePagination.current"
             :total="typePagination.total"
             :page-size="typePagination.pageSize"
@@ -47,26 +47,26 @@
             @change="onTypePageChange"
           />
         </div>
-      </a-card>
+      </t-card>
 
       <!-- 右侧：字典数据 -->
-      <a-card :bordered="true" class="flex flex-col">
+      <t-card :bordered="true" class="flex flex-col">
         <template #title>
           <div class="flex items-center justify-between w-full">
             <div class="flex items-center gap-2">
               <span>{{ $t('dict.dataTitle') }}</span>
-              <a-tag v-if="selectedType" color="blue">{{ selectedType.dictName }}</a-tag>
+              <t-tag v-if="selectedType" color="blue">{{ selectedType.dictName }}</t-tag>
             </div>
-            <a-button v-permission="PERM.system.dictAdd" type="primary" size="small" :disabled="!selectedType" @click="handleAddData">
+            <t-button v-permission="PERM.system.dictAdd" theme="primary" size="small" :disabled="!selectedType" @click="handleAddData">
               <template #icon><icon-plus /></template>
               {{ $t('common.add') }}
-            </a-button>
+            </t-button>
           </div>
         </template>
         <template v-if="selectedType">
           <div class="mb-3 flex items-center gap-2">
-            <a-input v-model="dataSearchForm.dictLabel" :placeholder="$t('dict.dictLabel')" allow-clear style="width: 180px" />
-            <a-button type="primary" size="small" @click="loadData">{{ $t('common.search') }}</a-button>
+            <t-input v-model="dataSearchForm.dictLabel" :placeholder="$t('dict.dictLabel')" clearable style="width: 180px" />
+            <t-button theme="primary" size="small" @click="loadData">{{ $t('common.search') }}</t-button>
           </div>
 
           <a-spin :loading="dataLoading">
@@ -78,33 +78,33 @@
                 <a-table-column :title="$t('dept.orderNum')" data-index="dictSort" :width="60" />
                 <a-table-column :title="$t('dict.isDefault')" :width="60">
                   <template #cell="{ record }">
-                    <a-tag :color="record.isDefault === 'Y' ? 'blue' : 'gray'" size="small">
+                    <t-tag :color="record.isDefault === 'Y' ? 'blue' : 'gray'" size="small">
                       {{ record.isDefault === 'Y' ? $t('common.yes') : $t('common.no') }}
-                    </a-tag>
+                    </t-tag>
                   </template>
                 </a-table-column>
                 <a-table-column :title="$t('common.status')" :width="80">
                   <template #cell="{ record }">
-                    <a-tag :color="record.status === '1' ? 'green' : 'red'" size="small">
+                    <t-tag :color="record.status === '1' ? 'green' : 'red'" size="small">
                       {{ record.status === '1' ? $t('common.normal') : $t('common.disable') }}
-                    </a-tag>
+                    </t-tag>
                   </template>
                 </a-table-column>
                 <a-table-column :title="$t('common.operate')" :width="120" align="right">
                   <template #cell="{ record }">
-                    <a-space>
-                      <a-button v-permission="PERM.system.dictEdit" size="small" @click="handleEditData(record)">{{ $t('common.edit') }}</a-button>
-                      <a-popconfirm v-permission="PERM.system.dictDelete" :content="$t('dict.deleteDataConfirm')" @ok="handleDeleteData(record)">
-                        <a-button size="small" status="danger">{{ $t('common.delete') }}</a-button>
-                      </a-popconfirm>
-                    </a-space>
+                    <t-space>
+                      <t-button v-permission="PERM.system.dictEdit" size="small" @click="handleEditData(record)">{{ $t('common.edit') }}</t-button>
+                      <t-popconfirm v-permission="PERM.system.dictDelete" :content="$t('dict.deleteDataConfirm')" @confirm="handleDeleteData(record)">
+                        <t-button size="small" theme="danger">{{ $t('common.delete') }}</t-button>
+                      </t-popconfirm>
+                    </t-space>
                   </template>
                 </a-table-column>
               </template>
             </a-table>
 
             <div v-if="dataPagination.total > dataPagination.pageSize" class="mt-3 flex justify-end">
-              <a-pagination
+              <t-pagination
                 v-model:current="dataPagination.current"
                 :total="dataPagination.total"
                 :page-size="dataPagination.pageSize"
@@ -114,110 +114,109 @@
             </div>
           </a-spin>
         </template>
-        <a-empty v-else :description="$t('dict.selectTypeHint')" />
-      </a-card>
+        <t-empty v-else :description="$t('dict.selectTypeHint')" />
+      </t-card>
     </div>
 
     <!-- 字典类型 新增/编辑弹窗 -->
-    <a-modal
-      v-model:visible="typeFormVisible"
-      :title="typeFormType === 'add' ? $t('dict.addType') : $t('dict.editType')"
-      :width="480"
-      :mask-closable="false"
-      @ok="onTypeFormConfirm"
-      @cancel="typeFormVisible = false"
+    <t-dialog
+      v-model="typeFormVisible"
+      :header="typeFormType === 'add' ? $t('dict.addType') : $t('dict.editType')"
+      width="480px"
+      :close-on-overlay-click="false"
+      @confirm="onTypeFormConfirm"
+      @close="typeFormVisible = false"
     >
-      <a-form :model="typeFormData" layout="vertical">
-        <a-form-item field="dictName" :label="$t('dict.dictName')" :rules="[{ required: true, message: $t('dict.dictName') }]">
-          <a-input v-model="typeFormData.dictName" :placeholder="$t('dict.dictName')" />
-        </a-form-item>
-        <a-form-item field="dictType" :label="$t('dict.dictType')" :rules="[{ required: true, message: $t('dict.dictType') }]">
-          <a-input v-model="typeFormData.dictType" :placeholder="$t('dict.dictType')" :disabled="typeFormType === 'edit'" />
-        </a-form-item>
-        <a-form-item field="status" :label="$t('common.status')">
-          <a-radio-group v-model="typeFormData.status">
-            <a-radio value="1">{{ $t('common.normal') }}</a-radio>
-            <a-radio value="0">{{ $t('common.disable') }}</a-radio>
-          </a-radio-group>
-        </a-form-item>
-      </a-form>
-    </a-modal>
+      <t-form :model="typeFormData" layout="vertical">
+        <t-form-item name="dictName" :label="$t('dict.dictName')" :rules="[{ required: true, message: $t('dict.dictName') }]">
+          <t-input v-model="typeFormData.dictName" :placeholder="$t('dict.dictName')" />
+        </t-form-item>
+        <t-form-item name="dictType" :label="$t('dict.dictType')" :rules="[{ required: true, message: $t('dict.dictType') }]">
+          <t-input v-model="typeFormData.dictType" :placeholder="$t('dict.dictType')" :disabled="typeFormType === 'edit'" />
+        </t-form-item>
+        <t-form-item name="status" :label="$t('common.status')">
+          <t-radio-group v-model="typeFormData.status">
+            <t-radio value="1">{{ $t('common.normal') }}</t-radio>
+            <t-radio value="0">{{ $t('common.disable') }}</t-radio>
+          </t-radio-group>
+        </t-form-item>
+      </t-form>
+    </t-dialog>
 
     <!-- 字典数据 新增/编辑弹窗 -->
-    <a-modal
-      v-model:visible="dataFormVisible"
-      :title="dataFormType === 'add' ? $t('dict.addData') : $t('dict.editData')"
-      :width="560"
-      :mask-closable="false"
-      @ok="onDataFormConfirm"
-      @cancel="dataFormVisible = false"
+    <t-dialog
+      v-model="dataFormVisible"
+      :header="dataFormType === 'add' ? $t('dict.addData') : $t('dict.editData')"
+      width="560px"
+      :close-on-overlay-click="false"
+      @confirm="onDataFormConfirm"
+      @close="dataFormVisible = false"
     >
-      <a-form :model="dataFormData" layout="vertical">
-        <a-form-item :label="$t('dict.dictType')">
-          <a-input :model-value="selectedType?.dictType" disabled />
-        </a-form-item>
-        <a-row :gutter="16">
-          <a-col :span="12">
-            <a-form-item field="dictLabel" :label="$t('dict.dictLabel')" :rules="[{ required: true, message: $t('dict.dictLabel') }]">
-              <a-input v-model="dataFormData.dictLabel" :placeholder="$t('dict.dictLabel')" />
-            </a-form-item>
-          </a-col>
-          <a-col :span="12">
-            <a-form-item field="dictValue" :label="$t('dict.dictValue')" :rules="[{ required: true, message: $t('dict.dictValue') }]">
-              <a-input v-model="dataFormData.dictValue" :placeholder="$t('dict.dictValue')" />
-            </a-form-item>
-          </a-col>
-        </a-row>
-        <a-row :gutter="16">
-          <a-col :span="12">
-            <a-form-item field="dictSort" :label="$t('dept.orderNum')">
-              <a-input-number v-model="dataFormData.dictSort" placeholder="0" :min="0" style="width: 100%" />
-            </a-form-item>
-          </a-col>
-          <a-col :span="12">
-            <a-form-item field="cssClass" :label="$t('dict.listClass')">
-              <a-input v-model="dataFormData.cssClass" placeholder="css class" />
-            </a-form-item>
-          </a-col>
-        </a-row>
-        <a-row :gutter="16">
-          <a-col :span="12">
-            <a-form-item field="listClass" :label="$t('dict.listClass')">
-              <a-select v-model="dataFormData.listClass" :placeholder="$t('common.selectPlaceholder')" allow-clear>
-                <a-option value="primary">主要（蓝色）</a-option>
-                <a-option value="success">成功（绿色）</a-option>
-                <a-option value="warning">警告（橙色）</a-option>
-                <a-option value="danger">危险（红色）</a-option>
-                <a-option value="default">默认（灰色）</a-option>
-              </a-select>
-            </a-form-item>
-          </a-col>
-          <a-col :span="12">
-            <a-form-item field="isDefault" :label="$t('dict.isDefault')">
-              <a-radio-group v-model="dataFormData.isDefault">
-                <a-radio value="Y">{{ $t('common.yes') }}</a-radio>
-                <a-radio value="N">{{ $t('common.no') }}</a-radio>
-              </a-radio-group>
-            </a-form-item>
-          </a-col>
-        </a-row>
-        <a-form-item field="status" :label="$t('common.status')">
-          <a-radio-group v-model="dataFormData.status">
-            <a-radio value="1">{{ $t('common.normal') }}</a-radio>
-            <a-radio value="0">{{ $t('common.disable') }}</a-radio>
-          </a-radio-group>
-        </a-form-item>
-      </a-form>
-    </a-modal>
+      <t-form :model="dataFormData" layout="vertical">
+        <t-form-item :label="$t('dict.dictType')">
+          <t-input :model-value="selectedType?.dictType" disabled />
+        </t-form-item>
+        <t-row :gutter="16">
+          <t-col :span="12">
+            <t-form-item name="dictLabel" :label="$t('dict.dictLabel')" :rules="[{ required: true, message: $t('dict.dictLabel') }]">
+              <t-input v-model="dataFormData.dictLabel" :placeholder="$t('dict.dictLabel')" />
+            </t-form-item>
+          </t-col>
+          <t-col :span="12">
+            <t-form-item name="dictValue" :label="$t('dict.dictValue')" :rules="[{ required: true, message: $t('dict.dictValue') }]">
+              <t-input v-model="dataFormData.dictValue" :placeholder="$t('dict.dictValue')" />
+            </t-form-item>
+          </t-col>
+        </t-row>
+        <t-row :gutter="16">
+          <t-col :span="12">
+            <t-form-item name="dictSort" :label="$t('dept.orderNum')">
+              <t-input-number v-model="dataFormData.dictSort" placeholder="0" :min="0" style="width: 100%" />
+            </t-form-item>
+          </t-col>
+          <t-col :span="12">
+            <t-form-item name="cssClass" :label="$t('dict.listClass')">
+              <t-input v-model="dataFormData.cssClass" placeholder="css class" />
+            </t-form-item>
+          </t-col>
+        </t-row>
+        <t-row :gutter="16">
+          <t-col :span="12">
+            <t-form-item name="listClass" :label="$t('dict.listClass')">
+              <t-select v-model="dataFormData.listClass" :placeholder="$t('common.selectPlaceholder')" allow-clear>
+                <t-option value="primary">主要（蓝色）</t-option>
+                <t-option value="success">成功（绿色）</t-option>
+                <t-option value="warning">警告（橙色）</t-option>
+                <t-option value="danger">危险（红色）</t-option>
+                <t-option value="default">默认（灰色）</t-option>
+              </t-select>
+            </t-form-item>
+          </t-col>
+          <t-col :span="12">
+            <t-form-item name="isDefault" :label="$t('dict.isDefault')">
+              <t-radio-group v-model="dataFormData.isDefault">
+                <t-radio value="Y">{{ $t('common.yes') }}</t-radio>
+                <t-radio value="N">{{ $t('common.no') }}</t-radio>
+              </t-radio-group>
+            </t-form-item>
+          </t-col>
+        </t-row>
+        <t-form-item name="status" :label="$t('common.status')">
+          <t-radio-group v-model="dataFormData.status">
+            <t-radio value="1">{{ $t('common.normal') }}</t-radio>
+            <t-radio value="0">{{ $t('common.disable') }}</t-radio>
+          </t-radio-group>
+        </t-form-item>
+      </t-form>
+    </t-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { PERM } from '@/utils/constants'
 import { ref, reactive, computed, onMounted } from 'vue'
-import { Message, Modal } from '@arco-design/web-vue'
+import { MessagePlugin, DialogPlugin } from 'tdesign-vue-next'
 import { useI18n } from 'vue-i18n'
-import { IconPlus, IconMore } from '@arco-design/web-vue/es/icon'
 import {
   getDictTypePageApi,
   addDictTypeApi,
@@ -296,10 +295,10 @@ async function onTypeFormConfirm() {
   try {
     if (typeFormType.value === 'add') {
       await addDictTypeApi({ ...typeFormData })
-      Message.success(t('dict.addSuccess'))
+      MessagePlugin.success(t('dict.addSuccess'))
     } else {
       await updateDictTypeApi({ ...typeFormData })
-      Message.success(t('dict.editSuccess'))
+      MessagePlugin.success(t('dict.editSuccess'))
     }
     typeFormVisible.value = false
     loadTypes()
@@ -309,18 +308,23 @@ async function onTypeFormConfirm() {
 }
 
 async function handleDeleteType(item: SysDictType) {
-  Modal.confirm({
-    title: t('common.confirmDelete'),
-    content: t('dict.deleteTypeConfirm'),
-    onOk: async () => {
+  const dialog = DialogPlugin.confirm({
+    header: t('common.confirmDelete'),
+    body: t('dict.deleteTypeConfirm'),
+    confirmBtn: { content: t('common.confirm'), theme: 'danger' },
+    onConfirm: async () => {
       try {
         await deleteDictTypeApi(item.id)
-        Message.success(t('dict.deleteSuccess'))
+        MessagePlugin.success(t('dict.deleteSuccess'))
         if (selectedType.value?.id === item.id) selectedType.value = null
         loadTypes()
       } catch {
         // ignore
       }
+      dialog.destroy()
+    },
+    onClose: () => {
+      dialog.destroy()
     },
   })
 }
@@ -399,10 +403,10 @@ async function onDataFormConfirm() {
     const payload = { ...dataFormData, dictSort: Number(dataFormData.dictSort) || 0 }
     if (dataFormType.value === 'add') {
       await addDictDataApi(payload)
-      Message.success(t('dict.addSuccess'))
+      MessagePlugin.success(t('dict.addSuccess'))
     } else {
       await updateDictDataApi(payload)
-      Message.success(t('dict.editSuccess'))
+      MessagePlugin.success(t('dict.editSuccess'))
     }
     dataFormVisible.value = false
     loadData()
@@ -414,7 +418,7 @@ async function onDataFormConfirm() {
 async function handleDeleteData(row: SysDictData) {
   try {
     await deleteDictDataApi(row.id)
-    Message.success(t('dict.deleteSuccess'))
+    MessagePlugin.success(t('dict.deleteSuccess'))
     loadData()
   } catch {
     // ignore
