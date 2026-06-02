@@ -2,7 +2,7 @@
   <div class="page-container">
     <!-- 搜索区域 -->
     <a-card class="mb-4">
-      <a-card-content class="pt-6">
+      <div class="pt-6">
         <div class="flex flex-wrap items-end gap-4">
           <a-form-item :label="$t('monitor.operLog.title')">
             <a-input v-model="searchForm.title" :placeholder="$t('monitor.operLog.title')" style="width: 176px" />
@@ -33,7 +33,7 @@
             <a-button @click="handleReset">{{ $t('common.reset') }}</a-button>
           </div>
         </div>
-      </a-card-content>
+      </div>
     </a-card>
 
     <!-- 表格区域 -->
@@ -59,7 +59,6 @@
           </a-space>
         </div>
       </template>
-      <a-card-content>
         <div v-if="loading" class="flex items-center justify-center h-64">
           <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--primary)]"></div>
           <span class="ml-2 text-[var(--muted-foreground)]">{{ $t('common.loading') }}</span>
@@ -121,7 +120,6 @@
           </div>
         </template>
         <a-empty v-else :description="$t('monitor.operLog.noLogs')" />
-      </a-card-content>
     </a-card>
 
     <!-- 详情弹窗 -->

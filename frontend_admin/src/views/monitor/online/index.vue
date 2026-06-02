@@ -19,7 +19,6 @@
           </div>
         </div>
       </template>
-      <a-card-content>
         <div v-if="loading" class="flex items-center justify-center h-64">
           <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--primary)]"></div>
           <span class="ml-2 text-[var(--muted-foreground)]">{{ $t('common.loading') }}</span>
@@ -73,7 +72,6 @@
             />
           </div>
         </template>
-      </a-card-content>
     </a-card>
 
     <a-modal v-model:visible="confirmDialogVisible" :title="$t('common.confirm')" @cancel="confirmDialogVisible = false">

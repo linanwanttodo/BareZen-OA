@@ -1,7 +1,6 @@
 <template>
   <div class="page-container">
     <a-card>
-      <a-card-content>
         <div class="flex flex-wrap items-end gap-3">
           <a-form-item :label="$t('notice.noticeTitle')">
             <a-input v-model="searchForm.noticeTitle" :placeholder="$t('notice.noticePlaceholder')" style="width: 200px" />
@@ -17,7 +16,6 @@
             <a-button @click="handleReset">{{ $t('common.reset') }}</a-button>
           </div>
         </div>
-      </a-card-content>
     </a-card>
 
     <a-card class="mt-4">
@@ -30,7 +28,6 @@
           </a-button>
         </div>
       </template>
-      <a-card-content>
         <div v-if="loading" class="flex items-center justify-center h-64">
           <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--primary)]"></div>
           <span class="ml-2 text-[var(--muted-foreground)]">{{ $t('common.loading') }}</span>
@@ -98,7 +95,6 @@
             />
           </div>
         </template>
-      </a-card-content>
     </a-card>
 
     <a-modal v-model:visible="formDialogVisible" :title="formType === 'add' ? $t('notice.addNotice') : $t('notice.editNotice')" @cancel="formDialogVisible = false">

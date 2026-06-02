@@ -444,7 +444,7 @@ onMounted(() => {
   background: var(--wecom-bg-container);
 }
 .dict-type-item--active {
-  background: var(--color-primary-light-1);
+  background: var(--wecom-primary-light);
 }
 .dict-type-item__info {
   flex: 1;

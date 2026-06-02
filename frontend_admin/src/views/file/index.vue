@@ -24,7 +24,6 @@
           </div>
         </div>
       </template>
-      <a-card-content>
         <!-- 面包屑导航 -->
         <div class="mb-4 flex flex-wrap items-center gap-1">
           <a class="cursor-pointer text-sm text-[var(--primary)] hover:underline" @click="goToLevel(-1)">{{ $t('file.root') }}</a>
@@ -105,7 +104,6 @@
             @change="loadList"
           />
         </div>
-      </a-card-content>
     </a-card>
 
     <!-- 新建文件夹 -->

@@ -1,9 +1,18 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
+import Components from 'unplugin-vue-components/vite'
+import { ArcoResolver } from 'unplugin-vue-components/resolvers'
 import { fileURLToPath, URL } from 'node:url'
 
 export default defineConfig({
-  plugins: [vue()],
+  plugins: [
+    vue(),
+    // Arco 按需导入：模板中 <a-xxx> 自动引入对应组件与样式，替代全量注册
+    Components({
+      resolvers: [ArcoResolver({ sideEffect: true })],
+      dts: false,
+    }),
+  ],
   define: {
     // sockjs-client 等依赖在浏览器环境引用 Node.js 的 global，
     // 提供 polyfill 避免 ReferenceError: global is not defined 导致白屏

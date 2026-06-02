@@ -89,7 +89,7 @@
              @ok="handleApprove" @cancel="approveVisible = false" :ok-loading="approving"
              :ok-button-props="{ disabled: !approveForm.item }">
       <template v-if="approveForm.item">
-        <a-card class="mb-4" :bordered="false" style="background: var(--color-fill-2)">
+        <a-card class="mb-4" :bordered="false" style="background: var(--wecom-bg-container)">
           <a-descriptions :column="2" size="small" layout="horizontal">
             <a-descriptions-item :label="$t('todoCenter.type')" :span="2">
               <a-tag :color="approveForm.item.type === 'leave' ? 'blue' : 'orange'">{{ approveForm.item.typeName }}</a-tag>

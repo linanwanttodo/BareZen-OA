@@ -54,17 +54,17 @@
             <a-table-column :title="$t('attendanceStat.workDays')" data-index="workDays" :width="100" align="center" />
             <a-table-column :title="$t('attendanceStat.lateCount')" data-index="lateCount" :width="100" align="center">
               <template #cell="{ record }">
-                <span :class="record.lateCount > 0 ? 'text-[var(--color-warning-6)]' : ''">{{ record.lateCount }}</span>
+                <span :class="record.lateCount > 0 ? 'text-[var(--wecom-warning)]' : ''">{{ record.lateCount }}</span>
               </template>
             </a-table-column>
             <a-table-column :title="$t('attendanceStat.earlyCount')" data-index="earlyCount" :width="100" align="center">
               <template #cell="{ record }">
-                <span :class="record.earlyCount > 0 ? 'text-[var(--color-warning-6)]' : ''">{{ record.earlyCount }}</span>
+                <span :class="record.earlyCount > 0 ? 'text-[var(--wecom-warning)]' : ''">{{ record.earlyCount }}</span>
               </template>
             </a-table-column>
             <a-table-column :title="$t('attendanceStat.absentCount')" data-index="absentCount" :width="100" align="center">
               <template #cell="{ record }">
-                <span :class="record.absentCount > 0 ? 'text-[var(--color-danger-6)]' : ''">{{ record.absentCount }}</span>
+                <span :class="record.absentCount > 0 ? 'text-[var(--wecom-error)]' : ''">{{ record.absentCount }}</span>
               </template>
             </a-table-column>
           </template>

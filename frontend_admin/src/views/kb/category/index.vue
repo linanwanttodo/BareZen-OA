@@ -3,7 +3,7 @@
     <!-- 工具栏 -->
     <a-card class="mb-4">
       <div class="flex items-center justify-between">
-        <span class="text-sm text-[var(--color-text-2)]">{{ $t('kb.categoryDesc') }}</span>
+        <span class="text-sm text-[var(--wecom-text-secondary)]">{{ $t('kb.categoryDesc') }}</span>
         <a-button v-permission="PERM.kb.categoryAdd" type="primary" @click="handleAdd">
           <template #icon><icon-plus /></template>
           {{ $t('common.add') }}

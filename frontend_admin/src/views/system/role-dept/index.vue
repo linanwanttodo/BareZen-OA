@@ -8,7 +8,6 @@
           <a-button type="text" size="small" @click="resetFilters">{{ $t('common.reset') }}</a-button>
         </div>
       </template>
-      <a-card-content>
         <!-- 角色筛选 -->
         <div class="filter-section">
           <div class="filter-title">
@@ -43,7 +42,6 @@
             <div v-if="!deptLoading && deptTree.length === 0" class="empty-tip">{{ $t('common.noDeptData') }}</div>
           </div>
         </div>
-      </a-card-content>
     </a-card>
 
     <!-- 右侧用户列表 -->
@@ -65,7 +63,6 @@
           />
         </div>
       </template>
-      <a-card-content>
         <a-empty v-if="tableLoading" :description="$t('common.loading')" />
         <template v-else-if="userList.length">
           <a-table :data="userList" :pagination="false" row-key="id">
@@ -98,7 +95,6 @@
         <div v-if="total > 0" class="pagination-bar">
           <a-pagination v-model:current="pageNum" :total="total" :page-size="pageSize" @change="onPaginationChange" />
         </div>
-      </a-card-content>
     </a-card>
 
     <!-- 分配角色对话框 -->
