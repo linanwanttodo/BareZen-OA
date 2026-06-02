@@ -1,20 +1,25 @@
 <template>
   <div class="top-navbar">
-    <!-- 左侧：Logo + 品牌名 -->
+    <!-- 左侧：Logo + 品牌名 + 布局设置入口 -->
     <div class="top-navbar__left">
       <img src="/logo.png" alt="BareZen" class="top-navbar__logo" />
       <span class="top-navbar__brand">BareZen</span>
+      <t-tooltip content="布局设置">
+        <t-button variant="text" shape="square" size="small" class="top-navbar__settings" @click="openSettings?.()">
+          <template #icon><icon-apps /></template>
+        </t-button>
+      </t-tooltip>
     </div>
 
     <!-- 中间：导航菜单（从后端动态渲染） -->
     <nav class="top-navbar__nav">
       <template v-for="item in visibleMenus" :key="item.id">
         <!-- 有子菜单 → 下拉 -->
-        <div
+        <t-dropdown
           v-if="item.children && item.children.length > 0"
-          class="top-navbar__dropdown"
-          @mouseenter="openDropdown(item.id)"
-          @mouseleave="closeDropdown(item.id)"
+          :options="dropdownOptions(item)"
+          trigger="hover"
+          @click="onDropdownClick($event, item)"
         >
           <a
             class="top-navbar__nav-item"
@@ -23,18 +28,7 @@
             {{ getMenuTranslation(item) }}
             <icon-down class="top-navbar__arrow" :class="{ 'top-navbar__arrow--open': dropdownOpen[item.id] }" />
           </a>
-          <div v-show="dropdownOpen[item.id]" class="top-navbar__dropdown-menu">
-            <a
-              v-for="child in item.children"
-              :key="child.id"
-              class="top-navbar__dropdown-item"
-              :class="{ 'top-navbar__dropdown-item--active': isActive(child, item) }"
-              @click="navigate(child, item)"
-            >
-              {{ getMenuTranslation(child) }}
-            </a>
-          </div>
-        </div>
+        </t-dropdown>
 
         <!-- 无子菜单 → 直接链接 -->
         <a
@@ -51,35 +45,31 @@
     <!-- 右侧：语言切换 + 用户信息 -->
     <div class="top-navbar__right">
       <LangSwitch />
-      <a-dropdown>
+      <t-dropdown :options="userMenuOptions" trigger="hover" @click="onUserMenuClick">
         <div class="top-navbar__user">
           <div class="top-navbar__avatar">{{ userInitial }}</div>
           <span class="top-navbar__username">{{ nickName }}</span>
         </div>
-        <template #content>
-          <a-doption @click="router.push('/profile')">{{ $t('route.profile') }}</a-doption>
-          <a-doption @click="pwdDialogVisible = true">{{ $t('profile.changePwd') }}</a-doption>
-          <a-doption @click="onLogout" status="danger">{{ $t('login.logout') }}</a-doption>
-        </template>
-      </a-dropdown>
+      </t-dropdown>
     </div>
 
     <!-- 修改密码弹窗 -->
-    <a-modal
+    <t-dialog
       v-model:visible="pwdDialogVisible"
-      :title="$t('profile.changePasswordTitle')"
-      :width="400"
-      :mask-closable="false"
-      @ok="onPwdSubmit"
-      @cancel="pwdDialogVisible = false"
+      :header="$t('profile.changePasswordTitle')"
+      width="400px"
+      :close-on-overlay-click="false"
+      :confirm-btn="{ content: $t('common.confirm'), loading: pwdSubmitting }"
+      @confirm="onPwdSubmit"
+      @close="pwdDialogVisible = false"
     >
-      <a-form :model="pwdForm" layout="vertical">
-        <a-form-item field="oldPassword" :label="$t('profile.oldPassword')">
-          <a-input-password v-model="pwdForm.oldPassword" :placeholder="$t('profile.oldPasswordPlaceholder')" />
-        </a-form-item>
-        <a-form-item field="newPassword" :label="$t('profile.newPassword')">
-          <a-input-password v-model="pwdForm.newPassword" :placeholder="$t('profile.newPasswordPlaceholder')" />
-        </a-form-item>
+      <t-form :data="pwdForm" label-align="top">
+        <t-form-item labelWidth="auto" :label="$t('profile.oldPassword')" name="oldPassword">
+          <t-input type="password" v-model="pwdForm.oldPassword" :placeholder="$t('profile.oldPasswordPlaceholder')" clearable />
+        </t-form-item>
+        <t-form-item :label="$t('profile.newPassword')" name="newPassword">
+          <t-input type="password" v-model="pwdForm.newPassword" :placeholder="$t('profile.newPasswordPlaceholder')" clearable />
+        </t-form-item>
         <!-- 密码强度指示条（仿大型网站） -->
         <div v-if="pwdForm.newPassword" class="-mt-2 mb-2">
           <div class="flex gap-1">
@@ -101,19 +91,18 @@
             <span>{{ rule.label }}</span>
           </p>
         </div>
-        <a-form-item field="confirmPassword" :label="$t('profile.confirmPassword')">
-          <a-input-password v-model="pwdForm.confirmPassword" :placeholder="$t('profile.confirmPasswordPlaceholder')" />
-        </a-form-item>
-      </a-form>
-    </a-modal>
+        <t-form-item :label="$t('profile.confirmPassword')" name="confirmPassword">
+          <t-input type="password" v-model="pwdForm.confirmPassword" :placeholder="$t('profile.confirmPasswordPlaceholder')" clearable />
+        </t-form-item>
+      </t-form>
+    </t-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref, reactive } from 'vue'
+import { computed, inject, ref, reactive } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Message } from '@arco-design/web-vue'
-import { IconDown, IconCheck, IconMinus } from '@arco-design/web-vue/es/icon'
+import { MessagePlugin } from 'tdesign-vue-next'
 import { useI18n } from 'vue-i18n'
 import { useUserStore } from '@/stores/user'
 import { usePermissionStore } from '@/stores/permission'
@@ -127,6 +116,7 @@ const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
 const permissionStore = usePermissionStore()
+const openSettings = inject<(() => void) | undefined>('openSettingsPanel', undefined)
 
 const nickName = computed(() => userStore.userInfo?.nickName || t('user.adminUser'))
 const userInitial = computed(() => nickName.value.charAt(0).toUpperCase())
@@ -190,10 +180,41 @@ function getMenuTranslation(item: SysMenu): string {
   return item.menuName
 }
 
-// 下拉展开状态
+// 下拉展开状态（用于箭头旋转动画）
 const dropdownOpen = reactive<Record<string, boolean>>({})
-function openDropdown(id: string) { dropdownOpen[id] = true }
-function closeDropdown(id: string) { dropdownOpen[id] = false }
+
+/** 菜单 → TDesign Dropdown options（content 复用现有翻译逻辑） */
+function dropdownOptions(item: SysMenu) {
+  return (item.children || []).map((child) => ({
+    content: getMenuTranslation(child),
+    value: child.id as string,
+  }))
+}
+
+function onDropdownClick(data: { value: string | number }, parent: SysMenu) {
+  const child = (parent.children || []).find((c) => String(c.id) === String(data.value))
+  if (child) navigate(child, parent)
+}
+
+const userMenuOptions = [
+  { content: t('route.profile'), value: 'profile' },
+  { content: t('profile.changePwd'), value: 'pwd' },
+  { content: t('login.logout'), value: 'logout', theme: 'error' as const },
+]
+
+function onUserMenuClick(data: { value: string | number }) {
+  switch (data.value) {
+    case 'profile':
+      router.push('/profile')
+      break
+    case 'pwd':
+      pwdDialogVisible.value = true
+      break
+    case 'logout':
+      onLogout()
+      break
+  }
+}
 
 function isActive(item: SysMenu, parent?: SysMenu): boolean {
   const normalized = resolveMenuPath(item, parent)
@@ -218,11 +239,12 @@ function navigate(item: SysMenu, parent?: SysMenu) {
 async function onLogout() {
   await userStore.logout()
   await router.push('/login')
-  Message.success(t('login.logoutSuccess'))
+  MessagePlugin.success(t('login.logoutSuccess'))
 }
 
 // ---- 修改密码 ----
 const pwdDialogVisible = ref(false)
+const pwdSubmitting = ref(false)
 const pwdForm = reactive({
   oldPassword: '',
   newPassword: '',
@@ -288,25 +310,26 @@ function strengthBarClass(barIndex: number): string {
 
 async function onPwdSubmit() {
   if (!pwdForm.oldPassword || !pwdForm.newPassword || !pwdForm.confirmPassword) {
-    Message.warning(t('login.passwordInfoIncomplete'))
+    MessagePlugin.warning(t('login.passwordInfoIncomplete'))
     return
   }
   // 与后端 PasswordUtil.validatePasswordPolicy 完全一致的五项校验
   if (!passwordRules.value.every((r) => r.valid)) {
-    Message.warning(t('user.batchPwdError', { name: '' }))
+    MessagePlugin.warning(t('user.batchPwdError', { name: '' }))
     return
   }
   if (pwdForm.newPassword !== pwdForm.confirmPassword) {
-    Message.warning(t('login.passwordMismatch'))
+    MessagePlugin.warning(t('login.passwordMismatch'))
     return
   }
 
+  pwdSubmitting.value = true
   try {
     await changePasswordApi({
       oldPassword: pwdForm.oldPassword,
       newPassword: pwdForm.newPassword,
     })
-    Message.success(t('login.passwordChangeSuccess'))
+    MessagePlugin.success(t('login.passwordChangeSuccess'))
     pwdDialogVisible.value = false
     // 改密成功后后端已拉黑当前 token：再调登出接口必然 401，
     // 直接同步清理本地状态（token/用户信息/动态路由），避免与 401 处理互相竞争
@@ -314,7 +337,9 @@ async function onPwdSubmit() {
     router.push('/login')
   } catch (e) {
     const msg = (e as Error)?.message || '密码修改失败'
-    Message.error(msg)
+    MessagePlugin.error(msg)
+  } finally {
+    pwdSubmitting.value = false
   }
 }
 </script>
@@ -342,6 +367,10 @@ async function onPwdSubmit() {
   font-weight: 600;
   font-size: 16px;
   color: var(--wecom-text-primary);
+}
+.top-navbar__settings {
+  margin-left: var(--wecom-spacing-sm);
+  color: var(--wecom-text-tertiary);
 }
 .top-navbar__nav {
   display: flex;
@@ -377,38 +406,6 @@ async function onPwdSubmit() {
 }
 .top-navbar__arrow--open {
   transform: rotate(180deg);
-}
-.top-navbar__dropdown {
-  position: relative;
-}
-.top-navbar__dropdown-menu {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  min-width: 160px;
-  padding: 4px;
-  border: 1px solid var(--wecom-border);
-  border-radius: var(--wecom-radius-md);
-  background: var(--wecom-bg-card);
-  box-shadow: var(--wecom-shadow-md);
-  z-index: 1000;
-}
-.top-navbar__dropdown-item {
-  display: block;
-  padding: 8px 12px;
-  border-radius: var(--wecom-radius-sm);
-  font-size: 14px;
-  cursor: pointer;
-  color: var(--wecom-text-primary);
-  text-decoration: none;
-  white-space: nowrap;
-}
-.top-navbar__dropdown-item:hover {
-  background: var(--wecom-bg-hover);
-}
-.top-navbar__dropdown-item--active {
-  color: var(--wecom-primary);
-  background: var(--wecom-primary-light);
 }
 .top-navbar__right {
   display: flex;

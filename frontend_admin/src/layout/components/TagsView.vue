@@ -1,30 +1,28 @@
 <template>
   <div class="tags-view">
-    <div
-      v-for="tag in appStore.tagsList"
-      :key="tag.path"
-      class="tags-view__item"
-      :class="{ 'tags-view__item--active': tag.path === appStore.activeTag }"
-      @click="router.push(tag.path)"
+    <t-tabs
+      theme="card"
+      :value="appStore.activeTag"
+      @change="onChange"
+      @remove="onRemove"
     >
-      <span>{{ $t(getTagTitleKey(tag)) }}</span>
-      <span
-        v-if="!tag.affix"
-        class="tags-view__close"
-        @click.stop="onTagRemove(tag.path)"
-      >×</span>
-    </div>
+      <t-tab-panel
+        v-for="tag in appStore.tagsList"
+        :key="tag.path"
+        :value="tag.path"
+        :label="$t(getTagTitleKey(tag))"
+        :closable="!tag.affix"
+      />
+    </t-tabs>
   </div>
 </template>
 
 <script setup lang="ts">
 import { watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
 import type { TagItem } from '@/stores/app'
 
-const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const appStore = useAppStore()
@@ -61,7 +59,8 @@ function getTagTitleKey(tag: TagItem): string {
     'route.online', 'route.operLog', 'route.logininfor', 'route.jobs',
     'route.gen', 'route.profile', 'route.backup', 'route.roleDept']
   for (const k of knownKeys) {
-    if (t(k) === tag.title) return k
+    // getTagTitleKey 在模板中经 $t() 调用，此处直接返回原 key 或标题
+    if (knownKeys.includes(k) && tag.title === k) return k
   }
   return tag.title
 }
@@ -81,8 +80,17 @@ watch(
   { immediate: true }
 )
 
-function onTagRemove(path: string) {
-  const nextPath = appStore.closeTag(path)
+/** 切换标签 → 跳转路由 */
+function onChange(value: unknown) {
+  const path = value as string
+  if (path && path !== route.path) {
+    router.push(path)
+  }
+}
+
+/** 关闭标签（t-tabs @remove），affix 标签不可关闭不会触发 */
+function onRemove({ value }: { value: unknown }) {
+  const nextPath = appStore.closeTag(value as string)
   if (nextPath) {
     router.push(nextPath)
   }
@@ -91,43 +99,16 @@ function onTagRemove(path: string) {
 
 <style scoped>
 .tags-view {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 8px var(--wecom-spacing-xl);
   background: var(--wecom-bg-card);
   border-bottom: 1px solid var(--wecom-border);
+  padding: 0 var(--wecom-spacing-xl);
 }
 
-.tags-view__item {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px 12px;
+/* 对齐企微风格：标签条扁平、紧凑 */
+.tags-view :deep(.t-tabs__nav-item) {
   font-size: 12px;
-  color: var(--wecom-text-tertiary);
-  background: var(--wecom-bg-container);
-  border: 1px solid transparent;
-  border-radius: var(--wecom-radius-sm);
-  cursor: pointer;
-  user-select: none;
-  transition: color var(--wecom-transition-fast), background var(--wecom-transition-fast);
 }
-.tags-view__item:hover {
-  color: var(--wecom-text-secondary);
-  background: var(--wecom-bg-active);
-}
-.tags-view__item--active {
-  color: var(--wecom-primary);
-  background: var(--wecom-primary-light);
-}
-
-.tags-view__close {
-  font-size: 14px;
-  line-height: 1;
-  opacity: 0.5;
-}
-.tags-view__close:hover {
-  opacity: 1;
+.tags-view :deep(.t-tabs__content) {
+  display: none;
 }
 </style>
