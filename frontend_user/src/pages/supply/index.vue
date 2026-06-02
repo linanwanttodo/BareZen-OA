@@ -6,19 +6,19 @@
     </div>
 
     <!-- Tab：可申领 / 我的申领 -->
-    <a-tabs v-model:active-key="activeTab" class="mb-6" @change="onTabChange">
-      <a-tab-pane key="supply" :title="$t('supplyApply.available')" />
-      <a-tab-pane key="request" :title="$t('supplyApply.myRequests')" />
-    </a-tabs>
+    <t-tabs v-model:active-key="activeTab" class="mb-6" @change="onTabChange">
+      <t-tab-panel key="supply" :title="$t('supplyApply.available')" />
+      <t-tab-panel key="request" :title="$t('supplyApply.myRequests')" />
+    </t-tabs>
 
     <!-- 可申领用品 -->
     <div v-if="activeTab === 'supply'">
       <div class="mb-4 flex justify-end">
-        <a-input v-model="keyword" :placeholder="$t('supplyApply.searchPlaceholder')" allow-clear style="width: 100%; max-width: " @press-enter="loadSupplies" @clear="loadSupplies">
+        <t-input v-model="keyword" :placeholder="$t('supplyApply.searchPlaceholder')" allow-clear style="width: 100%; max-width: " @press-enter="loadSupplies" @clear="loadSupplies">
           <template #prefix><icon-search /></template>
-        </a-input>
+        </t-input>
       </div>
-      <a-spin :loading="supplyLoading">
+      <t-loading :loading="supplyLoading">
         <div v-if="supplies.length" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <div v-for="item in supplies" :key="item.id" class="rounded-wecom-md border border-[var(--wecom-border)] bg-[var(--wecom-bg-card)] p-5">
             <div class="flex items-start justify-between">
@@ -26,28 +26,28 @@
                 <h3 class="font-semibold text-[var(--foreground)]">{{ item.supplyName }}</h3>
                 <p class="mt-1 text-xs text-[var(--muted-foreground)]">{{ item.spec || '-' }} · {{ item.unit }}</p>
               </div>
-              <a-tag color="blue">{{ item.stock }} {{ item.unit }}</a-tag>
+              <t-tag color="blue">{{ item.stock }} {{ item.unit }}</t-tag>
             </div>
             <div class="mt-4 flex items-center gap-2">
-              <a-input-number v-model="applyQuantities[item.id]" :min="1" :max="item.stock" style="width: 120px" />
-              <a-button type="primary" :disabled="!item.stock" @click="openApply(item)">
+              <t-input-number v-model="applyQuantities[item.id]" :min="1" :max="item.stock" style="width: 120px" />
+              <t-button theme="primary" :disabled="!item.stock" @click="openApply(item)">
                 {{ $t('supplyApply.apply') }}
-              </a-button>
+              </t-button>
             </div>
           </div>
         </div>
-        <a-empty v-else :description="$t('supplyApply.noSupply')" />
-      </a-spin>
+        <t-empty v-else :description="$t('supplyApply.noSupply')" />
+      </t-loading>
     </div>
 
     <!-- 我的申领 -->
     <div v-else>
-      <a-spin :loading="requestLoading">
+      <t-loading :loading="requestLoading">
         <div v-if="requests.length" class="space-y-3">
           <div v-for="item in requests" :key="item.id" class="flex items-start gap-4 rounded-wecom-md border border-[var(--wecom-border)] bg-[var(--wecom-bg-card)] p-5">
             <div class="min-w-0 flex-1">
               <div class="mb-1 flex items-center gap-2">
-                <a-tag :color="statusColor(item.status)">{{ statusText(item.status) }}</a-tag>
+                <t-tag :color="statusColor(item.status)">{{ statusText(item.status) }}</t-tag>
                 <span class="font-medium text-[var(--foreground)]">{{ item.supplyName }} × {{ item.quantity }}</span>
               </div>
               <p v-if="item.reason" class="text-sm text-[var(--muted-foreground)]">{{ item.reason }}</p>
@@ -55,50 +55,50 @@
                 {{ $t('supplyApply.approveRemark') }}：{{ item.approveRemark }}
               </p>
             </div>
-            <a-button v-if="item.status === '0'" size="small" status="danger" @click="handleRevoke(item)">
+            <t-button v-if="item.status === '0'" size="small" theme="danger" @click="handleRevoke(item)">
               {{ $t('supplyApply.revoke') }}
-            </a-button>
-            <a-button size="small" @click="openFlow(item.id)">{{ $t('supplyApply.flow') }}</a-button>
+            </t-button>
+            <t-button size="small" @click="openFlow(item.id)">{{ $t('supplyApply.flow') }}</t-button>
           </div>
         </div>
-        <a-empty v-else :description="$t('supplyApply.noRequest')" />
-      </a-spin>
+        <t-empty v-else :description="$t('supplyApply.noRequest')" />
+      </t-loading>
     </div>
 
     <!-- 流程进度弹窗 -->
-    <a-modal v-model:visible="flowVisible" :title="$t('supplyApply.flow')" :width="520" footer-only>
-      <a-steps v-if="flowNodes.length" direction="vertical" :current="currentStep">
-        <a-step
+    <t-dialog v-model="flowVisible" :title="$t('supplyApply.flow')" :width="520" footer-only>
+      <t-steps v-if="flowNodes.length" direction="vertical" :current="currentStep">
+        <t-step-item
           v-for="node in flowNodes"
           :key="node.id"
           :title="node.nodeName"
           :description="`${node.operatorName || '-'} · ${node.createTime}${node.remark ? ' · ' + node.remark : ''}`"
         />
-      </a-steps>
-      <a-empty v-else :description="$t('supplyApply.flowEmpty')" />
-    </a-modal>
+      </t-steps>
+      <t-empty v-else :description="$t('supplyApply.flowEmpty')" />
+    </t-dialog>
 
     <!-- 申领弹窗 -->
-    <a-modal v-model:visible="applyVisible" :title="$t('supplyApply.apply')" :width="480"
-             @ok="handleSubmit" @cancel="applyVisible = false" :ok-loading="submitting">
-      <a-form :model="applyForm" layout="vertical">
-        <a-form-item :label="$t('supplyApply.supplyName')">
-          <a-input :model-value="applyForm.supplyName" disabled />
-        </a-form-item>
-        <a-form-item :label="$t('supplyApply.quantity')" required>
-          <a-input-number v-model="applyForm.quantity" :min="1" :max="applyForm.maxStock" style="width: 100%" />
-        </a-form-item>
-        <a-form-item :label="$t('supplyApply.reason')">
-          <a-textarea v-model="applyForm.reason" :placeholder="$t('common.inputPlaceholder')" :max-length="500" show-word-limit />
-        </a-form-item>
-      </a-form>
-    </a-modal>
+    <t-dialog v-model="applyVisible" :title="$t('supplyApply.apply')" :width="480"
+             @confirm="handleSubmit" @cancel="applyVisible = false" :ok-loading="submitting">
+      <t-form :model="applyForm" layout="vertical">
+        <t-form-item :label="$t('supplyApply.supplyName')">
+          <t-input :model-value="applyForm.supplyName" disabled />
+        </t-form-item>
+        <t-form-item :label="$t('supplyApply.quantity')" required>
+          <t-input-number v-model="applyForm.quantity" :min="1" :max="applyForm.maxStock" style="width: 100%" />
+        </t-form-item>
+        <t-form-item :label="$t('supplyApply.reason')">
+          <t-textarea v-model="applyForm.reason" :placeholder="$t('common.inputPlaceholder')" :max-length="500" show-word-limit />
+        </t-form-item>
+      </t-form>
+    </t-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
-import { Message } from '@arco-design/web-vue'
+import { MessagePlugin as Message } from 'tdesign-vue-next'
 import {
   getSuppliesApi, getMySupplyRequestsApi, submitSupplyRequestApi, revokeSupplyRequestApi,
   getFlowLogsApi,

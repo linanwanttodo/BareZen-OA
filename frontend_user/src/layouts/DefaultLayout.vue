@@ -20,7 +20,7 @@
           {{ item.title }}
         </a>
 
-        <a-dropdown
+        <t-dropdown
           v-for="group in dropdownGroups"
           :key="group.title"
           trigger="hover"
@@ -35,35 +35,35 @@
             <ChevronDown :size="14" class="user-header__nav-group-icon" />
           </div>
           <template #content>
-            <a-doption v-for="child in group.children" :key="child.path" @click="router.push(child.path)">
+            <t-dropdown-item v-for="child in group.children" :key="child.path" @click="router.push(child.path)">
               {{ child.title }}
-            </a-doption>
+            </t-dropdown-item>
           </template>
-        </a-dropdown>
+        </t-dropdown>
       </nav>
 
       <!-- 右侧：消息铃铛 + 用户信息 -->
       <div class="user-header__right">
         <template v-if="userStore.token">
           <div class="user-header__bell" title="消息中心" @click="router.push('/messages')">
-            <a-badge :count="unreadCount" :max-count="99" :offset="[2, -2]">
+            <t-badge :count="unreadCount" :max-count="99" :offset="[2, -2]">
               <icon-notification :size="18" />
-            </a-badge>
+            </t-badge>
           </div>
-          <a-dropdown>
+          <t-dropdown>
             <div class="user-header__user">
               <div class="user-header__avatar">{{ userInitial }}</div>
               <span class="user-header__username">{{ nickName }}</span>
             </div>
             <template #content>
-              <a-doption @click="router.push('/user/profile')">个人中心</a-doption>
-              <a-doption @click="pwdDialogVisible = true">修改密码</a-doption>
-              <a-doption @click="onLogout" status="danger">退出登录</a-doption>
+              <t-dropdown-item @click="router.push('/user/profile')">个人中心</t-dropdown-item>
+              <t-dropdown-item @click="pwdDialogVisible = true">修改密码</t-dropdown-item>
+              <t-dropdown-item @click="onLogout" status="danger">退出登录</t-dropdown-item>
             </template>
-          </a-dropdown>
+          </t-dropdown>
         </template>
         <template v-else>
-          <a-button type="primary" size="small" @click="router.push('/auth/login')">登录</a-button>
+          <t-button theme="primary" size="small" @click="router.push('/auth/login')">登录</t-button>
         </template>
       </div>
     </header>
@@ -85,21 +85,21 @@
     </footer>
 
     <!-- 修改密码弹窗 -->
-    <a-modal
-      v-model:visible="pwdDialogVisible"
-      title="修改密码"
+    <t-dialog
+      v-model="pwdDialogVisible"
+      header="修改密码"
       :width="400"
       :mask-closable="false"
-      @ok="onPwdSubmit"
+      @confirm="onPwdSubmit"
       @cancel="pwdDialogVisible = false"
     >
-      <a-form :model="pwdForm" layout="vertical">
-        <a-form-item field="oldPassword" label="旧密码">
-          <a-input-password v-model="pwdForm.oldPassword" placeholder="请输入旧密码" />
-        </a-form-item>
-        <a-form-item field="newPassword" label="新密码">
-          <a-input-password v-model="pwdForm.newPassword" placeholder="请输入新密码" />
-        </a-form-item>
+      <t-form :model="pwdForm" layout="vertical">
+        <t-form-item field="oldPassword" label="旧密码">
+          <t-input v-model="pwdForm.oldPassword" placeholder="请输入旧密码" />
+        </t-form-item>
+        <t-form-item field="newPassword" label="新密码">
+          <t-input v-model="pwdForm.newPassword" placeholder="请输入新密码" />
+        </t-form-item>
         <!-- 密码强度指示条（仿大型网站） -->
         <div v-if="pwdForm.newPassword" class="-mt-2 mb-2">
           <div class="flex gap-1">
@@ -121,20 +121,19 @@
             <span>{{ rule.label }}</span>
           </p>
         </div>
-        <a-form-item field="confirmPassword" label="确认新密码">
-          <a-input-password v-model="pwdForm.confirmPassword" placeholder="请再次输入新密码" />
-        </a-form-item>
-      </a-form>
-    </a-modal>
+        <t-form-item field="confirmPassword" label="确认新密码">
+          <t-input v-model="pwdForm.confirmPassword" placeholder="请再次输入新密码" />
+        </t-form-item>
+      </t-form>
+    </t-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, ref, reactive, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { Message } from '@arco-design/web-vue'
+import { MessagePlugin as Message } from 'tdesign-vue-next'
 import { ChevronDown } from 'lucide-vue-next'
-import { IconNotification, IconCheck, IconMinus } from '@arco-design/web-vue/es/icon'
 import { useUserStore } from '@/stores/user'
 import { changePasswordApi } from '@/api/auth'
 import { getUnreadCountApi } from '@/api/message'

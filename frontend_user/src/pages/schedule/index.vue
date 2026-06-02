@@ -5,24 +5,24 @@
         <h1 class="text-xl font-semibold text-[var(--wecom-text-primary)]">{{ $t('schedule.title') }}</h1>
         <p class="mt-1 text-sm text-[var(--muted-foreground)]">{{ $t('schedule.subtitle') }}</p>
       </div>
-      <a-button type="primary" @click="openAdd">
+      <t-button theme="primary" @click="openAdd">
         <template #icon><icon-plus /></template>
         {{ $t('schedule.add') }}
-      </a-button>
+      </t-button>
     </div>
 
     <!-- 状态筛选 -->
     <div class="mb-6">
-      <a-radio-group v-model="statusFilter" type="button" @change="loadSchedules">
-        <a-radio :value="''">{{ $t('schedule.all') }}</a-radio>
-        <a-radio value="0">{{ $t('schedule.statusTodo') }}</a-radio>
-        <a-radio value="1">{{ $t('schedule.statusOngoing') }}</a-radio>
-        <a-radio value="2">{{ $t('schedule.statusDone') }}</a-radio>
-      </a-radio-group>
+      <t-radio-group v-model="statusFilter" variant="default-filled" @change="loadSchedules">
+        <t-radio :value="''">{{ $t('schedule.all') }}</t-radio>
+        <t-radio value="0">{{ $t('schedule.statusTodo') }}</t-radio>
+        <t-radio value="1">{{ $t('schedule.statusOngoing') }}</t-radio>
+        <t-radio value="2">{{ $t('schedule.statusDone') }}</t-radio>
+      </t-radio-group>
     </div>
 
     <!-- 日程列表 -->
-    <a-spin :loading="loading">
+    <t-loading :loading="loading">
       <div v-if="schedules.length" class="space-y-3">
         <div
           v-for="item in schedules"
@@ -37,61 +37,64 @@
           <div class="min-w-0 flex-1">
             <div class="mb-1 flex items-center gap-2">
               <h3 class="font-semibold text-[var(--foreground)]" :class="{ 'line-through': item.status === '2' }">{{ item.title }}</h3>
-              <a-tag :color="statusColor(item.status)" size="small">{{ statusLabel(item.status) }}</a-tag>
-              <a-tag v-if="item.location" size="small">{{ $t('schedule.locationLabel') }}：{{ item.location }}</a-tag>
+              <t-tag :color="statusColor(item.status)" size="small">{{ statusLabel(item.status) }}</t-tag>
+              <t-tag v-if="item.location" size="small">{{ $t('schedule.locationLabel') }}：{{ item.location }}</t-tag>
             </div>
             <p v-if="item.description" class="text-sm text-[var(--muted-foreground)]">{{ item.description }}</p>
             <p v-if="item.remindTime" class="mt-1 text-xs text-[var(--bz-warning)]">{{ $t('schedule.remind') }}：{{ item.remindTime }}</p>
           </div>
           <div class="flex shrink-0 items-center gap-2">
-            <a-button v-if="item.status === '0'" size="small" type="primary" @click="markDone(item)">
+            <t-button v-if="item.status === '0'" size="small" theme="primary" @click="markDone(item)">
               {{ $t('schedule.done') }}
-            </a-button>
-            <a-button size="small" @click="openEdit(item)">{{ $t('schedule.edit') }}</a-button>
-            <a-popconfirm :content="$t('schedule.deleteConfirm')" @ok="handleDelete(item)">
-              <a-button size="small" status="danger">{{ $t('schedule.delete') }}</a-button>
-            </a-popconfirm>
+            </t-button>
+            <t-button size="small" @click="openEdit(item)">{{ $t('schedule.edit') }}</t-button>
+            <t-popconfirm :content="$t('schedule.deleteConfirm')" @confirm="handleDelete(item)">
+              <t-button size="small" theme="danger">{{ $t('schedule.delete') }}</t-button>
+            </t-popconfirm>
           </div>
         </div>
       </div>
-      <a-empty v-else :description="$t('schedule.noData')" />
-    </a-spin>
+      <t-empty v-else :description="$t('schedule.noData')" />
+    </t-loading>
 
     <!-- 新增/编辑弹窗 -->
-    <a-modal v-model:visible="dialogVisible" :title="isEdit ? $t('schedule.edit') : $t('schedule.add')"
-             :width="560" @ok="handleSave" @cancel="dialogVisible = false" :ok-loading="saving">
-      <a-form :model="form" layout="vertical">
-        <a-form-item :label="$t('schedule.titleLabel')" required>
-          <a-input v-model="form.title" :placeholder="$t('common.inputPlaceholder')" />
-        </a-form-item>
-        <a-form-item :label="$t('schedule.timeRange')" required>
-          <a-date-picker v-model="form.startTime" show-time value-format="YYYY-MM-DD HH:mm" style="width: 100%; max-width: " :placeholder="$t('schedule.startTime')" />
+    <t-dialog v-model="dialogVisible" :title="isEdit ? $t('schedule.edit') : $t('schedule.add')"
+             :width="560" @confirm="handleSave" @cancel="dialogVisible = false" :ok-loading="saving">
+      <t-form :model="form" layout="vertical">
+        <t-form-item :label="$t('schedule.titleLabel')" required>
+          <t-input v-model="form.title" :placeholder="$t('common.inputPlaceholder')" />
+        </t-form-item>
+        <t-form-item :label="$t('schedule.timeRange')" required>
+          
+<!-- TODO(date-picker): 核对返回值格式（原 Arco 为字符串） --><t-date-picker v-model="form.startTime" show-time value-format="YYYY-MM-DD HH:mm" style="width: 100%; max-width: " :placeholder="$t('schedule.startTime')" />
           <span class="mx-2">~</span>
-          <a-date-picker v-model="form.endTime" show-time value-format="YYYY-MM-DD HH:mm" style="width: 100%; max-width: " :placeholder="$t('schedule.endTime')" />
-        </a-form-item>
-        <a-row :gutter="16">
-          <a-col :span="12">
-            <a-form-item :label="$t('schedule.remind')">
-              <a-date-picker v-model="form.remindTime" show-time value-format="YYYY-MM-DD HH:mm" style="width: 100%" :placeholder="$t('schedule.remindPlaceholder')" />
-            </a-form-item>
-          </a-col>
-          <a-col :span="12">
-            <a-form-item :label="$t('schedule.locationLabel')">
-              <a-input v-model="form.location" :placeholder="$t('common.inputPlaceholder')" />
-            </a-form-item>
-          </a-col>
-        </a-row>
-        <a-form-item :label="$t('schedule.descLabel')">
-          <a-textarea v-model="form.description" :placeholder="$t('common.inputPlaceholder')" :max-length="1000" show-word-limit />
-        </a-form-item>
-      </a-form>
-    </a-modal>
+          
+<!-- TODO(date-picker): 核对返回值格式（原 Arco 为字符串） --><t-date-picker v-model="form.endTime" show-time value-format="YYYY-MM-DD HH:mm" style="width: 100%; max-width: " :placeholder="$t('schedule.endTime')" />
+        </t-form-item>
+        <t-row :gutter="16">
+          <t-col :span="12">
+            <t-form-item :label="$t('schedule.remind')">
+              
+<!-- TODO(date-picker): 核对返回值格式（原 Arco 为字符串） --><t-date-picker v-model="form.remindTime" show-time value-format="YYYY-MM-DD HH:mm" style="width: 100%" :placeholder="$t('schedule.remindPlaceholder')" />
+            </t-form-item>
+          </t-col>
+          <t-col :span="12">
+            <t-form-item :label="$t('schedule.locationLabel')">
+              <t-input v-model="form.location" :placeholder="$t('common.inputPlaceholder')" />
+            </t-form-item>
+          </t-col>
+        </t-row>
+        <t-form-item :label="$t('schedule.descLabel')">
+          <t-textarea v-model="form.description" :placeholder="$t('common.inputPlaceholder')" :max-length="1000" show-word-limit />
+        </t-form-item>
+      </t-form>
+    </t-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
-import { Message } from '@arco-design/web-vue'
+import { MessagePlugin as Message } from 'tdesign-vue-next'
 import { getMySchedulesApi, addScheduleApi, updateScheduleApi, deleteScheduleApi, type Schedule } from '@/api/enterprise'
 
 const loading = ref(false)

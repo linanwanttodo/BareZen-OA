@@ -5,23 +5,23 @@
         <h1 class="text-xl font-semibold text-[var(--wecom-text-primary)]">{{ $t('message.title') }}</h1>
         <p class="mt-1 text-sm text-[var(--muted-foreground)]">{{ $t('message.subtitle') }}</p>
       </div>
-      <a-button type="primary" :disabled="unreadCount === 0" @click="onMarkAllRead">
+      <t-button theme="primary" :disabled="unreadCount === 0" @click="onMarkAllRead">
         <template #icon><icon-check-circle /></template>
         {{ $t('message.markAllRead') }}
-      </a-button>
+      </t-button>
     </div>
 
     <!-- 已读/未读筛选 -->
     <div class="mb-6">
-      <a-radio-group v-model="readFilter" type="button" @change="onReadFilter">
-        <a-radio :value="undefined">{{ $t('message.all') }}</a-radio>
-        <a-radio :value="0">{{ $t('message.unread') }}（{{ unreadCount }}）</a-radio>
-        <a-radio :value="1">{{ $t('message.read') }}</a-radio>
-      </a-radio-group>
+      <t-radio-group v-model="readFilter" variant="default-filled" @change="onReadFilter">
+        <t-radio :value="undefined">{{ $t('message.all') }}</t-radio>
+        <t-radio :value="0">{{ $t('message.unread') }}（{{ unreadCount }}）</t-radio>
+        <t-radio :value="1">{{ $t('message.read') }}</t-radio>
+      </t-radio-group>
     </div>
 
     <!-- 消息列表 -->
-    <a-spin :loading="loading">
+    <t-loading :loading="loading">
       <div v-if="messages.length" class="space-y-3">
         <div
           v-for="msg in messages"
@@ -38,7 +38,7 @@
             <h3 class="min-w-0 flex-1 truncate font-semibold text-[var(--foreground)]" :class="{ 'opacity-70': msg.isRead === 1 }">
               {{ msg.title }}
             </h3>
-            <a-tag :color="msgTypeColor(msg.msgType)" size="small">{{ msgTypeLabel(msg.msgType) }}</a-tag>
+            <t-tag :color="msgTypeColor(msg.msgType)" size="small">{{ msgTypeLabel(msg.msgType) }}</t-tag>
             <span class="shrink-0 text-xs text-[var(--muted-foreground)]">{{ formatDate(msg.createTime) }}</span>
           </div>
           <p class="line-clamp-2 pl-4 text-sm text-[var(--muted-foreground)]" :class="{ 'opacity-60': msg.isRead === 1 }">
@@ -46,12 +46,12 @@
           </p>
         </div>
       </div>
-      <a-empty v-else :description="$t('message.noData')" />
-    </a-spin>
+      <t-empty v-else :description="$t('message.noData')" />
+    </t-loading>
 
     <!-- 分页 -->
     <div v-if="total > pageSize" class="mt-6 flex justify-end">
-      <a-pagination
+      <t-pagination
         v-model:current="currentPage"
         :total="total"
         :page-size="pageSize"
@@ -66,8 +66,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { Message } from '@arco-design/web-vue'
-import { IconCheckCircle } from '@arco-design/web-vue/es/icon'
+import { MessagePlugin as Message } from 'tdesign-vue-next'
 import { getMyMessagesApi, getUnreadCountApi, markMessageReadApi, markAllMessagesReadApi } from '@/api/message'
 import type { SysMessage } from '@/types/api'
 import { formatDate } from '@/utils/format'

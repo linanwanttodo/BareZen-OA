@@ -32,34 +32,33 @@
     </Card>
 
     <!-- 编辑资料对话框 -->
-    <a-modal v-model:visible="showEditDialog" :title="$t('profile.editProfile')" @ok="onEditSubmit" @cancel="showEditDialog = false">
-      <a-form :model="editForm" auto-label-width>
-        <a-form-item field="nickName" :label="$t('profile.nickName')" :rules="[{ required: true, message: '请输入昵称' }]">
-          <a-input v-model="editForm.nickName" placeholder="请输入昵称" />
-        </a-form-item>
-        <a-form-item field="sex" :label="$t('profile.sex')">
-          <a-radio-group v-model="editForm.sex">
-            <a-radio value="0">{{ $t('profile.male') }}</a-radio>
-            <a-radio value="1">{{ $t('profile.female') }}</a-radio>
-            <a-radio value="2">{{ $t('profile.unknown') }}</a-radio>
-          </a-radio-group>
-        </a-form-item>
-        <a-form-item field="email" :label="$t('profile.email')">
-          <a-input v-model="editForm.email" placeholder="请输入邮箱" />
-        </a-form-item>
-        <a-form-item field="phone" :label="$t('profile.phone')">
-          <a-input v-model="editForm.phone" placeholder="请输入手机号" />
-        </a-form-item>
-      </a-form>
-    </a-modal>
+    <t-dialog v-model="showEditDialog" :title="$t('profile.editProfile')" @confirm="onEditSubmit" @cancel="showEditDialog = false">
+      <t-form :model="editForm" auto-label-width>
+        <t-form-item field="nickName" :label="$t('profile.nickName')" :rules="[{ required: true, message: '请输入昵称' }]">
+          <t-input v-model="editForm.nickName" placeholder="请输入昵称" />
+        </t-form-item>
+        <t-form-item field="sex" :label="$t('profile.sex')">
+          <t-radio-group v-model="editForm.sex">
+            <t-radio value="0">{{ $t('profile.male') }}</t-radio>
+            <t-radio value="1">{{ $t('profile.female') }}</t-radio>
+            <t-radio value="2">{{ $t('profile.unknown') }}</t-radio>
+          </t-radio-group>
+        </t-form-item>
+        <t-form-item field="email" :label="$t('profile.email')">
+          <t-input v-model="editForm.email" placeholder="请输入邮箱" />
+        </t-form-item>
+        <t-form-item field="phone" :label="$t('profile.phone')">
+          <t-input v-model="editForm.phone" placeholder="请输入手机号" />
+        </t-form-item>
+      </t-form>
+    </t-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, ref, reactive, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Message } from '@arco-design/web-vue'
-import { IconEdit } from '@arco-design/web-vue/es/icon'
+import { MessagePlugin as Message } from 'tdesign-vue-next'
 import { useUserStore } from '@/stores/user'
 import { updateProfileApi } from '@/api/enterprise'
 

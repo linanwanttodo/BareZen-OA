@@ -1,17 +1,17 @@
 <template>
   <div class="mx-auto max-w-4xl px-6 py-8">
     <div class="mb-6 flex items-center gap-4">
-      <a-button size="small" @click="router.back()">
+      <t-button size="small" @click="router.back()">
         <template #icon><icon-left /></template>
         返回
-      </a-button>
+      </t-button>
       <h1 class="text-xl font-semibold text-[var(--wecom-text-primary)]">{{ $t('message.detail') }}</h1>
     </div>
 
-    <a-spin :loading="loading">
+    <t-loading :loading="loading">
       <div v-if="message" class="rounded-wecom-md border border-[var(--wecom-border)] bg-[var(--wecom-bg-card)] p-6">
         <div class="mb-4 flex items-center gap-2">
-          <a-tag :color="tagColor" size="small">{{ tagLabel }}</a-tag>
+          <t-tag :color="tagColor" size="small">{{ tagLabel }}</t-tag>
           <span class="text-xs text-[var(--muted-foreground)]">{{ formatDate(message.createTime) }}</span>
           <span v-if="message.isRead === 1" class="text-xs text-[var(--muted-foreground)]">{{ $t('message.read') }}</span>
           <span v-else class="text-xs text-[var(--primary)]">{{ $t('message.unread') }}</span>
@@ -19,8 +19,8 @@
         <h2 class="mb-4 text-xl font-semibold text-[var(--foreground)]">{{ message.title }}</h2>
         <div class="whitespace-pre-wrap text-sm leading-relaxed text-[var(--foreground)]">{{ message.content }}</div>
       </div>
-      <a-empty v-else-if="!loading" description="消息不存在" />
-    </a-spin>
+      <t-empty v-else-if="!loading" description="消息不存在" />
+    </t-loading>
   </div>
 </template>
 
@@ -28,8 +28,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { Message } from '@arco-design/web-vue'
-import { IconLeft } from '@arco-design/web-vue/es/icon'
+import { MessagePlugin as Message } from 'tdesign-vue-next'
 import { getMessageDetailApi } from '@/api/message'
 import type { SysMessage } from '@/types/api'
 import { formatDate } from '@/utils/format'

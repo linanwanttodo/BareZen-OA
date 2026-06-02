@@ -6,27 +6,27 @@
       <p class="mt-2 text-sm text-[var(--wecom-text-tertiary)]">登录你的企业账户</p>
     </div>
 
-    <a-form :model="formData" layout="vertical" @submit-success="onSubmit" class="space-y-2">
-      <a-form-item field="username" :label="$t('auth.username')" :rules="[{ required: true, message: '请输入用户名' }]">
-        <a-input
+    <t-form :model="formData" layout="vertical" @submit-success="onSubmit" class="space-y-2">
+      <t-form-item field="username" :label="$t('auth.username')" :rules="[{ required: true, message: '请输入用户名' }]">
+        <t-input
           v-model="formData.username"
           placeholder="请输入用户名"
           size="large"
           allow-clear
         />
-      </a-form-item>
+      </t-form-item>
 
-      <a-form-item field="password" :label="$t('auth.password')" :rules="[{ required: true, message: '请输入密码' }]">
-        <a-input-password
+      <t-form-item field="password" :label="$t('auth.password')" :rules="[{ required: true, message: '请输入密码' }]">
+        <t-input
           v-model="formData.password"
           placeholder="请输入密码"
           size="large"
         />
-      </a-form-item>
+      </t-form-item>
 
-      <a-form-item field="captchaCode" :label="$t('auth.captcha')" :rules="[{ required: true, message: '请输入验证码' }]">
+      <t-form-item field="captchaCode" :label="$t('auth.captcha')" :rules="[{ required: true, message: '请输入验证码' }]">
         <div class="flex items-center gap-3 w-full">
-          <a-input
+          <t-input
             v-model="formData.captchaCode"
             placeholder="请输入验证码"
             size="large"
@@ -42,20 +42,20 @@
             <span v-else class="text-xs text-[var(--wecom-text-tertiary)]">加载中</span>
           </div>
         </div>
-      </a-form-item>
+      </t-form-item>
 
-      <a-form-item class="!mb-0 mt-2">
-        <a-button
-          type="primary"
+      <t-form-item class="!mb-0 mt-2">
+        <t-button
+          theme="primary"
           html-type="submit"
           long
           size="large"
           :loading="loading"
         >
           {{ $t('auth.login') }}
-        </a-button>
-      </a-form-item>
-    </a-form>
+        </t-button>
+      </t-form-item>
+    </t-form>
 
     <div class="mt-6 text-center">
       <p class="text-xs text-[var(--muted-foreground)]">如需账号，请联系企业管理员</p>
@@ -69,7 +69,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useUserStore } from '@/stores/user'
 import { getCaptchaApi } from '@/api/auth'
-import { Message } from '@arco-design/web-vue'
+import { MessagePlugin as Message } from 'tdesign-vue-next'
 import { safeRedirect } from '@/utils/url'
 
 const { t } = useI18n()

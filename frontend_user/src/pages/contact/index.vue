@@ -8,7 +8,7 @@
     </div>
     <template v-else>
       <div class="mb-6">
-        <a-input v-model="keyword" :placeholder="$t('contact.searchPlaceholder')" @press-enter="onSearch" />
+        <t-input v-model="keyword" :placeholder="$t('contact.searchPlaceholder')" @press-enter="onSearch" />
       </div>
 
       <div v-if="contacts.length" class="space-y-3">
@@ -17,11 +17,11 @@
           :key="contact.userId"
           class="flex items-center gap-4 rounded-wecom-md border border-[var(--wecom-border)] bg-[var(--wecom-bg-card)] p-5"
         >
-          <a-avatar :style="{ background: 'var(--primary)' }" :size="48">{{ (contact.nickName || contact.userName || '?').charAt(0).toUpperCase() }}</a-avatar>
+          <t-avatar :style="{ background: 'var(--primary)' }" :size="48">{{ (contact.nickName || contact.userName || '?').charAt(0).toUpperCase() }}</t-avatar>
           <div class="min-w-0 flex-1">
             <div class="mb-1 flex flex-wrap items-center gap-2">
               <h3 class="font-semibold text-[var(--foreground)]">{{ contact.nickName || contact.userName }}</h3>
-              <a-tag v-for="role in contact.roleNames" :key="role">{{ role }}</a-tag>
+              <t-tag v-for="role in contact.roleNames" :key="role">{{ role }}</t-tag>
             </div>
             <p class="text-sm text-[var(--muted-foreground)]">@{{ contact.userName }}</p>
           </div>
@@ -37,10 +37,10 @@
           </div>
         </div>
       </div>
-      <a-empty v-else :description="$t('contact.noData')" />
+      <t-empty v-else :description="$t('contact.noData')" />
 
       <div v-if="total > pageSize" class="mt-6">
-        <a-pagination v-model:current="currentPage" :total="total" :page-size="pageSize" @change="loadContacts" />
+        <t-pagination v-model:current="currentPage" :total="total" :page-size="pageSize" @change="loadContacts" />
       </div>
     </template>
   </div>

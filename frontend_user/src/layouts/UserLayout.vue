@@ -6,7 +6,7 @@
         <img src="/logo.png" alt="BareZen" class="user-header__logo" />
         <span class="user-header__brand">BareZen</span>
       </div>
-      <a-button size="small" @click="router.push('/')">返回工作台</a-button>
+      <t-button size="small" @click="router.push('/')">返回工作台</t-button>
     </header>
 
     <!-- 主内容 -->

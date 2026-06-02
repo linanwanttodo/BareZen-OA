@@ -5,24 +5,24 @@
         <h1 class="text-xl font-semibold text-[var(--wecom-text-primary)]">{{ $t('todo.title') }}</h1>
         <p class="mt-1 text-sm text-[var(--muted-foreground)]">{{ $t('todo.subtitle') }}</p>
       </div>
-      <a-button type="primary" @click="openAddDialog">
+      <t-button theme="primary" @click="openAddDialog">
         <template #icon><icon-plus /></template>
         {{ $t('todo.add') }}
-      </a-button>
+      </t-button>
     </div>
 
     <!-- 状态筛选 -->
     <div class="mb-6">
-      <a-radio-group v-model="statusFilter" type="button" @change="onStatusFilter">
-        <a-radio :value="''">{{ $t('todo.all') }}</a-radio>
-        <a-radio :value="0">{{ $t('todo.statusTodo') }}</a-radio>
-        <a-radio :value="1">{{ $t('todo.statusInProgress') }}</a-radio>
-        <a-radio :value="2">{{ $t('todo.statusDone') }}</a-radio>
-      </a-radio-group>
+      <t-radio-group v-model="statusFilter" variant="default-filled" @change="onStatusFilter">
+        <t-radio :value="''">{{ $t('todo.all') }}</t-radio>
+        <t-radio :value="0">{{ $t('todo.statusTodo') }}</t-radio>
+        <t-radio :value="1">{{ $t('todo.statusInProgress') }}</t-radio>
+        <t-radio :value="2">{{ $t('todo.statusDone') }}</t-radio>
+      </t-radio-group>
     </div>
 
     <!-- 待办列表 -->
-    <a-spin :loading="loading">
+    <t-loading :loading="loading">
       <div v-if="todos.length" class="space-y-3">
         <div
           v-for="todo in todos"
@@ -31,13 +31,13 @@
           :class="{ 'opacity-60': todo.status === 2 || todo.status === 3 }"
         >
           <div class="mt-0.5 shrink-0">
-            <a-checkbox :model-value="todo.status === 2" @change="(checked: any) => onToggleDone(todo, checked as boolean)" />
+            <t-checkbox :model-value="todo.status === 2" @change="(checked: any) => onToggleDone(todo, checked as boolean)" />
           </div>
           <div class="min-w-0 flex-1">
             <div class="mb-1 flex items-center gap-2">
               <h3 class="font-semibold text-[var(--foreground)]" :class="{ 'line-through': todo.status === 2 }">{{ todo.title }}</h3>
-              <a-tag :color="priorityColor(todo.priority)" size="small">{{ priorityLabel(todo.priority) }}</a-tag>
-              <a-tag :color="statusColor(todo.status)" size="small">{{ statusLabel(todo.status) }}</a-tag>
+              <t-tag :color="priorityColor(todo.priority)" size="small">{{ priorityLabel(todo.priority) }}</t-tag>
+              <t-tag :color="statusColor(todo.status)" size="small">{{ statusLabel(todo.status) }}</t-tag>
             </div>
             <p v-if="todo.description" class="mb-2 line-clamp-2 text-sm text-[var(--muted-foreground)]">{{ todo.description }}</p>
             <div class="flex items-center gap-4 text-xs text-[var(--muted-foreground)]">
@@ -46,23 +46,23 @@
             </div>
           </div>
           <div class="flex items-center gap-1">
-            <a-button size="small" @click="openEditDialog(todo)">
+            <t-button size="small" @click="openEditDialog(todo)">
               <template #icon><icon-edit /></template>
-            </a-button>
-            <a-popconfirm :content="$t('todo.deleteConfirm')" @ok="onDelete(todo.id)">
-              <a-button size="small" status="danger">
+            </t-button>
+            <t-popconfirm :content="$t('todo.deleteConfirm')" @confirm="onDelete(todo.id)">
+              <t-button size="small" theme="danger">
                 <template #icon><icon-delete /></template>
-              </a-button>
-            </a-popconfirm>
+              </t-button>
+            </t-popconfirm>
           </div>
         </div>
       </div>
-      <a-empty v-else :description="$t('todo.noData')" />
-    </a-spin>
+      <t-empty v-else :description="$t('todo.noData')" />
+    </t-loading>
 
     <!-- 分页 -->
     <div v-if="total > pageSize" class="mt-6 flex justify-end">
-      <a-pagination
+      <t-pagination
         v-model:current="currentPage"
         :total="total"
         :page-size="pageSize"
@@ -72,56 +72,56 @@
     </div>
 
     <!-- 新增/编辑弹窗 -->
-    <a-modal
-      v-model:visible="dialogVisible"
+    <t-dialog
+      v-model="dialogVisible"
       :title="isEdit ? $t('todo.edit') : $t('todo.add')"
       :width="520"
       :mask-closable="false"
-      @ok="onSubmit"
+      @confirm="onSubmit"
       @cancel="dialogVisible = false"
     >
-      <a-form :model="formData" layout="vertical">
-        <a-form-item field="title" :label="$t('todo.titleLabel')" :rules="[{ required: true, message: t('todo.titleRequired') }]">
-          <a-input v-model="formData.title" :placeholder="$t('todo.titlePlaceholder')" />
-        </a-form-item>
-        <a-form-item field="description" :label="$t('todo.descriptionLabel')">
-          <a-textarea v-model="formData.description" :placeholder="$t('todo.descriptionPlaceholder')" />
-        </a-form-item>
-        <a-row :gutter="16">
-          <a-col :span="12">
-            <a-form-item field="priority" :label="$t('todo.priorityLabel')">
-              <a-select v-model="formData.priority">
-                <a-option :value="0">{{ $t('todo.priorityLow') }}</a-option>
-                <a-option :value="1">{{ $t('todo.priorityMedium') }}</a-option>
-                <a-option :value="2">{{ $t('todo.priorityHigh') }}</a-option>
-                <a-option :value="3">{{ $t('todo.priorityUrgent') }}</a-option>
-              </a-select>
-            </a-form-item>
-          </a-col>
-          <a-col :span="12">
-            <a-form-item field="status" :label="$t('todo.statusLabel')">
-              <a-select v-model="formData.status">
-                <a-option :value="0">{{ $t('todo.statusTodo') }}</a-option>
-                <a-option :value="1">{{ $t('todo.statusInProgress') }}</a-option>
-                <a-option :value="2">{{ $t('todo.statusDone') }}</a-option>
-                <a-option :value="3">{{ $t('todo.statusCancelled') }}</a-option>
-              </a-select>
-            </a-form-item>
-          </a-col>
-        </a-row>
-        <a-form-item field="dueDate" :label="$t('todo.dueDateLabel')">
-          <a-date-picker v-model="formData.dueDate" style="width: 100%" />
-        </a-form-item>
-      </a-form>
-    </a-modal>
+      <t-form :model="formData" layout="vertical">
+        <t-form-item field="title" :label="$t('todo.titleLabel')" :rules="[{ required: true, message: t('todo.titleRequired') }]">
+          <t-input v-model="formData.title" :placeholder="$t('todo.titlePlaceholder')" />
+        </t-form-item>
+        <t-form-item field="description" :label="$t('todo.descriptionLabel')">
+          <t-textarea v-model="formData.description" :placeholder="$t('todo.descriptionPlaceholder')" />
+        </t-form-item>
+        <t-row :gutter="16">
+          <t-col :span="12">
+            <t-form-item field="priority" :label="$t('todo.priorityLabel')">
+              <t-select v-model="formData.priority">
+                <t-option :value="0">{{ $t('todo.priorityLow') }}</t-option>
+                <t-option :value="1">{{ $t('todo.priorityMedium') }}</t-option>
+                <t-option :value="2">{{ $t('todo.priorityHigh') }}</t-option>
+                <t-option :value="3">{{ $t('todo.priorityUrgent') }}</t-option>
+              </t-select>
+            </t-form-item>
+          </t-col>
+          <t-col :span="12">
+            <t-form-item field="status" :label="$t('todo.statusLabel')">
+              <t-select v-model="formData.status">
+                <t-option :value="0">{{ $t('todo.statusTodo') }}</t-option>
+                <t-option :value="1">{{ $t('todo.statusInProgress') }}</t-option>
+                <t-option :value="2">{{ $t('todo.statusDone') }}</t-option>
+                <t-option :value="3">{{ $t('todo.statusCancelled') }}</t-option>
+              </t-select>
+            </t-form-item>
+          </t-col>
+        </t-row>
+        <t-form-item field="dueDate" :label="$t('todo.dueDateLabel')">
+          
+<!-- TODO(date-picker): 核对返回值格式（原 Arco 为字符串） --><t-date-picker v-model="formData.dueDate" style="width: 100%" />
+        </t-form-item>
+      </t-form>
+    </t-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Message, Modal } from '@arco-design/web-vue'
-import { IconPlus, IconEdit, IconDelete } from '@arco-design/web-vue/es/icon'
+import { MessagePlugin as Message, DialogPlugin as Modal } from 'tdesign-vue-next'
 import { getTodoListApi, addTodoApi, updateTodoApi, deleteTodoApi } from '@/api/enterprise'
 import type { TodoItem } from '@/types/api'
 import { formatDate } from '@/utils/format'

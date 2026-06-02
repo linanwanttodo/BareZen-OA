@@ -18,17 +18,17 @@
           </div>
         </div>
         <div class="flex flex-col items-center gap-3 sm:flex-row">
-          <a-button
+          <t-button
             size="large"
-            type="primary"
+            theme="primary"
             class="min-w-32"
             :disabled="!!todayRecord?.clockInTime"
             :loading="submitting"
             @click="handleClockIn"
           >
             {{ $t('clock.clockIn') }}
-          </a-button>
-          <a-button
+          </t-button>
+          <t-button
             size="large"
             class="min-w-32"
             :disabled="!todayRecord?.clockInTime || !!todayRecord?.clockOutTime"
@@ -36,7 +36,7 @@
             @click="handleClockOut"
           >
             {{ $t('clock.clockOut') }}
-          </a-button>
+          </t-button>
         </div>
       </div>
 
@@ -70,14 +70,14 @@
       <div class="mb-5 flex items-center justify-between">
         <h2 class="text-lg font-semibold text-[var(--foreground)]">{{ $t('clock.monthly') }}</h2>
         <div class="flex items-center gap-2">
-          <a-button size="small" @click="shiftMonth(-1)" aria-label="prev-month">
+          <t-button size="small" @click="shiftMonth(-1)" aria-label="prev-month">
             <template #icon><icon-left /></template>
-          </a-button>
+          </t-button>
           <span class="w-24 text-center text-sm font-medium text-[var(--foreground)]">{{ monthLabel }}</span>
-          <a-button size="small" @click="shiftMonth(1)" aria-label="next-month">
+          <t-button size="small" @click="shiftMonth(1)" aria-label="next-month">
             <template #icon><icon-right /></template>
-          </a-button>
-          <a-button v-if="!isCurrentMonth" size="small" @click="backToCurrentMonth">{{ $t('clock.backToday') }}</a-button>
+          </t-button>
+          <t-button v-if="!isCurrentMonth" size="small" @click="backToCurrentMonth">{{ $t('clock.backToday') }}</t-button>
         </div>
       </div>
 
@@ -135,7 +135,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Message } from '@arco-design/web-vue'
+import { MessagePlugin as Message } from 'tdesign-vue-next'
 import { clockInApi, clockOutApi, getTodayClockApi, getMonthClockApi } from '@/api/clock'
 import type { AttClockRecord } from '@/types/api'
 

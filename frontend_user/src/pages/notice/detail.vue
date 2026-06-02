@@ -1,16 +1,16 @@
 <template>
   <div class="mx-auto max-w-4xl px-6 py-8">
-    <a-button type="text" size="small" class="mb-6" @click="router.push('/notices')">
+    <t-button variant="text" size="small" class="mb-6" @click="router.push('/notices')">
       <ChevronLeft :size="16" class="mr-1.5" />
       {{ $t('notice.backToList') }}
-    </a-button>
+    </t-button>
 
     <div v-if="notice" class="rounded-wecom-md border border-[var(--wecom-border)] bg-[var(--wecom-bg-card)] p-8">
       <div class="mb-6 border-b border-[var(--border)] pb-6">
         <div class="mb-3 flex items-center gap-2">
-          <a-tag :color="notice.noticeType === '1' ? 'arcoblue' : 'green'">
+          <t-tag :color="notice.noticeType === '1' ? 'arcoblue' : 'green'">
             {{ notice.noticeType === '1' ? $t('notice.typeNotice') : $t('notice.typeAnnouncement') }}
-          </a-tag>
+          </t-tag>
         </div>
         <h1 class="mb-4 text-xl font-semibold text-[var(--wecom-text-primary)]">{{ notice.noticeTitle }}</h1>
         <div class="flex items-center gap-4 text-sm text-[var(--muted-foreground)]">
@@ -19,7 +19,7 @@
       </div>
       <div class="prose max-w-none" v-html="sanitizeHtml(notice.noticeContent)"></div>
     </div>
-    <a-empty v-else :description="$t('notice.notFound')" />
+    <t-empty v-else :description="$t('notice.notFound')" />
   </div>
 </template>
 

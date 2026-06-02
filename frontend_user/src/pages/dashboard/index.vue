@@ -44,9 +44,9 @@
               @click="router.push(`/notices/${notice.id}`)"
             >
               <div class="flex items-center gap-3 min-w-0">
-                <a-tag :bordered="notice.noticeType === '1'" class="shrink-0 text-xs" color="arcoblue">
+                <t-tag :bordered="notice.noticeType === '1'" class="shrink-0 text-xs" theme="primary">
                   {{ notice.noticeType === '1' ? $t('notice.typeNotice') : $t('notice.typeAnnouncement') }}
-                </a-tag>
+                </t-tag>
                 <span class="truncate text-sm text-[var(--wecom-text-primary)]">{{ notice.noticeTitle }}</span>
               </div>
               <span class="shrink-0 text-xs text-[var(--wecom-text-tertiary)]">{{ formatShortDate(notice.createTime) }}</span>

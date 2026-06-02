@@ -8,55 +8,57 @@
     </div>
 
     <!-- Tab 切换 -->
-    <a-tabs v-model:active-key="activeTab" class="mb-6" @change="onTabChange">
-      <a-tab-pane key="leave" :title="$t('attendance.leave')" />
-      <a-tab-pane key="overtime" :title="$t('attendance.overtime')" />
-      <a-tab-pane key="travel" :title="$t('attendance.travel')" />
-    </a-tabs>
+    <t-tabs v-model:active-key="activeTab" class="mb-6" @change="onTabChange">
+      <t-tab-panel key="leave" :title="$t('attendance.leave')" />
+      <t-tab-panel key="overtime" :title="$t('attendance.overtime')" />
+      <t-tab-panel key="travel" :title="$t('attendance.travel')" />
+    </t-tabs>
 
     <div v-if="activeTab === 'leave'">
       <!-- 请假申请表单 -->
-      <a-card class="mb-6" :title="$t('attendance.applyLeave')">
-        <a-form :model="leaveForm" layout="vertical">
-          <a-row :gutter="16">
-            <a-col :span="8">
-              <a-form-item :label="$t('attendance.leaveType')" required>
-                <a-select v-model="leaveForm.leaveType" :placeholder="$t('common.selectPlaceholder')">
-                  <a-option value="annual">{{ $t('attendance.leaveTypeAnnual') }}</a-option>
-                  <a-option value="sick">{{ $t('attendance.leaveTypeSick') }}</a-option>
-                  <a-option value="personal">{{ $t('attendance.leaveTypePersonal') }}</a-option>
-                  <a-option value="overtime">{{ $t('attendance.leaveTypeOvertime') }}</a-option>
-                  <a-option value="marriage">{{ $t('attendance.leaveTypeMarriage') }}</a-option>
-                  <a-option value="maternity">{{ $t('attendance.leaveTypeMaternity') }}</a-option>
-                  <a-option value="other">{{ $t('attendance.leaveTypeOther') }}</a-option>
-                </a-select>
-              </a-form-item>
-            </a-col>
-            <a-col :span="16">
-              <a-form-item :label="$t('attendance.timeRange')" required>
-                <a-date-picker v-model="leaveForm.startTime" show-time style="width: 100%; max-width: " :placeholder="$t('attendance.startTime')" />
+      <t-card class="mb-6" :title="$t('attendance.applyLeave')">
+        <t-form :model="leaveForm" layout="vertical">
+          <t-row :gutter="16">
+            <t-col :span="8">
+              <t-form-item :label="$t('attendance.leaveType')" required>
+                <t-select v-model="leaveForm.leaveType" :placeholder="$t('common.selectPlaceholder')">
+                  <t-option value="annual">{{ $t('attendance.leaveTypeAnnual') }}</t-option>
+                  <t-option value="sick">{{ $t('attendance.leaveTypeSick') }}</t-option>
+                  <t-option value="personal">{{ $t('attendance.leaveTypePersonal') }}</t-option>
+                  <t-option value="overtime">{{ $t('attendance.leaveTypeOvertime') }}</t-option>
+                  <t-option value="marriage">{{ $t('attendance.leaveTypeMarriage') }}</t-option>
+                  <t-option value="maternity">{{ $t('attendance.leaveTypeMaternity') }}</t-option>
+                  <t-option value="other">{{ $t('attendance.leaveTypeOther') }}</t-option>
+                </t-select>
+              </t-form-item>
+            </t-col>
+            <t-col :span="16">
+              <t-form-item :label="$t('attendance.timeRange')" required>
+                
+<!-- TODO(date-picker): 核对返回值格式（原 Arco 为字符串） --><t-date-picker v-model="leaveForm.startTime" show-time style="width: 100%; max-width: " :placeholder="$t('attendance.startTime')" />
                 <span class="mx-2">~</span>
-                <a-date-picker v-model="leaveForm.endTime" show-time style="width: 100%; max-width: " :placeholder="$t('attendance.endTime')" />
-              </a-form-item>
-            </a-col>
-          </a-row>
-          <a-form-item :label="$t('attendance.reason')" required>
-            <a-textarea v-model="leaveForm.reason" :placeholder="$t('common.inputPlaceholder')" :max-length="500" show-word-limit />
-          </a-form-item>
-          <a-button type="primary" :loading="submitting" @click="handleSubmitLeave">
+                
+<!-- TODO(date-picker): 核对返回值格式（原 Arco 为字符串） --><t-date-picker v-model="leaveForm.endTime" show-time style="width: 100%; max-width: " :placeholder="$t('attendance.endTime')" />
+              </t-form-item>
+            </t-col>
+          </t-row>
+          <t-form-item :label="$t('attendance.reason')" required>
+            <t-textarea v-model="leaveForm.reason" :placeholder="$t('common.inputPlaceholder')" :max-length="500" show-word-limit />
+          </t-form-item>
+          <t-button theme="primary" :loading="submitting" @click="handleSubmitLeave">
             {{ $t('attendance.submit') }}
-          </a-button>
-        </a-form>
-      </a-card>
+          </t-button>
+        </t-form>
+      </t-card>
 
       <!-- 我的请假申请列表 -->
-      <a-card :title="$t('attendance.myLeaves')">
-        <a-spin :loading="leaveLoading">
+      <t-card :title="$t('attendance.myLeaves')">
+        <t-loading :loading="leaveLoading">
           <div v-if="leaves.length" class="space-y-3">
             <div v-for="item in leaves" :key="item.id" class="flex items-start gap-4 rounded-wecom-md border border-[var(--wecom-border)] bg-[var(--wecom-bg-card)] p-5">
               <div class="min-w-0 flex-1">
                 <div class="mb-1 flex items-center gap-2">
-                  <a-tag :color="statusColor(item.status)">{{ statusText(item.status) }}</a-tag>
+                  <t-tag :color="statusColor(item.status)">{{ statusText(item.status) }}</t-tag>
                   <span class="font-medium text-[var(--foreground)]">{{ leaveTypeText(item.leaveType) }}</span>
                   <span class="text-sm text-[var(--muted-foreground)]">{{ item.startTime }} ~ {{ item.endTime }}</span>
                 </div>
@@ -65,57 +67,60 @@
                   {{ $t('attendance.approveRemark') }}：{{ item.approveRemark }}
                 </p>
               </div>
-              <a-button v-if="item.status === '0'" size="small" status="danger" @click="handleRevokeLeave(item)">
+              <t-button v-if="item.status === '0'" size="small" theme="danger" @click="handleRevokeLeave(item)">
                 {{ $t('attendance.revoke') }}
-              </a-button>
-              <a-button size="small" @click="openFlow('leave', item.id)">{{ $t('attendance.flow') }}</a-button>
+              </t-button>
+              <t-button size="small" @click="openFlow('leave', item.id)">{{ $t('attendance.flow') }}</t-button>
             </div>
           </div>
-          <a-empty v-else :description="$t('attendance.noData')" />
-        </a-spin>
-      </a-card>
+          <t-empty v-else :description="$t('attendance.noData')" />
+        </t-loading>
+      </t-card>
     </div>
 
     <div v-if="activeTab === 'overtime'">
       <!-- 加班申请表单 -->
-      <a-card class="mb-6" :title="$t('attendance.applyOvertime')">
-        <a-form :model="overtimeForm" layout="vertical">
-          <a-row :gutter="16">
-            <a-col :span="12">
-              <a-form-item :label="$t('attendance.timeRange')" required>
-                <a-date-picker v-model="overtimeForm.startTime" show-time style="width: 100%; max-width: " :placeholder="$t('attendance.startTime')" />
+      <t-card class="mb-6" :title="$t('attendance.applyOvertime')">
+        <t-form :model="overtimeForm" layout="vertical">
+          <t-row :gutter="16">
+            <t-col :span="12">
+              <t-form-item :label="$t('attendance.timeRange')" required>
+                
+<!-- TODO(date-picker): 核对返回值格式（原 Arco 为字符串） --><t-date-picker v-model="overtimeForm.startTime" show-time style="width: 100%; max-width: " :placeholder="$t('attendance.startTime')" />
                 <span class="mx-2">~</span>
-                <a-date-picker v-model="overtimeForm.endTime" show-time style="width: 100%; max-width: " :placeholder="$t('attendance.endTime')" />
-              </a-form-item>
-            </a-col>
-            <a-col :span="6">
-              <a-form-item :label="$t('attendance.durationHours')">
-                <a-input-number v-model="overtimeForm.durationHours" :min="0.5" :step="0.5" style="width: 100%" />
-              </a-form-item>
-            </a-col>
-            <a-col :span="6">
-              <a-form-item :label="$t('attendance.overtimeDate')">
-                <a-date-picker v-model="overtimeForm.overtimeDate" style="width: 100%" />
-              </a-form-item>
-            </a-col>
-          </a-row>
-          <a-form-item :label="$t('attendance.reason')" required>
-            <a-textarea v-model="overtimeForm.reason" :placeholder="$t('common.inputPlaceholder')" :max-length="500" show-word-limit />
-          </a-form-item>
-          <a-button type="primary" :loading="submitting" @click="handleSubmitOvertime">
+                
+<!-- TODO(date-picker): 核对返回值格式（原 Arco 为字符串） --><t-date-picker v-model="overtimeForm.endTime" show-time style="width: 100%; max-width: " :placeholder="$t('attendance.endTime')" />
+              </t-form-item>
+            </t-col>
+            <t-col :span="6">
+              <t-form-item :label="$t('attendance.durationHours')">
+                <t-input-number v-model="overtimeForm.durationHours" :min="0.5" :step="0.5" style="width: 100%" />
+              </t-form-item>
+            </t-col>
+            <t-col :span="6">
+              <t-form-item :label="$t('attendance.overtimeDate')">
+                
+<!-- TODO(date-picker): 核对返回值格式（原 Arco 为字符串） --><t-date-picker v-model="overtimeForm.overtimeDate" style="width: 100%" />
+              </t-form-item>
+            </t-col>
+          </t-row>
+          <t-form-item :label="$t('attendance.reason')" required>
+            <t-textarea v-model="overtimeForm.reason" :placeholder="$t('common.inputPlaceholder')" :max-length="500" show-word-limit />
+          </t-form-item>
+          <t-button theme="primary" :loading="submitting" @click="handleSubmitOvertime">
             {{ $t('attendance.submit') }}
-          </a-button>
-        </a-form>
-      </a-card>
+          </t-button>
+        </t-form>
+      </t-card>
 
       <!-- 我的加班申请列表 -->
-      <a-card :title="$t('attendance.myOvertimes')">
-        <a-spin :loading="overtimeLoading">
+      <t-card :title="$t('attendance.myOvertimes')">
+        <t-loading :loading="overtimeLoading">
           <div v-if="overtimes.length" class="space-y-3">
             <div v-for="item in overtimes" :key="item.id" class="flex items-start gap-4 rounded-wecom-md border border-[var(--wecom-border)] bg-[var(--wecom-bg-card)] p-5">
               <div class="min-w-0 flex-1">
                 <div class="mb-1 flex items-center gap-2">
-                  <a-tag :color="statusColor(item.status)">{{ statusText(item.status) }}</a-tag>
+                  <t-tag :color="statusColor(item.status)">{{ statusText(item.status) }}</t-tag>
                   <span class="text-sm text-[var(--muted-foreground)]">{{ item.startTime }} ~ {{ item.endTime }}</span>
                   <span v-if="item.durationHours" class="text-sm text-[var(--muted-foreground)]">{{ item.durationHours }}h</span>
                 </div>
@@ -124,57 +129,59 @@
                   {{ $t('attendance.approveRemark') }}：{{ item.approveRemark }}
                 </p>
               </div>
-              <a-button v-if="item.status === '0'" size="small" status="danger" @click="handleRevokeOvertime(item)">
+              <t-button v-if="item.status === '0'" size="small" theme="danger" @click="handleRevokeOvertime(item)">
                 {{ $t('attendance.revoke') }}
-              </a-button>
-              <a-button size="small" @click="openFlow('overtime', item.id)">{{ $t('attendance.flow') }}</a-button>
+              </t-button>
+              <t-button size="small" @click="openFlow('overtime', item.id)">{{ $t('attendance.flow') }}</t-button>
             </div>
           </div>
-          <a-empty v-else :description="$t('attendance.noData')" />
-        </a-spin>
-      </a-card>
+          <t-empty v-else :description="$t('attendance.noData')" />
+        </t-loading>
+      </t-card>
     </div>
 
     <div v-else-if="activeTab === 'travel'">
       <!-- 出差申请表单 -->
-      <a-card class="mb-6" :title="$t('attendance.applyTravel')">
-        <a-form :model="travelForm" layout="vertical">
-          <a-row :gutter="16">
-            <a-col :span="12">
-              <a-form-item :label="$t('attendance.destination')" required>
-                <a-input v-model="travelForm.destination" :placeholder="$t('common.inputPlaceholder')" />
-              </a-form-item>
-            </a-col>
-            <a-col :span="12">
-              <a-form-item :label="$t('attendance.timeRange')" required>
-                <a-date-picker v-model="travelForm.startTime" show-time style="width: 100%; max-width: " :placeholder="$t('attendance.startTime')" />
+      <t-card class="mb-6" :title="$t('attendance.applyTravel')">
+        <t-form :model="travelForm" layout="vertical">
+          <t-row :gutter="16">
+            <t-col :span="12">
+              <t-form-item :label="$t('attendance.destination')" required>
+                <t-input v-model="travelForm.destination" :placeholder="$t('common.inputPlaceholder')" />
+              </t-form-item>
+            </t-col>
+            <t-col :span="12">
+              <t-form-item :label="$t('attendance.timeRange')" required>
+                
+<!-- TODO(date-picker): 核对返回值格式（原 Arco 为字符串） --><t-date-picker v-model="travelForm.startTime" show-time style="width: 100%; max-width: " :placeholder="$t('attendance.startTime')" />
                 <span class="mx-2">~</span>
-                <a-date-picker v-model="travelForm.endTime" show-time style="width: 100%; max-width: " :placeholder="$t('attendance.endTime')" />
-              </a-form-item>
-            </a-col>
-            <a-col :span="6">
-              <a-form-item :label="$t('attendance.days')">
-                <a-input-number v-model="travelForm.days" :min="0.5" :step="0.5" style="width: 100%" />
-              </a-form-item>
-            </a-col>
-          </a-row>
-          <a-form-item :label="$t('attendance.purpose')" required>
-            <a-textarea v-model="travelForm.purpose" :placeholder="$t('common.inputPlaceholder')" :max-length="500" show-word-limit />
-          </a-form-item>
-          <a-button type="primary" :loading="submitting" @click="handleSubmitTravel">
+                
+<!-- TODO(date-picker): 核对返回值格式（原 Arco 为字符串） --><t-date-picker v-model="travelForm.endTime" show-time style="width: 100%; max-width: " :placeholder="$t('attendance.endTime')" />
+              </t-form-item>
+            </t-col>
+            <t-col :span="6">
+              <t-form-item :label="$t('attendance.days')">
+                <t-input-number v-model="travelForm.days" :min="0.5" :step="0.5" style="width: 100%" />
+              </t-form-item>
+            </t-col>
+          </t-row>
+          <t-form-item :label="$t('attendance.purpose')" required>
+            <t-textarea v-model="travelForm.purpose" :placeholder="$t('common.inputPlaceholder')" :max-length="500" show-word-limit />
+          </t-form-item>
+          <t-button theme="primary" :loading="submitting" @click="handleSubmitTravel">
             {{ $t('attendance.submit') }}
-          </a-button>
-        </a-form>
-      </a-card>
+          </t-button>
+        </t-form>
+      </t-card>
 
       <!-- 我的出差申请列表 -->
-      <a-card :title="$t('attendance.myTravels')">
-        <a-spin :loading="travelLoading">
+      <t-card :title="$t('attendance.myTravels')">
+        <t-loading :loading="travelLoading">
           <div v-if="travels.length" class="space-y-3">
             <div v-for="item in travels" :key="item.id" class="flex items-start gap-4 rounded-wecom-md border border-[var(--wecom-border)] bg-[var(--wecom-bg-card)] p-5">
               <div class="min-w-0 flex-1">
                 <div class="mb-1 flex items-center gap-2">
-                  <a-tag :color="statusColor(item.status)">{{ statusText(item.status) }}</a-tag>
+                  <t-tag :color="statusColor(item.status)">{{ statusText(item.status) }}</t-tag>
                   <span class="font-medium text-[var(--foreground)]">{{ item.destination }}</span>
                   <span class="text-sm text-[var(--muted-foreground)]">{{ item.startTime }} ~ {{ item.endTime }}</span>
                 </div>
@@ -183,44 +190,44 @@
                   {{ $t('attendance.approveRemark') }}：{{ item.approveRemark }}
                 </p>
               </div>
-              <a-button v-if="item.status === '0'" size="small" status="danger" @click="handleRevokeTravel(item)">
+              <t-button v-if="item.status === '0'" size="small" theme="danger" @click="handleRevokeTravel(item)">
                 {{ $t('attendance.revoke') }}
-              </a-button>
-              <a-button size="small" @click="openFlow('travel', item.id)">{{ $t('attendance.flow') }}</a-button>
+              </t-button>
+              <t-button size="small" @click="openFlow('travel', item.id)">{{ $t('attendance.flow') }}</t-button>
             </div>
           </div>
-          <a-empty v-else :description="$t('attendance.noData')" />
-        </a-spin>
-      </a-card>
+          <t-empty v-else :description="$t('attendance.noData')" />
+        </t-loading>
+      </t-card>
     </div>
 
     <!-- 流程进度弹窗：优先渲染引擎节点链（任务态），未接入引擎回退事件流 -->
-    <a-modal v-model:visible="flowVisible" :title="$t('attendance.flow')" :width="520" footer-only>
-      <a-steps v-if="flowTasks.length" direction="vertical" :current="taskCurrent">
-        <a-step
+    <t-dialog v-model="flowVisible" :title="$t('attendance.flow')" :width="520" footer-only>
+      <t-steps v-if="flowTasks.length" direction="vertical" :current="taskCurrent">
+        <t-step-item
           v-for="task in flowTasks"
           :key="task.id"
           :status="taskStepStatus(task.status)"
           :title="task.nodeName"
           :description="taskStepDesc(task)"
         />
-      </a-steps>
-      <a-steps v-else-if="flowNodes.length" direction="vertical" :current="currentStep">
-        <a-step
+      </t-steps>
+      <t-steps v-else-if="flowNodes.length" direction="vertical" :current="currentStep">
+        <t-step-item
           v-for="node in flowNodes"
           :key="node.id"
           :title="node.nodeName"
           :description="`${node.operatorName || '-'} · ${node.createTime}${node.remark ? ' · ' + node.remark : ''}`"
         />
-      </a-steps>
-      <a-empty v-else :description="$t('attendance.flowEmpty')" />
-    </a-modal>
+      </t-steps>
+      <t-empty v-else :description="$t('attendance.flowEmpty')" />
+    </t-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
-import { Message } from '@arco-design/web-vue'
+import { MessagePlugin as Message } from 'tdesign-vue-next'
 import {
   getMyLeavesApi, submitLeaveApi, revokeLeaveApi,
   getMyOvertimesApi, submitOvertimeApi, revokeOvertimeApi,

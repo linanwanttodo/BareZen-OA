@@ -19,9 +19,9 @@
         </div>
         <div class="min-w-0 flex-1">
           <div class="mb-1 flex items-center gap-2">
-            <a-tag :color="notice.noticeType === '1' ? 'arcoblue' : 'green'">
+            <t-tag :color="notice.noticeType === '1' ? 'arcoblue' : 'green'">
               {{ notice.noticeType === '1' ? $t('notice.typeNotice') : $t('notice.typeAnnouncement') }}
-            </a-tag>
+            </t-tag>
             <h3 class="truncate text-base font-semibold text-[var(--foreground)]">{{ notice.noticeTitle }}</h3>
             <span v-if="notice.requireRead === 'Y' && notice.isRead === false" class="shrink-0 rounded bg-wecom-error px-1.5 py-0.5 text-[10px] font-medium text-white">NEW</span>
           </div>
@@ -32,10 +32,10 @@
         </div>
       </div>
     </div>
-    <a-empty v-else :description="$t('common.noData')" />
+    <t-empty v-else :description="$t('common.noData')" />
 
     <div v-if="total > pageSize" class="mt-6">
-      <a-pagination v-model:current="currentPage" :total="total" :page-size="pageSize" @change="loadNotices" />
+      <t-pagination v-model:current="currentPage" :total="total" :page-size="pageSize" @change="loadNotices" />
     </div>
     </template>
   </div>
