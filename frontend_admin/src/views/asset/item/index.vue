@@ -45,6 +45,30 @@
 
       <t-loading :loading="loading">
           <t-table row-key="id" :data="tableData" :columns="tableColumns" :pagination="false">
+    <template #category="{ row }">{{ categoryName(row.categoryId) }}</template>
+    <template #brandModel="{ row }">{{ [row.brand, row.model].filter(Boolean).join(' ') || '-' }}</template>
+    <template #price="{ row }">{{ row.price ? Number(row.price).toFixed(2) : '-' }}</template>
+    <template #status="{ row }">
+                <t-tag :color="statusColor(row.status)">{{ statusText(row.status) }}</t-tag>
+              </template>
+    <template #operate="{ row }">
+                <t-space>
+                  <t-button v-permission="PERM.asset.itemEdit" size="small" @click="handleEdit(row)">{{ $t('common.edit') }}</t-button>
+                  <t-button v-if="row.status === '0' || row.status === '2'" v-permission="PERM.asset.itemBorrow" size="small" theme="primary" @click="handleBorrow(row)">
+                    {{ $t('asset.borrow') }}
+                  </t-button>
+                  <t-button v-if="row.status === '1'" v-permission="PERM.asset.itemBorrow" size="small" @click="handleReturn(row)">
+                    {{ $t('asset.return') }}
+                  </t-button>
+                  <t-button size="small" @click="handleRecords(row)">{{ $t('asset.records') }}</t-button>
+                  <t-button v-if="row.status !== '3'" v-permission="PERM.asset.itemEdit" size="small" @click="handleScrap(row)">
+                    {{ $t('asset.scrap') }}
+                  </t-button>
+                  <t-popconfirm :content="$t('common.deleteConfirm')" @confirm="handleDelete(row)">
+                    <t-button v-permission="PERM.asset.itemDelete" size="small" theme="danger">{{ $t('common.delete') }}</t-button>
+                  </t-popconfirm>
+                </t-space>
+              </template>
   </t-table>
 
         <div v-if="pagination.total > 0" class="mt-4 flex justify-end">
@@ -156,6 +180,9 @@
     <!-- 借用记录弹窗 -->
     <t-dialog v-model="recordsVisible" :title="$t('asset.records')" :width="640" footer-only>
         <t-table row-key="id" :data="records" :columns="tableColumns2" :pagination="false">
+    <template #status="{ row }">
+                <t-tag :color="row.status === '0' ? 'blue' : 'green'">{{ row.status === '0' ? $t('asset.borrowing') : $t('asset.returned') }}</t-tag>
+              </template>
   </t-table>
       <t-empty v-if="!records.length" :description="$t('common.noData')" />
     </t-dialog>
@@ -353,14 +380,27 @@ onMounted(() => {
   loadData()
 })
 
-/** 表格列定义（由 Arco 列模板迁移，自定义单元格见模板同名插槽） */
+/** 表格列定义（自定义单元格见 t-table 同名插槽） */
 const tableColumns = computed(() => [
-    ,
-  ])
+  { colKey: 'assetNo', title: t('asset.assetNo'), width: 130 },
+  { colKey: 'assetName', title: t('asset.assetName'), width: 150, ellipsis: true },
+  { colKey: 'category', title: t('asset.category'), width: 100 },
+  { colKey: 'brandModel', title: t('asset.brandModel'), width: 130, ellipsis: true },
+  { colKey: 'price', title: t('asset.price'), width: 100, align: 'right' },
+  { colKey: 'deptName', title: t('asset.deptName'), width: 110 },
+  { colKey: 'holderName', title: t('asset.holderName'), width: 90 },
+  { colKey: 'status', title: t('common.status'), width: 90 },
+  { colKey: 'operate', title: t('common.operate'), width: 280, align: 'right' },
+])
 
-/** 表格列定义（由 Arco 列模板迁移，自定义单元格见模板同名插槽） */
+/** 借用记录表格列定义 */
 const tableColumns2 = computed(() => [
-    ,
-  ])
+  { colKey: 'borrowerName', title: t('asset.borrowerName'), width: 110 },
+  { colKey: 'borrowTime', title: t('asset.borrowTime'), width: 160 },
+  { colKey: 'expectReturnTime', title: t('asset.expectReturnTime'), width: 110 },
+  { colKey: 'returnTime', title: t('asset.returnTime'), width: 160 },
+  { colKey: 'status', title: t('common.status'), width: 90 },
+  { colKey: 'remark', title: t('common.remark'), ellipsis: true },
+])
 
 </script>

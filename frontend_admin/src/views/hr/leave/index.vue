@@ -34,6 +34,33 @@
 
       <t-loading :loading="loading">
           <t-table row-key="id" :data="tableData" :columns="tableColumns" :pagination="false">
+    <template #leaveType="{ row }">{{ leaveTypeText(row.leaveType) }}</template>
+    <template #timeRange="{ row }">
+                <span class="text-sm">{{ row.startTime }} ~ {{ row.endTime }}</span>
+              </template>
+    <template #status="{ row }">
+                <t-tag :color="statusColor(row.status)">{{ statusText(row.status) }}</t-tag>
+              </template>
+    <template #approverName="{ row }">{{ row.approverName || '-' }}</template>
+    <template #operate="{ row }">
+                <t-space>
+                  <template v-if="row.status === '0'">
+                    <t-button v-permission="PERM.hr.leaveApprove" size="small" theme="primary" @click="openApprove(row)">
+                      {{ $t('leave.approve') }}
+                    </t-button>
+                    <t-button size="small" @click="handleRevoke(row)">
+                      {{ $t('leave.revoke') }}
+                    </t-button>
+                  </template>
+                  <t-button v-if="row.approveRemark" size="small" @click="showRemark(row)">
+                    {{ $t('leave.viewRemark') }}
+                  </t-button>
+                  <t-button size="small" @click="openFlow(row)">{{ $t('leave.flow') }}</t-button>
+                  <t-popconfirm :content="$t('common.deleteConfirm')" @confirm="handleDelete(row)">
+                    <t-button v-permission="PERM.hr.leaveDelete" size="small" theme="danger">{{ $t('common.delete') }}</t-button>
+                  </t-popconfirm>
+                </t-space>
+              </template>
   </t-table>
 
         <div v-if="pagination.total > 0" class="mt-4 flex justify-end">
@@ -330,9 +357,17 @@ async function openFlow(record: AttLeaveRequest) {
 onMounted(loadData)
 onActivated(loadData)
 
-/** 表格列定义（由 Arco 列模板迁移，自定义单元格见模板同名插槽） */
+/** 表格列定义（自定义单元格见 t-table 同名插槽） */
 const tableColumns = computed(() => [
-    ,
-  ])
+  { colKey: 'userName', title: t('leave.userName'), width: 100 },
+  { colKey: 'deptName', title: t('leave.deptName'), width: 120 },
+  { colKey: 'leaveType', title: t('leave.leaveType'), width: 100 },
+  { colKey: 'timeRange', title: t('leave.timeRange'), width: 250 },
+  { colKey: 'leaveDays', title: t('leave.leaveDays'), width: 80 },
+  { colKey: 'reason', title: t('leave.reason'), ellipsis: true },
+  { colKey: 'status', title: t('common.status'), width: 90 },
+  { colKey: 'approverName', title: t('leave.approverName'), width: 100 },
+  { colKey: 'operate', title: t('common.operate'), width: 230, align: 'right' },
+])
 
 </script>

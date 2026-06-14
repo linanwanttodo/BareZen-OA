@@ -37,6 +37,33 @@
 
       <t-loading :loading="loading">
           <t-table row-key="id" :data="tableData" :columns="tableColumns" :pagination="false">
+    <template #vehicleType="{ row }">{{ vehicleTypeText(row.vehicleType) }}</template>
+    <template #timeRange="{ row }">
+                <span class="text-sm">{{ row.startTime }} ~ {{ row.endTime }}</span>
+              </template>
+    <template #status="{ row }">
+                <t-tag :color="statusColor(row.status)">{{ statusText(row.status) }}</t-tag>
+              </template>
+    <template #approverName="{ row }">{{ row.approverName || '-' }}</template>
+    <template #operate="{ row }">
+                <t-space>
+                  <template v-if="row.status === '0'">
+                    <t-button v-permission="PERM.office.vehicleApprove" size="small" theme="primary" @click="openApprove(row)">
+                      {{ $t('office.approve') }}
+                    </t-button>
+                    <t-button size="small" @click="handleCancel(row)">
+                      {{ $t('office.cancel') }}
+                    </t-button>
+                  </template>
+                  <t-button v-if="row.approveRemark" size="small" @click="showRemark(row)">
+                    {{ $t('office.viewRemark') }}
+                  </t-button>
+                  <t-button size="small" @click="openFlow(row)">{{ $t('office.flow') }}</t-button>
+                  <t-popconfirm :content="$t('common.deleteConfirm')" @confirm="handleDelete(row)">
+                    <t-button v-permission="PERM.office.vehicleDelete" size="small" theme="danger">{{ $t('common.delete') }}</t-button>
+                  </t-popconfirm>
+                </t-space>
+              </template>
   </t-table>
 
         <div v-if="pagination.total > 0" class="mt-4 flex justify-end">
@@ -323,9 +350,17 @@ async function openFlow(record: OfficeVehicleRequest) {
 
 onMounted(loadData)
 
-/** 表格列定义（由 Arco 列模板迁移，自定义单元格见模板同名插槽） */
+/** 表格列定义（自定义单元格见 t-table 同名插槽） */
 const tableColumns = computed(() => [
-    ,
-  ])
+  { colKey: 'applicantName', title: t('office.applicantName'), width: 100 },
+  { colKey: 'deptName', title: t('office.deptName'), width: 120 },
+  { colKey: 'vehicleType', title: t('office.vehicleType'), width: 90 },
+  { colKey: 'timeRange', title: t('office.timeRange'), width: 250 },
+  { colKey: 'destination', title: t('office.destination'), width: 120, ellipsis: true },
+  { colKey: 'purpose', title: t('office.purpose'), ellipsis: true },
+  { colKey: 'status', title: t('office.vehicleStatus'), width: 90 },
+  { colKey: 'approverName', title: t('leave.approverName'), width: 100 },
+  { colKey: 'operate', title: t('common.operate'), width: 230, align: 'right' },
+])
 
 </script>

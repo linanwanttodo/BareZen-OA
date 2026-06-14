@@ -38,6 +38,20 @@
 
       <t-loading :loading="loading">
           <t-table row-key="id" :data="tableData" :columns="tableColumns" :pagination="false">
+    <template #timeRange="{ row }">
+                <span class="text-sm">{{ row.startTime }} ~ {{ row.endTime }}</span>
+              </template>
+    <template #status="{ row }">
+                <t-tag :color="statusColor(row.status)">{{ statusText(row.status) }}</t-tag>
+              </template>
+    <template #operate="{ row }">
+                <t-space>
+                  <t-button v-permission="PERM.hr.scheduleEdit" size="small" @click="openEdit(row)">{{ $t('common.edit') }}</t-button>
+                  <t-popconfirm :content="$t('common.deleteConfirm')" @confirm="handleDelete(row)">
+                    <t-button v-permission="PERM.hr.scheduleDelete" size="small" theme="danger">{{ $t('common.delete') }}</t-button>
+                  </t-popconfirm>
+                </t-space>
+              </template>
   </t-table>
 
         <div v-if="pagination.total > 0" class="mt-4 flex justify-end">
@@ -212,9 +226,15 @@ async function handleDelete(record: HrSchedule) {
 
 onMounted(loadData)
 
-/** 表格列定义（由 Arco 列模板迁移，自定义单元格见模板同名插槽） */
+/** 表格列定义（自定义单元格见 t-table 同名插槽） */
 const tableColumns = computed(() => [
-    ,
-  ])
+  { colKey: 'title', title: t('schedule.title'), width: 160, ellipsis: true },
+  { colKey: 'userName', title: t('schedule.userName'), width: 100 },
+  { colKey: 'timeRange', title: t('schedule.timeRange'), width: 250 },
+  { colKey: 'location', title: t('schedule.location'), width: 120, ellipsis: true },
+  { colKey: 'description', title: t('schedule.description'), ellipsis: true },
+  { colKey: 'status', title: t('schedule.status'), width: 90 },
+  { colKey: 'operate', title: t('common.operate'), width: 140, align: 'right' },
+])
 
 </script>
