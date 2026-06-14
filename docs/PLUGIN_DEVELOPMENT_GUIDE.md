@@ -1,4 +1,4 @@
-# BareZen_Base 插件开发详细指南
+# BareZen_OA 插件开发详细指南
 
 ## 目录
 1. [插件开发概述](#插件开发概述)
@@ -16,7 +16,7 @@
 
 ### 什么是插件？
 
-插件是BareZen_Base系统中的独立功能模块，就像乐高积木一样，可以按需添加、移除，不会影响核心系统的稳定性。
+插件是BareZen_OA系统中的独立功能模块，就像乐高积木一样，可以按需添加、移除，不会影响核心系统的稳定性。
 
 ### 插件的优势
 
@@ -44,7 +44,7 @@
 #### 步骤1：创建插件目录
 
 ```bash
-cd /home/lin/All_projects/Javaproject/BareZen_Base/backend/bz_framework_core/src/main/java/com/linan/plugin
+cd /home/lin/All_projects/Javaproject/BareZen_OA/backend/bz_framework_core/src/main/java/com/linan/plugin
 mkdir -p customer
 cd customer
 ```
@@ -227,7 +227,7 @@ customer/
 #### 步骤6：启动应用
 
 ```bash
-cd /home/lin/All_projects/Javaproject/BareZen_Base/backend
+cd /home/lin/All_projects/Javaproject/BareZen_OA/backend
 ./gradlew :bz_web_app:bootRun
 ```
 
@@ -1086,7 +1086,7 @@ private String customerName;
 - * 掌握插件管理的基本操作
 - * 遵循插件开发的最佳实践
 
-BareZen_Base的插件化架构让系统变得像乐高积木一样灵活，你可以：
+BareZen_OA的插件化架构让系统变得像乐高积木一样灵活，你可以：
 - 按需添加功能模块
 - 独立开发和测试
 - 快速迭代和升级

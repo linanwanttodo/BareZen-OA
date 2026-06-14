@@ -2,7 +2,7 @@
 
 ## 1. 概述
 
-BareZen_Base 后端采用 Gradle 多模块（Multi-Module）架构，将不同职责的代码分离到独立模块中。本章详细讲解 Gradle Kotlin DSL（`.kts`）配置的原理和最佳实践。
+BareZen_OA 后端采用 Gradle 多模块（Multi-Module）架构，将不同职责的代码分离到独立模块中。本章详细讲解 Gradle Kotlin DSL（`.kts`）配置的原理和最佳实践。
 
 完成本章后，你将理解：
 - 为什么选择 Gradle 而非 Maven
@@ -27,7 +27,7 @@ BareZen_Base 后端采用 Gradle 多模块（Multi-Module）架构，将不同�
 
 ### 2.2 Kotlin DSL vs Groovy DSL
 
-BareZen_Base 使用 Kotlin DSL（`.kts` 文件）而非 Groovy DSL（`.gradle` 文件），原因如下：
+BareZen_OA 使用 Kotlin DSL（`.kts` 文件）而非 Groovy DSL（`.gradle` 文件），原因如下：
 
 - **类型安全**：Kotlin 是静态类型语言，IDE 可提供自动补全和编译时检查，Groovy 是动态类型。
 - **更好的 IDE 支持**：IDEA 对 Kotlin 的支持优于 Groovy，代码导航和重构更可靠。
@@ -91,7 +91,7 @@ zipStorePath=wrapper/dists
 文件路径：`backend/settings.gradle.kts`
 
 ```kotlin
-rootProject.name = "BareZen_Base"
+rootProject.name = "BareZen_OA"
 
 // ---- 子模块声明 ----
 // 每个 include 声明一个子模块，名称为模块目录名
@@ -123,7 +123,7 @@ dependencyResolutionManagement {
 ### 4.1 rootProject.name
 
 ```kotlin
-rootProject.name = "BareZen_Base"
+rootProject.name = "BareZen_OA"
 ```
 设置根项目名称，该名称会出现在 Gradle 面板、构建输出和 IDEA 导航中。
 

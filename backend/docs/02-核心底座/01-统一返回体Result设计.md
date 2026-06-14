@@ -2,7 +2,7 @@
 
 ## 1. 功能概述
 
-`Result<T>` 是 BareZen_Base 后端所有接口的统一返回体格式。无论接口是成功还是失败，返回给前端的 JSON 结构始终保持一致。
+`Result<T>` 是 BareZen_OA 后端所有接口的统一返回体格式。无论接口是成功还是失败，返回给前端的 JSON 结构始终保持一致。
 
 **解决的问题**：
 - 前端不需要根据接口不同而编写不同的响应解析逻辑
@@ -17,7 +17,7 @@
 /api/user/error -> { "error": "xxx" }
 /api/role       -> { "success": true, "data": [...] }
 
-# 有统一返回体（BareZen_Base 做法）
+# 有统一返回体（BareZen_OA 做法）
 所有接口       -> { "code": 200, "msg": "操作成功", "data": { ... } }
 ```
 

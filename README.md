@@ -1,12 +1,12 @@
-# BareZen_Base — 极简模块化全栈开发骨架
+# BareZen_OA — 极简模块化全栈开发骨架
 
-**BareZen_Base** 是一个面向现代个人开发者和小型团队的全栈开发骨架，基于 Java 21 + Spring Boot 3.2 + Vue 3.4 + TypeScript。
+**BareZen_OA** 是一个面向现代个人开发者和小型团队的全栈开发骨架，基于 Java 21 + Spring Boot 3.2 + Vue 3.4 + TypeScript。
 
 ## 核心特性
 
 - **微内核架构**：核心底座不绑定任何业务表结构，企业权限作为"插件"按需加载
 - **纯净 JWT 鉴权**：告别 Spring Security 的臃肿，自定义 JWT 拦截器，代码透明可控
-- **一后带两前**：管理后台（Vue 3 + Arco Design）+ 用户前台（Vue 3 + Tailwind CSS）
+- **一后带两前**：管理后台（Vue 3 + TDesign）+ 用户前台（Vue 3 + Tailwind CSS）
 - **Java 21 虚拟线程**：充分利用现代 JDK 的 I/O 性能优势
 - **Gradle Kotlin DSL**：现代化的构建配置
 
@@ -19,8 +19,8 @@
 | 缓存 | Redis 7.0 |
 | 数据库 | MySQL 8.0 |
 | 文档 | Knife4j (`/doc.html`) |
-| 管理端 | Vue 3.4 / Arco Design / Pinia / ECharts |
-| 用户端 | Vue 3.4 / Tailwind CSS / Pinia |
+| 管理端 | Vue 3.4 / TDesign / Pinia / ECharts |
+| 用户端 | Vue 3.4 / Tailwind CSS + TDesign / Pinia |
 | 构建 | Gradle 8+ / Vite 5 |
 | 部署 | Docker / Docker Compose |
 
@@ -35,11 +35,11 @@ make env-up        # 启动 MySQL + Redis Docker 容器
 
 ### 2. 初始化数据库（Flyway 自动迁移）
 
-数据库结构由 **Flyway 自动迁移**管理，无需手动执行 SQL 脚本。首次启动后端时会自动创建 `barezen_base` 库表并写入种子数据（V1-V47）：
+数据库结构由 **Flyway 自动迁移**管理，无需手动执行 SQL 脚本。首次启动后端时会自动创建 `barezen_oa` 库表并写入种子数据（V1-V47）：
 
 ```bash
-# 只需确保 MySQL 存在 barezen_base 数据库（或由连接配置自动创建）
-mysql -uroot -p123456 -e "CREATE DATABASE IF NOT EXISTS barezen_base CHARACTER SET utf8mb4;"
+# 只需确保 MySQL 存在 barezen_oa 数据库（或由连接配置自动创建）
+mysql -uroot -p123456 -e "CREATE DATABASE IF NOT EXISTS barezen_oa CHARACTER SET utf8mb4;"
 ```
 
 后续结构变更一律新增 `backend/bz_web_app/src/main/resources/db/migration/V{编号}__*.sql`，启动时按版本号顺序自动应用，历史脚本不可修改。
@@ -77,14 +77,14 @@ npm run dev
 ## 项目结构
 
 ```
-BareZen_Base/
+BareZen_OA/
 ├── backend/                  # 后端 Gradle 多模块
 │   ├── bz_framework_core/    # 核心底座 + RBAC + 业务域（hr/office/asset/kb/system）
 │   ├── bz_web_app/           # Web 启动模块
 │   │   └── src/main/resources/db/migration/  # Flyway 迁移脚本（V1-V47）
 │   ├── docker-compose.yml    # MySQL + Redis
 │   └── Dockerfile            # 后端容器化
-├── frontend_admin/           # 管理后台（Vue 3 + Arco Design）
+├── frontend_admin/           # 管理后台（Vue 3 + TDesign）
 ├── frontend_user/            # 用户前台（Vue 3 + Tailwind CSS）
 ├── design-system/            # 设计规范文档
 └── docs/                     # 项目文档（.md）

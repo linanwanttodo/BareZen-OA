@@ -2,7 +2,7 @@
 
 ## 1. 概述
 
-本规范定义了 BareZen_Base（BareZen_Base）项目中所有后端 RESTful API 的设计标准。无论是核心底座提供的通用接口，还是业务模块开发的具体接口，都必须严格遵守本规范。
+本规范定义了 BareZen_OA（BareZen_OA）项目中所有后端 RESTful API 的设计标准。无论是核心底座提供的通用接口，还是业务模块开发的具体接口，都必须严格遵守本规范。
 
 制定统一接口规范的目的是：
 
@@ -59,7 +59,7 @@ POST /api/system/v1/users/1/change-status    # 修改状态
 
 ## 3. HTTP方法约定
 
-BareZen_Base 接口严格遵循 RESTful 风格，使用以下 HTTP 方法：
+BareZen_OA 接口严格遵循 RESTful 风格，使用以下 HTTP 方法：
 
 | HTTP方法 | 用途 | 是否幂等 | 说明 |
 | :--- | :--- | :---: | :--- |
@@ -294,7 +294,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOjF9.xxx
 
 ## 7. 接口模块划分
 
-BareZen_Base 后端按功能域将接口划分为以下模块：
+BareZen_OA 后端按功能域将接口划分为以下模块：
 
 | 模块路径 | 说明 | 示例 URL |
 | :--- | :--- | :--- |
@@ -560,7 +560,7 @@ curl -X GET http://localhost:8080/api/system/v1/users?pageNum=1\&pageSize=10 \
 
 | 日期 | 版本 | 变更内容 | 作者 |
 | :--- | :--- | :--- | :--- |
-| 2026-05-05 | v1.0 | 初始版本，定义 RESTful 接口规范 | BareZen_Base Team |
+| 2026-05-05 | v1.0 | 初始版本，定义 RESTful 接口规范 | BareZen_OA Team |
 
 ---
 

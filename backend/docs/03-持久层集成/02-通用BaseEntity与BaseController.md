@@ -2,7 +2,7 @@
 
 ## 1. 概述
 
-本章创建 BareZen_Base 的通用基类体系，这是对标若依框架中 CRUD 封装能力的核心基础。通过抽取公共字段和通用操作方法，避免在每一个实体类中重复编写相同的代码。
+本章创建 BareZen_OA 的通用基类体系，这是对标若依框架中 CRUD 封装能力的核心基础。通过抽取公共字段和通用操作方法，避免在每一个实体类中重复编写相同的代码。
 
 **本章创建的文件**：
 
@@ -111,7 +111,7 @@ import java.time.LocalDateTime;
  * - 更新时间（@TableField + fill）：更新时自动填充
  * - 逻辑删除（@TableLogic）：删除仅标记字段，不物理删除
  *
- * @author BareZen_Base Team
+ * @author BareZen_OA Team
  * @since 1.0-SNAPSHOT
  */
 @Data

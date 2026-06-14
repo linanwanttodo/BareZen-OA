@@ -210,7 +210,7 @@ registry.addMapping("/api/**")
 2. Content-Type 是 `application/x-www-form-urlencoded`、`multipart/form-data` 或 `text/plain`
 3. 没有自定义 Header
 
-BareZen_Base 的请求通常不是简单请求（Content-Type 为 application/json 且携带 Authorization Header），因此每次跨域调用都会先发送 OPTIONS 预检请求。`maxAge(3600)` 告诉浏览器在 1 小时内缓存预检结果，避免重复请求。
+BareZen_OA 的请求通常不是简单请求（Content-Type 为 application/json 且携带 Authorization Header），因此每次跨域调用都会先发送 OPTIONS 预检请求。`maxAge(3600)` 告诉浏览器在 1 小时内缓存预检结果，避免重复请求。
 
 ---
 

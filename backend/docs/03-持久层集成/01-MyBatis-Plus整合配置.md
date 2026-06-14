@@ -2,7 +2,7 @@
 
 ## 1. 概述
 
-MyBatis-Plus 是 MyBatis 的增强工具包，提供开箱即用的 CRUD 方法、分页插件、乐观锁、逻辑删除等功能。BareZen_Base 选择 MyBatis-Plus 而非 JPA，原因如下：
+MyBatis-Plus 是 MyBatis 的增强工具包，提供开箱即用的 CRUD 方法、分页插件、乐观锁、逻辑删除等功能。BareZen_OA 选择 MyBatis-Plus 而非 JPA，原因如下：
 
 - **对 SQL 的完全掌控**：复杂查询可以直接写 SQL，不依赖框架生成的查询
 - **学习成本低**：如果你用过 MyBatis，MyBatis-Plus 是零学习成本的升级
@@ -57,7 +57,7 @@ spring:
     # useSSL=false：本地开发环境禁用 SSL（生产环境应启用）
     # serverTimezone=Asia/Shanghai：设置时区（必须，否则 MySQL 8.0 可能报时区错误）
     # allowPublicKeyRetrieval=true：允许客户端获取公钥（MySQL 8.0 密码认证需要）
-    url: jdbc:mysql://localhost:3306/barezen_base?useUnicode=true&characterEncoding=utf8mb4&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    url: jdbc:mysql://localhost:3306/barezen_oa?useUnicode=true&characterEncoding=utf8mb4&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
     username: root
     password: 123456
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -234,7 +234,7 @@ CommunicationsException: Communications link failure
 
 ## 6. 目录结构约定
 
-为保持项目结构清晰，BareZen_Base 约定以下目录结构：
+为保持项目结构清晰，BareZen_OA 约定以下目录结构：
 
 ```text
 bz_framework_core/
@@ -272,7 +272,7 @@ bz_framework_core/
 - `BaseService`：封装通用业务逻辑
 - `BaseController`：封装通用 HTTP 接口
 
-这些基类是 BareZen_Base 对标若依框架中对通用 CRUD 能力的封装基础。
+这些基类是 BareZen_OA 对标若依框架中对通用 CRUD 能力的封装基础。
 
 ---
 
@@ -296,7 +296,7 @@ A: `mybatis-plus-spring-boot3-starter:3.5.7` 兼容 Spring Boot 3.2.x 和 JDK 17
 
 **Q: `@MapperScan` 和 在每个 Mapper 上加 `@Mapper` 有什么区别？**
 
-A: `@MapperScan` 是批量扫描，一个注解覆盖所有 Mapper，更简洁。`@Mapper` 需要每个 Mapper 接口单独标注，容易遗漏但更显式。BareZen_Base 使用 `@MapperScan`。
+A: `@MapperScan` 是批量扫描，一个注解覆盖所有 Mapper，更简洁。`@Mapper` 需要每个 Mapper 接口单独标注，容易遗漏但更显式。BareZen_OA 使用 `@MapperScan`。
 
 ---
 

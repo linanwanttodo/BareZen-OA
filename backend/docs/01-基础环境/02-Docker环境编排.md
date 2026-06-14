@@ -2,7 +2,7 @@
 
 ## 1. 概述
 
-BareZen_Base 后端依赖 MySQL 8.0 和 Redis 7.0 两个中间件。为了统一开发环境、避免"在我电脑上能跑"的问题，我们使用 Docker Compose 编排这两个服务，实现一键启动。
+BareZen_OA 后端依赖 MySQL 8.0 和 Redis 7.0 两个中间件。为了统一开发环境、避免"在我电脑上能跑"的问题，我们使用 Docker Compose 编排这两个服务，实现一键启动。
 
 通过 Docker 启动中间件有以下好处：
 - 无需手动安装 MySQL 和 Redis
@@ -60,7 +60,7 @@ services:
       # root 用户密码（生产环境应使用更强的密码）
       MYSQL_ROOT_PASSWORD: root123456
       # 容器启动时自动创建的数据库名
-      MYSQL_DATABASE: barezen_base
+      MYSQL_DATABASE: barezen_oa
       # 时区设置为亚洲/上海
       TZ: Asia/Shanghai
     # 端口映射：宿主机端口:容器端口
@@ -126,7 +126,7 @@ image: mysql:8.0
 ```yaml
 environment:
   MYSQL_ROOT_PASSWORD: root123456
-  MYSQL_DATABASE: barezen_base
+  MYSQL_DATABASE: barezen_oa
 ```
 环境变量是 MySQL 镜像约定的配置方式：
 - `MYSQL_ROOT_PASSWORD`：**必填**，root 用户密码
@@ -221,9 +221,9 @@ docker exec -it zen-mysql mysql -uroot -proot123456
 
 # 进入 MySQL 命令行后：
 mysql> SHOW DATABASES;
-# 预期输出包含 'barezen_base' 数据库
+# 预期输出包含 'barezen_oa' 数据库
 
-mysql> USE barezen_base;
+mysql> USE barezen_oa;
 mysql> SELECT 1;
 # 验证数据库可正常操作
 
@@ -240,9 +240,9 @@ docker exec -it zen-redis redis-cli
 127.0.0.1:6379> PING
 # 预期输出：PONG
 
-127.0.0.1:6379> SET test "hello barebarezen_base"
+127.0.0.1:6379> SET test "hello barebarezen_oa"
 127.0.0.1:6379> GET test
-# 预期输出："hello barebarezen_base"
+# 预期输出："hello barebarezen_oa"
 
 127.0.0.1:6379> EXIT
 ```
@@ -272,7 +272,7 @@ docker-compose down -v
 
 ## 5. Makefile 详解
 
-BareZen_Base 项目提供 `Makefile` 封装常用命令，减少记忆负担。
+BareZen_OA 项目提供 `Makefile` 封装常用命令，减少记忆负担。
 
 文件路径：`backend/Makefile`
 
@@ -317,7 +317,7 @@ backend/
 └── data/
     ├── mysql/       # MySQL 数据文件（表结构、数据行）
     │   ├── ibdata1
-    │   ├── barezen_base/   # 数据库目录
+    │   ├── barezen_oa/   # 数据库目录
     │   └── ...
     └── redis/       # Redis 数据文件
         ├── dump.rdb    # RDB 快照文件

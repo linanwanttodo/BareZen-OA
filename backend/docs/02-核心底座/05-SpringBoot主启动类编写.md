@@ -2,7 +2,7 @@
 
 ## 1. 功能概述
 
-本章完成 BareZen_Base 后端的启动入口配置，使项目从一个编译通过的空壳变为可以启动的 Spring Boot 应用。
+本章完成 BareZen_OA 后端的启动入口配置，使项目从一个编译通过的空壳变为可以启动的 Spring Boot 应用。
 
 本章将创建/修改以下内容：
 - **主启动类**：Spring Boot 应用入口，整合两个模块的组件扫描
@@ -80,7 +80,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 /**
- * BareZen Base 后端应用主启动类
+ * BareZen OA 后端应用主启动类
  *
  * 这是整个 Spring Boot 应用的入口点。使用 @SpringBootApplication 注解
  * 自动启用组件扫描、自动配置和属性支持。
@@ -97,7 +97,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  *   make dev-api
  *   # 或在 IDEA 中直接运行此类的 main 方法
  *
- * @author BareZen_Base Team
+ * @author BareZen_OA Team
  * @since 1.0-SNAPSHOT
  */
 @SpringBootApplication(scanBasePackages = {
@@ -188,7 +188,7 @@ tasks.test {
 
 ```yaml
 # ============================================
-# BareZen Base 应用配置
+# BareZen OA 应用配置
 # ============================================
 
 # ---- 服务端口 ----
@@ -198,7 +198,7 @@ server:
 # ---- Spring 核心配置 ----
 spring:
   application:
-    name: BareBareZen_Base         # 应用名称
+    name: BareZen_OA         # 应用名称
 
   # ---- Jackson JSON 序列化配置 ----
   jackson:
@@ -222,7 +222,7 @@ logging:
 **逐行讲解**：
 
 - `server.port: 8080`：应用监听的 HTTP 端口号。Spring Boot 默认也是 8080，显式声明便于理解和修改。
-- `spring.application.name: BareBareZen_Base`：应用名称，用于日志输出、Actuator 端点、Spring Cloud 服务注册等。
+- `spring.application.name: BareZen_OA`：应用名称，用于日志输出、Actuator 端点、Spring Cloud 服务注册等。
 - `spring.jackson.date-format: yyyy-MM-dd HH:mm:ss`：Java 的 Date/LocalDateTime 对象序列化为 JSON 时使用的格式。
 - `write-dates-as-timestamps: false`：false 表示使用字符串格式输出日期（如 "2026-05-05 14:30:00"），true 表示使用毫秒时间戳（如 1714888200000）。
 - `logging.level.com.linan: DEBUG`：设置项目代码的日志级别为 DEBUG，开发阶段能看到更多的调试信息。
@@ -310,11 +310,11 @@ public class HealthController {
     /**
      * 健康检查
      * 请求：GET /api/common/v1/health
-     * 响应：{"code":200,"msg":"服务运行正常","data":"BareBareZen_Base v1.0-SNAPSHOT"}
+     * 响应：{"code":200,"msg":"服务运行正常","data":"BareZen_OA v1.0-SNAPSHOT"}
      */
     @GetMapping("/health")
     public Result<String> health() {
-        return Result.success("服务运行正常", "BareBareZen_Base v1.0-SNAPSHOT");
+        return Result.success("服务运行正常", "BareZen_OA v1.0-SNAPSHOT");
     }
 }
 ```
@@ -323,7 +323,7 @@ public class HealthController {
 
 ```bash
 curl http://localhost:8080/api/common/v1/health
-# 响应：{"code":200,"msg":"服务运行正常","data":"BareBareZen_Base v1.0-SNAPSHOT"}
+# 响应：{"code":200,"msg":"服务运行正常","data":"BareZen_OA v1.0-SNAPSHOT"}
 ```
 
 ---
@@ -350,7 +350,7 @@ A: `@SpringBootApplication` 包含了 `@EnableAutoConfiguration`，这是 Spring
 
 ## 9. 核心底座阶段总结
 
-到目前为止，我们已经完成了 BareZen_Base 后端的核心底座（bz_framework_core）和启动入口（bz_web_app）的所有代码和配置。回顾已完成的组件：
+到目前为止，我们已经完成了 BareZen_OA 后端的核心底座（bz_framework_core）和启动入口（bz_web_app）的所有代码和配置。回顾已完成的组件：
 
 | 组件 | 文件 | 功能 |
 | :--- | :--- | :--- |

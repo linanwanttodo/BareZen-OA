@@ -2,7 +2,7 @@
 
 ## 1. 功能概述
 
-BareZen_Base 采用轻量级的 JWT 拦截器方案实现身份认证，而不使用臃肿的 Spring Security。这是一个极简但完整的鉴权引擎，由三个核心组件组成。
+BareZen_OA 采用轻量级的 JWT 拦截器方案实现身份认证，而不使用臃肿的 Spring Security。这是一个极简但完整的鉴权引擎，由三个核心组件组成。
 
 **核心组件**：
 - `JwtUtil`：Token 的生成与解析工具类

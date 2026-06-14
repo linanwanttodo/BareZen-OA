@@ -12,7 +12,7 @@
 
 ### 2.2 使用示例
 
-在 [SysUserController.java](file:///home/lin/桌面/BareZen_Base/backend/bz_web_app/src/main/java/com/linan/web/controller/SysUserController.java) 中：
+在 [SysUserController.java](file:///home/lin/桌面/BareZen_OA/backend/bz_web_app/src/main/java/com/linan/web/controller/SysUserController.java) 中：
 
 ```java
 @OperLog(title = "用户管理", businessType = 1) // 1 代表新增
