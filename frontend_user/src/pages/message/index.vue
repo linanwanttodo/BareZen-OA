@@ -38,7 +38,7 @@
             <h3 class="min-w-0 flex-1 truncate font-semibold text-[var(--foreground)]" :class="{ 'opacity-70': msg.isRead === 1 }">
               {{ msg.title }}
             </h3>
-            <t-tag :color="msgTypeColor(msg.msgType)" size="small">{{ msgTypeLabel(msg.msgType) }}</t-tag>
+            <t-tag :theme="msgTypeTheme(msg.msgType)" size="small">{{ msgTypeLabel(msg.msgType) }}</t-tag>
             <span class="shrink-0 text-xs text-[var(--muted-foreground)]">{{ formatDate(msg.createTime) }}</span>
           </div>
           <p class="line-clamp-2 pl-4 text-sm text-[var(--muted-foreground)]" :class="{ 'opacity-60': msg.isRead === 1 }">
@@ -66,7 +66,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { MessagePlugin as Message } from 'tdesign-vue-next'
+import { MessagePlugin } from 'tdesign-vue-next'
 import { getMyMessagesApi, getUnreadCountApi, markMessageReadApi, markAllMessagesReadApi } from '@/api/message'
 import type { SysMessage } from '@/types/api'
 import { formatDate } from '@/utils/format'
@@ -86,8 +86,8 @@ function msgTypeLabel(type: string) {
   return t(map[type] || 'message.notification')
 }
 
-function msgTypeColor(type: string) {
-  return { approval: 'arcoblue', system: 'gray', notice: 'green' }[type] || 'gray'
+function msgTypeTheme(type: string) {
+  return { approval: 'primary', system: 'default', notice: 'success' }[type] || 'default'
 }
 
 function goDetail(msg: SysMessage) {
@@ -143,7 +143,7 @@ async function onMarkRead(msg: SysMessage) {
 async function onMarkAllRead() {
   try {
     const count = await markAllMessagesReadApi()
-    Message.success(count.data > 0 ? `已标记 ${count.data} 条为已读` : '没有未读消息')
+    MessagePlugin.success(count.data > 0 ? `已标记 ${count.data} 条为已读` : '没有未读消息')
     unreadCount.value = 0
     if (readFilter.value === 1) {
       // 已读筛选下全部已读无变化，保持当前列表

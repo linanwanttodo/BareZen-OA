@@ -3,8 +3,7 @@
     <PageHeader :title="$t('notice.title')" description="" />
 
     <div v-if="loading" class="flex items-center justify-center h-64">
-      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--primary)]"></div>
-      <span class="ml-2 text-[var(--muted-foreground)]">加载中...</span>
+      <t-loading size="28px" text="加载中" />
     </div>
     <template v-else>
       <div v-if="notices.length" class="space-y-4">
@@ -15,11 +14,11 @@
         @click="router.push(`/notices/${notice.id}`)"
       >
         <div class="mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-wecom-sm bg-[var(--wecom-bg-container)]">
-          <component :is="notice.noticeType === '1' ? Bell : FileText" :size="20" class="text-[var(--foreground)]" />
+          <component :is="notice.noticeType === '1' ? NotificationIcon : FileIcon" size="20px" class="text-[var(--foreground)]" />
         </div>
         <div class="min-w-0 flex-1">
           <div class="mb-1 flex items-center gap-2">
-            <t-tag :color="notice.noticeType === '1' ? 'arcoblue' : 'green'">
+            <t-tag :theme="notice.noticeType === '1' ? 'primary' : 'success'">
               {{ notice.noticeType === '1' ? $t('notice.typeNotice') : $t('notice.typeAnnouncement') }}
             </t-tag>
             <h3 class="truncate text-base font-semibold text-[var(--foreground)]">{{ notice.noticeTitle }}</h3>
@@ -45,7 +44,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { Bell, FileText } from 'lucide-vue-next'
+import { NotificationIcon, FileIcon } from 'tdesign-icons-vue-next'
 import { getNoticeListApi } from '@/api/enterprise'
 import type { Notice } from '@/types/api'
 import PageHeader from '@/components/common/PageHeader.vue'

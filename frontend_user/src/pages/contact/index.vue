@@ -3,8 +3,7 @@
     <PageHeader :title="$t('contact.title')" :description="$t('contact.description')" />
 
     <div v-if="loading" class="flex items-center justify-center h-64">
-      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--primary)]"></div>
-      <span class="ml-2 text-[var(--muted-foreground)]">{{ $t('common.loading') }}</span>
+      <t-loading size="28px" :text="$t('common.loading')" />
     </div>
     <template v-else>
       <div class="mb-6">
@@ -27,11 +26,11 @@
           </div>
           <div class="hidden items-center gap-6 text-sm text-[var(--foreground)] md:flex">
             <div v-if="contact.email" class="flex items-center gap-1.5">
-              <Mail :size="16" class="text-[var(--muted-foreground)]" />
+              <MailIcon size="16px" class="text-[var(--muted-foreground)]" />
               <span>{{ contact.email }}</span>
             </div>
             <div v-if="contact.phone" class="flex items-center gap-1.5">
-              <Phone :size="16" class="text-[var(--muted-foreground)]" />
+              <CallIcon size="16px" class="text-[var(--muted-foreground)]" />
               <span>{{ contact.phone }}</span>
             </div>
           </div>
@@ -49,7 +48,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Mail, Phone } from 'lucide-vue-next'
+import { MailIcon, CallIcon } from 'tdesign-icons-vue-next'
 import { getContactListApi } from '@/api/enterprise'
 import type { Contact } from '@/types/api'
 import PageHeader from '@/components/common/PageHeader.vue'

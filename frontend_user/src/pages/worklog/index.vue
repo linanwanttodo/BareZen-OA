@@ -22,7 +22,7 @@
           <t-col :span="8">
             <t-form-item :label="$t('worklog.logDate')">
               
-<!-- TODO(date-picker): 核对返回值格式（原 Arco 为字符串） --><t-date-picker v-model="form.logDate" style="width: 100%" />
+<t-date-picker v-model="form.logDate" value-type="YYYY-MM-DD" style="width: 100%" />
             </t-form-item>
           </t-col>
           <t-col :span="8">
@@ -57,7 +57,7 @@
           <div v-for="item in logs" :key="item.id" class="rounded-wecom-md border border-[var(--wecom-border)] bg-[var(--wecom-bg-card)] p-5">
             <div class="mb-2 flex items-center justify-between">
               <div class="flex items-center gap-2">
-                <t-tag :color="item.logType === 'weekly' ? 'arcoblue' : 'gray'" size="small">
+                <t-tag :theme="item.logType === 'weekly' ? 'primary' : 'default'" size="small">
                   {{ item.logType === 'weekly' ? $t('worklog.typeWeekly') : $t('worklog.typeDaily') }}
                 </t-tag>
                 <span class="text-sm text-[var(--muted-foreground)]">{{ item.logDate || '-' }}</span>
@@ -103,7 +103,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
-import { MessagePlugin as Message } from 'tdesign-vue-next'
+import { MessagePlugin } from 'tdesign-vue-next'
 import { getMyWorkLogsApi, submitWorkLogApi, updateWorkLogApi, deleteWorkLogApi, type WorkLog } from '@/api/enterprise'
 import { useUserStore } from '@/stores/user'
 
@@ -138,7 +138,7 @@ async function loadLogs() {
 
 async function handleSubmit() {
   if (!form.content || !form.content.trim()) {
-    Message.warning('请填写日志内容')
+    MessagePlugin.warning('请填写日志内容')
     return
   }
   submitting.value = true
@@ -149,7 +149,7 @@ async function handleSubmit() {
       logDate: form.logDate,
       content: form.content,
     })
-    Message.success('提交成功')
+    MessagePlugin.success('提交成功')
     form.content = ''
     form.logDate = ''
     editingId.value = null
@@ -174,27 +174,27 @@ function cancelEdit() {
 
 async function handleEditSubmit() {
   if (!editForm.content || !editForm.content.trim()) {
-    Message.warning('请填写日志内容')
+    MessagePlugin.warning('请填写日志内容')
     return
   }
   try {
     await updateWorkLogApi({ id: editingId.value!, content: editForm.content })
-    Message.success('更新成功')
+    MessagePlugin.success('更新成功')
     editVisible.value = false
     editingId.value = null
     loadLogs()
   } catch {
-    Message.error('更新失败')
+    MessagePlugin.error('更新失败')
   }
 }
 
 async function handleDelete(item: WorkLog) {
   try {
     await deleteWorkLogApi(item.id!)
-    Message.success('删除成功')
+    MessagePlugin.success('删除成功')
     loadLogs()
   } catch {
-    Message.error('删除失败')
+    MessagePlugin.error('删除失败')
   }
 }
 

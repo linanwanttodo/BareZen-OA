@@ -5,9 +5,10 @@
         <router-view />
       </div>
       <div class="mt-4 text-center">
-        <button class="text-xs text-[var(--wecom-text-tertiary)] hover:text-[var(--wecom-text-primary)] transition-colors" @click="router.push('/')">
-          ← 返回工作台
-        </button>
+        <t-link theme="default" hover="color" size="small" @click="router.push('/')">
+          <template #prefix-icon><arrow-left-icon size="16px" /></template>
+          <span>返回工作台</span>
+        </t-link>
       </div>
     </div>
   </div>
@@ -15,5 +16,6 @@
 
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
+import { ArrowLeftIcon } from 'tdesign-icons-vue-next'
 const router = useRouter()
 </script>

@@ -14,7 +14,7 @@
     <!-- 可申领用品 -->
     <div v-if="activeTab === 'supply'">
       <div class="mb-4 flex justify-end">
-        <t-input v-model="keyword" :placeholder="$t('supplyApply.searchPlaceholder')" allow-clear style="width: 100%; max-width: " @press-enter="loadSupplies" @clear="loadSupplies">
+        <t-input v-model="keyword" :placeholder="$t('supplyApply.searchPlaceholder')" allow-clear style="width: 100%; max-width: 320px" @press-enter="loadSupplies" @clear="loadSupplies">
           <template #prefix><icon-search /></template>
         </t-input>
       </div>
@@ -26,7 +26,7 @@
                 <h3 class="font-semibold text-[var(--foreground)]">{{ item.supplyName }}</h3>
                 <p class="mt-1 text-xs text-[var(--muted-foreground)]">{{ item.spec || '-' }} · {{ item.unit }}</p>
               </div>
-              <t-tag color="blue">{{ item.stock }} {{ item.unit }}</t-tag>
+              <t-tag theme="primary">{{ item.stock }} {{ item.unit }}</t-tag>
             </div>
             <div class="mt-4 flex items-center gap-2">
               <t-input-number v-model="applyQuantities[item.id]" :min="1" :max="item.stock" style="width: 120px" />
@@ -98,7 +98,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
-import { MessagePlugin as Message } from 'tdesign-vue-next'
+import { MessagePlugin } from 'tdesign-vue-next'
 import {
   getSuppliesApi, getMySupplyRequestsApi, submitSupplyRequestApi, revokeSupplyRequestApi,
   getFlowLogsApi,
@@ -165,7 +165,7 @@ function openApply(item: Supply) {
 
 async function handleSubmit() {
   if (!applyForm.quantity || applyForm.quantity < 1) {
-    Message.warning('请填写申领数量')
+    MessagePlugin.warning('请填写申领数量')
     return
   }
   submitting.value = true
@@ -176,7 +176,7 @@ async function handleSubmit() {
       reason: applyForm.reason,
       userName: userStore.userInfo?.nickName || '',
     })
-    Message.success('申领成功，等待审批')
+    MessagePlugin.success('申领成功，等待审批')
     applyVisible.value = false
     loadSupplies()
   } finally { submitting.value = false }
@@ -184,7 +184,7 @@ async function handleSubmit() {
 
 async function handleRevoke(item: SupplyRequest) {
   await revokeSupplyRequestApi(item.id)
-  Message.success('已撤销')
+  MessagePlugin.success('已撤销')
   loadRequests()
 }
 

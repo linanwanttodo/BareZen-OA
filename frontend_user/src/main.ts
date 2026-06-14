@@ -1,7 +1,7 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
-// 图标已切换为 TDesign：以原 IconXxx 同名注册 tdesign-icons-vue-next 图标，
-// 模板 <icon-xxx> 标签零改动；命令式 API（Message/Modal）样式仍走 Arco（P4 移除）。
+// 图标统一使用 tdesign-icons-vue-next：以 IconXxx 同名全局注册，
+// 模板 <icon-xxx> 标签零改动；命令式提示统一走 TDesign MessagePlugin。
 import {
   AddIcon,
   CheckCircleIcon,
@@ -23,6 +23,10 @@ import App from './App.vue'
 import router from './router'
 import { i18n } from './i18n'
 import './styles/index.css'
+import { initTheme } from './utils/theme'
+
+// 应用暗色偏好（theme-mode='dark'），需在样式加载后、挂载前执行
+initTheme()
 
 const app = createApp(App)
 

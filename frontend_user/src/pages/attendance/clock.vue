@@ -135,7 +135,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { MessagePlugin as Message } from 'tdesign-vue-next'
+import { MessagePlugin } from 'tdesign-vue-next'
 import { clockInApi, clockOutApi, getTodayClockApi, getMonthClockApi } from '@/api/clock'
 import type { AttClockRecord } from '@/types/api'
 
@@ -208,7 +208,7 @@ async function handleClockIn() {
     const res = await clockInApi()
     todayRecord.value = res.data
     await loadMonth()
-    Message.success(i18nText('clockInSuccess'))
+    MessagePlugin.success(i18nText('clockInSuccess'))
   } catch (e) {
     // 拦截器已 Toast 后端错误信息
     console.error('clock-in error:', e)
@@ -223,7 +223,7 @@ async function handleClockOut() {
     const res = await clockOutApi()
     todayRecord.value = res.data
     await loadMonth()
-    Message.success(i18nText('clockOutSuccess'))
+    MessagePlugin.success(i18nText('clockOutSuccess'))
   } catch (e) {
     console.error('clock-out error:', e)
   } finally {

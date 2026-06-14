@@ -111,7 +111,7 @@
         </t-row>
         <t-form-item field="dueDate" :label="$t('todo.dueDateLabel')">
           
-<!-- TODO(date-picker): 核对返回值格式（原 Arco 为字符串） --><t-date-picker v-model="formData.dueDate" style="width: 100%" />
+<t-date-picker v-model="formData.dueDate" value-type="YYYY-MM-DD" style="width: 100%" />
         </t-form-item>
       </t-form>
     </t-dialog>
@@ -121,7 +121,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { MessagePlugin as Message, DialogPlugin as Modal } from 'tdesign-vue-next'
+import { MessagePlugin, DialogPlugin } from 'tdesign-vue-next'
 import { getTodoListApi, addTodoApi, updateTodoApi, deleteTodoApi } from '@/api/enterprise'
 import type { TodoItem } from '@/types/api'
 import { formatDate } from '@/utils/format'
@@ -239,7 +239,7 @@ async function onSubmit() {
         dueDate: formData.dueDate,
       })
     }
-    Message.success(t('todo.saveSuccess'))
+    MessagePlugin.success(t('todo.saveSuccess'))
     dialogVisible.value = false
     resetForm()
     loadTodos()
@@ -251,7 +251,7 @@ async function onSubmit() {
 async function onDelete(id: string) {
   try {
     await deleteTodoApi(id)
-    Message.success(t('todo.deleteSuccess'))
+    MessagePlugin.success(t('todo.deleteSuccess'))
     loadTodos()
   } catch (err) {
     console.error('todo delete error:', err)

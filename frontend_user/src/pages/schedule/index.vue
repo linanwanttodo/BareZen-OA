@@ -66,16 +66,16 @@
         </t-form-item>
         <t-form-item :label="$t('schedule.timeRange')" required>
           
-<!-- TODO(date-picker): 核对返回值格式（原 Arco 为字符串） --><t-date-picker v-model="form.startTime" show-time value-format="YYYY-MM-DD HH:mm" style="width: 100%; max-width: " :placeholder="$t('schedule.startTime')" />
+<t-date-picker v-model="form.startTime" show-time value-type="YYYY-MM-DD HH:mm" style="width: 100%" :placeholder="$t('schedule.startTime')" />
           <span class="mx-2">~</span>
           
-<!-- TODO(date-picker): 核对返回值格式（原 Arco 为字符串） --><t-date-picker v-model="form.endTime" show-time value-format="YYYY-MM-DD HH:mm" style="width: 100%; max-width: " :placeholder="$t('schedule.endTime')" />
+<t-date-picker v-model="form.endTime" show-time value-type="YYYY-MM-DD HH:mm" style="width: 100%" :placeholder="$t('schedule.endTime')" />
         </t-form-item>
         <t-row :gutter="16">
           <t-col :span="12">
             <t-form-item :label="$t('schedule.remind')">
               
-<!-- TODO(date-picker): 核对返回值格式（原 Arco 为字符串） --><t-date-picker v-model="form.remindTime" show-time value-format="YYYY-MM-DD HH:mm" style="width: 100%" :placeholder="$t('schedule.remindPlaceholder')" />
+<t-date-picker v-model="form.remindTime" show-time value-type="YYYY-MM-DD HH:mm" style="width: 100%" :placeholder="$t('schedule.remindPlaceholder')" />
             </t-form-item>
           </t-col>
           <t-col :span="12">
@@ -94,7 +94,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
-import { MessagePlugin as Message } from 'tdesign-vue-next'
+import { MessagePlugin } from 'tdesign-vue-next'
 import { getMySchedulesApi, addScheduleApi, updateScheduleApi, deleteScheduleApi, type Schedule } from '@/api/enterprise'
 
 const loading = ref(false)
@@ -141,11 +141,11 @@ function openEdit(item: Schedule) {
 
 async function handleSave() {
   if (!form.title) {
-    Message.warning('请填写日程标题')
+    MessagePlugin.warning('请填写日程标题')
     return
   }
   if (!form.startTime || !form.endTime) {
-    Message.warning('请选择日程时间')
+    MessagePlugin.warning('请选择日程时间')
     return
   }
   saving.value = true
@@ -155,7 +155,7 @@ async function handleSave() {
     } else {
       await addScheduleApi(form)
     }
-    Message.success('保存成功')
+    MessagePlugin.success('保存成功')
     dialogVisible.value = false
     loadSchedules()
   } finally {
@@ -165,13 +165,13 @@ async function handleSave() {
 
 async function markDone(item: Schedule) {
   await updateScheduleApi({ id: item.id, status: '2' })
-  Message.success('已标记完成')
+  MessagePlugin.success('已标记完成')
   loadSchedules()
 }
 
 async function handleDelete(item: Schedule) {
   await deleteScheduleApi(item.id)
-  Message.success('删除成功')
+  MessagePlugin.success('删除成功')
   loadSchedules()
 }
 

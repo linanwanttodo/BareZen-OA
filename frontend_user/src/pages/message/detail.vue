@@ -11,7 +11,7 @@
     <t-loading :loading="loading">
       <div v-if="message" class="rounded-wecom-md border border-[var(--wecom-border)] bg-[var(--wecom-bg-card)] p-6">
         <div class="mb-4 flex items-center gap-2">
-          <t-tag :color="tagColor" size="small">{{ tagLabel }}</t-tag>
+          <t-tag :theme="tagTheme" size="small">{{ tagLabel }}</t-tag>
           <span class="text-xs text-[var(--muted-foreground)]">{{ formatDate(message.createTime) }}</span>
           <span v-if="message.isRead === 1" class="text-xs text-[var(--muted-foreground)]">{{ $t('message.read') }}</span>
           <span v-else class="text-xs text-[var(--primary)]">{{ $t('message.unread') }}</span>
@@ -28,7 +28,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { MessagePlugin as Message } from 'tdesign-vue-next'
+import { MessagePlugin } from 'tdesign-vue-next'
 import { getMessageDetailApi } from '@/api/message'
 import type { SysMessage } from '@/types/api'
 import { formatDate } from '@/utils/format'
@@ -39,8 +39,8 @@ const route = useRoute()
 const loading = ref(false)
 const message = ref<SysMessage | null>(null)
 
-const tagColor = computed(() => {
-  return { approval: 'arcoblue', system: 'gray', notice: 'green' }[message.value?.msgType || ''] || 'gray'
+const tagTheme = computed(() => {
+  return { approval: 'primary', system: 'default', notice: 'success' }[message.value?.msgType || ''] || 'default'
 })
 
 const tagLabel = computed(() => {
@@ -63,11 +63,11 @@ async function loadMessage() {
     if (res.code === 200 && res.data) {
       message.value = res.data
     } else {
-      Message.error(res.msg || t('message.notFound'))
+      MessagePlugin.error(res.msg || t('message.notFound'))
     }
   } catch (e) {
     console.error('load message detail error:', e)
-    Message.error(t('message.notFound'))
+    MessagePlugin.error(t('message.notFound'))
   } finally {
     loading.value = false
   }

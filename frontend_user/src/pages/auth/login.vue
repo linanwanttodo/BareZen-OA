@@ -69,7 +69,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useUserStore } from '@/stores/user'
 import { getCaptchaApi } from '@/api/auth'
-import { MessagePlugin as Message } from 'tdesign-vue-next'
+import { MessagePlugin } from 'tdesign-vue-next'
 import { safeRedirect } from '@/utils/url'
 
 const { t } = useI18n()
@@ -105,7 +105,7 @@ async function onSubmit() {
       captchaCode: formData.captchaCode,
       uuid: captchaUuid.value,
     })
-    Message.success(t('auth.loginSuccess'))
+    MessagePlugin.success(t('auth.loginSuccess'))
     const redirect = (route.query.redirect as string) || '/'
     router.push(safeRedirect(redirect))
   } catch {

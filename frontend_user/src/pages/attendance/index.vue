@@ -35,10 +35,10 @@
             <t-col :span="16">
               <t-form-item :label="$t('attendance.timeRange')" required>
                 
-<!-- TODO(date-picker): 核对返回值格式（原 Arco 为字符串） --><t-date-picker v-model="leaveForm.startTime" show-time style="width: 100%; max-width: " :placeholder="$t('attendance.startTime')" />
+<t-date-picker v-model="leaveForm.startTime" show-time value-type="YYYY-MM-DD HH:mm" style="width: 100%" :placeholder="$t('attendance.startTime')" />
                 <span class="mx-2">~</span>
                 
-<!-- TODO(date-picker): 核对返回值格式（原 Arco 为字符串） --><t-date-picker v-model="leaveForm.endTime" show-time style="width: 100%; max-width: " :placeholder="$t('attendance.endTime')" />
+<t-date-picker v-model="leaveForm.endTime" show-time value-type="YYYY-MM-DD HH:mm" style="width: 100%" :placeholder="$t('attendance.endTime')" />
               </t-form-item>
             </t-col>
           </t-row>
@@ -58,7 +58,7 @@
             <div v-for="item in leaves" :key="item.id" class="flex items-start gap-4 rounded-wecom-md border border-[var(--wecom-border)] bg-[var(--wecom-bg-card)] p-5">
               <div class="min-w-0 flex-1">
                 <div class="mb-1 flex items-center gap-2">
-                  <t-tag :color="statusColor(item.status)">{{ statusText(item.status) }}</t-tag>
+                  <t-tag :theme="statusTheme(item.status)">{{ statusText(item.status) }}</t-tag>
                   <span class="font-medium text-[var(--foreground)]">{{ leaveTypeText(item.leaveType) }}</span>
                   <span class="text-sm text-[var(--muted-foreground)]">{{ item.startTime }} ~ {{ item.endTime }}</span>
                 </div>
@@ -86,10 +86,10 @@
             <t-col :span="12">
               <t-form-item :label="$t('attendance.timeRange')" required>
                 
-<!-- TODO(date-picker): 核对返回值格式（原 Arco 为字符串） --><t-date-picker v-model="overtimeForm.startTime" show-time style="width: 100%; max-width: " :placeholder="$t('attendance.startTime')" />
+<t-date-picker v-model="overtimeForm.startTime" show-time value-type="YYYY-MM-DD HH:mm" style="width: 100%" :placeholder="$t('attendance.startTime')" />
                 <span class="mx-2">~</span>
                 
-<!-- TODO(date-picker): 核对返回值格式（原 Arco 为字符串） --><t-date-picker v-model="overtimeForm.endTime" show-time style="width: 100%; max-width: " :placeholder="$t('attendance.endTime')" />
+<t-date-picker v-model="overtimeForm.endTime" show-time value-type="YYYY-MM-DD HH:mm" style="width: 100%" :placeholder="$t('attendance.endTime')" />
               </t-form-item>
             </t-col>
             <t-col :span="6">
@@ -100,7 +100,7 @@
             <t-col :span="6">
               <t-form-item :label="$t('attendance.overtimeDate')">
                 
-<!-- TODO(date-picker): 核对返回值格式（原 Arco 为字符串） --><t-date-picker v-model="overtimeForm.overtimeDate" style="width: 100%" />
+<t-date-picker v-model="overtimeForm.overtimeDate" value-type="YYYY-MM-DD" style="width: 100%" />
               </t-form-item>
             </t-col>
           </t-row>
@@ -120,7 +120,7 @@
             <div v-for="item in overtimes" :key="item.id" class="flex items-start gap-4 rounded-wecom-md border border-[var(--wecom-border)] bg-[var(--wecom-bg-card)] p-5">
               <div class="min-w-0 flex-1">
                 <div class="mb-1 flex items-center gap-2">
-                  <t-tag :color="statusColor(item.status)">{{ statusText(item.status) }}</t-tag>
+                  <t-tag :theme="statusTheme(item.status)">{{ statusText(item.status) }}</t-tag>
                   <span class="text-sm text-[var(--muted-foreground)]">{{ item.startTime }} ~ {{ item.endTime }}</span>
                   <span v-if="item.durationHours" class="text-sm text-[var(--muted-foreground)]">{{ item.durationHours }}h</span>
                 </div>
@@ -153,10 +153,10 @@
             <t-col :span="12">
               <t-form-item :label="$t('attendance.timeRange')" required>
                 
-<!-- TODO(date-picker): 核对返回值格式（原 Arco 为字符串） --><t-date-picker v-model="travelForm.startTime" show-time style="width: 100%; max-width: " :placeholder="$t('attendance.startTime')" />
+<t-date-picker v-model="travelForm.startTime" show-time value-type="YYYY-MM-DD HH:mm" style="width: 100%" :placeholder="$t('attendance.startTime')" />
                 <span class="mx-2">~</span>
                 
-<!-- TODO(date-picker): 核对返回值格式（原 Arco 为字符串） --><t-date-picker v-model="travelForm.endTime" show-time style="width: 100%; max-width: " :placeholder="$t('attendance.endTime')" />
+<t-date-picker v-model="travelForm.endTime" show-time value-type="YYYY-MM-DD HH:mm" style="width: 100%" :placeholder="$t('attendance.endTime')" />
               </t-form-item>
             </t-col>
             <t-col :span="6">
@@ -181,7 +181,7 @@
             <div v-for="item in travels" :key="item.id" class="flex items-start gap-4 rounded-wecom-md border border-[var(--wecom-border)] bg-[var(--wecom-bg-card)] p-5">
               <div class="min-w-0 flex-1">
                 <div class="mb-1 flex items-center gap-2">
-                  <t-tag :color="statusColor(item.status)">{{ statusText(item.status) }}</t-tag>
+                  <t-tag :theme="statusTheme(item.status)">{{ statusText(item.status) }}</t-tag>
                   <span class="font-medium text-[var(--foreground)]">{{ item.destination }}</span>
                   <span class="text-sm text-[var(--muted-foreground)]">{{ item.startTime }} ~ {{ item.endTime }}</span>
                 </div>
@@ -227,7 +227,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
-import { MessagePlugin as Message } from 'tdesign-vue-next'
+import { MessagePlugin } from 'tdesign-vue-next'
 import {
   getMyLeavesApi, submitLeaveApi, revokeLeaveApi,
   getMyOvertimesApi, submitOvertimeApi, revokeOvertimeApi,
@@ -271,10 +271,10 @@ function statusText(status: string | undefined): string {
   const map: Record<string, string> = { 0: '待审批', 1: '已通过', 2: '已驳回', 3: '已撤销' }
   return status != null ? map[status] || '-' : '-'
 }
-function statusColor(status: string | undefined): string {
-  if (status === '0') return 'orange'
-  if (status === '1') return 'green'
-  if (status === '2') return 'red'
+function statusTheme(status: string | undefined): 'default' | 'warning' | 'success' | 'danger' {
+  if (status === '0') return 'warning'
+  if (status === '1') return 'success'
+  if (status === '2') return 'danger'
   return 'default'
 }
 
@@ -316,15 +316,15 @@ function onTabChange(key: string | number) {
 
 async function handleSubmitLeave() {
   if (!leaveForm.leaveType) {
-    Message.warning('请选择请假类型')
+    MessagePlugin.warning('请选择请假类型')
     return
   }
   if (!leaveForm.startTime || !leaveForm.endTime) {
-    Message.warning('请选择请假时间')
+    MessagePlugin.warning('请选择请假时间')
     return
   }
   if (!leaveForm.reason) {
-    Message.warning('请填写请假事由')
+    MessagePlugin.warning('请填写请假事由')
     return
   }
   submitting.value = true
@@ -336,7 +336,7 @@ async function handleSubmitLeave() {
       endTime: leaveForm.endTime,
       reason: leaveForm.reason,
     })
-    Message.success('提交成功，等待审批')
+    MessagePlugin.success('提交成功，等待审批')
     leaveForm.leaveType = ''
     leaveForm.startTime = ''
     leaveForm.endTime = ''
@@ -349,11 +349,11 @@ async function handleSubmitLeave() {
 
 async function handleSubmitOvertime() {
   if (!overtimeForm.startTime || !overtimeForm.endTime) {
-    Message.warning('请选择加班时间')
+    MessagePlugin.warning('请选择加班时间')
     return
   }
   if (!overtimeForm.reason) {
-    Message.warning('请填写加班事由')
+    MessagePlugin.warning('请填写加班事由')
     return
   }
   submitting.value = true
@@ -366,7 +366,7 @@ async function handleSubmitOvertime() {
       durationHours: Number(overtimeForm.durationHours) || 1,
       reason: overtimeForm.reason,
     })
-    Message.success('提交成功，等待审批')
+    MessagePlugin.success('提交成功，等待审批')
     overtimeForm.startTime = ''
     overtimeForm.endTime = ''
     overtimeForm.overtimeDate = ''
@@ -379,15 +379,15 @@ async function handleSubmitOvertime() {
 
 async function handleSubmitTravel() {
   if (!travelForm.destination) {
-    Message.warning('请填写目的地')
+    MessagePlugin.warning('请填写目的地')
     return
   }
   if (!travelForm.startTime || !travelForm.endTime) {
-    Message.warning('请选择出差时间')
+    MessagePlugin.warning('请选择出差时间')
     return
   }
   if (!travelForm.purpose) {
-    Message.warning('请填写出差事由')
+    MessagePlugin.warning('请填写出差事由')
     return
   }
   submitting.value = true
@@ -400,7 +400,7 @@ async function handleSubmitTravel() {
       days: Number(travelForm.days) || 1,
       purpose: travelForm.purpose,
     })
-    Message.success('提交成功，等待审批')
+    MessagePlugin.success('提交成功，等待审批')
     travelForm.destination = ''
     travelForm.startTime = ''
     travelForm.endTime = ''
@@ -413,19 +413,19 @@ async function handleSubmitTravel() {
 
 async function handleRevokeLeave(item: LeaveRequest) {
   await revokeLeaveApi(item.id)
-  Message.success('已撤销')
+  MessagePlugin.success('已撤销')
   loadLeaves()
 }
 
 async function handleRevokeOvertime(item: OvertimeRequest) {
   await revokeOvertimeApi(item.id)
-  Message.success('已撤销')
+  MessagePlugin.success('已撤销')
   loadOvertimes()
 }
 
 async function handleRevokeTravel(item: TravelRequest) {
   await revokeTravelApi(item.id)
-  Message.success('已撤销')
+  MessagePlugin.success('已撤销')
   loadTravels()
 }
 

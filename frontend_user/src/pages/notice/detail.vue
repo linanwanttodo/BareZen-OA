@@ -1,14 +1,14 @@
 <template>
   <div class="mx-auto max-w-4xl px-6 py-8">
     <t-button variant="text" size="small" class="mb-6" @click="router.push('/notices')">
-      <ChevronLeft :size="16" class="mr-1.5" />
+      <icon-left :size="16" class="mr-1.5" />
       {{ $t('notice.backToList') }}
     </t-button>
 
     <div v-if="notice" class="rounded-wecom-md border border-[var(--wecom-border)] bg-[var(--wecom-bg-card)] p-8">
       <div class="mb-6 border-b border-[var(--border)] pb-6">
         <div class="mb-3 flex items-center gap-2">
-          <t-tag :color="notice.noticeType === '1' ? 'arcoblue' : 'green'">
+          <t-tag :theme="notice.noticeType === '1' ? 'primary' : 'success'">
             {{ notice.noticeType === '1' ? $t('notice.typeNotice') : $t('notice.typeAnnouncement') }}
           </t-tag>
         </div>
@@ -27,7 +27,6 @@
 import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { ChevronLeft } from 'lucide-vue-next'
 import { getNoticeDetailApi } from '@/api/enterprise'
 import type { Notice } from '@/types/api'
 

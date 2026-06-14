@@ -32,7 +32,7 @@
             :class="{ 'user-header__nav-item--active': isGroupActive(group) }"
           >
             <span>{{ group.title }}</span>
-            <ChevronDown :size="14" class="user-header__nav-group-icon" />
+            <ChevronDownIcon size="14px" class="user-header__nav-group-icon" />
           </div>
           <template #content>
             <t-dropdown-item v-for="child in group.children" :key="child.path" @click="router.push(child.path)">
@@ -42,12 +42,13 @@
         </t-dropdown>
       </nav>
 
-      <!-- 右侧：消息铃铛 + 用户信息 -->
+      <!-- 右侧：主题切换 + 消息铃铛 + 用户信息 -->
       <div class="user-header__right">
+        <ThemeToggle />
         <template v-if="userStore.token">
           <div class="user-header__bell" title="消息中心" @click="router.push('/messages')">
             <t-badge :count="unreadCount" :max-count="99" :offset="[2, -2]">
-              <icon-notification :size="18" />
+              <icon-notification size="18px" />
             </t-badge>
           </div>
           <t-dropdown>
@@ -116,8 +117,8 @@
         <div v-if="pwdForm.newPassword" class="mb-2 rounded-wecom-md bg-[var(--wecom-bg-container)] p-3 text-xs">
           <p class="mb-1 font-medium">密码强度要求：</p>
           <p v-for="rule in passwordRules" :key="rule.label" class="flex items-center gap-1.5" :class="rule.valid ? 'text-[var(--wecom-success)]' : 'text-[var(--wecom-text-tertiary)]'">
-            <icon-check v-if="rule.valid" :size="12" />
-            <icon-minus v-else :size="12" />
+            <icon-check v-if="rule.valid" size="12px" />
+            <icon-minus v-else size="12px" />
             <span>{{ rule.label }}</span>
           </p>
         </div>
@@ -132,9 +133,10 @@
 <script setup lang="ts">
 import { computed, ref, reactive, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { MessagePlugin as Message } from 'tdesign-vue-next'
-import { ChevronDown } from 'lucide-vue-next'
+import { MessagePlugin } from 'tdesign-vue-next'
+import { ChevronDownIcon } from 'tdesign-icons-vue-next'
 import { useUserStore } from '@/stores/user'
+import ThemeToggle from '@/components/common/ThemeToggle.vue'
 import { changePasswordApi } from '@/api/auth'
 import { getUnreadCountApi } from '@/api/message'
 
@@ -204,7 +206,7 @@ function isGroupActive(group: { children: NavItem[] }): boolean {
 async function onLogout() {
   await userStore.logout()
   router.push('/')
-  Message.success('已退出登录')
+  MessagePlugin.success('已退出登录')
 }
 
 // ---- 修改密码 ----
@@ -276,21 +278,21 @@ function strengthBarClass(barIndex: number): string {
 
 async function onPwdSubmit() {
   if (!pwdForm.oldPassword || !pwdForm.newPassword || !pwdForm.confirmPassword) {
-    Message.warning('请填写完整信息')
+    MessagePlugin.warning('请填写完整信息')
     return
   }
   // 与后端 PasswordUtil.validatePasswordPolicy 完全一致的五项校验
   if (!passwordRules.value.every((r) => r.valid)) {
-    Message.warning('密码不满足强度要求，请检查所有规则')
+    MessagePlugin.warning('密码不满足强度要求，请检查所有规则')
     return
   }
   if (pwdForm.newPassword !== pwdForm.confirmPassword) {
-    Message.warning('两次输入的新密码不一致')
+    MessagePlugin.warning('两次输入的新密码不一致')
     return
   }
   try {
     await changePasswordApi({ oldPassword: pwdForm.oldPassword, newPassword: pwdForm.newPassword })
-    Message.success('密码修改成功，请重新登录')
+    MessagePlugin.success('密码修改成功，请重新登录')
     pwdDialogVisible.value = false
     pwdForm.oldPassword = ''
     pwdForm.newPassword = ''
@@ -299,7 +301,7 @@ async function onPwdSubmit() {
     router.push('/auth/login')
   } catch (e) {
     const msg = (e as Error)?.message || '密码修改失败'
-    Message.error(msg)
+    MessagePlugin.error(msg)
   }
 }
 </script>
@@ -355,7 +357,7 @@ async function onPwdSubmit() {
   padding: 6px 16px;
   font-size: 14px;
   color: var(--muted-foreground);
-  border-radius: 4px;
+  border-radius: var(--td-radius-default);
   cursor: pointer;
   user-select: none;
 }
@@ -392,7 +394,7 @@ async function onPwdSubmit() {
   display: flex;
   align-items: center;
   padding: 6px;
-  border-radius: 4px;
+  border-radius: var(--td-radius-default);
   cursor: pointer;
   color: var(--muted-foreground);
 }
@@ -406,7 +408,7 @@ async function onPwdSubmit() {
   gap: 8px;
   cursor: pointer;
   padding: 4px 8px;
-  border-radius: 4px;
+  border-radius: var(--td-radius-default);
 }
 .user-header__user:hover {
   background: var(--muted);

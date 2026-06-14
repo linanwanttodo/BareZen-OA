@@ -5,31 +5,27 @@
 
     <!-- 头像区域 -->
     <div class="flex flex-col items-center mb-8">
-      <div class="w-20 h-20 rounded-wecom-lg bg-[var(--wecom-primary)] flex items-center justify-center text-white text-2xl font-semibold mb-3">
-        {{ userInitial }}
-      </div>
-      <h2 class="text-xl font-semibold text-[var(--wecom-text-primary)]">{{ userStore.userInfo?.nickName }}</h2>
+      <t-avatar :size="80" :style="{ background: 'var(--td-brand-color)', fontSize: '28px' }">{{ userInitial }}</t-avatar>
+      <h2 class="mt-3 text-xl font-semibold text-[var(--wecom-text-primary)]">{{ userStore.userInfo?.nickName }}</h2>
       <p class="text-sm text-[var(--wecom-text-tertiary)]">@{{ userStore.userInfo?.userName }}</p>
     </div>
 
     <!-- 信息卡片 -->
-    <Card>
-      <CardContent class="p-6">
-        <div class="space-y-4">
-          <div v-for="(item, index) in profileData" :key="index"
-               class="flex items-center justify-between py-2 border-b border-[var(--wecom-border)] last:border-0">
-            <span class="text-[var(--wecom-text-tertiary)] text-sm">{{ item.label }}</span>
-            <span class="text-[var(--wecom-text-primary)] font-medium">{{ item.value }}</span>
-          </div>
+    <t-card>
+      <div class="space-y-4">
+        <div v-for="(item, index) in profileData" :key="index"
+             class="flex items-center justify-between py-2 border-b border-[var(--wecom-border)] last:border-0">
+          <span class="text-[var(--wecom-text-tertiary)] text-sm">{{ item.label }}</span>
+          <span class="text-[var(--wecom-text-primary)] font-medium">{{ item.value }}</span>
         </div>
+      </div>
 
-        <div class="mt-6 flex justify-center">
-          <Button variant="outline" @click="showEditDialog = true">
-            {{ $t('profile.editProfile') }}
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+      <div class="mt-6 flex justify-center">
+        <t-button variant="outline" @click="showEditDialog = true">
+          {{ $t('profile.editProfile') }}
+        </t-button>
+      </div>
+    </t-card>
 
     <!-- 编辑资料对话框 -->
     <t-dialog v-model="showEditDialog" :title="$t('profile.editProfile')" @confirm="onEditSubmit" @cancel="showEditDialog = false">
@@ -58,7 +54,7 @@
 <script setup lang="ts">
 import { computed, ref, reactive, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { MessagePlugin as Message } from 'tdesign-vue-next'
+import { MessagePlugin } from 'tdesign-vue-next'
 import { useUserStore } from '@/stores/user'
 import { updateProfileApi } from '@/api/enterprise'
 
@@ -109,7 +105,7 @@ async function onEditSubmit() {
       phone: editForm.phone,
       sex: editForm.sex,
     })
-    Message.success(t('profile.updateSuccess'))
+    MessagePlugin.success(t('profile.updateSuccess'))
     showEditDialog.value = false
     await userStore.fetchUserInfo()
   } catch {

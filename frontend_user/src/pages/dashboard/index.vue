@@ -1,46 +1,40 @@
 <template>
   <div class="px-6 py-8 max-w-5xl mx-auto">
     <div v-if="loading" class="flex items-center justify-center h-64">
-      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--primary)]"></div>
-      <span class="ml-2 text-[var(--muted-foreground)]">{{ $t('common.loading') }}</span>
+      <t-loading size="28px" :text="$t('common.loading')" />
     </div>
     <template v-else>
       <!-- 欢迎区 -->
       <div class="mb-8">
-      <h1 class="text-xl font-semibold text-[var(--wecom-text-primary)]">{{ $t('dashboard.welcome', { name: nickName }) }}</h1>
-      <p class="mt-1 text-sm text-[var(--wecom-text-tertiary)]">{{ todayStr }}</p>
-    </div>
+        <h1 class="text-xl font-semibold text-[var(--wecom-text-primary)]">{{ $t('dashboard.welcome', { name: nickName }) }}</h1>
+        <p class="mt-1 text-sm text-[var(--wecom-text-tertiary)]">{{ todayStr }}</p>
+      </div>
 
-    <!-- 统计卡片 -->
-    <div class="grid grid-cols-3 gap-4 mb-8">
-      <div class="rounded-wecom-md border border-[var(--wecom-border)] bg-[var(--wecom-bg-card)] p-5 shadow-wecom-sm">
-        <p class="text-sm text-[var(--wecom-text-tertiary)]">{{ $t('dashboard.todayTask') }}</p>
-        <p class="mt-2 text-2xl font-semibold text-[var(--wecom-text-primary)]">{{ dashboard.todoCount || 0 }}</p>
+      <!-- 统计卡片 -->
+      <div class="stat-grid">
+        <t-card :title="$t('dashboard.todayTask')" :header-bordered="false">
+          <p class="stat-value">{{ dashboard.todoCount || 0 }}</p>
+        </t-card>
+        <t-card :title="$t('dashboard.doneCount')" :header-bordered="false">
+          <p class="stat-value">{{ dashboard.doneCount || 0 }}</p>
+        </t-card>
+        <t-card :title="$t('dashboard.urgent')" :header-bordered="false">
+          <p class="stat-value">{{ dashboard.urgentCount || 0 }}</p>
+        </t-card>
       </div>
-      <div class="rounded-wecom-md border border-[var(--wecom-border)] bg-[var(--wecom-bg-card)] p-5 shadow-wecom-sm">
-        <p class="text-sm text-[var(--wecom-text-tertiary)]">{{ $t('dashboard.doneCount') }}</p>
-        <p class="mt-2 text-2xl font-semibold text-[var(--wecom-text-primary)]">{{ dashboard.doneCount || 0 }}</p>
-      </div>
-      <div class="rounded-wecom-md border border-[var(--wecom-border)] bg-[var(--wecom-bg-card)] p-5 shadow-wecom-sm">
-        <p class="text-sm text-[var(--wecom-text-tertiary)]">{{ $t('dashboard.urgent') }}</p>
-        <p class="mt-2 text-2xl font-semibold text-[var(--wecom-text-primary)]">{{ dashboard.urgentCount || 0 }}</p>
-      </div>
-    </div>
 
-    <!-- 双栏内容 -->
-    <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-      <!-- 最新通知 -->
-      <div class="rounded-wecom-md border border-[var(--wecom-border)] bg-[var(--wecom-bg-card)] shadow-wecom-sm">
-        <div class="flex items-center justify-between border-b border-[var(--wecom-border)] px-5 py-4">
-          <h2 class="text-sm font-medium text-[var(--wecom-text-primary)]">{{ $t('dashboard.latestNotices') }}</h2>
-          <button class="text-xs text-[var(--wecom-primary)]" @click="router.push('/notices')">{{ $t('dashboard.viewAll') }}</button>
-        </div>
-        <div class="p-5">
+      <!-- 双栏内容 -->
+      <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <!-- 最新通知 -->
+        <t-card :title="$t('dashboard.latestNotices')" :header-bordered="false">
+          <template #actions>
+            <t-link theme="primary" hover="color" class="text-xs" @click="router.push('/notices')">{{ $t('dashboard.viewAll') }}</t-link>
+          </template>
           <div v-if="dashboard.latestNotices?.length" class="space-y-3">
             <div
               v-for="notice in dashboard.latestNotices"
               :key="notice.id"
-              class="flex items-center justify-between rounded-wecom-sm border border-[var(--wecom-border)] px-4 py-3 cursor-pointer hover:bg-[var(--wecom-bg-hover)] transition-colors"
+              class="list-item"
               @click="router.push(`/notices/${notice.id}`)"
             >
               <div class="flex items-center gap-3 min-w-0">
@@ -53,18 +47,15 @@
             </div>
           </div>
           <div v-else class="py-8 text-center text-sm text-[var(--wecom-text-tertiary)]">{{ $t('dashboard.noNotices') }}</div>
-        </div>
-      </div>
+        </t-card>
 
-      <!-- 待办事项 -->
-      <div class="rounded-wecom-md border border-[var(--wecom-border)] bg-[var(--wecom-bg-card)] shadow-wecom-sm">
-        <div class="flex items-center justify-between border-b border-[var(--wecom-border)] px-5 py-4">
-          <h2 class="text-sm font-medium text-[var(--wecom-text-primary)]">{{ $t('dashboard.upcomingTodos') }}</h2>
-          <button class="text-xs text-[var(--wecom-primary)]" @click="router.push('/todos')">{{ $t('dashboard.viewAll') }}</button>
-        </div>
-        <div class="p-5">
+        <!-- 待办事项 -->
+        <t-card :title="$t('dashboard.upcomingTodos')" :header-bordered="false">
+          <template #actions>
+            <t-link theme="primary" hover="color" class="text-xs" @click="router.push('/todos')">{{ $t('dashboard.viewAll') }}</t-link>
+          </template>
           <div v-if="dashboard.upcomingTodos?.length" class="space-y-3">
-            <div v-for="todo in dashboard.upcomingTodos" :key="todo.id" class="flex items-center justify-between rounded-wecom-sm border border-[var(--wecom-border)] px-4 py-3">
+            <div v-for="todo in dashboard.upcomingTodos" :key="todo.id" class="list-item">
               <div class="flex items-center gap-3 min-w-0">
                 <span class="h-2 w-2 rounded-full shrink-0" :class="todo.priority >= 2 ? 'bg-[var(--wecom-error)]' : 'bg-[var(--wecom-text-disabled)]'"></span>
                 <span class="truncate text-sm text-[var(--wecom-text-primary)]">{{ todo.title }}</span>
@@ -73,27 +64,27 @@
             </div>
           </div>
           <div v-else class="py-8 text-center text-sm text-[var(--wecom-text-tertiary)]">{{ $t('dashboard.noUpcoming') }}</div>
-        </div>
+        </t-card>
       </div>
-    </div>
 
-    <!-- 快捷入口 -->
-    <div class="mt-6 rounded-wecom-md border border-[var(--wecom-border)] bg-[var(--wecom-bg-card)] p-5 shadow-wecom-sm">
-      <h2 class="mb-4 text-sm font-medium text-[var(--wecom-text-primary)]">{{ $t('dashboard.quickEntry') }}</h2>
-      <div class="grid grid-cols-4 gap-3">
-        <button
-          v-for="entry in quickEntries"
-          :key="entry.path"
-          type="button"
-          class="flex flex-col items-center gap-2 rounded-wecom-sm border border-[var(--wecom-border)] px-4 py-4 text-sm text-[var(--wecom-text-primary)] hover:bg-[var(--wecom-bg-hover)] transition-colors"
-          @click="router.push(entry.path)"
-        >
-          <component :is="entry.icon" :size="20" class="text-[var(--wecom-text-tertiary)]" />
-          <span>{{ entry.title }}</span>
-        </button>
-      </div>
-    </div>
-  </template>
+      <!-- 快捷入口 -->
+      <t-card class="quick-entry-card" :title="$t('dashboard.quickEntry')" :header-bordered="false">
+        <div class="quick-grid">
+          <t-button
+            v-for="entry in quickEntries"
+            :key="entry.path"
+            variant="outline"
+            theme="default"
+            size="large"
+            class="quick-entry-btn"
+            @click="router.push(entry.path)"
+          >
+            <template #icon><component :is="entry.icon" size="20px" /></template>
+            {{ entry.title }}
+          </t-button>
+        </div>
+      </t-card>
+    </template>
   </div>
 </template>
 
@@ -101,7 +92,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { Bell, CheckSquare, Users, FileText, Clock, NotebookPen, Calendar, Package } from 'lucide-vue-next'
+import { NotificationIcon, CheckRectangleIcon, UsergroupIcon, FileIcon, TimeIcon, EditIcon, CalendarIcon, CartIcon } from 'tdesign-icons-vue-next'
 import { useUserStore } from '@/stores/user'
 import { formatShortDate } from '@/utils/format'
 import { getDashboardApi } from '@/api/enterprise'
@@ -123,14 +114,14 @@ const todayStr = computed(() => {
 })
 
 const quickEntries = computed(() => [
-  { title: t('dashboard.noticeCount'), path: '/notices', icon: Bell },
-  { title: t('dashboard.contact'), path: '/contacts', icon: Users },
-  { title: t('dashboard.todayTask'), path: '/todos', icon: CheckSquare },
-  { title: t('dashboard.myProfile'), path: '/user/profile', icon: FileText },
-  { title: t('dashboard.attendance'), path: '/attendance', icon: Clock },
-  { title: t('dashboard.worklog'), path: '/worklogs', icon: NotebookPen },
-  { title: t('dashboard.schedule'), path: '/schedules', icon: Calendar },
-  { title: t('dashboard.supply'), path: '/supplies', icon: Package },
+  { title: t('dashboard.noticeCount'), path: '/notices', icon: NotificationIcon },
+  { title: t('dashboard.contact'), path: '/contacts', icon: UsergroupIcon },
+  { title: t('dashboard.todayTask'), path: '/todos', icon: CheckRectangleIcon },
+  { title: t('dashboard.myProfile'), path: '/user/profile', icon: FileIcon },
+  { title: t('dashboard.attendance'), path: '/attendance', icon: TimeIcon },
+  { title: t('dashboard.worklog'), path: '/worklogs', icon: EditIcon },
+  { title: t('dashboard.schedule'), path: '/schedules', icon: CalendarIcon },
+  { title: t('dashboard.supply'), path: '/supplies', icon: CartIcon },
 ])
 
 async function loadDashboard() {
@@ -149,3 +140,59 @@ onMounted(() => {
   loadDashboard()
 })
 </script>
+
+<style scoped>
+/* 统计卡片栅格 */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 32px;
+}
+.stat-value {
+  margin-top: 4px;
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--wecom-text-primary);
+}
+/* 列表行（通知/待办共用） */
+.list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid var(--wecom-border);
+  border-radius: var(--td-radius-small);
+  padding: 12px 16px;
+}
+.list-item:hover {
+  background: var(--wecom-bg-hover);
+}
+/* 快捷入口卡片 */
+.quick-entry-card {
+  margin-top: 24px;
+}
+.quick-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+.quick-entry-btn {
+  height: auto;
+  padding: 16px;
+  flex-direction: column;
+  gap: 8px;
+  white-space: normal;
+}
+.quick-entry-btn:hover {
+  border-color: var(--td-brand-color);
+  color: var(--td-brand-color);
+}
+@media (max-width: 768px) {
+  .stat-grid {
+    grid-template-columns: 1fr;
+  }
+  .quick-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+</style>
