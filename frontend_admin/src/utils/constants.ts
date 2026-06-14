@@ -74,6 +74,15 @@ export const PERMISSIONS = {
     vehicleDelete: 'office:vehicle:delete',
     vehicleApprove: 'office:vehicle:approve',
   },
+  salary: {
+    structureList: 'salary:structure:list',
+    structureAdd: 'salary:structure:add',
+    structureEdit: 'salary:structure:edit',
+    structureDelete: 'salary:structure:delete',
+    paymentList: 'salary:payment:list',
+    paymentExecute: 'salary:payment:execute',
+    statisticsView: 'salary:statistics:view',
+  },
   system: {
     apiKeyAdd: 'system:apiKey:add',
     apiKeyEdit: 'system:apiKey:edit',
@@ -114,6 +123,7 @@ export const PERMISSIONS = {
     flowTemplateAdd: 'system:flow:template:add',
     flowTemplateEdit: 'system:flow:template:edit',
     flowTemplateDelete: 'system:flow:template:delete',
+    pluginManage: 'system:plugin:manage',
   },
 }
 
