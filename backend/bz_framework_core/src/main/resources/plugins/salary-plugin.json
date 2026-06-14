@@ -11,13 +11,16 @@
     "salary.payment.day": 10
   },
   "controllers": [
-    "com.linan.plugin.salary.controller.SalaryStructureController"
+    "com.linan.plugin.salary.controller.SalaryStructureController",
+    "com.linan.plugin.salary.controller.SalaryPaymentController"
   ],
   "services": [
-    "com.linan.plugin.salary.service.ISalaryStructureService"
+    "com.linan.plugin.salary.service.ISalaryStructureService",
+    "com.linan.plugin.salary.service.ISalaryPaymentRecordService"
   ],
   "entities": [
-    "com.linan.plugin.salary.entity.SalaryStructure"
+    "com.linan.plugin.salary.entity.SalaryStructure",
+    "com.linan.plugin.salary.entity.SalaryPaymentRecord"
   ],
   "migrations": [
     "V47__salary_plugin.sql"

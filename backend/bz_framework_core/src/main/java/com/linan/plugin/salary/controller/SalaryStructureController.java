@@ -1,5 +1,8 @@
 package com.linan.plugin.salary.controller;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.linan.core.common.api.PageResult;
 import com.linan.core.common.api.Result;
 import com.linan.core.security.RequirePermission;
 import com.linan.plugin.salary.entity.SalaryStructure;
@@ -25,6 +28,19 @@ import java.util.List;
 public class SalaryStructureController {
 
     private final ISalaryStructureService salaryStructureService;
+
+    @Operation(summary = "分页查询工资结构")
+    @RequirePermission("salary:structure:list")
+    @GetMapping("/page")
+    public Result<PageResult<SalaryStructure>> page(
+            @Parameter(description = "页码") @RequestParam(defaultValue = "1") long pageNum,
+            @Parameter(description = "每页大小") @RequestParam(defaultValue = "10") long pageSize,
+            @Parameter(description = "员工姓名模糊关键字") @RequestParam(required = false) String keyword) {
+        LambdaQueryWrapper<SalaryStructure> wrapper = new LambdaQueryWrapper<SalaryStructure>()
+                .like(keyword != null && !keyword.isBlank(), SalaryStructure::getUserName, keyword)
+                .orderByDesc(SalaryStructure::getUpdateTime);
+        return Result.page(salaryStructureService.page(new Page<>(pageNum, pageSize), wrapper));
+    }
 
     @Operation(summary = "查询员工工资结构")
     @RequirePermission("salary:structure:list")
