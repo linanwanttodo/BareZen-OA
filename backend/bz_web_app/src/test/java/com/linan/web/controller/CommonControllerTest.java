@@ -24,7 +24,7 @@ class CommonControllerTest {
         assertEquals(200, result.getCode());
         Map<String, Object> info = result.getData();
         assertEquals("UP", info.get("status"));
-        assertEquals("BareZen-Base", info.get("service"));
+        assertEquals("BareZen-OA", info.get("service"));
         assertEquals("1.0.0", info.get("version"));
         assertTrue(info.containsKey("timestamp"));
     }

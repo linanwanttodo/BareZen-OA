@@ -466,8 +466,13 @@ public class AppAttendanceController {
         if (workLog.getContent() == null || workLog.getContent().isBlank()) {
             return Result.error("日志内容不能为空");
         }
-        workLog.setUserId(userId);
-        boolean ok = workLogService.save(workLog);
+        // 字段白名单：防止 mass assignment 伪造批阅状态（reviewerName/reviewTime 等）
+        HrWorkLog entity = new HrWorkLog();
+        entity.setUserId(userId);
+        entity.setLogType(workLog.getLogType());
+        entity.setLogDate(workLog.getLogDate());
+        entity.setContent(workLog.getContent());
+        boolean ok = workLogService.save(entity);
         return ok ? Result.success(null) : Result.error("提交失败");
     }
 
@@ -492,6 +497,9 @@ public class AppAttendanceController {
         }
         if (existing.getReviewerName() != null) {
             return Result.error("已批阅的日志不能修改");
+        }
+        if (workLog.getContent() == null || workLog.getContent().isBlank()) {
+            return Result.error("日志内容不能为空");
         }
         existing.setContent(workLog.getContent());
         boolean ok = workLogService.updateById(existing);

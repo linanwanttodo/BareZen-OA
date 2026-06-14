@@ -174,20 +174,24 @@ public class WebMvcConfig implements WebMvcConfigurer {
      */
 
     /**
-     * 配置静态资源映射 —— 允许前端直接通过 URL 访问上传的文件（头像等）。
+     * 配置静态资源映射 —— 仅暴露头像目录。
      *
-     * 将虚拟路径 /profile/** 映射到上传根目录（barezen.upload-path，默认工作目录下 uploads/）。
+     * 将虚拟路径 /profile/avatar/** 映射到上传根目录下的 avatar/ 子目录。
      * 例如：访问 http://localhost:8080/profile/avatar/2025/01/01/xxx.png
      *       实际读取 <upload-path>/avatar/2025/01/01/xxx.png
      *
-     * 这种方式适用于头像、公开图片等不需要鉴权的静态文件。
-     * 若需权限控制的私有文件，请使用 SysFileController.download() 接口。
+     * 安全说明：此映射不经 JWT 拦截器（静态资源），因此只允许暴露头像这类
+     * 天然公开的文件。SysFileServiceImpl 上传的业务文件位于上传根目录下的
+     * yyyy/MM/dd/ 子路径（非 avatar/），若整根目录映射到 /profile/** 会导致
+     * 私有文件（scope=admin/internal）可被匿名 URL 直达、绕过下载接口的
+     * 权限校验——故此处只映射 avatar/ 子目录；私有文件一律走
+     * SysFileController.download()（按 scope 鉴权）。
      */
     @Override
     public void addResourceHandlers(@NonNull ResourceHandlerRegistry registry) {
-        registry.addResourceHandler("/profile/**")
+        registry.addResourceHandler("/profile/avatar/**")
                 .addResourceLocations("file:" + com.linan.core.storage.FileStorage.resolveBasePath(
-                        uploadPathConfig));
+                        uploadPathConfig) + "avatar/");
     }
 
     /**

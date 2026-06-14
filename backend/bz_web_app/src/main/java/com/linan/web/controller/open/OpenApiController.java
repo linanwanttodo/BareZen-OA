@@ -108,6 +108,7 @@ public class OpenApiController {
      * 查询启用状态的办公用品列表（供外部系统/看板调用）
      */
     @OpenScope("open:supply:read")
+    @RateLimit(key = "open:supply:read", limit = 30, window = 60)
     @Operation(summary = "查询办公用品库存")
     @GetMapping("/supplies")
     public Result<List<Map<String, Object>>> supplies(@RequestParam(defaultValue = "100") Integer limit) {
@@ -136,6 +137,7 @@ public class OpenApiController {
      * 查询已发布公告列表（供外部系统同步）
      */
     @OpenScope("open:notice:read")
+    @RateLimit(key = "open:notice:read", limit = 30, window = 60)
     @Operation(summary = "查询已发布公告")
     @GetMapping("/notices")
     public Result<List<Map<String, Object>>> notices(@RequestParam(defaultValue = "20") Integer limit) {

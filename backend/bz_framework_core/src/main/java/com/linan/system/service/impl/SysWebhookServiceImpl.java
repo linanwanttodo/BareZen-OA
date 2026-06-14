@@ -37,6 +37,14 @@ import java.util.stream.Collectors;
 public class SysWebhookServiceImpl extends ServiceImpl<SysWebhookMapper, SysWebhook>
         implements ISysWebhookService {
 
+    /**
+     * 共享 HttpClient：线程安全且内部持有连接池与选择器线程，
+     * 必须复用单例，避免每次推送都新建/等待 GC 回收造成资源浪费。
+     */
+    private static final java.net.http.HttpClient HTTP_CLIENT = java.net.http.HttpClient.newBuilder()
+            .connectTimeout(java.time.Duration.ofSeconds(5))
+            .build();
+
     private final ObjectMapper objectMapper;
 
     public SysWebhookServiceImpl(ObjectMapper objectMapper) {
@@ -94,9 +102,6 @@ public class SysWebhookServiceImpl extends ServiceImpl<SysWebhookMapper, SysWebh
                 }
                 String json = toJson(body);
                 String signature = sign(webhook, json);
-                java.net.http.HttpClient client = java.net.http.HttpClient.newBuilder()
-                        .connectTimeout(java.time.Duration.ofSeconds(5))
-                        .build();
                 java.net.http.HttpRequest.Builder reqBuilder = java.net.http.HttpRequest.newBuilder()
                         .uri(java.net.URI.create(webhook.getUrl()))
                         .timeout(java.time.Duration.ofSeconds(10))
@@ -106,7 +111,7 @@ public class SysWebhookServiceImpl extends ServiceImpl<SysWebhookMapper, SysWebh
                 if (signature != null) {
                     reqBuilder.header("X-Webhook-Signature", signature);
                 }
-                java.net.http.HttpResponse<String> resp = client.send(reqBuilder.build(),
+                java.net.http.HttpResponse<String> resp = HTTP_CLIENT.send(reqBuilder.build(),
                         java.net.http.HttpResponse.BodyHandlers.ofString());
                 if (resp.statusCode() >= 400) {
                     log.warn("Webhook 推送失败: url={}, status={}, body={}",

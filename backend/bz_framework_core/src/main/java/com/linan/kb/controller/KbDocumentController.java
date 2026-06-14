@@ -141,6 +141,10 @@ public class KbDocumentController {
     @RequirePermission("kb:document:edit")
     @PutMapping("/{id}/status/{status}")
     public Result<Void> changeStatus(@PathVariable Long id, @PathVariable String status) {
+        // 状态白名单：仅允许草稿(0)/已发布(1)，拒绝任意字符串写入，避免脏状态落库
+        if (!"0".equals(status) && !"1".equals(status)) {
+            return Result.error("非法的文档状态值");
+        }
         KbDocument doc = new KbDocument();
         doc.setId(id);
         doc.setStatus(status);

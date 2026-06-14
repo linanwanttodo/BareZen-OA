@@ -96,8 +96,14 @@ public class AttClockRecordServiceImpl extends ServiceImpl<AttClockRecordMapper,
         record.setLateMinutes(late);
         record.setEarlyMinutes(0);
         record.setStatus(late > 0 ? "late" : "normal");
-        if (!save(record)) {
-            throw new BusinessException("打卡失败");
+        try {
+            if (!save(record)) {
+                throw new BusinessException("打卡失败");
+            }
+        } catch (org.springframework.dao.DuplicateKeyException e) {
+            // 并发双击兜底：check-then-act 存在竞态窗口，
+            // 最终以唯一约束（user_id + clock_date，同日同人一行）为准
+            throw new BusinessException("今日已打卡上班，请勿重复打卡");
         }
         return record;
     }

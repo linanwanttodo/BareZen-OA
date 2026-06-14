@@ -32,8 +32,13 @@ import java.util.concurrent.ConcurrentHashMap;
 @Component
 public class NotificationWebSocketHandler extends TextWebSocketHandler {
 
-    /** 在线用户连接池：userId -> WebSocketSession */
-    private static final Map<Long, WebSocketSession> onlineSessions = new ConcurrentHashMap<>();
+    /**
+     * 在线用户连接池：userId -> WebSocketSession
+     *
+     * <p>Handler 本身是 Spring 单例 Bean，实例字段已足够全局共享；
+     * 去 static 避免测试间（多个 handler 实例）会话串扰与内存泄漏面。</p>
+     */
+    private final Map<Long, WebSocketSession> onlineSessions = new ConcurrentHashMap<>();
 
     @Override
     public void afterConnectionEstablished(WebSocketSession session) {

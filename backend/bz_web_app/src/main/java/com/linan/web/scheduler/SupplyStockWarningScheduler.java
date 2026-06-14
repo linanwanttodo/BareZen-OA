@@ -36,8 +36,8 @@ public class SupplyStockWarningScheduler {
     /** 分布式锁 key：防止多实例部署时重复广播预警 */
     private static final String WARN_LOCK_KEY = "scheduler:lock:supply_stock_warn";
 
-    /** 锁持有时间（秒）：任务秒级完成，TTL 兜底防止实例宕机导致死锁 */
-    private static final long LOCK_EXPIRE_SECONDS = 30;
+    /** 锁持有时间（秒）：任务通常秒级完成，TTL 兜底防实例宕机死锁；300s 防止慢查询下锁提前过期导致多实例并发广播 */
+    private static final long LOCK_EXPIRE_SECONDS = 300;
 
     private final IOfficeSupplyService supplyService;
 

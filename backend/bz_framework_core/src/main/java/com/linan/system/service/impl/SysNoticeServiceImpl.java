@@ -12,6 +12,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -23,6 +24,13 @@ public class SysNoticeServiceImpl extends ServiceImpl<SysNoticeMapper, SysNotice
     private final ApplicationEventPublisher eventPublisher;
 
     private final ISysNoticeReadService noticeReadService;
+
+    /** 公告状态：0=草稿 */
+    private static final String STATUS_DRAFT = "0";
+    /** 公告状态：1=已发布 */
+    private static final String STATUS_PUBLISH = "1";
+    /** 公告状态：2=已撤回 */
+    private static final String STATUS_REVOKED = "2";
 
     @Override
     public SysNotice selectLatestNotice() {
@@ -37,10 +45,10 @@ public class SysNoticeServiceImpl extends ServiceImpl<SysNoticeMapper, SysNotice
     @Override
     public boolean publish(Long id) {
         SysNotice notice = getById(id);
-        if (notice == null || !"0".equals(notice.getStatus())) {
+        if (notice == null || !STATUS_DRAFT.equals(notice.getStatus())) {
             return false;
         }
-        notice.setStatus("1");
+        notice.setStatus(STATUS_PUBLISH);
         boolean updated = updateById(notice);
         if (updated) {
             // 发布成功后发布领域事件，由 Web 模块监听并推送 WebSocket 实时通知；
@@ -54,10 +62,10 @@ public class SysNoticeServiceImpl extends ServiceImpl<SysNoticeMapper, SysNotice
     @Override
     public boolean revoke(Long id) {
         SysNotice notice = getById(id);
-        if (notice == null || !"1".equals(notice.getStatus())) {
+        if (notice == null || !STATUS_PUBLISH.equals(notice.getStatus())) {
             return false;
         }
-        notice.setStatus("2");
+        notice.setStatus(STATUS_REVOKED);
         return updateById(notice);
     }
 
@@ -82,10 +90,13 @@ public class SysNoticeServiceImpl extends ServiceImpl<SysNoticeMapper, SysNotice
         data.put("requireRead", notice.getRequireRead());
         data.put("readCount", readCount);
         data.put("totalCount", null); // 总用户数由前端从用户列表获取，此处仅返回已读
-        data.put("reads", reads.stream().map(r -> Map.of(
-                "userId", r.getUserId(),
-                "readTime", r.getReadTime() != null ? r.getReadTime().toString() : null
-        )).collect(Collectors.toList()));
+        // Map.of 不允许 null 值（readTime 为空时会抛 NPE），改用 LinkedHashMap 保留 null 语义
+        data.put("reads", reads.stream().map(r -> {
+            Map<String, Object> item = new LinkedHashMap<>();
+            item.put("userId", r.getUserId());
+            item.put("readTime", r.getReadTime() != null ? r.getReadTime().toString() : null);
+            return item;
+        }).collect(Collectors.toList()));
         return data;
     }
 }

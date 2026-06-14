@@ -37,7 +37,8 @@ public class PluginManager {
      */
     public void loadPlugin(Plugin plugin) throws PluginException {
         String pluginId = plugin.getPluginId();
-        
+
+        // 快速路径（仅避免重复初始化，非线程安全判据，真正的竞态由下方 putIfAbsent 兜底）
         if (loadedPlugins.containsKey(pluginId)) {
             log.warn("插件已存在: {}", pluginId);
             throw new PluginException(pluginId, "插件已存在");
@@ -53,13 +54,19 @@ public class PluginManager {
             plugin.initialize();
             plugin.setStatus(PluginStatus.LOADED);
 
-            loadedPlugins.put(pluginId, plugin);
-            log.info("插件加载成功: {}", pluginId);
-
         } catch (Exception e) {
             plugin.setStatus(PluginStatus.FAILED);
             throw new PluginException(pluginId, "插件加载失败: " + e.getMessage(), e);
         }
+
+        // 原子占位替代 containsKey + put 的 check-then-act 竞态：
+        // putIfAbsent 返回非 null 说明并发情况下已被其他线程先行加载
+        Plugin existing = loadedPlugins.putIfAbsent(pluginId, plugin);
+        if (existing != null) {
+            log.warn("插件已存在: {}", pluginId);
+            throw new PluginException(pluginId, "插件已存在");
+        }
+        log.info("插件加载成功: {}", pluginId);
     }
 
     /**

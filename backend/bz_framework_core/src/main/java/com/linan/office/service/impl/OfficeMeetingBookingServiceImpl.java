@@ -79,6 +79,10 @@ public class OfficeMeetingBookingServiceImpl extends ServiceImpl<OfficeMeetingBo
             throw new BusinessException("预订不存在");
         }
 
+        // 悲观锁：锁定会议室行，使同一会议室的并发编辑串行化，
+        // 防止两个编辑请求同时通过时间冲突校验后互相覆盖（与 saveBooking 同样的行锁机制）
+        roomMapper.selectByIdForUpdate(existing.getRoomId());
+
         // 白名单字段拷贝：仅允许更新 title/startTime/endTime/attendees/remark
         existing.setTitle(booking.getTitle());
         existing.setStartTime(booking.getStartTime());
@@ -86,11 +90,8 @@ public class OfficeMeetingBookingServiceImpl extends ServiceImpl<OfficeMeetingBo
         existing.setAttendees(booking.getAttendees());
         existing.setRemark(booking.getRemark());
 
-        // 强制保留原始归属信息，防止篡改
-        existing.setRoomId(existing.getRoomId());
-        existing.setRoomName(existing.getRoomName());
-        existing.setBookerId(existing.getBookerId());
-        existing.setBookerName(existing.getBookerName());
+        // 归属信息（roomId/roomName/bookerId/bookerName）不在白名单内，
+        // 均保持 existing 从数据库读出的原值，防止通过编辑接口篡改归属
 
         // 时间冲突校验：排除自身 id
         long conflict = lambdaQuery()

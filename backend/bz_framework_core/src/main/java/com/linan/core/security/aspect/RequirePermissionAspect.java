@@ -59,6 +59,12 @@ public class RequirePermissionAspect {
         // 1. 获取当前用户 ID
         Long userId = AuthInterceptor.getCurrentUserId();
         if (userId == null) {
+            // 未登录返回真实 HTTP 401 状态码（与下方 403 分支写法对齐，避免 200 误语义）
+            ServletRequestAttributes attrs =
+                    (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+            if (attrs != null && attrs.getResponse() != null) {
+                attrs.getResponse().setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            }
             return Result.error("未登录");
         }
 

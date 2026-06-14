@@ -18,6 +18,8 @@ import com.linan.system.service.ISysNoticeService;
 import com.linan.system.service.ITodoItemService;
 import lombok.extern.slf4j.Slf4j;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataAccessException;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.web.bind.annotation.*;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -28,6 +30,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -41,6 +44,13 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class AppEnterpriseController {
 
+    /** 邮箱格式（宽松 RFC 校验，与 SysUser 实体 @Email 语义一致） */
+    private static final Pattern EMAIL_PATTERN =
+            Pattern.compile("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
+
+    /** 大陆手机号格式（与 SysUser 实体 @Pattern 保持一致） */
+    private static final Pattern PHONE_PATTERN = Pattern.compile("^1[3-9]\\d{9}$");
+
     private final ISysNoticeService noticeService;
 
     private final ISysNoticeReadService noticeReadService;
@@ -51,12 +61,26 @@ public class AppEnterpriseController {
 
     private final SysRoleMapper roleMapper;
 
+    /**
+     * 统一的分页参数校验（防全表扫描，与 AppScheduleController 同模式）
+     */
+    private <T> Result<T> validatePageParams(Integer pageNum, Integer pageSize) {
+        if (pageNum == null || pageNum < 1) {
+            return Result.error("页码必须 ≥ 1");
+        }
+        if (pageSize == null || pageSize < 1 || pageSize > 100) {
+            return Result.error("每页条数必须在 1-100 之间");
+        }
+        return null; // 合法
+    }
+
     // ==================== 工作台概览 ====================
 
     /**
      * 工作台概览数据
      * GET /api/app/v1/dashboard
      */
+    @Operation(summary = "工作台概览数据")
     @GetMapping("/dashboard")
     public Result<Map<String, Object>> dashboard() {
         Long userId = AuthInterceptor.getCurrentUserId();
@@ -81,7 +105,8 @@ public class AppEnterpriseController {
             data.put("todoCount", todoCount);
             data.put("doneCount", doneCount);
             data.put("urgentCount", urgentCount);
-        } catch (Exception e) {
+        } catch (DataAccessException e) {
+            log.warn("工作台待办统计查询失败，降级为 0", e);
             data.put("todoCount", 0);
             data.put("doneCount", 0);
             data.put("urgentCount", 0);
@@ -94,7 +119,8 @@ public class AppEnterpriseController {
                             .eq(SysNotice::getStatus, "1")
                             .orderByDesc(SysNotice::getCreateTime));
             data.put("latestNotices", noticePage.getRecords());
-        } catch (Exception e) {
+        } catch (DataAccessException e) {
+            log.warn("工作台最新通知查询失败，降级为空列表", e);
             data.put("latestNotices", List.of());
         }
 
@@ -108,7 +134,8 @@ public class AppEnterpriseController {
                     .orderByAsc(TodoItem::getDueDate)
                     .last("LIMIT 3"));
             data.put("upcomingTodos", upcomingTodos);
-        } catch (Exception e) {
+        } catch (DataAccessException e) {
+            log.warn("工作台即将到期待办查询失败，降级为空列表", e);
             data.put("upcomingTodos", List.of());
         }
 
@@ -126,6 +153,11 @@ public class AppEnterpriseController {
     public Result<PageResult<SysNotice>> noticeList(
             @RequestParam(defaultValue = "1") Integer page,
             @RequestParam(defaultValue = "10") Integer pageSize) {
+        // 分页参数钳制（防全表扫描）
+        Result<PageResult<SysNotice>> pageError = validatePageParams(page, pageSize);
+        if (pageError != null) {
+            return pageError;
+        }
         // 查询已发布的通知（包含通知和公告两种类型）
         LambdaQueryWrapper<SysNotice> wrapper = new LambdaQueryWrapper<SysNotice>()
                 .eq(SysNotice::getStatus, "1")
@@ -169,7 +201,9 @@ public class AppEnterpriseController {
         if (userId == null && !"public".equals(notice.getScope())) {
             return Result.error("公告不存在或已下架");
         }
-        // 已读回执：登录用户查看即记录已读（幂等：已存在则跳过）
+        // 已读回执：登录用户查看即记录已读。
+        // 并发下"先查后插"存在竞态，依赖 sys_notice_read 唯一键 uk_notice_user 兜底：
+        // 撞唯一键说明另一请求已写入，视为幂等成功，忽略即可。
         if (userId != null) {
             boolean alreadyRead = noticeReadService.lambdaQuery()
                     .eq(SysNoticeRead::getNoticeId, id)
@@ -180,7 +214,11 @@ public class AppEnterpriseController {
                 read.setNoticeId(id);
                 read.setUserId(userId);
                 read.setReadTime(LocalDateTime.now());
-                noticeReadService.save(read);
+                try {
+                    noticeReadService.save(read);
+                } catch (DuplicateKeyException e) {
+                    log.debug("公告已读回执并发重复写入，忽略: noticeId={}, userId={}", id, userId);
+                }
             }
             notice.setIsRead(true);
         }
@@ -193,11 +231,17 @@ public class AppEnterpriseController {
      * 通讯录 - 员工列表
      * GET /api/app/v1/contacts?page=1&pageSize=20&keyword=xxx
      */
+    @Operation(summary = "通讯录员工列表")
     @GetMapping("/contacts")
     public Result<PageResult<Map<String, Object>>> contactList(
             @RequestParam(defaultValue = "1") Integer page,
             @RequestParam(defaultValue = "20") Integer pageSize,
             @RequestParam(required = false) String keyword) {
+        // 分页参数钳制（防全表扫描）
+        Result<PageResult<Map<String, Object>>> pageError = validatePageParams(page, pageSize);
+        if (pageError != null) {
+            return pageError;
+        }
         LambdaQueryWrapper<SysUser> wrapper = new LambdaQueryWrapper<SysUser>()
                 .eq(SysUser::getStatus, "0"); // 只查正常状态用户（0=正常 1=停用）
 
@@ -226,8 +270,8 @@ public class AppEnterpriseController {
                     roleNameMap.computeIfAbsent(uid, k -> new java.util.ArrayList<>())
                             .add(String.valueOf(row.get("roleName")));
                 }
-            } catch (Exception e) {
-                log.warn("批量查询用户角色失败", e);
+            } catch (DataAccessException e) {
+                log.warn("批量查询用户角色失败，通讯录角色列降级为空", e);
             }
         }
 
@@ -260,11 +304,18 @@ public class AppEnterpriseController {
      * 我的待办列表
      * GET /api/app/v1/todos?page=1&pageSize=10&status=0
      */
+    @Operation(summary = "我的待办列表")
     @GetMapping("/todos")
     public Result<PageResult<TodoItem>> todoList(
             @RequestParam(defaultValue = "1") Integer page,
             @RequestParam(defaultValue = "10") Integer pageSize,
             @RequestParam(required = false) Integer status) {
+
+        // 分页参数钳制（防全表扫描）
+        Result<PageResult<TodoItem>> pageError = validatePageParams(page, pageSize);
+        if (pageError != null) {
+            return pageError;
+        }
 
         Long userId = AuthInterceptor.getCurrentUserId();
         if (userId == null) {
@@ -290,6 +341,7 @@ public class AppEnterpriseController {
      * 新增待办
      * POST /api/app/v1/todos
      */
+    @Operation(summary = "新增待办")
     @PostMapping("/todos")
     public Result<Void> addTodo(@RequestBody TodoItem todo) {
         Long userId = AuthInterceptor.getCurrentUserId();
@@ -313,6 +365,7 @@ public class AppEnterpriseController {
      * 更新待办
      * PUT /api/app/v1/todos
      */
+    @Operation(summary = "更新待办")
     @PutMapping("/todos")
     public Result<Void> updateTodo(@RequestBody TodoItem todo) {
         Long userId = AuthInterceptor.getCurrentUserId();
@@ -339,6 +392,7 @@ public class AppEnterpriseController {
      * 删除待办
      * DELETE /api/app/v1/todos/{id}
      */
+    @Operation(summary = "删除待办")
     @DeleteMapping("/todos/{id}")
     public Result<Void> deleteTodo(@PathVariable Long id) {
         Long userId = AuthInterceptor.getCurrentUserId();
@@ -361,6 +415,7 @@ public class AppEnterpriseController {
      * 更新个人资料
      * PUT /api/app/v1/user/profile
      */
+    @Operation(summary = "更新个人资料")
     @PutMapping("/user/profile")
     public Result<Void> updateProfile(@RequestBody Map<String, String> body) {
         Long userId = AuthInterceptor.getCurrentUserId();
@@ -377,10 +432,18 @@ public class AppEnterpriseController {
             user.setNickName(body.get("nickName"));
         }
         if (body.containsKey("email")) {
-            user.setEmail(body.get("email"));
+            String email = body.get("email");
+            if (email != null && !email.isEmpty() && !EMAIL_PATTERN.matcher(email).matches()) {
+                return Result.error("邮箱格式不正确");
+            }
+            user.setEmail(email);
         }
         if (body.containsKey("phone")) {
-            user.setPhone(body.get("phone"));
+            String phone = body.get("phone");
+            if (phone != null && !phone.isEmpty() && !PHONE_PATTERN.matcher(phone).matches()) {
+                return Result.error("手机号格式不正确");
+            }
+            user.setPhone(phone);
         }
         if (body.containsKey("sex")) {
             user.setSex(body.get("sex"));

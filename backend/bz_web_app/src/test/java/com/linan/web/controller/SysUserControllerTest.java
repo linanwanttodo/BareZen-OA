@@ -6,6 +6,7 @@ import com.linan.core.common.api.Result;
 import com.linan.system.entity.SysUser;
 import com.linan.system.entity.SysUserDept;
 import com.linan.system.mapper.SysUserMapper;
+import com.linan.web.controller.dto.ResetPasswordRequest;
 import com.linan.system.service.ISysUserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -15,7 +16,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
-import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -143,7 +143,10 @@ class SysUserControllerTest {
     void resetPassword_success() {
         when(userService.resetPassword(1L, "newPass123!")).thenReturn(null);
 
-        Result<Void> result = controller.resetPassword(1L, Map.of("password", "newPass123!"));
+        ResetPasswordRequest req = new ResetPasswordRequest();
+        req.setPassword("newPass123!");
+
+        Result<Void> result = controller.resetPassword(1L, req);
 
         assertEquals(200, result.getCode());
         verify(userService).resetPassword(1L, "newPass123!");
@@ -154,7 +157,10 @@ class SysUserControllerTest {
     void resetPassword_failed() {
         when(userService.resetPassword(1L, "weak")).thenReturn("密码不符合策略要求");
 
-        Result<Void> result = controller.resetPassword(1L, Map.of("password", "weak"));
+        ResetPasswordRequest req = new ResetPasswordRequest();
+        req.setPassword("weak");
+
+        Result<Void> result = controller.resetPassword(1L, req);
 
         assertEquals(500, result.getCode());
         assertEquals("密码不符合策略要求", result.getMsg());

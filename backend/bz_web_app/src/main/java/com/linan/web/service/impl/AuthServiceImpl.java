@@ -25,6 +25,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
@@ -101,6 +102,18 @@ public class AuthServiceImpl implements IAuthService {
             List.class
     );
 
+    /**
+     * Lua 脚本：IP 失败计数原子递增，仅首次失败时设置窗口 TTL，
+     * 避免 INCR 与 EXPIRE 两条命令间进程异常导致计数 key 永不过期。
+     * KEYS[1]=失败计数 key；ARGV[1]=窗口秒数；返回当前计数
+     */
+    private static final DefaultRedisScript<Long> IP_FAIL_SCRIPT = new DefaultRedisScript<>(
+            "local current = redis.call('INCR', KEYS[1]) "
+                    + "if current == 1 then redis.call('EXPIRE', KEYS[1], tonumber(ARGV[1])) end "
+                    + "return current ",
+            Long.class
+    );
+
     @Override
     public LoginVO login(LoginRequest request) {
         String username = request.getUsername();
@@ -166,6 +179,8 @@ public class AuthServiceImpl implements IAuthService {
             // 同时增加 IP 计数
             incrementIpFail(ipFailKey);
             recordLoginLog(username, "1", "密码错误");
+            // 与"用户不存在"路径统一延迟，避免响应时间差被用于枚举已注册用户
+            try { Thread.sleep(500); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
             throw new BusinessException("用户名或密码错误");
         }
 
@@ -253,8 +268,14 @@ public class AuthServiceImpl implements IAuthService {
         user.setPassword(PasswordUtil.encode(password));
         user.setStatus("0");
         user.setId(null);
-        if (userMapper.insert(user) <= 0) {
-            throw new BusinessException("注册失败");
+        try {
+            if (userMapper.insert(user) <= 0) {
+                throw new BusinessException("注册失败");
+            }
+        } catch (DuplicateKeyException e) {
+            // selectCount 与 insert 之间存在并发窗口，唯一键 uk_user_name 兜底。
+            // 撞唯一键说明用户名已被并发请求占用，与"已存在"分支保持一致静默返回，防止枚举。
+            log.info("注册撞唯一键（用户名已存在）: {}", username);
         }
     }
 
@@ -289,6 +310,10 @@ public class AuthServiceImpl implements IAuthService {
         String newPassword = request.getNewPassword();
         if (!StringUtils.hasText(oldPassword) || !StringUtils.hasText(newPassword)) {
             throw new BusinessException("参数不完整");
+        }
+        // 新旧密码相同无需改密，直接拒绝，避免旧密码被探测（验证通过即返回成功会泄露密码正确性）
+        if (newPassword.equals(oldPassword)) {
+            throw new BusinessException("新密码不能与旧密码相同");
         }
         String policyMsg = PasswordUtil.validatePasswordPolicy(newPassword);
         if (policyMsg != null) {
@@ -443,15 +468,12 @@ public class AuthServiceImpl implements IAuthService {
     }
 
     /**
-     * 记录 IP 登录失败（简单 INCR + EXPIRE）
+     * 记录 IP 登录失败（Lua 原子 INCR + 首次设置 30 分钟窗口 TTL）
      */
     private void incrementIpFail(String ipFailKey) {
         try {
-            Long count = stringRedisTemplate.opsForValue().increment(ipFailKey);
-            if (count != null && count == 1) {
-                // 首次失败时设置 TTL（30分钟）
-                stringRedisTemplate.expire(ipFailKey, 30, TimeUnit.MINUTES);
-            }
+            stringRedisTemplate.execute(IP_FAIL_SCRIPT, List.of(ipFailKey),
+                    String.valueOf(TimeUnit.MINUTES.toSeconds(30)));
         } catch (Exception e) {
             log.warn("记录 IP 登录失败计数失败: {}", e.getMessage());
         }

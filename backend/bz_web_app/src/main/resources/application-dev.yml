@@ -1,5 +1,5 @@
 # ============================================
-# BareZen Base — 开发环境配置
+# BareZen OA — 开发环境配置
 # ============================================
 # 此文件中的配置会覆盖 application.yml 中的同名配置。
 # 默认激活（见 application.yml 中 spring.profiles.active=dev）。
@@ -29,7 +29,7 @@ spring:
   # 并开放公钥检索以适配 MySQL 8.0 认证插件。
   # 公共配置（application.yml）默认 useSSL=true，安全优先。
   datasource:
-    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:barezen_base}?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:barezen_oa}?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
     password: ${DB_PASSWORD:123456}
 
 # ---- JWT 开发环境默认密钥 ----

@@ -1,5 +1,5 @@
 # ============================================
-# BareZen Base 测试环境配置
+# BareZen OA 测试环境配置
 # ============================================
 # 说明：集成测试使用真实 MySQL（本机 3306）+ 独立测试库 barezen_test，
 #       由 Flyway V1-V47 自动建表（GenTableQueryServiceImpl 依赖 MySQL
@@ -8,7 +8,7 @@
 
 spring:
   application:
-    name: BareZen-Base-Test
+    name: BareZen-OA-Test
 
   # ---- 测试数据源（真实 MySQL，独立测试库） ----
   datasource:

@@ -4,6 +4,7 @@ import com.linan.core.security.JwtUtil;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.http.Cookie;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.env.Environment;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.server.ServerHttpRequest;
 import org.springframework.http.server.ServerHttpResponse;
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.socket.WebSocketHandler;
 import org.springframework.web.socket.server.HandshakeInterceptor;
 
+import java.util.Arrays;
 import java.util.Map;
 
 /**
@@ -40,9 +42,13 @@ public class WebSocketAuthInterceptor implements HandshakeInterceptor {
 
     private final RedisTemplate<String, Object> redisTemplate;
 
-    public WebSocketAuthInterceptor(JwtUtil jwtUtil, RedisTemplate<String, Object> redisTemplate) {
+    private final Environment environment;
+
+    public WebSocketAuthInterceptor(JwtUtil jwtUtil, RedisTemplate<String, Object> redisTemplate,
+                                    Environment environment) {
         this.jwtUtil = jwtUtil;
         this.redisTemplate = redisTemplate;
+        this.environment = environment;
     }
 
     @Override
@@ -107,6 +113,10 @@ public class WebSocketAuthInterceptor implements HandshakeInterceptor {
         }
 
         // 3. URL 参数（兼容旧版原生 WebSocket 客户端，仅兜底；新代码不应再使用）
+        //    生产环境禁用该通道，避免 token 进入 Nginx/代理访问日志造成泄漏
+        if (Arrays.asList(environment.getActiveProfiles()).contains("prod")) {
+            return null;
+        }
         String query = request.getURI() != null ? request.getURI().getQuery() : null;
         if (query != null && !query.isEmpty()) {
             for (String param : query.split("&")) {

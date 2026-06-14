@@ -7,6 +7,7 @@ import com.linan.core.security.RequirePermission;
 import com.linan.system.service.IDbBackupService;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.File;
@@ -27,6 +28,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
  * @author BareZen Team
  */
 @Tag(name = "数据备份", description = "系统监控 - 数据库备份管理")
+@Slf4j
 @RestController
 @RequestMapping("/api/system/v1/backup")
 @RequiredArgsConstructor
@@ -99,6 +101,7 @@ public class DbBackupController {
             }
             os.flush();
         } catch (Exception e) {
+            log.error("下载备份文件失败: {}", filename, e);
             response.setStatus(500);
         }
     }

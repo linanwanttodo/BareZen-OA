@@ -23,7 +23,7 @@ public interface SysMenuMapper extends BaseMapper<SysMenu> {
             "LEFT JOIN sys_user_role ur ON rm.role_id = ur.role_id " +
             "WHERE ur.user_id = #{userId} " +
             "AND m.menu_type IN ('M', 'C') " +
-            "AND m.status = '1' " +
+            "AND m.status = '0' " +
             "AND m.del_flag = 0 " +
             "ORDER BY m.order_num ASC")
     List<SysMenu> selectMenusByUserId(@Param("userId") Long userId);

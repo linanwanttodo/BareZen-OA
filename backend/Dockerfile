@@ -1,5 +1,5 @@
 # ============================================
-# BareZen_Base 后端 Docker 多阶段构建
+# BareZen_OA 后端 Docker 多阶段构建
 # ============================================
 # 构建阶段
 FROM eclipse-temurin:21-jdk-alpine AS builder

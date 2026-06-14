@@ -6,12 +6,10 @@ import com.linan.core.common.annotation.OperLog;
 import com.linan.core.common.annotation.RateLimit;
 import com.linan.core.common.api.PageResult;
 import com.linan.core.common.api.Result;
+import com.linan.core.security.PermissionService;
 import com.linan.core.security.RequirePermission;
 import com.linan.core.security.interceptor.AuthInterceptor;
 import com.linan.system.entity.SysFile;
-import com.linan.system.entity.SysRole;
-import com.linan.system.mapper.SysMenuMapper;
-import com.linan.system.mapper.SysRoleMapper;
 import com.linan.system.service.ISysFileService;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
@@ -20,10 +18,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -44,9 +40,7 @@ public class SysFileController {
 
     private final ISysFileService fileService;
 
-    private final SysRoleMapper roleMapper;
-
-    private final SysMenuMapper menuMapper;
+    private final PermissionService permissionService;
 
     // ============ 文件上传 ============
 
@@ -90,9 +84,9 @@ public class SysFileController {
             return;
         }
         // admin 私有文件：必须拥有 system:file:download 权限
+        // 走 PermissionService（含缓存 + 超管通配符），替代原先逐角色查菜单权限的 N+1 实现
         if (!"public".equalsIgnoreCase(file.getScope())) {
-            List<String> perms = roleAndMenuCheck(userId);
-            if (!perms.contains("system:file:download")) {
+            if (!permissionService.hasPermission(userId, "system:file:download")) {
                 response.setStatus(HttpServletResponse.SC_FORBIDDEN);
                 return;
             }
@@ -197,23 +191,5 @@ public class SysFileController {
             return Result.error("未登录");
         }
         return Result.success(fileService.getSubFolders(folderId));
-    }
-
-    // ============ 内部辅助方法 ============
-
-    /**
-     * 查询当前用户的所有权限标识（用于 download 等 void 方法的内联权限校验）
-     */
-    private List<String> roleAndMenuCheck(Long userId) {
-        List<SysRole> roles = roleMapper.selectRolesByUserId(userId);
-        boolean isAdmin = roles.stream().anyMatch(r -> "admin".equals(r.getRoleKey()));
-        if (isAdmin) {
-            return List.of("system:file:download"); // admin 直接放行
-        }
-        Set<String> perms = new HashSet<>();
-        for (SysRole role : roles) {
-            perms.addAll(menuMapper.selectPermsByRoleId(role.getId()));
-        }
-        return List.copyOf(perms);
     }
 }

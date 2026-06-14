@@ -5,6 +5,7 @@ import com.linan.core.common.event.NoticePublishEvent;
 import com.linan.system.service.ISysWebhookService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
@@ -35,6 +36,7 @@ public class WebhookEventListener {
     /**
      * 审批完成 → 推送 approval.completed 事件
      */
+    @Async
     @EventListener
     public void onApprovalCompleted(ApprovalCompletedEvent event) {
         Map<String, Object> payload = new HashMap<>();

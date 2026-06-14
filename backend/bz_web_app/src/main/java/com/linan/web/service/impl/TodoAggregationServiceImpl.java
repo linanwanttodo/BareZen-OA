@@ -148,8 +148,8 @@ public class TodoAggregationServiceImpl implements TodoAggregationService {
                 .count();
     }
 
-    /** 请假/加班/出差/用车同构组装 */
-    private <T> void assemble(T biz, String type, String typeName,
+    /** 请假/加班/出差/用车同构组装（业务实体均继承 BaseEntity，主键 id 由基类统一提供） */
+    private <T extends com.linan.core.common.entity.BaseEntity> void assemble(T biz, String type, String typeName,
                               Function<T, String> applicant,
                               Function<T, String> startTime,
                               Function<T, String> endTime,
@@ -159,7 +159,7 @@ public class TodoAggregationServiceImpl implements TodoAggregationService {
             return;
         }
         String applicantName = applicant.apply(biz);
-        items.add(new TodoItem(type, typeName, String.valueOf(((com.linan.core.common.entity.BaseEntity) biz).getId()),
+        items.add(new TodoItem(type, typeName, String.valueOf(biz.getId()),
                 applicantName + " 的" + typeName, applicantName,
                 startTime.apply(biz), endTime.apply(biz), createTime.apply(biz)));
     }

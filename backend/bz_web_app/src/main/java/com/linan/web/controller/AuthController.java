@@ -16,6 +16,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
@@ -51,7 +52,7 @@ public class AuthController {
                     content = @Content(schema = @Schema(implementation = LoginVO.class)))
     })
     @PostMapping("/login")
-    public Result<LoginVO> login(@RequestBody LoginRequest request) {
+    public Result<LoginVO> login(@Valid @RequestBody LoginRequest request) {
         return Result.success(authService.login(request));
     }
 
@@ -122,7 +123,7 @@ public class AuthController {
     @Operation(summary = "修改密码")
     @PutMapping("/password")
     public Result<Void> changePassword(
-            @RequestBody ChangePasswordRequest request,
+            @Valid @RequestBody ChangePasswordRequest request,
             @RequestHeader(value = "Authorization", required = false) String authHeader) {
         Long userId = AuthInterceptor.getCurrentUserId();
         if (userId == null) {

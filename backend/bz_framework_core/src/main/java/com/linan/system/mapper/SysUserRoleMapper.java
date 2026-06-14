@@ -34,4 +34,13 @@ public interface SysUserRoleMapper {
      */
     @Insert("INSERT INTO sys_user_role(user_id, role_id) VALUES(#{userId}, #{roleId})")
     int insert(SysUserRole record);
+
+    /**
+     * 批量插入用户-角色关联（一次 SQL，替代循环逐条 insert）
+     */
+    @Insert("<script>INSERT INTO sys_user_role(user_id, role_id) VALUES "
+            + "<foreach collection='list' item='item' separator=','>"
+            + "(#{item.userId}, #{item.roleId})"
+            + "</foreach></script>")
+    int insertBatch(@Param("list") List<SysUserRole> list);
 }

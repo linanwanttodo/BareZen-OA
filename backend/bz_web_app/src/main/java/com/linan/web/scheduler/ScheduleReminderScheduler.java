@@ -28,8 +28,8 @@ import java.util.concurrent.TimeUnit;
  * <ul>
  *   <li>Redis 分布式锁：多实例部署时同一时刻仅一个实例执行扫描，
  *       避免重复查询与广播（与 {@link com.linan.web.scheduler.SupplyStockWarningScheduler} 一致）</li>
- *   <li>原子条件更新：单条日程仅当 {@code remind_sent='N'} 时置为 'Y'，
- *       即使扫描阶段发生并发，也只有一个执行者能抢占成功并推送</li>
+ *   <li>原子抢占标记：单条日程先当 {@code remind_sent='N'} 时条件更新置 'Y' 抢占成功
+ *       才执行推送，即使扫描阶段发生并发，也只有一个执行者能推送；推送异常回滚 'Y'→'N'</li>
  * </ul>
  *
  * @author BareZen Team
@@ -44,8 +44,8 @@ public class ScheduleReminderScheduler {
     /** 分布式锁 key：防止多实例部署时重复扫描提醒 */
     private static final String REMINDER_LOCK_KEY = "scheduler:lock:schedule_reminder";
 
-    /** 锁持有时间（秒）：任务秒级完成，TTL 兜底防止实例宕机导致死锁 */
-    private static final long LOCK_EXPIRE_SECONDS = 30;
+    /** 锁持有时间（秒）：任务通常秒级完成，TTL 兜底防实例宕机死锁；300s 兼顾大批量扫描耗时 */
+    private static final long LOCK_EXPIRE_SECONDS = 300;
 
     /** 当日去重键前缀：scheduler:timeout_notified:{yyyyMMdd}，仅在线送达才写入，TTL 2 天 */
     private static final String DEDUP_KEY_PREFIX = "scheduler:timeout_notified:";
@@ -62,8 +62,8 @@ public class ScheduleReminderScheduler {
      * 每分钟执行一次日程提醒扫描
      *
      * <p>流程：SchedulerLockUtil 分布式锁（try-finally 释放）→ 查询「未提醒且已到点」清单 →
-     * 循环内：当日去重（isMember 跳过）→ 推送（异常不标记，下轮重试）→ 条件更新 N→Y →
-     * 仅「标记成功且在线送达」才写入当日去重键。</p>
+     * 循环内：当日去重（isMember 跳过）→ 先原子抢占标记 N→Y（抢占失败即跳过，防双推）→
+     * 推送（异常则回滚 Y→N 下轮重试）→ 仅「在线送达」才写入当日去重键。</p>
      */
     @Scheduled(fixedDelay = 60000, initialDelay = 30000)
     public void checkDueReminders() {
@@ -103,6 +103,18 @@ public class ScheduleReminderScheduler {
                     continue;
                 }
 
+                // 先原子抢占标记：仅当 remind_sent 仍为 'N' 时置 'Y'。
+                // 抢占失败说明该提醒已被其他执行者（并发扫描/多实例）认领，直接跳过，
+                // 从根上消除"两路各自推送后再互相看到标记"的双推竞态窗口。
+                boolean claimed = scheduleService.update(new LambdaUpdateWrapper<HrSchedule>()
+                        .eq(HrSchedule::getId, scheduleId)
+                        .eq(HrSchedule::getRemindSent, "N")
+                        .le(HrSchedule::getRemindTime, now)
+                        .set(HrSchedule::getRemindSent, "Y"));
+                if (!claimed) {
+                    continue;
+                }
+
                 String title = "日程提醒：" + schedule.getTitle();
                 String content = "您有日程即将开始："
                         + schedule.getTitle()
@@ -114,27 +126,41 @@ public class ScheduleReminderScheduler {
                 try {
                     sent = notificationService.notifyUser(schedule.getUserId(), title, content);
                 } catch (Exception e) {
-                    // 推送异常：不标记、不入去重，下轮重试
-                    log.warn("日程提醒推送异常，稍后重试: id={}, err={}", scheduleId, e.getMessage());
+                    // 推送异常：回滚标记 Y→N（保留 remind_time 已到点条件），下轮重试
+                    rollbackRemindSent(scheduleId);
+                    log.warn("日程提醒推送异常，已回滚标记稍后重试: id={}, err={}", scheduleId, e.getMessage());
                     continue;
                 }
 
-                // 先推后标记：仅当 remind_sent 仍为 'N' 时置为 'Y'（条件更新，防并发重复推送）
-                boolean marked = scheduleService.update(new LambdaUpdateWrapper<HrSchedule>()
-                        .eq(HrSchedule::getId, scheduleId)
-                        .eq(HrSchedule::getRemindSent, "N")
-                        .le(HrSchedule::getRemindTime, now)
-                        .set(HrSchedule::getRemindSent, "Y"));
-
-                // 语义：在线送达 → 标记 + 当日去重；离线 → 标记（防死循环）但不入去重
-                if (marked && sent) {
-                    redisTemplate.opsForSet().add(dedupKey, scheduleId);
-                    redisTemplate.expire(dedupKey, 2, TimeUnit.DAYS);
+                if (!sent) {
+                    // 用户本实例离线（notifyUser 内部已发布跨实例广播）：
+                    // 保留 'Y' 标记防止每分钟无限重扫（防死循环），但不写当日去重键
+                    log.info("日程提醒离线未送达（已转跨实例广播）: id={}, user={}",
+                            scheduleId, schedule.getUserId());
+                    continue;
                 }
+
+                // 在线送达 → 写入当日去重键
+                redisTemplate.opsForSet().add(dedupKey, scheduleId);
+                redisTemplate.expire(dedupKey, 2, TimeUnit.DAYS);
                 log.info("日程提醒已推送用户 {}: {}", schedule.getUserId(), schedule.getTitle());
             }
         } finally {
             lockUtil.release(REMINDER_LOCK_KEY, token);
+        }
+    }
+
+    /**
+     * 回滚抢占标记 Y→N（仅当仍处于 'Y' 时），供推送异常后下轮重试
+     */
+    private void rollbackRemindSent(Long scheduleId) {
+        try {
+            scheduleService.update(new LambdaUpdateWrapper<HrSchedule>()
+                    .eq(HrSchedule::getId, scheduleId)
+                    .eq(HrSchedule::getRemindSent, "Y")
+                    .set(HrSchedule::getRemindSent, "N"));
+        } catch (Exception e) {
+            log.warn("回滚日程提醒标记失败: id={}, err={}", scheduleId, e.getMessage());
         }
     }
 }

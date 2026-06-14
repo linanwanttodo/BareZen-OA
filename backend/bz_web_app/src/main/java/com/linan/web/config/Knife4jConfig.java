@@ -43,8 +43,8 @@ public class Knife4jConfig {
         return new OpenAPI()
                 // ===== Info：接口文档元信息 =====
                 .info(new Info()
-                        .title("BareZen_Base API 文档")
-                        .description("BareZen_Base 前后端分离公司内部管理系统接口文档。\n\n"
+                        .title("BareZen_OA API 文档")
+                        .description("BareZen_OA 前后端分离公司内部管理系统接口文档。\n\n"
                                 + "**统一约定**：\n"
                                 + "- 请求/响应均为 JSON（application/json）\n"
                                 + "- 成功响应统一结构：`{ code: 200, msg: \"操作成功\", data: ... }`\n"
@@ -61,7 +61,7 @@ public class Knife4jConfig {
                 // ===== Server：服务地址（可通过配置注入）=====
                 .servers(List.of(new Server()
                         .url(serverUrl)
-                        .description("BareZen_Base 服务")))
+                        .description("BareZen_OA 服务")))
                 // ===== SecurityScheme：Bearer JWT 认证 =====
                 .components(new Components()
                         .addSecuritySchemes("bearerAuth", new SecurityScheme()

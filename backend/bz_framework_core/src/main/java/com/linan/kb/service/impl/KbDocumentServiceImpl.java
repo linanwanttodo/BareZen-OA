@@ -29,10 +29,13 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
     private final IKbDocumentVersionService versionService;
     private final PermissionService permissionService;
 
+    /** 文档状态：草稿（新建文档的默认状态，1=已发布） */
+    private static final String STATUS_DRAFT = "0";
+
     @Override
     public boolean createDocument(KbDocument doc) {
         if (doc.getStatus() == null || doc.getStatus().isEmpty()) {
-            doc.setStatus("0");
+            doc.setStatus(STATUS_DRAFT);
         }
         Long userId = AuthInterceptor.getCurrentUserId();
         doc.setAuthorId(userId);

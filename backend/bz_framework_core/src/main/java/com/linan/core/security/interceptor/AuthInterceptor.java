@@ -172,8 +172,17 @@ public class AuthInterceptor implements HandlerInterceptor {
         // ---- 第四步：验证 Token ----
         try {
             // 1. 检查 Token 是否在黑名单中（digest + 完整 token 兼容）
+            //    黑名单值区分语义：
+            //    - "invalidated"：用户登出/管理员强制下线，必须拒绝；
+            //    - "slide_refresh"：Token 因滑动刷新被轮换。并发场景下（同页面多个请求
+            //      同时携带待刷新的旧 Token），后到的请求会命中该条目，若一律拒绝会
+            //      把用户强制登出。旧 Token 本身签名有效且未过自然有效期，故放行——
+            //      新 Token 仍会随本次响应下发（见下方滑动刷新分支），实现平滑轮换。
             String digest = jwtUtil.getTokenDigest(token);
-            if (Boolean.TRUE.equals(redisTemplate.hasKey("blacklist:" + digest))
+            String blacklistKey = "blacklist:" + digest;
+            Object blacklistValue = redisTemplate.opsForValue().get(blacklistKey);
+            boolean slideRefreshed = "slide_refresh".equals(blacklistValue);
+            if ((blacklistValue != null && !slideRefreshed)
                     || Boolean.TRUE.equals(redisTemplate.hasKey("blacklist:" + token))) {
                 writeUnauthorizedResponse(response, "Token已失效，请重新登录");
                 return false;

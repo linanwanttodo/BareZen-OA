@@ -249,11 +249,10 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
                 return ur;
             }).collect(Collectors.toList());
 
-            for (SysUserRole ur : list) {
-                int rows = userRoleMapper.insert(ur);
-                if (rows <= 0) {
-                    throw new BusinessException("分配角色失败");
-                }
+            // 一次批量 insert，替代循环逐条插入
+            int rows = userRoleMapper.insertBatch(list);
+            if (rows <= 0) {
+                throw new BusinessException("分配角色失败");
             }
         }
     }
@@ -272,10 +271,11 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
         if (deptList != null && !deptList.isEmpty()) {
             for (SysUserDept d : deptList) {
                 d.setUserId(userId);
-                int rows = userDeptMapper.insert(d);
-                if (rows <= 0) {
-                    throw new BusinessException("分配部门失败");
-                }
+            }
+            // 一次批量 insert，替代循环逐条插入
+            int rows = userDeptMapper.insertBatch(deptList);
+            if (rows <= 0) {
+                throw new BusinessException("分配部门失败");
             }
         }
     }

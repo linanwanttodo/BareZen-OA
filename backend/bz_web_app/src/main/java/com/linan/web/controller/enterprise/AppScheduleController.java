@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
+import java.util.List;
+
 /**
  * 个人日程 Controller（用户前台 /api/app/v1/schedules）
  *
@@ -97,29 +99,12 @@ public class AppScheduleController {
         if (schedule.getStartTime() == null || schedule.getEndTime() == null) {
             return Result.error("请选择日程时间");
         }
-        
-        // 严格校验时间格式（统一为 yyyy-MM-dd HH:mm）
-        java.time.format.DateTimeFormatter fmt = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
-        try {
-            java.time.LocalDateTime.parse(schedule.getStartTime(), fmt);
-            java.time.LocalDateTime.parse(schedule.getEndTime(), fmt);
-        } catch (Exception e) {
-            return Result.error("时间格式不正确，请使用 yyyy-MM-dd HH:mm 格式");
+
+        String timeError = validateTimeFormat(schedule);
+        if (timeError != null) {
+            return Result.error(timeError);
         }
-        
-        if (schedule.getStartTime().compareTo(schedule.getEndTime()) >= 0) {
-            return Result.error("结束时间必须晚于开始时间");
-        }
-        
-        // 校验提醒时间格式（如果提供）
-        if (schedule.getRemindTime() != null && !schedule.getRemindTime().isEmpty()) {
-            try {
-                java.time.LocalDateTime.parse(schedule.getRemindTime(), fmt);
-            } catch (Exception e) {
-                return Result.error("提醒时间格式不正确，请使用 yyyy-MM-dd HH:mm 格式");
-            }
-        }
-        
+
         schedule.setUserId(userId);
         if (schedule.getStatus() == null || schedule.getStatus().isEmpty()) {
             schedule.setStatus("0");
@@ -129,8 +114,37 @@ public class AppScheduleController {
     }
 
     /**
+     * 时间字段格式校验（统一为 yyyy-MM-dd HH:mm），合法返回 null，非法返回错误消息
+     */
+    private String validateTimeFormat(HrSchedule schedule) {
+        java.time.format.DateTimeFormatter fmt = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+        try {
+            java.time.LocalDateTime.parse(schedule.getStartTime(), fmt);
+            java.time.LocalDateTime.parse(schedule.getEndTime(), fmt);
+        } catch (Exception e) {
+            return "时间格式不正确，请使用 yyyy-MM-dd HH:mm 格式";
+        }
+        if (schedule.getStartTime().compareTo(schedule.getEndTime()) >= 0) {
+            return "结束时间必须晚于开始时间";
+        }
+        // 校验提醒时间格式（如果提供）
+        if (schedule.getRemindTime() != null && !schedule.getRemindTime().isEmpty()) {
+            try {
+                java.time.LocalDateTime.parse(schedule.getRemindTime(), fmt);
+            } catch (Exception e) {
+                return "提醒时间格式不正确，请使用 yyyy-MM-dd HH:mm 格式";
+            }
+        }
+        return null;
+    }
+
+    /**
      * 更新日程（含状态变更：完成/取消）
      * PUT /api/app/v1/schedules
+     *
+     * <p>字段白名单拷贝：仅允许更新 title/description/startTime/endTime/remindTime/location/status
+     * （status 变更即完成/取消入口）；userId/reminderSent 等归属与引擎字段强制以库中原值为准，
+     * 防止 mass assignment 篡改。</p>
      */
     @Operation(summary = "更新日程")
     @PutMapping
@@ -139,6 +153,9 @@ public class AppScheduleController {
         if (userId == null) {
             return Result.error("请先登录");
         }
+        if (schedule.getId() == null) {
+            return Result.error("日程ID不能为空");
+        }
         HrSchedule existing = scheduleService.getById(schedule.getId());
         if (existing == null) {
             return Result.error("日程不存在");
@@ -146,7 +163,44 @@ public class AppScheduleController {
         if (!userId.equals(existing.getUserId())) {
             return Result.error("只能操作自己的日程");
         }
-        boolean ok = scheduleService.updateById(schedule);
+
+        // 白名单拷贝（null 表示不修改该字段），归属字段 userId 保持 existing 原值不动
+        if (schedule.getTitle() != null) {
+            if (schedule.getTitle().isBlank()) {
+                return Result.error("日程标题不能为空");
+            }
+            existing.setTitle(schedule.getTitle());
+        }
+        if (schedule.getDescription() != null) {
+            existing.setDescription(schedule.getDescription());
+        }
+        if (schedule.getStartTime() != null) {
+            existing.setStartTime(schedule.getStartTime());
+        }
+        if (schedule.getEndTime() != null) {
+            existing.setEndTime(schedule.getEndTime());
+        }
+        if (schedule.getRemindTime() != null) {
+            existing.setRemindTime(schedule.getRemindTime());
+        }
+        if (schedule.getLocation() != null) {
+            existing.setLocation(schedule.getLocation());
+        }
+        if (schedule.getStatus() != null) {
+            // 状态白名单：0=未开始 1=进行中 2=已完成 3=已取消（与 hr_schedule.status 约定一致）
+            if (!List.of("0", "1", "2", "3").contains(schedule.getStatus())) {
+                return Result.error("状态值不合法");
+            }
+            existing.setStatus(schedule.getStatus());
+        }
+
+        // 时间变更时复用新增路径的格式校验（以合并后的最终值校验）
+        String timeError = validateTimeFormat(existing);
+        if (timeError != null) {
+            return Result.error(timeError);
+        }
+
+        boolean ok = scheduleService.updateById(existing);
         return ok ? Result.success(null) : Result.error("更新失败");
     }
 

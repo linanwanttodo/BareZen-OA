@@ -12,6 +12,9 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FilenameUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -26,6 +29,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -184,24 +188,64 @@ public class SysFileServiceImpl extends ServiceImpl<SysFileMapper, SysFile> impl
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public boolean deleteFile(Long id) {
         SysFile sysFile = this.getById(id);
         if (sysFile == null) {
             return false;
         }
 
-        // 如果是文件夹，递归删除所有子文件/子文件夹
+        // 事务内先完成全部 DB 删除（失败整体回滚），物理文件路径先收集、
+        // 记录删除成功后再清理磁盘，避免出现"记录还在、文件已丢"的悬挂数据
+        List<String> physicalPaths = new ArrayList<>();
+        collectPhysicalPaths(sysFile, physicalPaths);
         if (sysFile.getIsFolder() != null && sysFile.getIsFolder() == 1) {
-            deleteChildrenRecursively(id);
+            removeChildrenRecursively(sysFile.getId(), physicalPaths);
         }
-
-        // 删除物理文件（仅文件）
-        if ((sysFile.getIsFolder() == null || sysFile.getIsFolder() == 0)
-                && StringUtils.hasText(sysFile.getFilePath())) {
-            storage.delete(sysFile.getFilePath());
+        boolean removed = this.removeById(id);
+        if (removed && !physicalPaths.isEmpty()) {
+            deletePhysicalAfterCommit(physicalPaths);
         }
+        return removed;
+    }
 
-        return this.removeById(id);
+    /**
+     * 在事务提交成功后再删除物理文件。
+     *
+     * <p>避免在 {@code @Transactional} 方法内部（提交前）删磁盘：一旦后续 DB 操作回滚，
+     * 文件已被删但记录仍在，形成悬挂数据。注册 afterCommit 回调保证"仅提交成功才删文件"，
+     * 单个文件删除失败仅告警、不影响主流程。无活动事务同步时（如单元直调）立即执行。</p>
+     */
+    private void deletePhysicalAfterCommit(List<String> physicalPaths) {
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            deletePhysicalFiles(physicalPaths);
+            return;
+        }
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                deletePhysicalFiles(physicalPaths);
+            }
+        });
+    }
+
+    /** 逐个删除物理文件，单个失败仅记录告警，不影响其余文件与主流程 */
+    private void deletePhysicalFiles(List<String> physicalPaths) {
+        for (String path : physicalPaths) {
+            try {
+                storage.delete(path);
+            } catch (Exception e) {
+                log.warn("删除物理文件失败: {}", path, e);
+            }
+        }
+    }
+
+    /** 收集文件节点对应的物理存储路径（文件夹本身无物理文件） */
+    private void collectPhysicalPaths(SysFile node, List<String> paths) {
+        if ((node.getIsFolder() == null || node.getIsFolder() == 0)
+                && StringUtils.hasText(node.getFilePath())) {
+            paths.add(node.getFilePath());
+        }
     }
 
     @Override
@@ -301,20 +345,16 @@ public class SysFileServiceImpl extends ServiceImpl<SysFileMapper, SysFile> impl
 
     // ==================== 私有方法 ====================
 
-    /** 递归删除文件夹下所有子文件/子文件夹 */
-    private void deleteChildrenRecursively(Long folderId) {
+    /** 递归删除文件夹下所有子文件/子文件夹（仅 DB 记录，物理路径收集后统一清理） */
+    private void removeChildrenRecursively(Long folderId, List<String> physicalPaths) {
         List<SysFile> children = this.list(new LambdaQueryWrapper<SysFile>()
                 .eq(SysFile::getFolderId, folderId)
                 .eq(SysFile::getDelFlag, 0));
         for (SysFile child : children) {
             if (child.getIsFolder() != null && child.getIsFolder() == 1) {
-                deleteChildrenRecursively(child.getId());
+                removeChildrenRecursively(child.getId(), physicalPaths);
             }
-            // 删除物理文件
-            if ((child.getIsFolder() == null || child.getIsFolder() == 0)
-                    && StringUtils.hasText(child.getFilePath())) {
-                storage.delete(child.getFilePath());
-            }
+            collectPhysicalPaths(child, physicalPaths);
             this.removeById(child.getId());
         }
     }

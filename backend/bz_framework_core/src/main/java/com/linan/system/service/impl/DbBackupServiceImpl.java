@@ -2,6 +2,8 @@ package com.linan.system.service.impl;
 
 import com.linan.system.service.IDbBackupService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -19,6 +21,8 @@ import java.nio.file.attribute.PosixFilePermission;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -40,6 +44,11 @@ public class DbBackupServiceImpl implements IDbBackupService {
 
     @Value("${spring.datasource.password:}")
     private String dbPassword;
+
+    /** 有界异步线程池，用于消费 mysqldump 的 stderr，避免裸 new Thread 脱离线程管理 */
+    @Autowired
+    @Qualifier("asyncTaskExecutor")
+    private Executor asyncTaskExecutor;
 
     /** 备份文件存储目录 */
     private static final String BACKUP_DIR = System.getProperty("user.dir") + "/backup/";
@@ -88,9 +97,12 @@ public class DbBackupServiceImpl implements IDbBackupService {
             pb.redirectOutput(new File(filePath));
             Process process = pb.start();
 
-            // 异步消费 stderr，避免缓冲区写满导致进程阻塞
+            // 异步消费 stderr，避免缓冲区写满导致进程阻塞；
+            // 改用有界线程池（asyncTaskExecutor）替代裸 new Thread，纳入统一线程管理，
+            // 通过 CountDownLatch 等待消费完成
             StringBuilder errorOutput = new StringBuilder();
-            Thread errReader = new Thread(() -> {
+            CountDownLatch errDone = new CountDownLatch(1);
+            asyncTaskExecutor.execute(() -> {
                 try (BufferedReader reader = new BufferedReader(
                         new InputStreamReader(process.getErrorStream(), StandardCharsets.UTF_8))) {
                     String line;
@@ -99,10 +111,10 @@ public class DbBackupServiceImpl implements IDbBackupService {
                     }
                 } catch (IOException e) {
                     log.warn("读取 mysqldump 错误输出失败", e);
+                } finally {
+                    errDone.countDown();
                 }
             });
-            errReader.setDaemon(true);
-            errReader.start();
 
             // 带超时等待，超时后强制终止子进程
             boolean finished = process.waitFor(BACKUP_TIMEOUT_MINUTES, TimeUnit.MINUTES);
@@ -114,7 +126,7 @@ public class DbBackupServiceImpl implements IDbBackupService {
                 Files.deleteIfExists(Paths.get(filePath));
                 return result;
             }
-            errReader.join(5000);
+            errDone.await(5, TimeUnit.SECONDS);
             int exitCode = process.exitValue();
 
             if (exitCode == 0) {
@@ -137,7 +149,9 @@ public class DbBackupServiceImpl implements IDbBackupService {
         } catch (Exception e) {
             log.error("数据库备份异常", e);
             result.put("success", false);
-            result.put("message", e.getMessage());
+            // getMessage() 可能为 null，兜底使用异常类型名，避免前端展示 "null"
+            String msg = e.getMessage();
+            result.put("message", msg != null ? msg : e.getClass().getSimpleName());
         } finally {
             // 执行完毕后立即删除临时 my.cnf 配置文件
             if (tempCnfPath != null) {
@@ -287,7 +301,7 @@ public class DbBackupServiceImpl implements IDbBackupService {
         int idx = url.indexOf('?');
         String clean = idx > 0 ? url.substring(0, idx) : url;
         int lastSlash = clean.lastIndexOf('/');
-        return lastSlash > 0 ? clean.substring(lastSlash + 1) : "barezen_base";
+        return lastSlash > 0 ? clean.substring(lastSlash + 1) : "barezen_oa";
     }
 
     private String parseDbHost(String url) {

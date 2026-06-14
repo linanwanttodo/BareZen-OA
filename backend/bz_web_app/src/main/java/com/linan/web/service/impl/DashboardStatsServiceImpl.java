@@ -92,8 +92,8 @@ public class DashboardStatsServiceImpl implements DashboardStatsService {
             String sql = """
                 SELECT
                     COUNT(*) AS total,
-                    SUM(CASE WHEN status = '0' THEN 1 ELSE 0 END) AS pending,
-                    SUM(CASE WHEN status = '2' THEN 1 ELSE 0 END) AS rejected,
+                    COALESCE(SUM(CASE WHEN status = '0' THEN 1 ELSE 0 END), 0) AS pending,
+                    COALESCE(SUM(CASE WHEN status = '2' THEN 1 ELSE 0 END), 0) AS rejected,
                     COALESCE(ROUND(AVG(CASE
                         WHEN status IN ('1','2') AND approve_time IS NOT NULL AND approve_time <> ''
                         THEN TIMESTAMPDIFF(HOUR, create_time, STR_TO_DATE(approve_time, '%%Y-%%m-%%d %%H:%%i:%%s'))

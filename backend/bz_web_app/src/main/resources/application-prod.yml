@@ -1,5 +1,5 @@
 # ============================================
-# BareZen Base — 生产环境配置
+# BareZen OA — 生产环境配置
 # ============================================
 # 激活方式：启动时添加 --spring.profiles.active=prod
 # 例如：java -jar app.jar --spring.profiles.active=prod
@@ -60,6 +60,18 @@ spring:
 jwt:
   secret: ${JWT_SECRET}
   expiration: ${JWT_EXPIRATION:86400000}
+
+# ---- API 文档：生产环境整体关闭 ----
+# springdoc 自动配置默认注册 /v3/api-docs、/swagger-ui 等端点；
+# Knife4jConfig 仅 @Profile("dev") 控制元数据 Bean，若不在此显式关闭，
+# 生产环境仍会暴露接口清单。knife4j.production 同时屏蔽 doc.html 页面。
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+knife4j:
+  production: true
 
 auth:
   register-enabled: ${AUTH_REGISTER_ENABLED:false}

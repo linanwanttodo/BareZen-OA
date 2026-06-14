@@ -101,6 +101,9 @@ public class NotificationService {
 
     /**
      * 构建标准通知 JSON
+     *
+     * <p>降级分支同样走 Jackson 序列化（title 等字段含引号/反斜杠时保证转义合法），
+     * 而非手拼字符串；若降级序列化仍失败则返回最小合法 JSON。</p>
      */
     private String buildMessage(String title, String content, String type) {
         try {
@@ -112,7 +115,17 @@ public class NotificationService {
             ));
         } catch (JsonProcessingException e) {
             log.warn("构建通知消息失败", e);
-            return "{\"type\":\"" + type + "\",\"title\":\"" + title + "\"}";
+            try {
+                java.util.Map<String, Object> fallback = new java.util.LinkedHashMap<>();
+                fallback.put("type", type);
+                fallback.put("title", title);
+                fallback.put("content", content);
+                fallback.put("time", LocalDateTime.now().toString());
+                return objectMapper.writeValueAsString(fallback);
+            } catch (JsonProcessingException je) {
+                log.warn("降级序列化通知消息仍失败，返回最小消息", je);
+                return "{}";
+            }
         }
     }
 

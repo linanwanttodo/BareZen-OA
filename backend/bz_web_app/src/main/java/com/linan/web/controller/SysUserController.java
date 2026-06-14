@@ -12,8 +12,10 @@ import com.linan.system.entity.SysUser;
 import com.linan.system.entity.SysUserDept;
 import com.linan.system.mapper.SysUserMapper;
 import com.linan.system.service.ISysUserService;
+import com.linan.web.controller.dto.ResetPasswordRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
@@ -32,6 +34,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @RestController
 @RequestMapping("/api/system/v1/users")
 @RequiredArgsConstructor
+@Validated
 public class SysUserController extends BaseController<SysUser, ISysUserService> {
 
     private final SysUserMapper userMapper;
@@ -93,12 +96,15 @@ public class SysUserController extends BaseController<SysUser, ISysUserService> 
 
     /**
      * 批量创建账号（每个账号均校验强密码策略与用户名唯一性，任一失败整体回滚）
+     *
+     * <p>列表元素级联校验：@Valid 作用于参数与泛型元素两处，配合 jakarta.validation 3.x
+     * 在方法校验下对每个 SysUser 执行 @NotBlank/@Email/@Pattern 等约束。</p>
      */
     @Operation(summary = "批量创建账号")
     @OperLog(title = "用户管理", businessType = 1)
     @RequirePermission("system:user:add")
     @PostMapping("/batch")
-    public Result<Integer> batchSave(@RequestBody List<SysUser> users) {
+    public Result<Integer> batchSave(@RequestBody @Valid List<@Valid SysUser> users) {
         int created = userService.batchAddUsers(users);
         return Result.success(created);
     }
@@ -145,6 +151,10 @@ public class SysUserController extends BaseController<SysUser, ISysUserService> 
     @RequirePermission("system:user:edit")
     @PutMapping("/{id}/status/{status}")
     public Result<Void> changeStatus(@PathVariable Long id, @PathVariable String status) {
+        // 状态白名单：0=正常 1=停用，防止非法值直接写库
+        if (!"0".equals(status) && !"1".equals(status)) {
+            return Result.error("状态值不合法");
+        }
         SysUser user = new SysUser();
         user.setId(id);
         user.setStatus(status);
@@ -162,8 +172,9 @@ public class SysUserController extends BaseController<SysUser, ISysUserService> 
     @OperLog(title = "用户管理", businessType = 2)
     @RequirePermission("system:user:edit")
     @PutMapping("/{id}/password")
-    public Result<Void> resetPassword(@PathVariable Long id, @RequestBody Map<String, String> body) {
-        String errorMsg = userService.resetPassword(id, body.get("password"));
+    public Result<Void> resetPassword(@PathVariable Long id,
+                                      @Valid @RequestBody ResetPasswordRequest request) {
+        String errorMsg = userService.resetPassword(id, request.getPassword());
         return errorMsg == null ? Result.success(null) : Result.error(errorMsg);
     }
 
@@ -212,16 +223,23 @@ public class SysUserController extends BaseController<SysUser, ISysUserService> 
             return Result.error("分页参数不合法");
         }
 
-        List<Long> roleIdList = Optional.ofNullable(roleIds)
-                .filter(s -> !s.isEmpty())
-                .map(s -> Arrays.stream(s.split(","))
-                        .map(Long::parseLong).collect(Collectors.toList()))
-                .orElse(null);
-        List<Long> deptIdList = Optional.ofNullable(deptIds)
-                .filter(s -> !s.isEmpty())
-                .map(s -> Arrays.stream(s.split(","))
-                        .map(Long::parseLong).collect(Collectors.toList()))
-                .orElse(null);
+        // ID 列表解析：非法数字（如 roleIds=abc）不应抛 500，统一返回参数格式错误
+        List<Long> roleIdList;
+        List<Long> deptIdList;
+        try {
+            roleIdList = Optional.ofNullable(roleIds)
+                    .filter(s -> !s.isEmpty())
+                    .map(s -> Arrays.stream(s.split(","))
+                            .map(Long::parseLong).collect(Collectors.toList()))
+                    .orElse(null);
+            deptIdList = Optional.ofNullable(deptIds)
+                    .filter(s -> !s.isEmpty())
+                    .map(s -> Arrays.stream(s.split(","))
+                            .map(Long::parseLong).collect(Collectors.toList()))
+                    .orElse(null);
+        } catch (NumberFormatException e) {
+            return Result.error("参数格式错误");
+        }
 
         Page<SysUser> page = new Page<>(pageNum, pageSize);
         Page<SysUser> resultPage = userMapper.selectUsersByRoleDeptPage(page, roleIdList, deptIdList, userName, status);

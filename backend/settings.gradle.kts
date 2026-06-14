@@ -1,4 +1,4 @@
-rootProject.name = "BareZen_Base"
+rootProject.name = "BareZen_OA"
 
 // 包含子模块
 include("bz_framework_core")

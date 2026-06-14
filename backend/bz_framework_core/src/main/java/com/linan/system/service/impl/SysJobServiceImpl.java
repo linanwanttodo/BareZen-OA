@@ -1,6 +1,7 @@
 package com.linan.system.service.impl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.linan.core.common.exception.BusinessException;
 import com.linan.system.entity.SysJob;
 import com.linan.system.mapper.SysJobLogMapper;
 import com.linan.system.mapper.SysJobMapper;
@@ -48,8 +49,11 @@ public class SysJobServiceImpl extends ServiceImpl<SysJobMapper, SysJob> impleme
         if (!checkCronExpression(job.getCronExpression())) {
             throw new IllegalArgumentException("cron 表达式不合法: " + job.getCronExpression());
         }
-        // 更新数据库中的任务
-        jobMapper.updateById(job);
+        // 更新数据库中的任务（0 行受影响说明任务已不存在，必须显式失败而非静默继续调度）
+        int rows = jobMapper.updateById(job);
+        if (rows == 0) {
+            throw new BusinessException("任务不存在或已删除");
+        }
 
         // 重新调度 Quartz 触发器
         Long jobId = job.getId();
@@ -62,7 +66,15 @@ public class SysJobServiceImpl extends ServiceImpl<SysJobMapper, SysJob> impleme
                     .withSchedule(CronScheduleBuilder.cronSchedule(job.getCronExpression()))
                     .build();
 
-            scheduler.rescheduleJob(triggerKey, trigger);
+            // Quartz 语义：返回 null 表示触发器不存在、未能重新调度
+            java.util.Date nextFireTime = scheduler.rescheduleJob(triggerKey, trigger);
+            if (nextFireTime == null) {
+                // 降级路径：触发器已不存在（如任务被暂停后触发器被清理），
+                // 先移除残留调度再按最新配置重建，避免更新主流程因调度缺失而中断
+                log.warn("定时任务 [{}] 触发器不存在，降级为删除后重建调度", job.getJobName());
+                scheduler.deleteJob(JobKey.jobKey(jobId.toString(), jobGroup));
+                createScheduleJob(job);
+            }
             log.info("定时任务 [{}] 已更新触发器: {}", job.getJobName(), job.getCronExpression());
         } catch (SchedulerException e) {
             log.error("更新定时任务触发器失败, jobId: {}", jobId, e);

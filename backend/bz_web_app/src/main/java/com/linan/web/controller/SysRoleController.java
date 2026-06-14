@@ -32,6 +32,14 @@ public class SysRoleController {
     private final ISysRoleService roleService;
 
     /**
+     * 统一的分页参数校验（防全表扫描，参照 BaseController.isValidPageParams 语义）
+     */
+    private static boolean isValidPageParams(Integer pageNum, Integer pageSize) {
+        return pageNum != null && pageSize != null
+                && pageNum >= 1 && pageSize >= 1 && pageSize <= 100;
+    }
+
+    /**
      * 条件分页查询
      * GET /api/system/v1/roles/page?pageNum=1&pageSize=10&roleName=admin&status=1
      */
@@ -44,6 +52,11 @@ public class SysRoleController {
             @RequestParam(required = false) String roleName,
             @RequestParam(required = false) String roleKey,
             @RequestParam(required = false) String status) {
+
+        // 分页参数钳制（防全表扫描）
+        if (!isValidPageParams(pageNum, pageSize)) {
+            return Result.error("分页参数不合法");
+        }
 
         Page<SysRole> page = new Page<>(pageNum, pageSize);
         LambdaQueryWrapper<SysRole> wrapper = new LambdaQueryWrapper<>();
@@ -87,6 +100,17 @@ public class SysRoleController {
     @RequirePermission("system:role:edit")
     @PutMapping
     public Result<Void> update(@Valid @RequestBody SysRole role) {
+        // 更新前复查 roleKey 唯一（排除自身）：save 用的 checkRoleKeyUnique 不支持
+        // 排除自身 id，这里按相同语义（存在即冲突）用 lambdaQuery 复查
+        if (role.getId() != null && role.getRoleKey() != null) {
+            long conflict = roleService.lambdaQuery()
+                    .eq(SysRole::getRoleKey, role.getRoleKey())
+                    .ne(SysRole::getId, role.getId())
+                    .count();
+            if (conflict > 0) {
+                return Result.error("角色标识已存在");
+            }
+        }
         boolean ok = roleService.updateById(role);
         return ok ? Result.success(null) : Result.error("更新失败");
     }

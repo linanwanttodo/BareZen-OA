@@ -7,7 +7,7 @@ import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
- * BareZen Base 后端应用主启动类
+ * BareZen OA 后端应用主启动类
  *
  * 这是整个 Spring Boot 应用的入口点。使用 @SpringBootApplication 注解
  * 自动启用组件扫描、自动配置和属性支持。

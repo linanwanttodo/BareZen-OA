@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletRequestWrapper;
+import jakarta.servlet.http.HttpServletResponse;
 import org.jsoup.Jsoup;
 import org.jsoup.safety.Safelist;
 import org.springframework.core.annotation.Order;
@@ -71,8 +72,17 @@ public class XssFilter implements Filter {
         }
 
         // 包装请求，过滤参数和 body
-        XssRequestWrapper wrappedRequest = new XssRequestWrapper(req);
-        chain.doFilter(wrappedRequest, response);
+        // 超过 2MB 请求体时 XssRequestWrapper 构造会抛 IOException，
+        // 此处捕获并返回 413（而非默认的 500），符合 HTTP 语义且避免错误日志误导
+        try {
+            XssRequestWrapper wrappedRequest = new XssRequestWrapper(req);
+            chain.doFilter(wrappedRequest, response);
+        } catch (IOException e) {
+            HttpServletResponse resp = (HttpServletResponse) response;
+            resp.setStatus(HttpServletResponse.SC_REQUEST_ENTITY_TOO_LARGE);
+            resp.setContentType("application/json;charset=UTF-8");
+            resp.getWriter().write("{\"code\":413,\"msg\":\"请求体过大，超过 2MB 限制\"}");
+        }
     }
 
     @Override
@@ -205,7 +215,8 @@ public class XssFilter implements Filter {
             try {
                 return super.getInputStream();
             } catch (IOException e) {
-                return null;
+                // 返回空流而非 null，避免下游读取时抛 NPE
+                return new CachedBodyServletInputStream(new byte[0]);
             }
         }
 
@@ -218,7 +229,8 @@ public class XssFilter implements Filter {
             try {
                 return super.getReader();
             } catch (IOException e) {
-                return null;
+                // 返回空 Reader 而非 null，避免下游读取时抛 NPE
+                return new BufferedReader(new StringReader(""));
             }
         }
 

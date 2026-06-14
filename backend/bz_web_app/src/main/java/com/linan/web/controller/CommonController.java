@@ -25,7 +25,7 @@ public class CommonController {
         Map<String, Object> info = new HashMap<>();
         info.put("status", "UP");
         info.put("timestamp", LocalDateTime.now().toString());
-        info.put("service", "BareZen-Base");
+        info.put("service", "BareZen-OA");
         info.put("version", "1.0.0");
         return Result.success(info);
     }

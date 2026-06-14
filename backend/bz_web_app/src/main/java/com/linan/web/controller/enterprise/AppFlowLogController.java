@@ -130,6 +130,10 @@ public class AppFlowLogController {
                 AttLeaveRequest r = leaveService.getById(bizId);
                 yield r != null && userId.equals(r.getUserId());
             }
+            case "supply" -> {
+                OfficeSupplyRequest r = supplyRequestService.getById(bizId);
+                yield r != null && userId.equals(r.getUserId());
+            }
             default -> false;
         };
         if (!owned) {

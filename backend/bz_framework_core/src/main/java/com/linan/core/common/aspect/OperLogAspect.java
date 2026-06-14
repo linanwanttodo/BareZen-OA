@@ -92,9 +92,9 @@ public class OperLogAspect {
             logEntity.setOperUser(userId.toString());
         }
 
-        // 记录请求参数（脱敏处理）
+        // 记录请求参数（脱敏处理，截断避免大对象撑爆 oper_param 列）
         String params = captureRequestParams(joinPoint.getArgs(), method);
-        logEntity.setOperParam(params);
+        logEntity.setOperParam(truncate(params, 2000));
 
         Object result = null;
         try {
@@ -115,8 +115,14 @@ public class OperLogAspect {
         } catch (Exception e) {
             logEntity.setStatus(1);
             logEntity.setErrorMsg(truncate(e.getMessage(), 2000));
-            // 异常时也要记录部分结果
-            logEntity.setJsonResult("{\"error\":\"" + truncate(e.getMessage(), 500) + "\"}");
+            // 异常时也要记录部分结果：经 Jackson 序列化，避免 message 含引号/反斜杠时拼出非法 JSON
+            try {
+                Map<String, Object> errorPayload = new LinkedHashMap<>();
+                errorPayload.put("error", truncate(e.getMessage(), 500));
+                logEntity.setJsonResult(objectMapper.writeValueAsString(errorPayload));
+            } catch (JsonProcessingException je) {
+                logEntity.setJsonResult(null);
+            }
             throw e;
         } finally {
             long endTime = System.currentTimeMillis();
