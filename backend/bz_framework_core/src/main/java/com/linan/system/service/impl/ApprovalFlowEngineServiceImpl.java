@@ -5,6 +5,8 @@ import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.linan.core.common.exception.BusinessException;
 import com.linan.system.entity.ApprovalFlowTask;
 import com.linan.system.entity.ApprovalFlowTemplate;
+import com.linan.system.entity.SysUser;
+import com.linan.system.mapper.SysUserMapper;
 import com.linan.system.service.ApprovalFlowEngineService;
 import com.linan.system.service.IApprovalFlowTaskService;
 import com.linan.system.service.IApprovalFlowTemplateService;
@@ -40,10 +42,26 @@ public class ApprovalFlowEngineServiceImpl implements ApprovalFlowEngineService 
 
     private final IApprovalFlowTemplateService templateService;
     private final IApprovalFlowTaskService taskService;
+    private final SysUserMapper userMapper;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean start(String bizType, Long bizId, Long assigneeId, String assigneeName) {
+        // 幽灵审批人校验：指定审批人（来源为业务单请求字段，可被伪造/引用已删用户）
+        // 必须真实存在且未停用；姓名称谓以用户表为准，防止前端传入伪造名称
+        if (assigneeId != null) {
+            SysUser assignee = userMapper.selectById(assigneeId);
+            if (assignee == null) {
+                throw new BusinessException("指定的审批人不存在或已删除");
+            }
+            // 用户状态语义（RuoYi 约定）：'0'=正常 '1'=停用
+            if ("1".equals(assignee.getStatus())) {
+                throw new BusinessException("指定的审批人已停用");
+            }
+            if (assignee.getNickName() != null && !assignee.getNickName().isBlank()) {
+                assigneeName = assignee.getNickName();
+            }
+        }
         List<ApprovalFlowTemplate> nodes = enabledTemplates(bizType);
         if (nodes.isEmpty()) {
             log.warn("审批模板未配置: bizType={}, bizId={}", bizType, bizId);

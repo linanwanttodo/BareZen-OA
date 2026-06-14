@@ -1,5 +1,6 @@
 package com.linan.system.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.linan.core.common.exception.BusinessException;
 import com.linan.system.entity.SysJob;
@@ -9,8 +10,12 @@ import com.linan.system.service.ISysJobService;
 import lombok.extern.slf4j.Slf4j;
 import org.quartz.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 /**
  * 定时任务服务实现
@@ -39,7 +44,12 @@ public class SysJobServiceImpl extends ServiceImpl<SysJobMapper, SysJob> impleme
         // 保存任务到数据库
         jobMapper.insert(job);
 
-        // 创建 Quartz 触发器
+        // 创建 Quartz 触发器（状态 0=暂停 1=正常：显式暂停的任务不得进入调度，
+        // 否则 sys_job 显示暂停而实际在跑，与 pauseJob/resumeJob 的语义一致）
+        if ("0".equals(job.getStatus())) {
+            log.info("定时任务 [{}] 以暂停状态创建，不注册调度", job.getJobName());
+            return;
+        }
         createScheduleJob(job);
     }
 
@@ -69,11 +79,14 @@ public class SysJobServiceImpl extends ServiceImpl<SysJobMapper, SysJob> impleme
             // Quartz 语义：返回 null 表示触发器不存在、未能重新调度
             java.util.Date nextFireTime = scheduler.rescheduleJob(triggerKey, trigger);
             if (nextFireTime == null) {
-                // 降级路径：触发器已不存在（如任务被暂停后触发器被清理），
-                // 先移除残留调度再按最新配置重建，避免更新主流程因调度缺失而中断
+                // 降级路径：触发器不存在（重启丢失调度 / 暂停后被清理 /
+                // 以暂停状态创建未注册），按最新配置重建；
+                // 暂停状态（0）的任务不重建调度，维持"未调度"与状态一致
                 log.warn("定时任务 [{}] 触发器不存在，降级为删除后重建调度", job.getJobName());
                 scheduler.deleteJob(JobKey.jobKey(jobId.toString(), jobGroup));
-                createScheduleJob(job);
+                if (!"0".equals(job.getStatus())) {
+                    createScheduleJob(job);
+                }
             }
             log.info("定时任务 [{}] 已更新触发器: {}", job.getJobName(), job.getCronExpression());
         } catch (SchedulerException e) {
@@ -128,6 +141,15 @@ public class SysJobServiceImpl extends ServiceImpl<SysJobMapper, SysJob> impleme
 
         try {
             scheduler.resumeJob(JobKey.jobKey(jobId.toString(), jobGroup));
+            // 触发器缺失防护：resumeJob 只能唤醒已存在的暂停触发器；若调度在
+            // 重启后丢失（内存 JobStore）或任务以暂停状态创建，则按配置重建调度，
+            // 否则状态置为正常但实际不会被触发（假恢复）
+            Trigger existing = scheduler.getTrigger(
+                    TriggerKey.triggerKey(jobId.toString(), jobGroup));
+            if (existing == null) {
+                log.warn("定时任务 [{}] 恢复时触发器不存在，按配置重建调度", job.getJobName());
+                createScheduleJob(job);
+            }
             // 状态（0=暂停 1=正常）：恢复任务置为 1，避免 UI 开关状态与实际调度状态颠倒
             job.setStatus("1");
             jobMapper.updateById(job);
@@ -155,6 +177,45 @@ public class SysJobServiceImpl extends ServiceImpl<SysJobMapper, SysJob> impleme
     @Override
     public boolean checkCronExpression(String cronExpression) {
         return CronExpression.isValidExpression(cronExpression);
+    }
+
+    /**
+     * 应用就绪后恢复调度（启动补建）
+     *
+     * <p>Quartz 使用内存 JobStore（默认），进程重启后全部触发器丢失，而 sys_job 表中
+     * status='1'（正常）的任务按业务语义应处于可触发状态。此处扫描调度缺失的启用任务
+     * 并按配置重建 JobDetail + CronTrigger，消除"状态正常但实际永不执行"的孤儿任务。
+     * cron 非法等个别任务失败仅告警跳过，不阻断应用启动。</p>
+     */
+    @EventListener(ApplicationReadyEvent.class)
+    public void restoreSchedulesOnStartup() {
+        List<SysJob> enabledJobs;
+        try {
+            enabledJobs = jobMapper.selectList(new LambdaQueryWrapper<SysJob>()
+                    .eq(SysJob::getStatus, "1"));
+        } catch (Exception e) {
+            log.error("定时任务启动恢复：查询启用任务失败，跳过恢复", e);
+            return;
+        }
+        int restored = 0;
+        for (SysJob job : enabledJobs) {
+            try {
+                TriggerKey triggerKey = TriggerKey.triggerKey(
+                        job.getId().toString(), job.getJobGroup());
+                if (scheduler.getTrigger(triggerKey) != null) {
+                    continue;
+                }
+                createScheduleJob(job);
+                restored++;
+            } catch (Exception e) {
+                log.error("定时任务启动恢复失败, jobId={}, jobName={}",
+                        job.getId(), job.getJobName(), e);
+            }
+        }
+        if (restored > 0) {
+            log.info("定时任务启动恢复完成：补建调度 {} 个（启用任务共 {} 个）",
+                    restored, enabledJobs.size());
+        }
     }
 
     // ============ 内部辅助方法 ============

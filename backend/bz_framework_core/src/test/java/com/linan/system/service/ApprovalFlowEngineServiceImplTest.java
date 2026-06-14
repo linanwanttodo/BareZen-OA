@@ -8,6 +8,8 @@ import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
 import com.linan.core.common.exception.BusinessException;
 import com.linan.system.entity.ApprovalFlowTask;
 import com.linan.system.entity.ApprovalFlowTemplate;
+import com.linan.system.entity.SysUser;
+import com.linan.system.mapper.SysUserMapper;
 import com.linan.system.service.impl.ApprovalFlowEngineServiceImpl;
 import org.apache.ibatis.builder.MapperBuilderAssistant;
 import org.junit.jupiter.api.BeforeAll;
@@ -52,6 +54,9 @@ class ApprovalFlowEngineServiceImplTest {
     @Mock
     private IApprovalFlowTaskService taskService;
 
+    @Mock
+    private SysUserMapper userMapper;
+
     private ApprovalFlowEngineServiceImpl engine;
 
     @BeforeAll
@@ -65,7 +70,16 @@ class ApprovalFlowEngineServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        engine = new ApprovalFlowEngineServiceImpl(templateService, taskService);
+        engine = new ApprovalFlowEngineServiceImpl(templateService, taskService, userMapper);
+    }
+
+    /** 构造正常状态的指定审批人 */
+    private SysUser activeUser(Long id, String nickName) {
+        SysUser u = new SysUser();
+        u.setId(id);
+        u.setNickName(nickName);
+        u.setStatus("0");
+        return u;
     }
 
     /** 构造模板节点 */
@@ -96,12 +110,13 @@ class ApprovalFlowEngineServiceImplTest {
     class Start {
 
         @Test
-        @DisplayName("有模板生成首节点任务（含指定审批人）")
+        @DisplayName("有模板生成首节点任务（含指定审批人，姓名以用户表为准）")
         void withTemplate_createsFirstTask() {
+            when(userMapper.selectById(50L)).thenReturn(activeUser(50L, "李指定"));
             when(templateService.list(any(Wrapper.class))).thenReturn(List.of(tpl(1, "请假审批")));
             when(taskService.save(any(ApprovalFlowTask.class))).thenReturn(true);
 
-            boolean started = engine.start(BIZ_TYPE, BIZ_ID, 50L, "李指定");
+            boolean started = engine.start(BIZ_TYPE, BIZ_ID, 50L, "伪造名称");
 
             assertTrue(started);
             ArgumentCaptor<ApprovalFlowTask> captor = ArgumentCaptor.forClass(ApprovalFlowTask.class);
@@ -113,7 +128,31 @@ class ApprovalFlowEngineServiceImplTest {
             assertEquals("请假审批", saved.getNodeName());
             assertEquals("0", saved.getStatus());
             assertEquals(50L, saved.getApproverId(), "指定审批人落到首节点");
-            assertEquals("李指定", saved.getApproverName());
+            assertEquals("李指定", saved.getApproverName(), "称谓被用户表昵称覆盖");
+        }
+
+        @Test
+        @DisplayName("指定审批人不存在（幽灵审批人）拒绝发起")
+        void assignee_notFound_rejected() {
+            when(userMapper.selectById(50L)).thenReturn(null);
+
+            BusinessException ex = assertThrows(BusinessException.class,
+                    () -> engine.start(BIZ_TYPE, BIZ_ID, 50L, "任意"));
+            assertTrue(ex.getMessage().contains("不存在"));
+            verify(taskService, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("指定审批人已停用拒绝发起")
+        void assignee_disabled_rejected() {
+            SysUser disabled = activeUser(50L, "李停用");
+            disabled.setStatus("1");
+            when(userMapper.selectById(50L)).thenReturn(disabled);
+
+            BusinessException ex = assertThrows(BusinessException.class,
+                    () -> engine.start(BIZ_TYPE, BIZ_ID, 50L, "李停用"));
+            assertTrue(ex.getMessage().contains("停用"));
+            verify(taskService, never()).save(any());
         }
 
         @Test
