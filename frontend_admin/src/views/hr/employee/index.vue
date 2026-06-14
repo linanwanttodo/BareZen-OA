@@ -130,13 +130,13 @@
           <t-col :span="12">
             <t-form-item field="hireDate" :label="$t('hr.hireDate')">
               
-<!-- TODO(date-picker): 核对返回值格式（原 Arco 为字符串） --><t-date-picker v-model="form.hireDate" style="width: 100%" />
+<t-date-picker v-model="form.hireDate" style="width: 100%"  value-type="YYYY-MM-DD" />
             </t-form-item>
           </t-col>
           <t-col :span="12">
             <t-form-item field="leaveDate" :label="$t('hr.leaveDate')">
               
-<!-- TODO(date-picker): 核对返回值格式（原 Arco 为字符串） --><t-date-picker v-model="form.leaveDate" style="width: 100%" />
+<t-date-picker v-model="form.leaveDate" style="width: 100%"  value-type="YYYY-MM-DD" />
             </t-form-item>
           </t-col>
           <t-col :span="12">
@@ -183,7 +183,7 @@
 <script setup lang="ts">
 import { PERM } from '@/utils/constants'
 import { ref, computed, reactive, onMounted } from 'vue'
-import { MessagePlugin as Message } from 'tdesign-vue-next'
+import { MessagePlugin } from 'tdesign-vue-next'
 import { getEmployeePageApi, addEmployeeApi, updateEmployeeApi, deleteEmployeeApi, type HrEmployee } from '@/api/hr'
 import { getDeptTreeApi, type SysDept } from '@/api/dept'
 import { useI18n } from 'vue-i18n'
@@ -284,7 +284,7 @@ function handleEdit(record: HrEmployee) {
 
 async function handleSave() {
   if (!form.empNo || !form.name) {
-    Message.warning(t('common.msg.empNoNameRequired'))
+    MessagePlugin.warning(t('common.msg.empNoNameRequired'))
     return
   }
   saving.value = true
@@ -294,7 +294,7 @@ async function handleSave() {
     } else {
       await addEmployeeApi(form)
     }
-    Message.success(t('common.saveSuccess'))
+    MessagePlugin.success(t('common.saveSuccess'))
     editVisible.value = false
     loadData()
   } finally {
@@ -304,7 +304,7 @@ async function handleSave() {
 
 async function handleDelete(record: HrEmployee) {
   await deleteEmployeeApi(record.id)
-  Message.success(t('common.deleteSuccess'))
+  MessagePlugin.success(t('common.deleteSuccess'))
   loadData()
 }
 

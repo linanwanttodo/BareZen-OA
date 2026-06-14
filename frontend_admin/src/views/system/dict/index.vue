@@ -27,7 +27,7 @@
               <span class="dict-type-item__name">{{ item.dictName }}</span>
               <span class="dict-type-item__key">{{ item.dictType }}</span>
             </div>
-            <t-tag v-if="item.status === '0'" color="red" size="small">{{ $t('common.disable') }}</t-tag>
+            <t-tag v-if="item.status === '0'" theme="danger" size="small">{{ $t('common.disable') }}</t-tag>
             <t-dropdown>
               <icon-more class="cursor-pointer" style="color: var(--wecom-text-tertiary)" />
               <template #content>
@@ -55,7 +55,7 @@
           <div class="flex items-center justify-between w-full">
             <div class="flex items-center gap-2">
               <span>{{ $t('dict.dataTitle') }}</span>
-              <t-tag v-if="selectedType" color="blue">{{ selectedType.dictName }}</t-tag>
+              <t-tag v-if="selectedType" theme="primary">{{ selectedType.dictName }}</t-tag>
             </div>
             <t-button v-permission="PERM.system.dictAdd" theme="primary" size="small" :disabled="!selectedType" @click="handleAddData">
               <template #icon><icon-plus /></template>
@@ -72,12 +72,12 @@
           <t-loading :loading="dataLoading">
               <t-table row-key="id" :data="dataTable" :columns="tableColumns" :pagination="false">
     <template #isDefault="{ row }">
-                    <t-tag :color="row.isDefault === 'Y' ? 'blue' : 'gray'" size="small">
+                    <t-tag :theme="row.isDefault === 'Y' ? 'primary' : 'default'" size="small">
                       {{ row.isDefault === 'Y' ? $t('common.yes') : $t('common.no') }}
                     </t-tag>
                   </template>
     <template #status="{ row }">
-                    <t-tag :color="row.status === '1' ? 'green' : 'red'" size="small">
+                    <t-tag :theme="row.status === '1' ? 'success' : 'danger'" size="small">
                       {{ row.status === '1' ? $t('common.normal') : $t('common.disable') }}
                     </t-tag>
                   </template>
@@ -441,7 +441,7 @@ const tableColumns = computed(() => [
   align-items: center;
   gap: 8px;
   padding: 10px 12px;
-  border-radius: 6px;
+  border-radius: var(--td-radius-medium);
   cursor: pointer;
 }
 .dict-type-item:hover {

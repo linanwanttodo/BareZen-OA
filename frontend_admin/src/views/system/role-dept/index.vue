@@ -13,13 +13,13 @@
           <div class="filter-title">
             <icon-user-group size="16px" />
             <span>{{ $t('roleDept.roleFilter') }}</span>
-            <t-tag v-if="selectedRoleIds.length" color="arcoblue">{{ selectedRoleIds.length }}</t-tag>
+            <t-tag v-if="selectedRoleIds.length" theme="primary">{{ selectedRoleIds.length }}</t-tag>
           </div>
           <div class="filter-list">
             <label v-for="role in roleList" :key="role.id" class="filter-item flex items-center gap-2">
               <t-checkbox :model-value="selectedRoleIds.includes(String(role.id))" @change="() => toggleRole(String(role.id))" />
               <span class="filter-label">{{ role.roleName }}</span>
-              <t-tag :color="role.status === '0' ? 'arcoblue' : 'red'">{{ role.status === '0' ? $t('common.enable') : $t('common.disable') }}</t-tag>
+              <t-tag :theme="role.status === '0' ? 'primary' : 'danger'">{{ role.status === '0' ? $t('common.enable') : $t('common.disable') }}</t-tag>
             </label>
             <div v-if="!roleLoading && roleList.length === 0" class="empty-tip">{{ $t('roleDept.noRoleData') }}</div>
           </div>
@@ -32,7 +32,7 @@
           <div class="filter-title">
             <icon-branch size="16px" />
             <span>{{ $t('roleDept.deptFilter') }}</span>
-            <t-tag v-if="selectedDeptIds.length" color="arcoblue">{{ selectedDeptIds.length }}</t-tag>
+            <t-tag v-if="selectedDeptIds.length" theme="primary">{{ selectedDeptIds.length }}</t-tag>
           </div>
           <div class="filter-list">
             <div v-for="item in deptFlat" :key="item.node.id" class="flex items-center gap-2 py-1" :style="{ paddingLeft: item.depth * 16 + 'px' }">
@@ -422,7 +422,7 @@ const tableColumns = computed(() => [
 
 .filter-item {
   padding: 4px 2px;
-  border-radius: 4px;
+  border-radius: var(--td-radius-default);
 }
 
 .filter-label {
@@ -460,7 +460,7 @@ const tableColumns = computed(() => [
   display: inline-block;
   width: 8px;
   height: 8px;
-  border-radius: 50%;
+  border-radius: var(--td-radius-circle);
 }
 .online-indicator.online {
   color: var(--wecom-success);
@@ -491,7 +491,7 @@ const tableColumns = computed(() => [
 .role-checkbox-item {
   padding: 8px 12px;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--td-radius-medium);
   margin-bottom: 8px;
 }
 .role-checkbox-item:last-child {

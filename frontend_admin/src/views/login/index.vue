@@ -65,7 +65,7 @@
 
             <p class="login-switch">
               {{ $t('login.noAccount') }}
-              <button type="button" class="login-switch__link" @click="switchMode('register')">{{ $t('login.register') }}</button>
+              <t-link theme="primary" hover="color" @click="switchMode('register')">{{ $t('login.register') }}</t-link>
             </p>
           </div>
 
@@ -110,7 +110,7 @@
 
             <p class="login-switch">
               {{ $t('login.haveAccount') }}
-              <button type="button" class="login-switch__link" @click="switchMode('login')">{{ $t('login.backToLogin') }}</button>
+              <t-link theme="primary" hover="color" @click="switchMode('login')">{{ $t('login.backToLogin') }}</t-link>
             </p>
           </div>
         </div>
@@ -399,13 +399,6 @@ onMounted(() => {
   text-align: center;
   font-size: 14px;
   color: var(--wecom-text-tertiary);
-}
-.login-switch__link {
-  color: var(--wecom-primary);
-  font-weight: 500;
-}
-.login-switch__link:hover {
-  color: var(--wecom-primary-hover);
 }
 
 .login-copyright {

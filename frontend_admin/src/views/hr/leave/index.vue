@@ -86,10 +86,10 @@
         </t-form-item>
         <t-form-item field="timeRange" :label="$t('leave.timeRange')" required>
           
-<!-- TODO(date-picker): 核对返回值格式（原 Arco 为字符串） --><t-date-picker v-model="form.startTime" show-time style="width: 260px" :placeholder="$t('leave.startTime')" />
+<t-date-picker v-model="form.startTime" show-time value-type="YYYY-MM-DD HH:mm" style="width: 260px" :placeholder="$t('leave.startTime')" />
           <span class="mx-2">~</span>
           
-<!-- TODO(date-picker): 核对返回值格式（原 Arco 为字符串） --><t-date-picker v-model="form.endTime" show-time style="width: 260px" :placeholder="$t('leave.endTime')" />
+<t-date-picker v-model="form.endTime" show-time value-type="YYYY-MM-DD HH:mm" style="width: 260px" :placeholder="$t('leave.endTime')" />
         </t-form-item>
         <t-form-item field="leaveDays" :label="$t('leave.leaveDays')">
           <t-input-number v-model="form.leaveDays" :min="0.5" :step="0.5" style="width: 100%" :placeholder="$t('leave.leaveDaysPlaceholder')" />
@@ -121,7 +121,7 @@
 <script setup lang="ts">
 import { PERM } from '@/utils/constants'
 import { ref, computed, reactive, onMounted, onActivated } from 'vue'
-import { MessagePlugin as Message } from 'tdesign-vue-next'
+import { MessagePlugin } from 'tdesign-vue-next'
 import { getLeavePageApi, submitLeaveApi, approveLeaveApi, revokeLeaveApi, deleteLeaveApi, type AttLeaveRequest } from '@/api/leave'
 import { getFlowLogsApi, getFlowTasksApi, type ApprovalFlowNode, type ApprovalFlowTask } from '@/api/flowlog'
 import { useUserStore } from '@/stores/user'
@@ -225,11 +225,11 @@ function handleAdd() {
 
 async function handleSubmit() {
   if (!form.startTime || !form.endTime) {
-    Message.warning(t('common.msg.leaveTimeRequired'))
+    MessagePlugin.warning(t('common.msg.leaveTimeRequired'))
     return
   }
   if (!form.reason) {
-    Message.warning(t('common.msg.leaveReasonRequired'))
+    MessagePlugin.warning(t('common.msg.leaveReasonRequired'))
     return
   }
   submitting.value = true
@@ -242,7 +242,7 @@ async function handleSubmit() {
       leaveDays: String(form.leaveDays),
       reason: form.reason,
     })
-    Message.success(t('common.msg.submitSuccess'))
+    MessagePlugin.success(t('common.msg.submitSuccess'))
     addVisible.value = false
     loadData()
   } finally {
@@ -261,7 +261,7 @@ async function handleApprove() {
   approving.value = true
   try {
     await approveLeaveApi(approveForm.id, approveForm.action, approveForm.remark)
-    Message.success(t('common.msg.approveDone'))
+    MessagePlugin.success(t('common.msg.approveDone'))
     approveVisible.value = false
     loadData()
   } finally {
@@ -271,18 +271,18 @@ async function handleApprove() {
 
 async function handleRevoke(record: AttLeaveRequest) {
   await revokeLeaveApi(record.id)
-  Message.success(t('common.msg.withdrawn'))
+  MessagePlugin.success(t('common.msg.withdrawn'))
   loadData()
 }
 
 async function handleDelete(record: AttLeaveRequest) {
   await deleteLeaveApi(record.id)
-  Message.success(t('common.deleteSuccess'))
+  MessagePlugin.success(t('common.deleteSuccess'))
   loadData()
 }
 
 function showRemark(record: AttLeaveRequest) {
-  Message.info({ content: record.approveRemark || '-', duration: 5000 })
+  MessagePlugin.info({ content: record.approveRemark || '-', duration: 5000 })
 }
 
 // ============ 流程进度 ============

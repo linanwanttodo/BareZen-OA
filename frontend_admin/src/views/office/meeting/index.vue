@@ -42,7 +42,7 @@
           <t-card v-for="room in rooms" :key="room.id" class="room-card" hoverable>
             <div class="flex items-center justify-between">
               <span class="font-medium">{{ room.roomName }}</span>
-              <t-tag :color="room.status === '0' ? 'green' : 'red'">
+              <t-tag :theme="room.status === '0' ? 'success' : 'danger'">
                 {{ room.status === '0' ? $t('office.roomAvailable') : $t('office.roomDisabled') }}
               </t-tag>
             </div>
@@ -131,10 +131,10 @@
         </t-form-item>
         <t-form-item field="timeRange" :label="$t('office.timeRange')" required>
           
-<!-- TODO(date-picker): 核对返回值格式（原 Arco 为字符串） --><t-date-picker v-model="bookingForm.startTime" show-time style="width: 240px" :placeholder="$t('office.startTime')" />
+<t-date-picker v-model="bookingForm.startTime" show-time value-type="YYYY-MM-DD HH:mm" style="width: 240px" :placeholder="$t('office.startTime')" />
           <span class="mx-2">~</span>
           
-<!-- TODO(date-picker): 核对返回值格式（原 Arco 为字符串） --><t-date-picker v-model="bookingForm.endTime" show-time style="width: 240px" :placeholder="$t('office.endTime')" />
+<t-date-picker v-model="bookingForm.endTime" show-time value-type="YYYY-MM-DD HH:mm" style="width: 240px" :placeholder="$t('office.endTime')" />
         </t-form-item>
         <t-form-item field="attendees" :label="$t('office.attendees')">
           <t-input v-model="bookingForm.attendees" :placeholder="$t('office.attendeesPlaceholder')" />
@@ -150,7 +150,7 @@
 <script setup lang="ts">
 import { PERM } from '@/utils/constants'
 import { ref, reactive, onMounted, onActivated, computed } from 'vue'
-import { MessagePlugin as Message } from 'tdesign-vue-next'
+import { MessagePlugin } from 'tdesign-vue-next'
 import {
   getRoomPageApi, getAvailableRoomsApi, addRoomApi, updateRoomApi, deleteRoomApi,
   getBookingPageApi, addBookingApi, updateBookingApi, deleteBookingApi,
@@ -248,7 +248,7 @@ function openRoomEdit(room: OfficeMeetingRoom) {
 
 async function handleSaveRoom() {
   if (!roomForm.roomName) {
-    Message.warning(t('common.msg.meetingRoomRequired'))
+    MessagePlugin.warning(t('common.msg.meetingRoomRequired'))
     return
   }
   saving.value = true
@@ -258,7 +258,7 @@ async function handleSaveRoom() {
     } else {
       await addRoomApi(roomForm)
     }
-    Message.success(t('common.saveSuccess'))
+    MessagePlugin.success(t('common.saveSuccess'))
     roomDialogVisible.value = false
     Object.keys(roomForm).forEach((k) => delete (roomForm as Record<string, unknown>)[k])
     loadRooms()
@@ -269,7 +269,7 @@ async function handleSaveRoom() {
 
 async function handleDeleteRoom(room: OfficeMeetingRoom) {
   await deleteRoomApi(room.id)
-  Message.success(t('common.deleteSuccess'))
+  MessagePlugin.success(t('common.deleteSuccess'))
   loadRooms()
 }
 
@@ -299,11 +299,11 @@ function openBookingEdit(record: OfficeMeetingBooking) {
 
 async function handleSaveBooking() {
   if (!bookingForm.roomId || !bookingForm.title) {
-    Message.warning(t('common.msg.meetingInfoRequired'))
+    MessagePlugin.warning(t('common.msg.meetingInfoRequired'))
     return
   }
   if (!bookingForm.startTime || !bookingForm.endTime) {
-    Message.warning(t('common.msg.meetingTimeRequired'))
+    MessagePlugin.warning(t('common.msg.meetingTimeRequired'))
     return
   }
   saving.value = true
@@ -329,7 +329,7 @@ async function handleSaveBooking() {
         bookerName: userStore.userInfo?.nickName || '',
       })
     }
-    Message.success(t('common.msg.bookingSuccess'))
+    MessagePlugin.success(t('common.msg.bookingSuccess'))
     bookingVisible.value = false
     isBookingEdit.value = false
     bookingForm.id = ''
@@ -347,7 +347,7 @@ async function handleSaveBooking() {
 
 async function handleDeleteBooking(record: OfficeMeetingBooking) {
   await deleteBookingApi(record.id)
-  Message.success(t('common.deleteSuccess'))
+  MessagePlugin.success(t('common.deleteSuccess'))
   loadBookings()
 }
 

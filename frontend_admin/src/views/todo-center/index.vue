@@ -46,7 +46,7 @@
       <t-loading :loading="loading">
           <t-table row-key="id" :data="tableData" :columns="tableColumns" :pagination="false">
     <template #type="{ row }">
-                <t-tag :color="row.type === 'leave' ? 'blue' : 'orange'">{{ row.typeName }}</t-tag>
+                <t-tag :theme="row.type === 'leave' ? 'primary' : 'warning'">{{ row.typeName }}</t-tag>
               </template>
     <template #startTime="{ row }">
                 <span class="text-sm">{{ row.startTime }}<br />{{ row.endTime }}</span>
@@ -82,7 +82,7 @@
         <t-card class="mb-4" :bordered="false" style="background: var(--wecom-bg-container)">
           <t-descriptions :column="2" size="small" layout="horizontal">
             <t-descriptions-item :label="$t('todoCenter.type')" :span="2">
-              <t-tag :color="approveForm.item.type === 'leave' ? 'blue' : 'orange'">{{ approveForm.item.typeName }}</t-tag>
+              <t-tag :theme="approveForm.item.type === 'leave' ? 'primary' : 'warning'">{{ approveForm.item.typeName }}</t-tag>
             </t-descriptions-item>
             <t-descriptions-item :label="$t('todoCenter.title')" :span="2">{{ approveForm.item.title }}</t-descriptions-item>
             <t-descriptions-item :label="$t('todoCenter.applicant')">{{ approveForm.item.applicantName }}</t-descriptions-item>

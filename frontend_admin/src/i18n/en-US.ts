@@ -79,7 +79,7 @@ export default {
     noDeptData: 'No department data',
     online: 'Online',
     offline: 'Offline',
-    // Message toast texts (used by Message.success/warning in scripts)
+    // Toast texts (used by MessagePlugin.success/warning in scripts)
     msg: {
       contentRequired: 'Log content is required',
       reviewDone: 'Review completed',
@@ -104,7 +104,7 @@ export default {
     },
   },
   login: {
-    title: 'BareZen Admin',
+    title: 'BareZen OA Admin',
     username: 'Username',
     password: 'Password',
     captcha: 'Captcha',

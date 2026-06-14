@@ -38,7 +38,7 @@
                 <span class="font-mono text-sm">{{ row.configValue }}</span>
               </template>
     <template #configType="{ row }">
-                <t-tag :color="row.configType === 'Y' ? 'blue' : 'default'">
+                <t-tag :theme="row.configType === 'Y' ? 'primary' : 'default'">
                   {{ row.configType === 'Y' ? $t('common.yes') : $t('common.no') }}
                 </t-tag>
               </template>

@@ -38,7 +38,7 @@
       <t-loading :loading="loading">
           <t-table row-key="id" :data="tableData" :columns="tableColumns" :pagination="false">
     <template #status="{ row }">
-                <t-tag :color="row.status === '0' ? 'green' : 'red'">
+                <t-tag :theme="row.status === '0' ? 'success' : 'danger'">
                   {{ row.status === '0' ? $t('monitor.logininfor.success') : $t('monitor.logininfor.fail') }}
                 </t-tag>
               </template>

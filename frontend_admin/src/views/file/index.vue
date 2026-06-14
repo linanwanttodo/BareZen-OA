@@ -38,8 +38,7 @@
         </div>
 
         <div v-if="loading" class="flex h-64 items-center justify-center">
-          <div class="h-8 w-8 animate-spin rounded-full border-b-2 border-[var(--primary)]"></div>
-          <span class="ml-2 text-[var(--muted-foreground)]">{{ $t('common.loading') }}</span>
+          <t-loading size="28px" :text="$t('common.loading')" />
         </div>
           <t-table row-key="id" :data="tableData" :columns="tableColumns" :pagination="false">
     <template #fileName="{ row }">
@@ -59,7 +58,7 @@
               </template>
     <template #fileType="{ row }">{{ getTypeText(row) }}</template>
     <template #scope="{ row }">
-                <t-tag :color="row.scope === 'public' ? 'green' : 'gray'" size="small">
+                <t-tag :theme="row.scope === 'public' ? 'success' : 'default'" size="small">
                   {{ row.scope === 'public' ? $t('file.scopePublic') : $t('file.scopeAdmin') }}
                 </t-tag>
               </template>
@@ -118,7 +117,7 @@
 import { PERM } from '@/utils/constants'
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { MessagePlugin as Message } from 'tdesign-vue-next'
+import { MessagePlugin } from 'tdesign-vue-next'
 import { formatDateTime } from '@/utils/format'
 import {
   uploadFileApi,
@@ -192,9 +191,9 @@ async function onFileSelected(e: Event) {
     for (const file of Array.from(files)) {
       try {
         await uploadFileApi(file, currentFolderId.value || null)
-        Message.success(`${t('file.uploadSuccess')}: ${file.name}`)
+        MessagePlugin.success(`${t('file.uploadSuccess')}: ${file.name}`)
       } catch {
-        Message.error(`${t('file.uploadFailed')}: ${file.name}`)
+        MessagePlugin.error(`${t('file.uploadFailed')}: ${file.name}`)
       }
     }
     loadList()
@@ -215,9 +214,9 @@ async function handleDownload(record: SysFileItem) {
     a.download = getDownloadFilename(res.headers?.['content-disposition'], record.originalName || record.fileName)
     a.click()
     URL.revokeObjectURL(url)
-    Message.success(t('file.downloadStart'))
+    MessagePlugin.success(t('file.downloadStart'))
   } catch {
-    Message.error(t('file.downloadFailed'))
+    MessagePlugin.error(t('file.downloadFailed'))
   }
 }
 
@@ -247,16 +246,16 @@ function openCreateFolder() {
 async function handleCreateFolder() {
   const name = folderForm.name.trim()
   if (!name) {
-    Message.warning(t('file.nameRequired'))
+    MessagePlugin.warning(t('file.nameRequired'))
     return
   }
   try {
     await createFolderApi({ name, parentId: currentFolderId.value || null })
-    Message.success(t('file.folderCreated'))
+    MessagePlugin.success(t('file.folderCreated'))
     createFolderVisible.value = false
     loadList()
   } catch {
-    Message.error(t('file.folderCreatedFailed'))
+    MessagePlugin.error(t('file.folderCreatedFailed'))
   }
 }
 
@@ -274,16 +273,16 @@ function openRename(record: SysFileItem) {
 async function handleRename() {
   const name = renameForm.name.trim()
   if (!name || !renameTarget.value) {
-    Message.warning(t('file.nameRequired'))
+    MessagePlugin.warning(t('file.nameRequired'))
     return
   }
   try {
     await renameFileApi(renameTarget.value.id, name)
-    Message.success(t('file.renamed'))
+    MessagePlugin.success(t('file.renamed'))
     renameVisible.value = false
     loadList()
   } catch {
-    Message.error(t('file.renameFailed'))
+    MessagePlugin.error(t('file.renameFailed'))
   }
 }
 
@@ -308,11 +307,11 @@ async function handleDelete() {
   if (!deleteTarget.value) return
   try {
     await deleteFileApi(deleteTarget.value.id)
-    Message.success(t('file.deleted'))
+    MessagePlugin.success(t('file.deleted'))
     deleteVisible.value = false
     loadList()
   } catch {
-    Message.error(t('file.deleteFailed'))
+    MessagePlugin.error(t('file.deleteFailed'))
   }
 }
 

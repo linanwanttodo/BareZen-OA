@@ -3,49 +3,51 @@
 @tailwind utilities;
 
 /* ============================================================
-   BareZen Admin — 企业微信风格设计系统
+   BareZen OA Admin — 设计令牌（TDesign 单一来源）
    约定：简洁 / 专业 / 蓝白色调 / 无渐变 / 无霓虹 / 无 emoji
-   层次通过边框 + 背景明度表达
+   所有 --wecom-* 与历史别名统一转发 --td-* 官方 token；
+   暗色模式由 TDesign theme-mode='dark' 驱动，本文件不再自定义色值。
    ============================================================ */
 
-/* ===== 1. 企业微信设计令牌 ===== */
+/* ===== 1. 设计令牌（全部转发 TDesign token，禁止裸色值） ===== */
 :root {
-  /* ── 品牌色（腾讯蓝）── */
-  --wecom-primary: #2B7CE9;
-  --wecom-primary-hover: #1A6FD8;
-  --wecom-primary-active: #0F5FC2;
-  --wecom-primary-light: #E6F4FF;
-  --wecom-primary-bg: #F0F7FF;
+  /* ── 品牌色 ── */
+  --wecom-primary: var(--td-brand-color-7);
+  --wecom-primary-hover: var(--td-brand-color-8);
+  --wecom-primary-active: var(--td-brand-color-9);
+  --wecom-primary-light: var(--td-brand-color-2);
+  --wecom-primary-bg: var(--td-brand-color-1);
 
   /* ── 功能色 ── */
-  --wecom-success: #52C41A;
-  --wecom-success-light: #F6FFED;
-  --wecom-warning: #FAAD14;
-  --wecom-warning-light: #FFFBE6;
-  --wecom-error: #F5222D;
-  --wecom-error-light: #FFF1F0;
-  --wecom-info: #1890FF;
-  --wecom-info-light: #E6F7FF;
+  --wecom-success: var(--td-success-color);
+  --wecom-success-light: var(--td-success-color-1);
+  --wecom-warning: var(--td-warning-color);
+  --wecom-warning-light: var(--td-warning-color-1);
+  --wecom-error: var(--td-error-color);
+  --wecom-error-light: var(--td-error-color-1);
+  /* info 色 TDesign 无对应语义组，作为品牌蓝别名保留 */
+  --wecom-info: var(--td-brand-color-7);
+  --wecom-info-light: var(--td-brand-color-1);
 
   /* ── 中性色 - 文字 ── */
-  --wecom-text-primary: #262626;
-  --wecom-text-secondary: #595959;
-  --wecom-text-tertiary: #8C8C8C;
-  --wecom-text-disabled: #BFBFBF;
+  --wecom-text-primary: var(--td-text-color-primary);
+  --wecom-text-secondary: var(--td-text-color-secondary);
+  --wecom-text-tertiary: var(--td-text-color-placeholder);
+  --wecom-text-disabled: var(--td-text-color-disabled);
 
   /* ── 中性色 - 背景 ── */
-  --wecom-bg-page: #F5F5F5;
-  --wecom-bg-card: #FFFFFF;
-  --wecom-bg-container: #FAFAFA;
-  --wecom-bg-hover: #FAFAFA;
-  --wecom-bg-active: #F0F0F0;
+  --wecom-bg-page: var(--td-bg-color-page);
+  --wecom-bg-card: var(--td-bg-color-container);
+  --wecom-bg-container: var(--td-bg-color-secondarycontainer);
+  --wecom-bg-hover: var(--td-bg-color-secondarycontainer-hover);
+  --wecom-bg-active: var(--td-bg-color-active);
 
   /* ── 中性色 - 边框 ── */
-  --wecom-border: #E8E8E8;
-  --wecom-border-strong: #D9D9D9;
-  --wecom-border-focus: #2B7CE9;
+  --wecom-border: var(--td-component-stroke);
+  --wecom-border-strong: var(--td-border-level-2-color);
+  --wecom-border-focus: var(--td-brand-color);
 
-  /* ── 间距系统（基础单位 8px）── */
+  /* ── 间距系统（TDesign 无间距 token，保留为布局常量）── */
   --wecom-spacing-xs: 4px;
   --wecom-spacing-sm: 8px;
   --wecom-spacing-md: 12px;
@@ -54,18 +56,18 @@
   --wecom-spacing-xxl: 32px;
   --wecom-spacing-xxxl: 48px;
 
-  /* ── 圆角系统 ── */
-  --wecom-radius-sm: 2px;
-  --wecom-radius-md: 4px;
-  --wecom-radius-lg: 8px;
-  --wecom-radius-xl: 12px;
+  /* ── 圆角系统（对齐 TDesign radius token）── */
+  --wecom-radius-sm: var(--td-radius-small);
+  --wecom-radius-md: var(--td-radius-default);
+  --wecom-radius-lg: var(--td-radius-large);
+  --wecom-radius-xl: var(--td-radius-extraLarge);
 
-  /* ── 阴影系统 ── */
+  /* ── 阴影系统（对齐 TDesign shadow token）── */
   --wecom-shadow-none: none;
-  --wecom-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.03);
-  --wecom-shadow-md: 0 2px 8px rgba(0, 0, 0, 0.08);
-  --wecom-shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.12);
-  --wecom-shadow-xl: 0 8px 24px rgba(0, 0, 0, 0.15);
+  --wecom-shadow-sm: var(--td-shadow-1);
+  --wecom-shadow-md: var(--td-shadow-2);
+  --wecom-shadow-lg: var(--td-shadow-3);
+  --wecom-shadow-xl: var(--td-shadow-3);
 
   /* ── 布局尺寸 ── */
   --wecom-header-height: 56px;
@@ -73,7 +75,7 @@
   --wecom-sidebar-expanded: 210px;
   --wecom-tags-height: 36px;
 
-  /* ── 过渡动画 ── */
+  /* ── 过渡动画（TDesign 无动效时长 token，保留为动效常量）── */
   --wecom-transition-fast: 0.15s ease-in-out;
   --wecom-transition-base: 0.2s ease-in-out;
   --wecom-transition-slow: 0.3s ease-in-out;
@@ -88,106 +90,32 @@
   --bz-danger: var(--wecom-error);
   --bz-header-height: var(--wecom-header-height);
 
-  /* ── Arco 色阶桥接：让所有 Arco 组件（按钮/标签/表格/弹窗/菜单）走企业微信色板 ──
-     Arco 的 --gray-N / --arcoblue-N 为 RGB 三元组，覆盖后其语义变量
-     （--color-text-* / --color-bg-* / --color-fill-* / --color-border-* / --primary-*）自动跟随 */
-
-  /* 品牌色阶 → 腾讯蓝 #2B7CE9 */
-  --arcoblue-1: 232, 243, 254;
-  --arcoblue-2: 200, 225, 252;
-  --arcoblue-3: 163, 203, 248;
-  --arcoblue-4: 122, 178, 244;
-  --arcoblue-5: 79, 151, 238;
-  --arcoblue-6: 43, 124, 233;   /* = --wecom-primary */
-  --arcoblue-7: 26, 111, 216;   /* = --wecom-primary-hover */
-  --arcoblue-8: 15, 95, 194;    /* = --wecom-primary-active */
-  --arcoblue-9: 12, 77, 158;
-  --arcoblue-10: 9, 58, 120;
-
-  /* 中性灰阶 → 企业微信中性色 */
-  --gray-1: 250, 250, 250;      /* #FAFAFA 悬停/容器底 */
-  --gray-2: 245, 245, 245;      /* #F5F5F5 页面底 */
-  --gray-3: 232, 232, 232;      /* #E8E8E8 常规边框 */
-  --gray-4: 217, 217, 217;      /* #D9D9D9 强调边框 */
-  --gray-5: 191, 191, 191;      /* #BFBFBF 禁用文字 */
-  --gray-6: 140, 140, 140;      /* #8C8C8C 辅助文字 */
-  --gray-7: 113, 113, 113;
-  --gray-8: 89, 89, 89;         /* #595959 次要文字 */
-  --gray-9: 58, 58, 58;
-  --gray-10: 38, 38, 38;        /* #262626 主要文字 */
-
-  /* 功能色主体对齐（标签/状态点用色的 6 级） */
-  --blue-6: 24, 144, 255;       /* info #1890FF */
-  --green-6: 82, 196, 26;       /* success #52C41A */
-  --orange-6: 250, 173, 20;     /* warning #FAAD14 */
-  --gold-6: 250, 173, 20;
-  --red-6: 245, 34, 45;         /* error #F5222D */
-
-  /* ── shadcn 兼容层（映射到新变量）── */
-  --background: var(--wecom-bg-page);
-  --foreground: var(--wecom-text-primary);
-  --card: var(--wecom-bg-card);
-  --card-foreground: var(--wecom-text-primary);
-  --popover: var(--wecom-bg-card);
-  --popover-foreground: var(--wecom-text-primary);
-  --primary: var(--wecom-primary);
-  --primary-foreground: #FFFFFF;
-  --secondary: var(--wecom-bg-hover);
-  --secondary-foreground: var(--wecom-text-primary);
-  --muted: var(--wecom-bg-hover);
-  --muted-foreground: var(--wecom-text-tertiary);
-  --accent: var(--wecom-bg-active);
-  --accent-foreground: var(--wecom-text-primary);
-  --destructive: var(--wecom-error);
-  --destructive-foreground: #FFFFFF;
-  --border: var(--wecom-border);
-  --input: var(--wecom-border);
-  --ring: var(--wecom-primary);
-  --radius: var(--wecom-radius-md);
+  /* ── 历史遗留变量别名（统一转发到 TDesign token，不再自定义色值）──
+     说明：存量代码中仍有 --primary/--muted-foreground 等引用，
+     全部转发到 --td-* 官方 token 作为单一色值来源，逐步直连后可删除本层 */
+  --background: var(--td-bg-color-page);
+  --foreground: var(--td-text-color-primary);
+  --card: var(--td-bg-color-container);
+  --card-foreground: var(--td-text-color-primary);
+  --popover: var(--td-bg-color-container);
+  --popover-foreground: var(--td-text-color-primary);
+  --primary: var(--td-brand-color);
+  --primary-foreground: var(--td-text-color-anti);
+  --secondary: var(--td-bg-color-secondarycontainer);
+  --secondary-foreground: var(--td-text-color-primary);
+  --muted: var(--td-bg-color-secondarycontainer);
+  --muted-foreground: var(--td-text-color-placeholder);
+  --accent: var(--td-bg-color-active);
+  --accent-foreground: var(--td-text-color-primary);
+  --destructive: var(--td-error-color);
+  --destructive-foreground: var(--td-text-color-anti);
+  --border: var(--td-component-stroke);
+  --input: var(--td-component-stroke);
+  --ring: var(--td-brand-color);
+  --radius: var(--td-radius-medium);
 }
 
-/* ===== 2. Arco 组件微调（对齐企业微信交互规范） ===== */
-
-/* 主按钮：悬停加深、按下再加深（Arco 默认悬停变浅，不符合 wecom 规范） */
-.arco-btn-primary {
-  background-color: var(--wecom-primary);
-  border-color: var(--wecom-primary);
-}
-.arco-btn-primary:not(:disabled):hover {
-  background-color: var(--wecom-primary-hover);
-  border-color: var(--wecom-primary-hover);
-}
-.arco-btn-primary:not(:disabled):active {
-  background-color: var(--wecom-primary-active);
-  border-color: var(--wecom-primary-active);
-}
-
-/* 输入类组件聚焦：使用 wecom 焦点边框，去掉 Arco 默认光晕 */
-.arco-input-wrapper:focus-within,
-.arco-textarea-wrapper:focus-within,
-.arco-select-view-focus {
-  border-color: var(--wecom-border-focus) !important;
-  box-shadow: none !important;
-}
-
-/* 表格：表头浅灰、行悬停浅灰，去掉多余强调 */
-.arco-table-th {
-  background-color: var(--wecom-bg-container);
-  font-weight: 500;
-  color: var(--wecom-text-secondary);
-}
-
-/* 卡片：Arco 默认直角，按 wecom 规范改为 4px 中圆角 */
-.arco-card {
-  border-radius: var(--wecom-radius-md);
-}
-
-/* 弹窗/下拉：阴影按 wecom 层级 */
-.arco-modal {
-  box-shadow: var(--wecom-shadow-lg);
-}
-
-/* ===== 3. 全局重置 ===== */
+/* ===== 2. 全局重置 ===== */
 *,
 *::before,
 *::after {
@@ -228,7 +156,7 @@ body {
   min-height: 100vh;
   margin: 0;
   padding: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', 'Helvetica Neue', Arial, sans-serif;
+  font-family: var(--td-font-family);
   font-size: 14px;
   line-height: 1.6;
   color: var(--foreground);
@@ -268,7 +196,7 @@ body {
 }
 ::-webkit-scrollbar-thumb {
   background: var(--wecom-border-strong);
-  border-radius: 3px;
+  border-radius: var(--td-radius-default);
 }
 ::-webkit-scrollbar-thumb:hover {
   background: var(--wecom-text-disabled);

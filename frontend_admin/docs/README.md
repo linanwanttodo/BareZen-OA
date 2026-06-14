@@ -1,11 +1,11 @@
-# BareZen_Base 前端项目总览
+# BareZen_OA 前端项目总览
 
 ## 概览
 
 本项目包含两个独立的前端工程，共同对接后端 `backend/`：
 
 ```
-BareZen_Base/
+BareZen_OA/
 ├── frontend_admin/            # 管理后台 (Vue 3 + Arco Design)
 │   ├── docs/                 # 开发文档 (本目录)
 │   └── src/

@@ -52,17 +52,17 @@
                 </div>
               </template>
     <template #menuType="{ row }">
-                <t-tag :color="row.node.menuType === 'M' ? 'blue' : row.node.menuType === 'C' ? 'green' : 'orange'">
+                <t-tag :theme="row.node.menuType === 'M' ? 'primary' : row.node.menuType === 'C' ? 'success' : 'warning'">
                   {{ $t(menuTypeKey(row.node.menuType)) }}
                 </t-tag>
               </template>
     <template #visible="{ row }">
-                <t-tag :color="row.node.visible === '0' ? 'green' : 'red'">
+                <t-tag :theme="row.node.visible === '0' ? 'success' : 'danger'">
                   {{ row.node.visible === '0' ? $t('menu.show') : $t('menu.hide') }}
                 </t-tag>
               </template>
     <template #status="{ row }">
-                <t-tag :color="row.node.status === '0' ? 'green' : 'red'">
+                <t-tag :theme="row.node.status === '0' ? 'success' : 'danger'">
                   {{ row.node.status === '0' ? $t('common.normal') : $t('common.disable') }}
                 </t-tag>
               </template>
@@ -166,7 +166,7 @@
 <script setup lang="ts">
 import { PERM } from '@/utils/constants'
 import { ref, reactive, computed, onMounted } from 'vue'
-import { MessagePlugin as Message, DialogPlugin as Modal } from 'tdesign-vue-next'
+import { MessagePlugin, DialogPlugin } from 'tdesign-vue-next'
 import { useI18n } from 'vue-i18n'
 import {
   getMenuListApi,
@@ -290,7 +290,7 @@ async function loadTable() {
 async function handleDelete(row: SysMenu) {
   try {
     await deleteMenuApi(row.id)
-    Message.success(t('menu.deleteSuccess'))
+    MessagePlugin.success(t('menu.deleteSuccess'))
     loadTable()
   } catch {
     /* interceptor handles */
@@ -369,10 +369,10 @@ async function onFormConfirm() {
     const payload = { ...formData, orderNum: Number(formData.orderNum) || 0 }
     if (formType.value === 'add') {
       await addMenuApi(payload)
-      Message.success(t('menu.addSuccess'))
+      MessagePlugin.success(t('menu.addSuccess'))
     } else {
       await updateMenuApi(payload)
-      Message.success(t('menu.editSuccess'))
+      MessagePlugin.success(t('menu.editSuccess'))
     }
     formDialogVisible.value = false
     loadTable()

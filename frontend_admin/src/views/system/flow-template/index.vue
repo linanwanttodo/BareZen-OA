@@ -93,7 +93,7 @@
 <script setup lang="ts">
 import { PERM } from '@/utils/constants'
 import { ref, computed, reactive, onMounted } from 'vue'
-import { MessagePlugin as Message } from 'tdesign-vue-next'
+import { MessagePlugin } from 'tdesign-vue-next'
 import { useI18n } from 'vue-i18n'
 import { getFlowTemplatePageApi, addFlowTemplateApi, updateFlowTemplateApi, deleteFlowTemplateApi, type FlowTemplate } from '@/api/flow-template'
 
@@ -152,9 +152,9 @@ function handleEdit(record: FlowTemplate) {
 }
 
 async function handleSave() {
-  if (!form.bizType) { Message.warning(t('flowTemplate.bizTypeRequired')); return }
-  if (!form.nodeSeq) { Message.warning(t('flowTemplate.nodeSeqRequired')); return }
-  if (!form.nodeName?.trim()) { Message.warning(t('flowTemplate.nodeNameRequired')); return }
+  if (!form.bizType) { MessagePlugin.warning(t('flowTemplate.bizTypeRequired')); return }
+  if (!form.nodeSeq) { MessagePlugin.warning(t('flowTemplate.nodeSeqRequired')); return }
+  if (!form.nodeName?.trim()) { MessagePlugin.warning(t('flowTemplate.nodeNameRequired')); return }
   saving.value = true
   try {
     if (isEdit.value) {
@@ -162,7 +162,7 @@ async function handleSave() {
     } else {
       await addFlowTemplateApi(form)
     }
-    Message.success(t('common.saveSuccess'))
+    MessagePlugin.success(t('common.saveSuccess'))
     editVisible.value = false
     loadData()
   } finally {
@@ -172,13 +172,13 @@ async function handleSave() {
 
 async function handleDelete(record: FlowTemplate) {
   await deleteFlowTemplateApi(record.id)
-  Message.success(t('common.deleteSuccess'))
+  MessagePlugin.success(t('common.deleteSuccess'))
   loadData()
 }
 
 async function handleEnableChange(record: FlowTemplate, val: boolean) {
   await updateFlowTemplateApi({ id: record.id, enabled: val ? 1 : 0 })
-  Message.success(t('common.saveSuccess'))
+  MessagePlugin.success(t('common.saveSuccess'))
   record.enabled = val ? 1 : 0
 }
 

@@ -1,7 +1,6 @@
 <template>
   <div v-if="loading" class="flex items-center justify-center h-64">
-    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--primary)]"></div>
-    <span class="ml-2 text-[var(--muted-foreground)]">{{ $t('common.loading') }}</span>
+    <t-loading size="28px" :text="$t('common.loading')" />
   </div>
   <div v-else class="dashboard-container">
     <!-- 统计卡片 -->
@@ -62,12 +61,12 @@
       <t-card class="p-5">
         <div class="mb-3 flex items-center justify-between">
           <h3 class="text-sm font-medium text-[var(--foreground)]">{{ $t('dashboard.latestNotices') }}</h3>
-          <button class="text-xs text-[var(--muted-foreground)] hover:text-[var(--foreground)]" @click="router.push('/notice')">{{ $t('common.viewAll') }}</button>
+          <t-link theme="primary" hover="color" class="text-xs" @click="router.push('/notice')">{{ $t('common.viewAll') }}</t-link>
         </div>
         <div v-if="notices.length" class="divide-y divide-[var(--border)]">
           <div v-for="item in notices" :key="item.id" class="flex items-center justify-between py-3">
             <div class="flex items-center gap-2 min-w-0">
-              <t-tag :color="item.noticeType === '1' ? 'arcoblue' : 'gray'" class="shrink-0 text-xs">
+              <t-tag :theme="item.noticeType === '1' ? 'primary' : 'default'" class="shrink-0 text-xs">
                 {{ item.noticeType === '1' ? $t('notice.typeNotice') : $t('notice.typeAnnouncement') }}
               </t-tag>
               <span class="truncate text-sm text-[var(--foreground)]" @click="handleNoticeClick(item)">{{ item.noticeTitle }}</span>
@@ -81,12 +80,12 @@
       <t-card class="p-5">
         <div class="mb-3 flex items-center justify-between">
           <h3 class="text-sm font-medium text-[var(--foreground)]">{{ $t('dashboard.recentLogs') }}</h3>
-          <button class="text-xs text-[var(--muted-foreground)] hover:text-[var(--foreground)]" @click="router.push('/monitor/oper-log')">{{ $t('common.viewAll') }}</button>
+          <t-link theme="primary" hover="color" class="text-xs" @click="router.push('/monitor/oper-log')">{{ $t('common.viewAll') }}</t-link>
         </div>
         <div v-if="operLogs.length" class="divide-y divide-[var(--border)]">
           <div v-for="item in operLogs" :key="item.id" class="py-3">
             <div class="flex items-center gap-2">
-              <t-tag :color="businessTypeVariant(item.businessType) === 'default' ? 'arcoblue' : businessTypeVariant(item.businessType) === 'destructive' ? 'red' : 'arcoblue'" class="text-xs">{{ businessTypeText(item.businessType) }}</t-tag>
+              <t-tag :theme="businessTypeVariant(item.businessType) === 'default' ? 'primary' : businessTypeVariant(item.businessType) === 'destructive' ? 'danger' : 'primary'" class="text-xs">{{ businessTypeText(item.businessType) }}</t-tag>
               <span class="text-sm text-[var(--foreground)]">{{ item.title }}</span>
             </div>
             <p class="mt-1 text-xs text-[var(--muted-foreground)]">
@@ -105,12 +104,12 @@
     <t-dialog v-model="noticeDialogVisible" :header="currentNotice?.noticeTitle || $t('dashboard.noticeDetail')" @close="noticeDialogVisible = false">
       <div v-if="currentNotice" class="notice-detail">
         <div class="notice-detail-meta">
-          <t-tag :color="currentNotice.noticeType === '1' ? 'arcoblue' : 'gray'">
+          <t-tag :theme="currentNotice.noticeType === '1' ? 'primary' : 'default'">
             {{ currentNotice.noticeType === '1' ? $t('notice.typeNotice') : $t('notice.typeAnnouncement') }}
           </t-tag>
-          <t-tag v-if="currentNotice.status === '1'" color="arcoblue">{{ $t('notice.noticeStatusPublished') }}</t-tag>
+          <t-tag v-if="currentNotice.status === '1'" theme="primary">{{ $t('notice.noticeStatusPublished') }}</t-tag>
           <t-tag v-else-if="currentNotice.status === '0'" bordered>{{ $t('notice.noticeStatusDraft') }}</t-tag>
-          <t-tag v-else color="red">{{ $t('notice.noticeStatusRevoked') }}</t-tag>
+          <t-tag v-else theme="danger">{{ $t('notice.noticeStatusRevoked') }}</t-tag>
           <span class="notice-detail-time">{{ formatDateTime(currentNotice.createTime) }}</span>
         </div>
         <t-divider class="my-4" />
@@ -147,7 +146,7 @@ import { getMenuListApi } from '@/api/menu'
 import { getOnlineUserCountApi } from '@/api/online'
 import { getPublishedNoticesApi, getNoticePageApi, type SysNotice } from '@/api/notice'
 import { getOperLogPageApi, type SysOperLog } from '@/api/operLog'
-import { getDashboardChartsApi, type ApprovalStat } from '@/api/dashboard'
+import { getDashboardChartsApi, type ApprovalStat, type ChartData } from '@/api/dashboard'
 import { sanitizeHtml } from '@/utils/dom'
 
 const { t } = useI18n()
@@ -190,34 +189,63 @@ const pieChartRef = ref<HTMLElement>()
 let lineChart: echarts.ECharts | null = null
 let pieChart: echarts.ECharts | null = null
 
-const CHART_PRIMARY = '#2B7CE9'
-const CHART_TEXT = '#8C8C8C'
-const CHART_TEXT_STRONG = '#262626'
-const CHART_BORDER = '#E8E8E8'
-const CHART_SPLIT = '#F5F5F5'
-// 饼图：蓝色系渐进 + 中性灰收尾，避免彩虹配色
-const CHART_SERIES_COLORS = ['#2B7CE9', '#5C9CEF', '#8FBCF5', '#C0DBFA', '#595959', '#8C8C8C', '#BFBFBF']
+// 图表色值从 TDesign token 运行时解析（ECharts 画布无法直接消费 CSS 变量），
+// 保持与全局主题单一来源一致；解析失败时回退到同值常量。
+// 每次调用重新 getComputedStyle，暗色切换后可取到更新后的 token。
+function cssVar(name: string, fallback: string): string {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback
+}
+/** hex → rgba（用于面积图淡色填充） */
+function withAlpha(hex: string, alpha: number): string {
+  const n = hex.replace('#', '')
+  const r = parseInt(n.slice(0, 2), 16)
+  const g = parseInt(n.slice(2, 4), 16)
+  const b = parseInt(n.slice(4, 6), 16)
+  return `rgba(${r},${g},${b},${alpha})`
+}
+
+function chartPalette() {
+  return {
+    primary: cssVar('--td-brand-color-7', '#2B7CE9'),
+    text: cssVar('--td-text-color-placeholder', '#8C8C8C'),
+    textStrong: cssVar('--td-text-color-primary', '#262626'),
+    border: cssVar('--td-component-stroke', '#E8E8E8'),
+    split: cssVar('--td-bg-color-page', '#F5F5F5'),
+    bg: cssVar('--td-bg-color-container', '#FFFFFF'),
+    // 饼图：品牌色阶渐进 + 中性灰收尾，避免彩虹配色
+    series: [
+      cssVar('--td-brand-color-7', '#2B7CE9'),
+      cssVar('--td-brand-color-5', '#5595EC'),
+      cssVar('--td-brand-color-3', '#A9CDF7'),
+      cssVar('--td-brand-color-1', '#F0F7FF'),
+      cssVar('--td-text-color-secondary', '#595959'),
+      cssVar('--td-text-color-placeholder', '#8C8C8C'),
+      cssVar('--td-text-color-disabled', '#BFBFBF'),
+    ],
+  }
+}
 
 function initLineChart(visitTrend: { date: string; count: number }[]) {
   if (!lineChartRef.value) return
   lineChart = echarts.init(lineChartRef.value)
+  const P = chartPalette()
   const days = visitTrend.map((d) => d.date.substring(5))
   const counts = visitTrend.map((d) => d.count)
   lineChart.setOption({
-    tooltip: { trigger: 'axis', backgroundColor: '#FFFFFF', borderColor: CHART_BORDER, textStyle: { color: CHART_TEXT_STRONG } },
-    legend: { data: [t('dashboard.visitTrend')], top: 0, right: 0, textStyle: { fontSize: 12, color: CHART_TEXT } },
+    tooltip: { trigger: 'axis', backgroundColor: P.bg, borderColor: P.border, textStyle: { color: P.textStrong } },
+    legend: { data: [t('dashboard.visitTrend')], top: 0, right: 0, textStyle: { fontSize: 12, color: P.text } },
     grid: { left: 40, right: 20, bottom: 30, top: 40 },
-    xAxis: { type: 'category', data: days, axisLine: { lineStyle: { color: CHART_BORDER } }, axisLabel: { color: CHART_TEXT } },
-    yAxis: { type: 'value', splitLine: { lineStyle: { color: CHART_SPLIT } }, axisLabel: { color: CHART_TEXT } },
+    xAxis: { type: 'category', data: days, axisLine: { lineStyle: { color: P.border } }, axisLabel: { color: P.text } },
+    yAxis: { type: 'value', splitLine: { lineStyle: { color: P.split } }, axisLabel: { color: P.text } },
     series: [
       {
         name: t('dashboard.visitTrend'),
         type: 'line',
         smooth: true,
         data: counts,
-        lineStyle: { width: 2, color: CHART_PRIMARY },
-        areaStyle: { color: 'rgba(43,124,233,0.08)' },
-        itemStyle: { color: CHART_PRIMARY },
+        lineStyle: { width: 2, color: P.primary },
+        areaStyle: { color: withAlpha(P.primary, 0.08) },
+        itemStyle: { color: P.primary },
         symbol: 'circle',
         symbolSize: 6,
       },
@@ -228,14 +256,15 @@ function initLineChart(visitTrend: { date: string; count: number }[]) {
 function initPieChart(roleDistribution: { name: string; value: number }[]) {
   if (!pieChartRef.value) return
   pieChart = echarts.init(pieChartRef.value)
+  const P = chartPalette()
   const data = roleDistribution.map((item, i) => ({
     value: item.value,
     name: item.name,
-    itemStyle: { color: CHART_SERIES_COLORS[i % CHART_SERIES_COLORS.length] },
+    itemStyle: { color: P.series[i % P.series.length] },
   }))
   pieChart.setOption({
-    tooltip: { trigger: 'item', backgroundColor: '#FFFFFF', borderColor: CHART_BORDER, textStyle: { color: CHART_TEXT_STRONG } },
-    legend: { orient: 'horizontal', bottom: 0, textStyle: { fontSize: 12, color: CHART_TEXT } },
+    tooltip: { trigger: 'item', backgroundColor: P.bg, borderColor: P.border, textStyle: { color: P.textStrong } },
+    legend: { orient: 'horizontal', bottom: 0, textStyle: { fontSize: 12, color: P.text } },
     series: [
       {
         type: 'pie',
@@ -292,23 +321,39 @@ async function loadOperLogs() {
   }
 }
 
+// 图表数据缓存，主题切换后可用新 token 重绘
+const chartData = ref<ChartData | null>(null)
+
 async function loadCharts() {
   try {
     const res = await getDashboardChartsApi()
     const data = res.data
     if (data) {
       approvalStats.value = data.approvalStats || []
+      chartData.value = data
       await nextTick()
-      initLineChart(data.visitTrend)
-      initPieChart(data.roleDistribution)
+      renderCharts()
     }
   } catch (err) {
     console.error('dashboard load error:', err)
   }
 }
 
+/** 用缓存数据重绘图表（主题切换后 CSS token 变化，需重新解析色值） */
+function renderCharts() {
+  const data = chartData.value
+  if (!data) return
+  lineChart?.dispose()
+  pieChart?.dispose()
+  lineChart = null
+  pieChart = null
+  initLineChart(data.visitTrend || [])
+  initPieChart(data.roleDistribution || [])
+}
+
 // ============ 生命周期 ============
 let resizeHandler: (() => void) | null = null
+let themeHandler: (() => void) | null = null
 
 onMounted(async () => {
   loading.value = true
@@ -333,6 +378,9 @@ onMounted(async () => {
     pieChart?.resize()
   }
   window.addEventListener('resize', resizeHandler)
+  // 主题切换时以新 token 重绘图表（ECharts 画布不响应 CSS 变量变化）
+  themeHandler = () => { renderCharts() }
+  window.addEventListener('bz-theme-change', themeHandler)
 })
 
 onActivated(async () => {
@@ -344,6 +392,7 @@ onActivated(async () => {
 
 onUnmounted(() => {
   if (resizeHandler) window.removeEventListener('resize', resizeHandler)
+  if (themeHandler) window.removeEventListener('bz-theme-change', themeHandler)
   lineChart?.dispose()
   pieChart?.dispose()
 })

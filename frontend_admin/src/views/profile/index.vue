@@ -10,7 +10,7 @@
           <h2 class="text-xl font-semibold" style="color: var(--wecom-text-primary)">{{ userStore.userInfo?.nickName || $t('user.adminUser') }}</h2>
           <p class="text-sm mt-1" style="color: var(--wecom-text-tertiary)">@{{ userStore.userInfo?.userName || '-' }}</p>
           <div class="flex items-center gap-2 mt-2">
-            <t-tag v-for="role in userStore.roles" :key="role" color="blue">{{ role }}</t-tag>
+            <t-tag v-for="role in userStore.roles" :key="role" theme="primary">{{ role }}</t-tag>
           </div>
         </div>
         <t-button @click="showEditDialog = true">

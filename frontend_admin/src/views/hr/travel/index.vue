@@ -104,10 +104,10 @@
         </t-form-item>
         <t-form-item field="timeRange" :label="$t('travel.timeRange')" required>
           
-<!-- TODO(date-picker): 核对返回值格式（原 Arco 为字符串） --><t-date-picker v-model="form.startTime" show-time style="width: 260px" :placeholder="$t('travel.startTime')" />
+<t-date-picker v-model="form.startTime" show-time value-type="YYYY-MM-DD HH:mm" style="width: 260px" :placeholder="$t('travel.startTime')" />
           <span class="mx-2">~</span>
           
-<!-- TODO(date-picker): 核对返回值格式（原 Arco 为字符串） --><t-date-picker v-model="form.endTime" show-time style="width: 260px" :placeholder="$t('travel.endTime')" />
+<t-date-picker v-model="form.endTime" show-time value-type="YYYY-MM-DD HH:mm" style="width: 260px" :placeholder="$t('travel.endTime')" />
         </t-form-item>
         <t-form-item field="days" :label="$t('travel.days')">
           <t-input-number v-model="form.days" :min="0.5" :step="0.5" style="width: 100%" :placeholder="$t('travel.daysPlaceholder')" />
@@ -139,7 +139,7 @@
 <script setup lang="ts">
 import { PERM } from '@/utils/constants'
 import { ref, computed, reactive, onMounted } from 'vue'
-import { MessagePlugin as Message } from 'tdesign-vue-next'
+import { MessagePlugin } from 'tdesign-vue-next'
 import { getTravelPageApi, submitTravelApi, approveTravelApi, revokeTravelApi, deleteTravelApi, type AttTravelRequest } from '@/api/travel'
 import { getFlowLogsApi, getFlowTasksApi, type ApprovalFlowNode, type ApprovalFlowTask } from '@/api/flowlog'
 import { useUserStore } from '@/stores/user'
@@ -224,7 +224,7 @@ async function handleSubmit() {
   try {
     // days 表单内为 number（a-input-number），提交时转 string 与后端字段对齐
     await submitTravelApi({ ...form, days: String(form.days) })
-    Message.success(t('common.msg.submitDone'))
+    MessagePlugin.success(t('common.msg.submitDone'))
     addVisible.value = false
     loadData()
   } finally {
@@ -243,7 +243,7 @@ async function handleApprove() {
   approving.value = true
   try {
     await approveTravelApi(approveForm.id, approveForm.action, approveForm.remark)
-    Message.success(t('common.msg.approveDone'))
+    MessagePlugin.success(t('common.msg.approveDone'))
     approveVisible.value = false
     loadData()
   } finally {
@@ -253,18 +253,18 @@ async function handleApprove() {
 
 async function handleRevoke(record: AttTravelRequest) {
   await revokeTravelApi(record.id)
-  Message.success(t('common.msg.withdrawn'))
+  MessagePlugin.success(t('common.msg.withdrawn'))
   loadData()
 }
 
 async function handleDelete(record: AttTravelRequest) {
   await deleteTravelApi(record.id)
-  Message.success(t('common.deleteSuccess'))
+  MessagePlugin.success(t('common.deleteSuccess'))
   loadData()
 }
 
 function showRemark(record: AttTravelRequest) {
-  Message.info({ content: record.approveRemark || '-', duration: 5000 })
+  MessagePlugin.info({ content: record.approveRemark || '-', duration: 5000 })
 }
 
 // ============ 流程进度 ============

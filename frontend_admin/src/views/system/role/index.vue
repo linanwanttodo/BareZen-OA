@@ -142,7 +142,7 @@
           <t-checkbox :model-value="checkedMenuIds.includes(item.node.id)" @change="() => toggleMenuCheck(item.node.id)">
             {{ item.node.menuName }}
           </t-checkbox>
-          <t-tag size="small" class="ml-2" :color="item.node.menuType === 'M' ? 'blue' : item.node.menuType === 'C' ? 'green' : 'orange'">
+          <t-tag size="small" class="ml-2" :theme="item.node.menuType === 'M' ? 'primary' : item.node.menuType === 'C' ? 'success' : 'warning'">
             {{ $t(menuTypeKey(item.node.menuType)) }}
           </t-tag>
         </div>
@@ -154,7 +154,7 @@
 <script setup lang="ts">
 import { PERM } from '@/utils/constants'
 import { ref, reactive, computed, onMounted } from 'vue'
-import { MessagePlugin as Message, DialogPlugin as Modal } from 'tdesign-vue-next'
+import { MessagePlugin, DialogPlugin } from 'tdesign-vue-next'
 import { useI18n } from 'vue-i18n'
 import {
   getRoleListApi,
@@ -245,7 +245,7 @@ async function handleStatusChange(row: SysRole & { _statusLoading?: boolean }, v
   try {
     await changeRoleStatusApi(row.id, newStatus)
     row.status = newStatus
-    Message.success(t('role.statusSuccess'))
+    MessagePlugin.success(t('role.statusSuccess'))
   } catch {
     /* interceptor handles */
   } finally {
@@ -257,7 +257,7 @@ async function handleStatusChange(row: SysRole & { _statusLoading?: boolean }, v
 async function handleDelete(row: SysRole) {
   try {
     await deleteRoleApi(row.id)
-    Message.success(t('role.deleteSuccess'))
+    MessagePlugin.success(t('role.deleteSuccess'))
     loadTable()
   } catch {
     /* interceptor handles */
@@ -265,13 +265,13 @@ async function handleDelete(row: SysRole) {
 }
 
 async function handleBatchDelete() {
-  Modal.confirm({
+  DialogPlugin.confirm({
     header: t('common.confirmDelete'),
     body: t('role.batchDeleteConfirm', { count: selectedIds.value.length }),
     onConfirm: async () => {
       try {
         await batchDeleteRoleApi(selectedIds.value)
-        Message.success(t('role.batchDeleteSuccess'))
+        MessagePlugin.success(t('role.batchDeleteSuccess'))
         selectedIds.value = []
         loadTable()
       } catch {
@@ -320,10 +320,10 @@ async function onFormConfirm() {
     const payload = { ...formData, roleSort: Number(formData.roleSort) || 0 }
     if (formType.value === 'add') {
       await addRoleApi(payload)
-      Message.success(t('role.addSuccess'))
+      MessagePlugin.success(t('role.addSuccess'))
     } else {
       await updateRoleApi(payload)
-      Message.success(t('role.editSuccess'))
+      MessagePlugin.success(t('role.editSuccess'))
     }
     formDialogVisible.value = false
     loadTable()
@@ -426,7 +426,7 @@ async function onMenuConfirm() {
   if (!currentRole.value) return
   try {
     await assignRoleMenusApi(currentRole.value.id, checkedMenuIds.value)
-    Message.success(t('role.menuAssignSuccess'))
+    MessagePlugin.success(t('role.menuAssignSuccess'))
     menuDialogVisible.value = false
   } catch {
     /* interceptor handles */

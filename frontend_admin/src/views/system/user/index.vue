@@ -267,7 +267,7 @@
 <script setup lang="ts">
 import { PERM } from '@/utils/constants'
 import { ref, reactive, computed, onMounted } from 'vue'
-import { MessagePlugin as Message, DialogPlugin as Modal } from 'tdesign-vue-next'
+import { MessagePlugin, DialogPlugin } from 'tdesign-vue-next'
 import { useI18n } from 'vue-i18n'
 import {
   getUserListApi,
@@ -355,7 +355,7 @@ async function handleStatusChange(row: SysUser & { _statusLoading?: boolean }, v
   try {
     await changeUserStatusApi(row.id, newStatus)
     row.status = newStatus
-    Message.success(t('user.statusSuccess'))
+    MessagePlugin.success(t('user.statusSuccess'))
   } catch {
     /* interceptor handles */
   } finally {
@@ -367,7 +367,7 @@ async function handleStatusChange(row: SysUser & { _statusLoading?: boolean }, v
 async function handleDelete(row: SysUser) {
   try {
     await deleteUserApi(row.id)
-    Message.success(t('user.deleteSuccess'))
+    MessagePlugin.success(t('user.deleteSuccess'))
     loadTable()
   } catch {
     /* interceptor handles */
@@ -375,13 +375,13 @@ async function handleDelete(row: SysUser) {
 }
 
 async function handleBatchDelete() {
-  Modal.confirm({
+  DialogPlugin.confirm({
     header: t('common.confirmDelete'),
     body: t('user.batchDeleteConfirm', { count: selectedIds.value.length }),
     onConfirm: async () => {
       try {
         await batchDeleteUserApi(selectedIds.value)
-        Message.success(t('user.batchDeleteSuccess'))
+        MessagePlugin.success(t('user.batchDeleteSuccess'))
         selectedIds.value = []
         loadTable()
       } catch {
@@ -435,12 +435,12 @@ async function onFormConfirm() {
   try {
     if (formType.value === 'add') {
       await addUserApi({ ...formData })
-      Message.success(t('user.addSuccess'))
+      MessagePlugin.success(t('user.addSuccess'))
     } else {
       const updateData = { ...formData }
       if (!updateData.password) delete (updateData as Record<string, unknown>).password
       await updateUserApi(updateData)
-      Message.success(t('user.editSuccess'))
+      MessagePlugin.success(t('user.editSuccess'))
     }
     formDialogVisible.value = false
     loadTable()
@@ -482,7 +482,7 @@ async function onRoleConfirm() {
   if (!currentUser.value) return
   try {
     await assignUserRolesApi(currentUser.value.id, selectedRoleIds.value)
-    Message.success(t('user.roleAssignSuccess'))
+    MessagePlugin.success(t('user.roleAssignSuccess'))
     roleDialogVisible.value = false
   } catch {
     /* interceptor handles */
@@ -502,12 +502,12 @@ function handleResetPwd(row: SysUser) {
 async function onResetPwdConfirm() {
   if (!currentUser.value) return
   if (!passwordRules.value.every((r) => r.valid)) {
-    Message.warning(t('user.batchPwdError', { name: currentUser.value.userName }))
+    MessagePlugin.warning(t('user.batchPwdError', { name: currentUser.value.userName }))
     return
   }
   try {
     await resetUserPasswordApi(currentUser.value.id, resetPwdData.password)
-    Message.success(t('user.resetPwdSuccess'))
+    MessagePlugin.success(t('user.resetPwdSuccess'))
     resetPwdVisible.value = false
   } catch {
     /* interceptor handles */
@@ -579,7 +579,7 @@ async function handleBatchAdd() {
   batchLoading.value = true
   try {
     const created = await batchAddUsersApi(lines.map((l) => ({ userName: l.userName, password: l.password })))
-    Message.success(t('user.batchAddSuccess', { count: String(created ?? lines.length) }))
+    MessagePlugin.success(t('user.batchAddSuccess', { count: String(created ?? lines.length) }))
     batchVisible.value = false
     batchText.value = ''
     loadTable()
@@ -658,7 +658,7 @@ async function onDeptConfirm() {
       roleType: deptRoleMap.value[deptId] || '0',
     }))
     await assignUserDeptsApi(currentUser.value.id, deptList)
-    Message.success(t('user.deptAssignSuccess'))
+    MessagePlugin.success(t('user.deptAssignSuccess'))
     deptDialogVisible.value = false
   } catch {
     /* interceptor handles */

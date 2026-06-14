@@ -20,7 +20,7 @@
       <t-loading :loading="loading">
           <t-table row-key="id" :data="tableData" :columns="tableColumns" :pagination="false">
     <template #status="{ row }">
-                <t-tag :color="row.status === 1 ? 'green' : 'default'">
+                <t-tag :theme="row.status === 1 ? 'success' : 'default'">
                   {{ row.status === 1 ? $t('common.enabled') : $t('common.disabled') }}
                 </t-tag>
               </template>

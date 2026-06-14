@@ -60,19 +60,18 @@
         </div>
       </template>
         <div v-if="loading" class="flex items-center justify-center h-64">
-          <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--primary)]"></div>
-          <span class="ml-2 text-[var(--muted-foreground)]">{{ $t('common.loading') }}</span>
+          <t-loading size="28px" :text="$t('common.loading')" />
         </div>
         <template v-else-if="tableData.length">
             <t-table row-key="id" :data="tableData" :columns="tableColumns" :pagination="false">
     <template #businessType="{ row }">
-                  <t-tag :color="tagColor(businessTypeVariant(row.businessType))" :bordered="tagBordered(businessTypeVariant(row.businessType))">{{ businessTypeText(row.businessType) }}</t-tag>
+                  <t-tag :theme="tagTheme(businessTypeVariant(row.businessType))" :bordered="tagBordered(businessTypeVariant(row.businessType))">{{ businessTypeText(row.businessType) }}</t-tag>
                 </template>
     <template #requestMethod="{ row }">
-                  <t-tag :color="tagColor(methodVariant(row.requestMethod))" :bordered="tagBordered(methodVariant(row.requestMethod))">{{ row.requestMethod }}</t-tag>
+                  <t-tag :theme="tagTheme(methodVariant(row.requestMethod))" :bordered="tagBordered(methodVariant(row.requestMethod))">{{ row.requestMethod }}</t-tag>
                 </template>
     <template #status="{ row }">
-                  <t-tag :color="tagColor(operStatusVariant(row.status))" :bordered="tagBordered(operStatusVariant(row.status))">{{ operStatusText(row.status) }}</t-tag>
+                  <t-tag :theme="tagTheme(operStatusVariant(row.status))" :bordered="tagBordered(operStatusVariant(row.status))">{{ operStatusText(row.status) }}</t-tag>
                 </template>
     <template #costTime="{ row }">
                   <span :class="row.costTime > 1000 ? 'text-wecom-warning' : 'text-wecom-success'">{{ row.costTime }}ms</span>
@@ -109,7 +108,7 @@
           </div>
           <div>
             <dt class="text-xs text-[var(--muted-foreground)]">{{ $t('monitor.operLog.businessType') }}</dt>
-            <dd class="mt-1"><t-tag :color="tagColor(businessTypeVariant(detailData.businessType))" :bordered="tagBordered(businessTypeVariant(detailData.businessType))">{{ businessTypeText(detailData.businessType) }}</t-tag></dd>
+            <dd class="mt-1"><t-tag :theme="tagTheme(businessTypeVariant(detailData.businessType))" :bordered="tagBordered(businessTypeVariant(detailData.businessType))">{{ businessTypeText(detailData.businessType) }}</t-tag></dd>
           </div>
           <div>
             <dt class="text-xs text-[var(--muted-foreground)]">{{ $t('monitor.operLog.operName') }}</dt>
@@ -121,7 +120,7 @@
           </div>
           <div>
             <dt class="text-xs text-[var(--muted-foreground)]">{{ $t('monitor.operLog.requestMethod') }}</dt>
-            <dd class="mt-1"><t-tag :color="tagColor(methodVariant(detailData.requestMethod))" :bordered="tagBordered(methodVariant(detailData.requestMethod))">{{ detailData.requestMethod }}</t-tag></dd>
+            <dd class="mt-1"><t-tag :theme="tagTheme(methodVariant(detailData.requestMethod))" :bordered="tagBordered(methodVariant(detailData.requestMethod))">{{ detailData.requestMethod }}</t-tag></dd>
           </div>
           <div>
             <dt class="text-xs text-[var(--muted-foreground)]">{{ $t('monitor.operLog.costTime') }}</dt>
@@ -131,7 +130,7 @@
           </div>
           <div>
             <dt class="text-xs text-[var(--muted-foreground)]">{{ $t('common.status') }}</dt>
-            <dd class="mt-1"><t-tag :color="tagColor(operStatusVariant(detailData.status))" :bordered="tagBordered(operStatusVariant(detailData.status))">{{ operStatusText(detailData.status) }}</t-tag></dd>
+            <dd class="mt-1"><t-tag :theme="tagTheme(operStatusVariant(detailData.status))" :bordered="tagBordered(operStatusVariant(detailData.status))">{{ operStatusText(detailData.status) }}</t-tag></dd>
           </div>
           <div>
             <dt class="text-xs text-[var(--muted-foreground)]">{{ $t('monitor.operLog.operTime') }}</dt>
@@ -190,10 +189,10 @@ import {
 
 const { t } = useI18n()
 
-function tagColor(v: string): string | undefined {
-  if (v === 'default') return 'arcoblue'
-  if (v === 'destructive') return 'red'
-  if (v === 'secondary') return 'gray'
+function tagTheme(v: string): string | undefined {
+  if (v === 'default') return 'primary'
+  if (v === 'destructive') return 'danger'
+  if (v === 'secondary') return 'default'
   return undefined
 }
 
@@ -361,7 +360,7 @@ const tableColumns = computed(() => [
 .log-detail-code {
   background: var(--muted);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--td-radius-medium);
   padding: 12px 16px;
   font-family: 'SF Mono', 'Monaco', 'Menlo', 'Consolas', monospace;
   font-size: 12px;

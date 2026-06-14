@@ -153,7 +153,7 @@
 import { PERM } from '@/utils/constants'
 import { ref, computed, reactive, onMounted, onActivated } from 'vue'
 import { useRoute } from 'vue-router'
-import { MessagePlugin as Message } from 'tdesign-vue-next'
+import { MessagePlugin } from 'tdesign-vue-next'
 import {
   getSupplyPageApi, addSupplyApi, updateSupplyApi, deleteSupplyApi,
   getSupplyRequestPageApi, approveSupplyRequestApi, deleteSupplyRequestApi,
@@ -240,12 +240,12 @@ function openSupplyEdit(record: OfficeSupply) {
 }
 
 async function handleSaveSupply() {
-  if (!supplyForm.supplyName) { Message.warning(t('common.msg.supplyNameRequired')); return }
+  if (!supplyForm.supplyName) { MessagePlugin.warning(t('common.msg.supplyNameRequired')); return }
   saving.value = true
   try {
     if (isSupplyEdit.value) await updateSupplyApi(supplyForm)
     else await addSupplyApi(supplyForm)
-    Message.success(t('common.saveSuccess'))
+    MessagePlugin.success(t('common.saveSuccess'))
     supplyDialogVisible.value = false
     loadSupplies()
   } finally { saving.value = false }
@@ -253,7 +253,7 @@ async function handleSaveSupply() {
 
 async function handleDeleteSupply(record: OfficeSupply) {
   await deleteSupplyApi(record.id)
-  Message.success(t('common.deleteSuccess'))
+  MessagePlugin.success(t('common.deleteSuccess'))
   loadSupplies()
 }
 
@@ -268,7 +268,7 @@ async function handleApprove() {
   approving.value = true
   try {
     await approveSupplyRequestApi(approveForm.id, approveForm.action, approveForm.remark)
-    Message.success(t('common.msg.approveDone'))
+    MessagePlugin.success(t('common.msg.approveDone'))
     approveVisible.value = false
     loadRequests()
     loadSupplies() // 库存可能变化
@@ -277,12 +277,12 @@ async function handleApprove() {
 
 async function handleDeleteRequest(record: OfficeSupplyRequest) {
   await deleteSupplyRequestApi(record.id)
-  Message.success(t('common.deleteSuccess'))
+  MessagePlugin.success(t('common.deleteSuccess'))
   loadRequests()
 }
 
 function showRemark(record: OfficeSupplyRequest) {
-  Message.info({ content: record.approveRemark || '-', duration: 5000 })
+  MessagePlugin.info({ content: record.approveRemark || '-', duration: 5000 })
 }
 
 // ============ 流程进度 ============

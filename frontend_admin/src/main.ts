@@ -37,6 +37,10 @@ import './router/guard'
 import './styles/index.css'
 import { vPermission, vPermissionAny } from './directives/permission'
 import { i18n } from './i18n'
+import { initTheme } from './utils/theme'
+
+// 应用暗色偏好（theme-mode='dark'），需在样式加载后、挂载前执行
+initTheme()
 
 const app = createApp(App)
 

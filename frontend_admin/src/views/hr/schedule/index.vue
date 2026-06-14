@@ -16,7 +16,7 @@
         </t-form-item>
         <t-form-item field="dateRange" :label="$t('schedule.dateRange')">
           
-<!-- TODO(date-picker): 核对返回值格式（原 Arco 为字符串） --><t-date-picker v-model="searchForm.dateRange" type="daterange" style="width: 260px" />
+<t-date-picker v-model="searchForm.dateRange" type="daterange" style="width: 260px"  value-type="YYYY-MM-DD" />
         </t-form-item>
         <t-form-item>
           <t-space>
@@ -63,10 +63,10 @@
         </t-form-item>
         <t-form-item field="timeRange" :label="$t('schedule.timeRange')" required>
           
-<!-- TODO(date-picker): 核对返回值格式（原 Arco 为字符串） --><t-date-picker v-model="form.startTime" show-time style="width: calc(50% - 12px)" :placeholder="$t('schedule.startTime')" />
+<t-date-picker v-model="form.startTime" show-time value-type="YYYY-MM-DD HH:mm" style="width: calc(50% - 12px)" :placeholder="$t('schedule.startTime')" />
           <span class="mx-2">~</span>
           
-<!-- TODO(date-picker): 核对返回值格式（原 Arco 为字符串） --><t-date-picker v-model="form.endTime" show-time style="width: calc(50% - 12px)" :placeholder="$t('schedule.endTime')" />
+<t-date-picker v-model="form.endTime" show-time value-type="YYYY-MM-DD HH:mm" style="width: calc(50% - 12px)" :placeholder="$t('schedule.endTime')" />
         </t-form-item>
         <t-form-item field="location" :label="$t('schedule.location')">
           <t-input v-model="form.location" :placeholder="$t('common.inputPlaceholder')" />
@@ -90,7 +90,7 @@
 <script setup lang="ts">
 import { PERM } from '@/utils/constants'
 import { ref, computed, reactive, onMounted } from 'vue'
-import { MessagePlugin as Message } from 'tdesign-vue-next'
+import { MessagePlugin } from 'tdesign-vue-next'
 import { useI18n } from 'vue-i18n'
 import { getSchedulePageApi, addScheduleApi, updateScheduleApi, deleteScheduleApi, type HrSchedule } from '@/api/schedule'
 
@@ -173,12 +173,12 @@ function openEdit(record: HrSchedule) {
 
 async function handleSave(done: (closed: boolean) => void) {
   if (!form.title) {
-    Message.warning(t('schedule.titleRequired'))
+    MessagePlugin.warning(t('schedule.titleRequired'))
     done(false)
     return
   }
   if (!form.startTime || !form.endTime) {
-    Message.warning(t('schedule.timeRequired'))
+    MessagePlugin.warning(t('schedule.timeRequired'))
     done(false)
     return
   }
@@ -189,11 +189,11 @@ async function handleSave(done: (closed: boolean) => void) {
     } else {
       await addScheduleApi(form)
     }
-    Message.success(t('common.saveSuccess'))
+    MessagePlugin.success(t('common.saveSuccess'))
     loadData()
     done(true)
   } catch (e) {
-    Message.error((e as Error)?.message || t('common.failed'))
+    MessagePlugin.error((e as Error)?.message || t('common.failed'))
     done(false)
   } finally {
     saving.value = false
@@ -203,10 +203,10 @@ async function handleSave(done: (closed: boolean) => void) {
 async function handleDelete(record: HrSchedule) {
   try {
     await deleteScheduleApi(record.id)
-    Message.success(t('common.deleteSuccess'))
+    MessagePlugin.success(t('common.deleteSuccess'))
     loadData()
   } catch (e) {
-    Message.error((e as Error)?.message || t('common.failed'))
+    MessagePlugin.error((e as Error)?.message || t('common.failed'))
   }
 }
 

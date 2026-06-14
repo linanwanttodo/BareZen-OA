@@ -36,7 +36,7 @@
       <t-loading :loading="loading">
           <t-table row-key="id" :data="tableData" :columns="tableColumns" :pagination="false">
     <template #logType="{ row }">
-                <t-tag :color="row.logType === 'weekly' ? 'arcoblue' : 'gray'">
+                <t-tag :theme="row.logType === 'weekly' ? 'primary' : 'default'">
                   {{ row.logType === 'weekly' ? $t('worklog.typeWeekly') : $t('worklog.typeDaily') }}
                 </t-tag>
               </template>
@@ -82,7 +82,7 @@
           <t-col :span="12">
             <t-form-item field="logDate" :label="$t('worklog.logDate')">
               
-<!-- TODO(date-picker): 核对返回值格式（原 Arco 为字符串） --><t-date-picker v-model="form.logDate" style="width: 100%" />
+<t-date-picker v-model="form.logDate" style="width: 100%"  value-type="YYYY-MM-DD" />
             </t-form-item>
           </t-col>
         </t-row>
@@ -96,7 +96,7 @@
     <t-dialog v-model="viewVisible" :title="$t('worklog.view')" :width="640" footer-only>
       <div v-if="currentLog">
         <div class="mb-3 flex items-center gap-2">
-          <t-tag :color="currentLog.logType === 'weekly' ? 'arcoblue' : 'gray'">
+          <t-tag :theme="currentLog.logType === 'weekly' ? 'primary' : 'default'">
             {{ currentLog.logType === 'weekly' ? $t('worklog.typeWeekly') : $t('worklog.typeDaily') }}
           </t-tag>
           <span class="text-sm text-[var(--muted-foreground)]">{{ currentLog.userName }} · {{ currentLog.logDate }}</span>
@@ -126,7 +126,7 @@
 <script setup lang="ts">
 import { PERM } from '@/utils/constants'
 import { ref, computed, reactive, onMounted } from 'vue'
-import { MessagePlugin as Message } from 'tdesign-vue-next'
+import { MessagePlugin } from 'tdesign-vue-next'
 import { getWorkLogPageApi, addWorkLogApi, updateWorkLogApi, deleteWorkLogApi, reviewWorkLogApi, type HrWorkLog } from '@/api/worklog'
 import { useUserStore } from '@/stores/user'
 import { useI18n } from 'vue-i18n'
@@ -183,7 +183,7 @@ function handleEdit(record: HrWorkLog) {
 
 async function handleSave() {
   if (!form.content) {
-    Message.warning(t('common.msg.contentRequired'))
+    MessagePlugin.warning(t('common.msg.contentRequired'))
     return
   }
   saving.value = true
@@ -193,7 +193,7 @@ async function handleSave() {
     } else {
       await addWorkLogApi(form)
     }
-    Message.success(t('common.saveSuccess'))
+    MessagePlugin.success(t('common.saveSuccess'))
     editVisible.value = false
     loadData()
   } finally {
@@ -203,7 +203,7 @@ async function handleSave() {
 
 async function handleDelete(record: HrWorkLog) {
   await deleteWorkLogApi(record.id)
-  Message.success(t('common.deleteSuccess'))
+  MessagePlugin.success(t('common.deleteSuccess'))
   loadData()
 }
 
@@ -222,7 +222,7 @@ async function handleReview() {
   reviewing.value = true
   try {
     await reviewWorkLogApi(reviewForm.id, reviewForm.remark)
-    Message.success(t('common.msg.reviewDone'))
+    MessagePlugin.success(t('common.msg.reviewDone'))
     reviewVisible.value = false
     loadData()
   } finally {

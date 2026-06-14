@@ -5,7 +5,7 @@
         <div class="flex items-center justify-between w-full">
           <div class="flex items-center gap-2">
             <span>{{ $t('monitor.online.title') }}</span>
-            <t-tag color="arcoblue">{{ $t('monitor.online.onlineCount', { count: onlineCount }) }}</t-tag>
+            <t-tag theme="primary">{{ $t('monitor.online.onlineCount', { count: onlineCount }) }}</t-tag>
           </div>
           <div class="flex gap-2">
             <t-button @click="loadTable">
@@ -20,8 +20,7 @@
         </div>
       </template>
         <div v-if="loading" class="flex items-center justify-center h-64">
-          <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--primary)]"></div>
-          <span class="ml-2 text-[var(--muted-foreground)]">{{ $t('common.loading') }}</span>
+          <t-loading size="28px" :text="$t('common.loading')" />
         </div>
         <template v-else>
             <t-table row-key="id" :data="tableData" :columns="tableColumns" :pagination="false">

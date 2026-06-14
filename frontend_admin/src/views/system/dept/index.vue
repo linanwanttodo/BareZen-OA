@@ -53,7 +53,7 @@
     <template #phone="{ row }">{{ row.node.phone }}</template>
     <template #email="{ row }">{{ row.node.email }}</template>
     <template #status="{ row }">
-                <t-tag :color="row.node.status === '0' ? 'green' : 'red'">
+                <t-tag :theme="row.node.status === '0' ? 'success' : 'danger'">
                   {{ row.node.status === '0' ? $t('dept.statusNormal') : $t('dept.statusDisabled') }}
                 </t-tag>
               </template>
@@ -125,7 +125,7 @@
 <script setup lang="ts">
 import { PERM } from '@/utils/constants'
 import { ref, onMounted, computed } from 'vue'
-import { MessagePlugin as Message, DialogPlugin as Modal } from 'tdesign-vue-next'
+import { MessagePlugin, DialogPlugin } from 'tdesign-vue-next'
 import { useI18n } from 'vue-i18n'
 import { getDeptTreeApi, addDeptApi, updateDeptApi, deleteDeptApi, getDeptApi } from '@/api/dept'
 import type { SysDept } from '@/api/dept'
@@ -332,10 +332,10 @@ async function onFormSubmit() {
     }
     if (editingId.value) {
       await updateDeptApi({ id: editingId.value, ...payload })
-      Message.success(t('dept.editSuccess'))
+      MessagePlugin.success(t('dept.editSuccess'))
     } else {
       await addDeptApi(payload)
-      Message.success(t('dept.addSuccess'))
+      MessagePlugin.success(t('dept.addSuccess'))
     }
     formVisible.value = false
     loadTable()
@@ -348,7 +348,7 @@ async function onFormSubmit() {
 async function handleDelete(row: SysDept) {
   try {
     await deleteDeptApi(row.id)
-    Message.success(t('dept.deleteSuccess'))
+    MessagePlugin.success(t('dept.deleteSuccess'))
     loadTable()
   } catch {
     /* interceptor handles */

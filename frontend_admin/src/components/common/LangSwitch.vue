@@ -1,11 +1,7 @@
 <template>
   <t-dropdown trigger="click" @select="handleSelect">
     <div class="lang-switch">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="12" r="10"/>
-        <line x1="2" y1="12" x2="22" y2="12"/>
-        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
-      </svg>
+      <EarthIcon size="16px" />
       <span class="lang-switch__label">{{ currentLangLabel }}</span>
     </div>
     <template #content>
@@ -20,6 +16,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { EarthIcon } from 'tdesign-icons-vue-next'
 
 const { locale } = useI18n()
 

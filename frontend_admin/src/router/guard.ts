@@ -24,7 +24,7 @@ function addDynamicRoutes(menus: SysMenu[]) {
 
 router.beforeEach(async (to: RouteLocationNormalized, _from, next) => {
   const title = to.meta.title
-  document.title = title ? `${title} - BareZen 管理后台` : 'BareZen 管理后台'
+  document.title = title ? `${title} - BareZen OA 管理后台` : 'BareZen OA 管理后台'
 
   const userStore = useUserStore()
   // store 内存态与 sessionStorage 在登录写入瞬间可能短暂不一致，

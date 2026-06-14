@@ -45,7 +45,7 @@
               </template>
     <template #deptName="{ row }">{{ row.deptName || $t('kb.allCompany') }}</template>
     <template #status="{ row }">
-                <t-tag :color="row.status === '1' ? 'green' : 'default'">
+                <t-tag :theme="row.status === '1' ? 'success' : 'default'">
                   {{ row.status === '1' ? $t('kb.statusPublished') : $t('kb.statusDraft') }}
                 </t-tag>
               </template>
@@ -132,7 +132,7 @@
 <script setup lang="ts">
 import { PERM } from '@/utils/constants'
 import { ref, reactive, onMounted, computed } from 'vue'
-import { MessagePlugin as Message } from 'tdesign-vue-next'
+import { MessagePlugin } from 'tdesign-vue-next'
 import DOMPurify from 'dompurify'
 import { getDocPageApi, getDocApi, addDocApi, updateDocApi, deleteDocApi, changeDocStatusApi, getDocVersionsApi, getKbCategoryListApi, type KbDocument, type KbDocumentVersion, type KbCategory } from '@/api/kb'
 import { useUserStore } from '@/stores/user'
@@ -232,7 +232,7 @@ function handleEdit(record: KbDocument) {
 
 async function handleSave() {
   if (!form.title) {
-    Message.warning(t('common.msg.docTitleRequired'))
+    MessagePlugin.warning(t('common.msg.docTitleRequired'))
     return
   }
   saving.value = true
@@ -242,7 +242,7 @@ async function handleSave() {
     } else {
       await addDocApi(form)
     }
-    Message.success(t('common.saveSuccess'))
+    MessagePlugin.success(t('common.saveSuccess'))
     editVisible.value = false
     loadData()
   } finally {
@@ -252,13 +252,13 @@ async function handleSave() {
 
 async function handleDelete(record: KbDocument) {
   await deleteDocApi(record.id)
-  Message.success(t('common.deleteSuccess'))
+  MessagePlugin.success(t('common.deleteSuccess'))
   loadData()
 }
 
 async function handlePublish(record: KbDocument) {
   await changeDocStatusApi(record.id, '1')
-  Message.success(t('common.msg.published'))
+  MessagePlugin.success(t('common.msg.published'))
   loadData()
 }
 

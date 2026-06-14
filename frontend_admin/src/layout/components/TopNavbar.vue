@@ -42,8 +42,9 @@
       </template>
     </nav>
 
-    <!-- 右侧：语言切换 + 用户信息 -->
+    <!-- 右侧：主题切换 + 语言切换 + 用户信息 -->
     <div class="top-navbar__right">
+      <ThemeToggle />
       <LangSwitch />
       <t-dropdown :options="userMenuOptions" trigger="hover" @click="onUserMenuClick">
         <div class="top-navbar__user">
@@ -108,6 +109,7 @@ import { useUserStore } from '@/stores/user'
 import { usePermissionStore } from '@/stores/permission'
 import { changePasswordApi } from '@/api/auth'
 import LangSwitch from '@/components/common/LangSwitch.vue'
+import ThemeToggle from '@/components/common/ThemeToggle.vue'
 import { resolveMenuPath } from '@/utils/menuPath'
 import type { SysMenu } from '@/types/menu'
 
@@ -425,8 +427,8 @@ async function onPwdSubmit() {
 .top-navbar__avatar {
   width: 28px; height: 28px;
   border-radius: var(--wecom-radius-md);
-  background: var(--wecom-primary);
-  color: #fff;
+  background: var(--td-brand-color);
+  color: var(--td-text-color-anti);
   display: flex;
   align-items: center;
   justify-content: center;

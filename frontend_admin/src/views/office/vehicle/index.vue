@@ -86,10 +86,10 @@
         </t-form-item>
         <t-form-item field="timeRange" :label="$t('office.timeRange')" required>
           
-<!-- TODO(date-picker): 核对返回值格式（原 Arco 为字符串） --><t-date-picker v-model="form.startTime" show-time style="width: 240px" :placeholder="$t('office.startTime')" />
+<t-date-picker v-model="form.startTime" show-time value-type="YYYY-MM-DD HH:mm" style="width: 240px" :placeholder="$t('office.startTime')" />
           <span class="mx-2">~</span>
           
-<!-- TODO(date-picker): 核对返回值格式（原 Arco 为字符串） --><t-date-picker v-model="form.endTime" show-time style="width: 240px" :placeholder="$t('office.endTime')" />
+<t-date-picker v-model="form.endTime" show-time value-type="YYYY-MM-DD HH:mm" style="width: 240px" :placeholder="$t('office.endTime')" />
         </t-form-item>
         <t-form-item field="purpose" :label="$t('office.purpose')" required>
           <t-textarea v-model="form.purpose" :placeholder="$t('common.inputPlaceholder')" :max-length="200" show-word-limit />
@@ -127,7 +127,7 @@
 <script setup lang="ts">
 import { PERM } from '@/utils/constants'
 import { ref, computed, reactive, onMounted } from 'vue'
-import { MessagePlugin as Message } from 'tdesign-vue-next'
+import { MessagePlugin } from 'tdesign-vue-next'
 import { getVehiclePageApi, submitVehicleApi, approveVehicleApi, cancelVehicleApi, deleteVehicleApi, type OfficeVehicleRequest } from '@/api/office'
 import { getFlowLogsApi, getFlowTasksApi, type ApprovalFlowNode, type ApprovalFlowTask } from '@/api/flowlog'
 import { useUserStore } from '@/stores/user'
@@ -218,11 +218,11 @@ function handleAdd() {
 
 async function handleSubmit() {
   if (!form.startTime || !form.endTime) {
-    Message.warning(t('common.msg.vehicleTimeRequired'))
+    MessagePlugin.warning(t('common.msg.vehicleTimeRequired'))
     return
   }
   if (!form.purpose) {
-    Message.warning(t('common.msg.vehicleReasonRequired'))
+    MessagePlugin.warning(t('common.msg.vehicleReasonRequired'))
     return
   }
   submitting.value = true
@@ -237,7 +237,7 @@ async function handleSubmit() {
       destination: form.destination,
       passengerCount: Number(form.passengerCount) || 1,
     })
-    Message.success(t('common.msg.submitSuccess'))
+    MessagePlugin.success(t('common.msg.submitSuccess'))
     addVisible.value = false
     loadData()
   } finally {
@@ -256,7 +256,7 @@ async function handleApprove() {
   approving.value = true
   try {
     await approveVehicleApi(approveForm.id, approveForm.action, approveForm.remark)
-    Message.success(t('common.msg.approveDone'))
+    MessagePlugin.success(t('common.msg.approveDone'))
     approveVisible.value = false
     loadData()
   } finally {
@@ -266,18 +266,18 @@ async function handleApprove() {
 
 async function handleCancel(record: OfficeVehicleRequest) {
   await cancelVehicleApi(record.id)
-  Message.success(t('common.msg.cancelled'))
+  MessagePlugin.success(t('common.msg.cancelled'))
   loadData()
 }
 
 async function handleDelete(record: OfficeVehicleRequest) {
   await deleteVehicleApi(record.id)
-  Message.success(t('common.deleteSuccess'))
+  MessagePlugin.success(t('common.deleteSuccess'))
   loadData()
 }
 
 function showRemark(record: OfficeVehicleRequest) {
-  Message.info({ content: record.approveRemark || '-', duration: 5000 })
+  MessagePlugin.info({ content: record.approveRemark || '-', duration: 5000 })
 }
 
 // ============ 流程进度 ============

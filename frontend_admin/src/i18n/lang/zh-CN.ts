@@ -79,7 +79,7 @@ export default {
     noDeptData: '暂无部门数据',
     online: '在线',
     offline: '离线',
-    // Message 提示文案（script 中 Message.success/warning 使用）
+    // 提示文案（script 中 MessagePlugin.success/warning 使用）
     msg: {
       contentRequired: '日志内容必填',
       reviewDone: '批阅完成',
@@ -104,7 +104,7 @@ export default {
     },
   },
   login: {
-    title: 'BareZen 管理后台',
+    title: 'BareZen OA 管理后台',
     username: '用户名',
     password: '密码',
     captcha: '验证码',

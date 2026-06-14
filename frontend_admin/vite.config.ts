@@ -1,13 +1,13 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import Components from 'unplugin-vue-components/vite'
-import { ArcoResolver, TDesignResolver } from 'unplugin-vue-components/resolvers'
+import { TDesignResolver } from 'unplugin-vue-components/resolvers'
 import { fileURLToPath, URL } from 'node:url'
 
 export default defineConfig({
   plugins: [
     vue(),
-    // Arco 按需导入：模板中 <a-xxx> 自动引入对应组件与样式，替代全量注册
+    // 组件按需导入：模板中 t-* 组件自动引入对应实现与样式
     Components({
       resolvers: [
         // TDesign 按需导入：模板 t-* 组件与样式自动引入

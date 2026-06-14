@@ -143,7 +143,7 @@
         </t-form-item>
         <t-form-item field="expireTime" :label="$t('openapi.expireTime')">
           
-<!-- TODO(date-picker): 核对返回值格式（原 Arco 为字符串） --><t-date-picker v-model="keyCreateForm.expireTime" show-time style="width: 100%" :placeholder="$t('openapi.expireTimePlaceholder')" />
+<t-date-picker v-model="keyCreateForm.expireTime" show-time value-type="YYYY-MM-DD HH:mm" style="width: 100%" :placeholder="$t('openapi.expireTimePlaceholder')" />
         </t-form-item>
       </t-form>
     </t-dialog>
@@ -159,7 +159,7 @@
         </t-form-item>
         <t-form-item field="expireTime" :label="$t('openapi.expireTime')">
           
-<!-- TODO(date-picker): 核对返回值格式（原 Arco 为字符串） --><t-date-picker v-model="keyEditForm.expireTime" show-time style="width: 100%" :placeholder="$t('openapi.expireTimePlaceholder')" allow-clear />
+<t-date-picker v-model="keyEditForm.expireTime" show-time value-type="YYYY-MM-DD HH:mm" style="width: 100%" :placeholder="$t('openapi.expireTimePlaceholder')" allow-clear />
         </t-form-item>
       </t-form>
     </t-dialog>
@@ -221,7 +221,7 @@
 <script setup lang="ts">
 import { PERM } from '@/utils/constants'
 import { ref, computed, reactive, onMounted } from 'vue'
-import { MessagePlugin as Message } from 'tdesign-vue-next'
+import { MessagePlugin } from 'tdesign-vue-next'
 import { useI18n } from 'vue-i18n'
 import {
   getApiKeyPageApi,
@@ -281,7 +281,7 @@ function openKeyCreate() {
 
 async function handleKeyCreate() {
   if (!keyCreateForm.keyName.trim()) {
-    Message.warning(t('openapi.keyNameRequired'))
+    MessagePlugin.warning(t('openapi.keyNameRequired'))
     return
   }
   const res = await createApiKeyApi({
@@ -292,7 +292,7 @@ async function handleKeyCreate() {
   keyCreateVisible.value = false
   createdPlainKey.value = res.data.apiKey
   keyResultVisible.value = true
-  Message.success(t('openapi.createApiKeySuccess'))
+  MessagePlugin.success(t('openapi.createApiKeySuccess'))
   loadKeys()
 }
 
@@ -306,7 +306,7 @@ function openKeyEdit(row: ApiKeyItem) {
 
 async function handleKeyEdit() {
   if (!keyEditForm.keyName.trim()) {
-    Message.warning(t('openapi.keyNameRequired'))
+    MessagePlugin.warning(t('openapi.keyNameRequired'))
     return
   }
   await updateApiKeyApi(keyEditForm.id, {
@@ -315,28 +315,28 @@ async function handleKeyEdit() {
     expireTime: keyEditForm.expireTime || undefined,
   })
   keyEditVisible.value = false
-  Message.success(t('openapi.editSuccess'))
+  MessagePlugin.success(t('openapi.editSuccess'))
   loadKeys()
 }
 
 async function handleKeyStatusChange(row: ApiKeyItem, val: boolean) {
   await changeApiKeyStatusApi(row.id, val ? '0' : '1')
-  Message.success(t('openapi.statusUpdated'))
+  MessagePlugin.success(t('openapi.statusUpdated'))
   loadKeys()
 }
 
 async function handleKeyDelete(row: ApiKeyItem) {
   await deleteApiKeyApi(row.id)
-  Message.success(t('openapi.deleteSuccess'))
+  MessagePlugin.success(t('openapi.deleteSuccess'))
   loadKeys()
 }
 
 async function copyPlainKey() {
   try {
     await navigator.clipboard.writeText(createdPlainKey.value)
-    Message.success(t('openapi.keyCopied'))
+    MessagePlugin.success(t('openapi.keyCopied'))
   } catch {
-    Message.error(t('openapi.copyFailed'))
+    MessagePlugin.error(t('openapi.copyFailed'))
   }
 }
 
@@ -376,11 +376,11 @@ function openHookCreate() {
 
 async function handleHookCreate() {
   if (!hookCreateForm.name.trim() || !hookCreateForm.url.trim() || !hookCreateForm.events.trim()) {
-    Message.warning(t('openapi.hookRequired'))
+    MessagePlugin.warning(t('openapi.hookRequired'))
     return
   }
   if (!/^https?:\/\//.test(hookCreateForm.url.trim())) {
-    Message.warning(t('openapi.urlProtocol'))
+    MessagePlugin.warning(t('openapi.urlProtocol'))
     return
   }
   await createWebhookApi({
@@ -390,7 +390,7 @@ async function handleHookCreate() {
     secret: hookCreateForm.secret.trim() || undefined,
   })
   hookCreateVisible.value = false
-  Message.success(t('openapi.createWebhookSuccess'))
+  MessagePlugin.success(t('openapi.createWebhookSuccess'))
   loadHooks()
 }
 
@@ -405,11 +405,11 @@ function openHookEdit(row: WebhookItem) {
 
 async function handleHookEdit() {
   if (!hookEditForm.name.trim() || !hookEditForm.url.trim() || !hookEditForm.events.trim()) {
-    Message.warning(t('openapi.hookRequired'))
+    MessagePlugin.warning(t('openapi.hookRequired'))
     return
   }
   if (!/^https?:\/\//.test(hookEditForm.url.trim())) {
-    Message.warning(t('openapi.urlProtocol'))
+    MessagePlugin.warning(t('openapi.urlProtocol'))
     return
   }
   await updateWebhookApi(hookEditForm.id, {
@@ -419,19 +419,19 @@ async function handleHookEdit() {
     secret: hookEditForm.secret.trim() || undefined,
   })
   hookEditVisible.value = false
-  Message.success(t('openapi.editSuccess'))
+  MessagePlugin.success(t('openapi.editSuccess'))
   loadHooks()
 }
 
 async function handleHookStatusChange(row: WebhookItem, val: boolean) {
   await changeWebhookStatusApi(row.id, val ? '0' : '1')
-  Message.success(t('openapi.statusUpdated'))
+  MessagePlugin.success(t('openapi.statusUpdated'))
   loadHooks()
 }
 
 async function handleHookDelete(row: WebhookItem) {
   await deleteWebhookApi(row.id)
-  Message.success(t('openapi.deleteSuccess'))
+  MessagePlugin.success(t('openapi.deleteSuccess'))
   loadHooks()
 }
 

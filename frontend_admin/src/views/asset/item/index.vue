@@ -116,7 +116,7 @@
           <t-col :span="12">
             <t-form-item field="purchaseDate" :label="$t('asset.purchaseDate')">
               
-<!-- TODO(date-picker): 核对返回值格式（原 Arco 为字符串） --><t-date-picker v-model="form.purchaseDate" style="width: 100%" />
+<t-date-picker v-model="form.purchaseDate" style="width: 100%"  value-type="YYYY-MM-DD" />
             </t-form-item>
           </t-col>
           <t-col :span="12">
@@ -145,7 +145,7 @@
         </t-form-item>
         <t-form-item field="expectReturnTime" :label="$t('asset.expectReturnTime')">
           
-<!-- TODO(date-picker): 核对返回值格式（原 Arco 为字符串） --><t-date-picker v-model="borrowForm.expectReturnTime" style="width: 100%" />
+<t-date-picker v-model="borrowForm.expectReturnTime" style="width: 100%"  value-type="YYYY-MM-DD" />
         </t-form-item>
         <t-form-item field="remark" :label="$t('common.remark')">
           <t-textarea v-model="borrowForm.remark" :placeholder="$t('common.inputPlaceholder')" :max-length="500" show-word-limit />
@@ -165,7 +165,7 @@
 <script setup lang="ts">
 import { PERM } from '@/utils/constants'
 import { ref, computed, reactive, onMounted } from 'vue'
-import { MessagePlugin as Message } from 'tdesign-vue-next'
+import { MessagePlugin } from 'tdesign-vue-next'
 import { getAssetPageApi, addAssetApi, updateAssetApi, deleteAssetApi, scrapAssetApi, borrowAssetApi, returnAssetApi, getBorrowRecordsApi, getCategoryListApi, type AssetItem, type AssetBorrowRecord, type AssetCategory } from '@/api/asset'
 import { useI18n } from 'vue-i18n'
 
@@ -278,7 +278,7 @@ function handleEdit(record: AssetItem) {
 
 async function handleSave() {
   if (!form.assetNo || !form.assetName) {
-    Message.warning(t('common.msg.assetNoNameRequired'))
+    MessagePlugin.warning(t('common.msg.assetNoNameRequired'))
     return
   }
   saving.value = true
@@ -288,7 +288,7 @@ async function handleSave() {
     } else {
       await addAssetApi(form)
     }
-    Message.success(t('common.saveSuccess'))
+    MessagePlugin.success(t('common.saveSuccess'))
     editVisible.value = false
     loadData()
   } finally {
@@ -298,13 +298,13 @@ async function handleSave() {
 
 async function handleDelete(record: AssetItem) {
   await deleteAssetApi(record.id)
-  Message.success(t('common.deleteSuccess'))
+  MessagePlugin.success(t('common.deleteSuccess'))
   loadData()
 }
 
 async function handleScrap(record: AssetItem) {
   await scrapAssetApi(record.id)
-  Message.success(t('common.msg.scrapped'))
+  MessagePlugin.success(t('common.msg.scrapped'))
   loadData()
 }
 
@@ -318,7 +318,7 @@ function handleBorrow(record: AssetItem) {
 
 async function handleBorrowSave() {
   if (!borrowForm.borrowerName) {
-    Message.warning(t('asset.borrowerNameRequired'))
+    MessagePlugin.warning(t('asset.borrowerNameRequired'))
     return
   }
   saving.value = true
@@ -328,7 +328,7 @@ async function handleBorrowSave() {
       expectReturnTime: borrowForm.expectReturnTime,
       remark: borrowForm.remark,
     })
-    Message.success(t('common.saveSuccess'))
+    MessagePlugin.success(t('common.saveSuccess'))
     borrowVisible.value = false
     loadData()
   } finally {
@@ -338,7 +338,7 @@ async function handleBorrowSave() {
 
 async function handleReturn(record: AssetItem) {
   await returnAssetApi(record.id)
-  Message.success(t('asset.returned'))
+  MessagePlugin.success(t('asset.returned'))
   loadData()
 }
 

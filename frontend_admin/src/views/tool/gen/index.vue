@@ -55,7 +55,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { MessagePlugin as Message } from 'tdesign-vue-next'
+import { MessagePlugin } from 'tdesign-vue-next'
 import { getGenTableListApi, generateCodeApi, type TableInfo } from '@/api/gen'
 
 const { t } = useI18n()
@@ -90,7 +90,7 @@ async function handlePreview(table: TableInfo) {
     previewData.value = res.data
     previewVisible.value = true
   } catch {
-    Message.error(t('tool.gen.generateFailed'))
+    MessagePlugin.error(t('tool.gen.generateFailed'))
   }
 }
 
@@ -98,16 +98,16 @@ async function handleGenerate(table: TableInfo) {
   try {
     const res = await generateCodeApi(table.tableName)
     const codes = res.data
-    if (!codes) { Message.error(t('tool.gen.generateFailed')); return }
+    if (!codes) { MessagePlugin.error(t('tool.gen.generateFailed')); return }
 
     // 下载为 zip（简单方式：逐个下载）
     const entries = Object.entries(codes)
     for (const [filename, code] of entries.slice(0, 1)) {
       downloadCode(filename, code)
     }
-    Message.success(t('tool.gen.generateSuccess', { count: entries.length }))
+    MessagePlugin.success(t('tool.gen.generateSuccess', { count: entries.length }))
   } catch {
-    Message.error(t('tool.gen.generateFailed'))
+    MessagePlugin.error(t('tool.gen.generateFailed'))
   }
 }
 
@@ -124,13 +124,13 @@ function downloadCode(filename: string, code: string) {
 async function copyCode(code: string) {
   try {
     await navigator.clipboard.writeText(code)
-    Message.success(t('tool.gen.copySuccess'))
+    MessagePlugin.success(t('tool.gen.copySuccess'))
   } catch {
-    Message.error(t('tool.gen.copyFailed'))
+    MessagePlugin.error(t('tool.gen.copyFailed'))
   }
 }
 
-/** 表格列定义（由 Arco 列模板迁移，自定义单元格见模板同名插槽） */
+/** 表格列定义（自定义单元格见模板同名插槽） */
 const tableColumns = computed(() => [
     { colKey: 'tableName', title: t('tool.gen.tableName'), width: 200 },
     { colKey: 'tableComment', title: t('tool.gen.tableComment') },
@@ -142,10 +142,11 @@ const tableColumns = computed(() => [
 
 <style scoped>
 .code-preview {
+  /* 代码预览区为固定的深色终端样式，不随主题切换，色值为刻意保留的字面量 */
   background: #1e1e1e;
   color: #d4d4d4;
   padding: 16px;
-  border-radius: 6px;
+  border-radius: var(--td-radius-medium);
   overflow-x: auto;
   font-size: 13px;
   line-height: 1.6;
