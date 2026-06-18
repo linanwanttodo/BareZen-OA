@@ -10,6 +10,7 @@ import com.linan.core.common.api.Result;
 import com.linan.core.security.RequirePermission;
 import com.linan.system.entity.SysApiKey;
 import com.linan.system.service.ISysApiKeyService;
+import com.linan.core.common.api.PageParamGuard;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -54,9 +55,7 @@ public class SysApiKeyController {
             @Parameter(description = "每页条数") @RequestParam(defaultValue = "10") Integer pageSize,
             @Parameter(description = "密钥名称模糊查询（可选）") @RequestParam(required = false) String keyName) {
 
-        if (pageNum < 1 || pageSize < 1 || pageSize > 100) {
-            return Result.error("分页参数不合法");
-        }
+        PageParamGuard.validate(pageNum, pageSize);
 
         LambdaQueryWrapper<SysApiKey> wrapper = new LambdaQueryWrapper<>();
         if (keyName != null && !keyName.isEmpty()) {

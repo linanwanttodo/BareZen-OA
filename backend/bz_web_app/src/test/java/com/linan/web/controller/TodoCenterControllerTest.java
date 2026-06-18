@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.linan.core.common.api.PageResult;
 import com.linan.core.common.api.Result;
+import com.linan.core.common.exception.BusinessException;
 import com.linan.core.security.interceptor.AuthInterceptor;
 import com.linan.system.entity.ApprovalFlowTask;
 import com.linan.web.service.TodoAggregationService;
@@ -20,6 +21,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.lang.reflect.Field;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
@@ -66,32 +68,35 @@ class TodoCenterControllerTest {
     }
 
     @Test
-    @DisplayName("pageNum=0 直接返回参数错误，不触达聚合服务")
+    @DisplayName("pageNum=0 抛出 400 参数异常，不触达聚合服务")
     void list_pageNumZero_rejected() {
-        Result<PageResult<TodoAggregationService.TodoItem>> result = controller.list(0, 10, null, null);
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> controller.list(0, 10, null, null));
 
-        assertEquals(500, result.getCode());
-        assertTrue(result.getMsg().contains("分页参数不合法"));
+        assertEquals(400, ex.getCode());
+        assertTrue(ex.getMessage().contains("分页参数不合法"));
         verifyNoInteractions(todoService);
     }
 
     @Test
-    @DisplayName("pageSize=1000 越界直接返回参数错误，不触达聚合服务")
+    @DisplayName("pageSize=1000 超出业务上限，抛出 400 参数异常")
     void list_pageSizeTooLarge_rejected() {
-        Result<PageResult<TodoAggregationService.TodoItem>> result = controller.list(1, 1000, null, null);
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> controller.list(1, 1000, null, null));
 
-        assertEquals(500, result.getCode());
-        assertTrue(result.getMsg().contains("分页参数不合法"));
+        assertEquals(400, ex.getCode());
+        assertTrue(ex.getMessage().contains("分页参数不合法"));
         verifyNoInteractions(todoService);
     }
 
     @Test
-    @DisplayName("pageSize=0 直接返回参数错误")
+    @DisplayName("pageSize=0 抛出 400 参数异常")
     void list_pageSizeZero_rejected() {
-        Result<PageResult<TodoAggregationService.TodoItem>> result = controller.list(1, 0, null, null);
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> controller.list(1, 0, null, null));
 
-        assertEquals(500, result.getCode());
-        assertTrue(result.getMsg().contains("分页参数不合法"));
+        assertEquals(400, ex.getCode());
+        assertTrue(ex.getMessage().contains("分页参数不合法"));
         verifyNoInteractions(todoService);
     }
 

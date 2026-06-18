@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.linan.core.common.api.PageResult;
 import com.linan.core.common.api.Result;
+import com.linan.core.common.exception.BusinessException;
 import com.linan.core.security.RequirePermission;
 import com.linan.system.entity.SysApiKey;
 import com.linan.system.service.ISysApiKeyService;
@@ -85,11 +86,13 @@ class SysApiKeyControllerTest {
     }
 
     @Test
-    @DisplayName("分页参数非法返回业务错误")
-    void page_invalidParams_returnsError() {
+    @DisplayName("分页参数非法抛出 400 业务异常")
+    void page_invalidParams_throws400() {
         controller = newController();
-        assertEquals(500, controller.page(0, 10, null).getCode());
-        assertEquals(500, controller.page(1, 101, null).getCode());
+        BusinessException smallPage = assertThrows(BusinessException.class, () -> controller.page(0, 10, null));
+        assertEquals(400, smallPage.getCode());
+        BusinessException largeSize = assertThrows(BusinessException.class, () -> controller.page(1, 101, null));
+        assertEquals(400, largeSize.getCode());
     }
 
     @Test

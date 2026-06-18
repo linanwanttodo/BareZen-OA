@@ -9,6 +9,7 @@ import com.linan.core.common.annotation.OperLog;
 import com.linan.core.security.RequirePermission;
 import com.linan.system.entity.SysRole;
 import com.linan.system.service.ISysRoleService;
+import com.linan.core.common.api.PageParamGuard;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -30,15 +31,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 public class SysRoleController {
 
     private final ISysRoleService roleService;
-
-    /**
-     * 统一的分页参数校验（防全表扫描，参照 BaseController.isValidPageParams 语义）
-     */
-    private static boolean isValidPageParams(Integer pageNum, Integer pageSize) {
-        return pageNum != null && pageSize != null
-                && pageNum >= 1 && pageSize >= 1 && pageSize <= 100;
-    }
-
     /**
      * 条件分页查询
      * GET /api/system/v1/roles/page?pageNum=1&pageSize=10&roleName=admin&status=1
@@ -54,9 +46,7 @@ public class SysRoleController {
             @RequestParam(required = false) String status) {
 
         // 分页参数钳制（防全表扫描）
-        if (!isValidPageParams(pageNum, pageSize)) {
-            return Result.error("分页参数不合法");
-        }
+        PageParamGuard.validate(pageNum, pageSize);
 
         Page<SysRole> page = new Page<>(pageNum, pageSize);
         LambdaQueryWrapper<SysRole> wrapper = new LambdaQueryWrapper<>();

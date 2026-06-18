@@ -13,6 +13,7 @@ import com.linan.system.entity.SysUserDept;
 import com.linan.system.mapper.SysUserMapper;
 import com.linan.system.service.ISysUserService;
 import com.linan.web.controller.dto.ResetPasswordRequest;
+import com.linan.core.common.api.PageParamGuard;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.validation.annotation.Validated;
@@ -60,9 +61,7 @@ public class SysUserController extends BaseController<SysUser, ISysUserService> 
             @RequestParam(required = false) String phone) {
 
         // 分页参数钳制（防全表扫描）
-        if (!isValidPageParams(pageNum, pageSize)) {
-            return Result.error("分页参数不合法");
-        }
+        PageParamGuard.validate(pageNum, pageSize);
 
         Page<SysUser> page = new Page<>(pageNum, pageSize);
         LambdaQueryWrapper<SysUser> wrapper = new LambdaQueryWrapper<>();
@@ -221,9 +220,7 @@ public class SysUserController extends BaseController<SysUser, ISysUserService> 
             @RequestParam(defaultValue = "10") Integer pageSize) {
 
         // 分页参数钳制（防全表扫描）
-        if (!isValidPageParams(pageNum, pageSize)) {
-            return Result.error("分页参数不合法");
-        }
+        PageParamGuard.validate(pageNum, pageSize);
 
         // ID 列表解析：非法数字（如 roleIds=abc）不应抛 500，统一返回参数格式错误
         List<Long> roleIdList;

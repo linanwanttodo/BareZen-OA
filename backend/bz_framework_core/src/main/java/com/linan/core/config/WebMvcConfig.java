@@ -3,6 +3,7 @@ package com.linan.core.config;
 import com.linan.core.security.JwtUtil;
 import com.linan.core.security.interceptor.AuthInterceptor;
 import com.linan.core.security.interceptor.OpenApiInterceptor;
+import com.linan.core.security.interceptor.PageParamInterceptor;
 import com.linan.core.spi.permission.ApiKeyValidator;
 import jakarta.annotation.PostConstruct;
 import jakarta.servlet.*;
@@ -36,6 +37,9 @@ public class WebMvcConfig implements WebMvcConfigurer {
      * AuthInterceptor 实例
      */
     private final AuthInterceptor authInterceptor;
+
+    /** 分页参数兜底拦截器：无状态无依赖，不进容器 */
+    private final PageParamInterceptor pageParamInterceptor = new PageParamInterceptor();
 
     /** 逗号分隔的允许来源，如 https://admin.example.com,https://app.example.com；空则开发模式放行 */
     @Value("${cors.allowed-origins:}")
@@ -103,6 +107,11 @@ public class WebMvcConfig implements WebMvcConfigurer {
                         "/api/common/v1/health"                // 健康检查接口
                         // 文件下载需登录；公开文件在 Controller 内校验 scope
                 );
+        // 分页参数兜底拦截器：覆盖未主动校验的存量接口；排除 /api/open/**，
+        // 外部集成契约不随内部校验规则变更
+        registry.addInterceptor(pageParamInterceptor)
+                .addPathPatterns("/api/**")
+                .excludePathPatterns("/api/open/**");
         // Open API 拦截器：仅拦截 /api/open/**，通过 X-Api-Key 认证外部系统
         registry.addInterceptor(openApiInterceptor)
                 .addPathPatterns("/api/open/**");

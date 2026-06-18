@@ -5,6 +5,7 @@ import com.linan.core.common.api.Result;
 import com.linan.core.security.RequirePermission;
 import com.linan.core.security.interceptor.AuthInterceptor;
 import com.linan.web.service.TodoAggregationService;
+import com.linan.core.common.api.PageParamGuard;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -46,9 +47,7 @@ public class TodoCenterController {
             @RequestParam(required = false) String keyword) {
 
         // 参数钳制：pageNum 非法或 pageSize 越界直接拒绝，防数据库分页负数/超大扫描
-        if (pageNum < 1 || pageSize < 1 || pageSize > 100) {
-            return Result.error("分页参数不合法");
-        }
+        PageParamGuard.validate(pageNum, pageSize);
         Long userId = AuthInterceptor.getCurrentUserId();
         if (userId == null) {
             return Result.error("请先登录");

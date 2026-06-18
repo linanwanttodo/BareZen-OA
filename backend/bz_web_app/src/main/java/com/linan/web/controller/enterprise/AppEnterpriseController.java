@@ -16,6 +16,7 @@ import com.linan.system.mapper.SysUserMapper;
 import com.linan.system.service.ISysNoticeReadService;
 import com.linan.system.service.ISysNoticeService;
 import com.linan.system.service.ITodoItemService;
+import com.linan.core.common.api.PageParamGuard;
 import lombok.extern.slf4j.Slf4j;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataAccessException;
@@ -60,19 +61,6 @@ public class AppEnterpriseController {
     private final SysUserMapper userMapper;
 
     private final SysRoleMapper roleMapper;
-
-    /**
-     * 统一的分页参数校验（防全表扫描，与 AppScheduleController 同模式）
-     */
-    private <T> Result<T> validatePageParams(Integer pageNum, Integer pageSize) {
-        if (pageNum == null || pageNum < 1) {
-            return Result.error("页码必须 ≥ 1");
-        }
-        if (pageSize == null || pageSize < 1 || pageSize > 100) {
-            return Result.error("每页条数必须在 1-100 之间");
-        }
-        return null; // 合法
-    }
 
     // ==================== 工作台概览 ====================
 
@@ -154,10 +142,7 @@ public class AppEnterpriseController {
             @RequestParam(defaultValue = "1") Integer page,
             @RequestParam(defaultValue = "10") Integer pageSize) {
         // 分页参数钳制（防全表扫描）
-        Result<PageResult<SysNotice>> pageError = validatePageParams(page, pageSize);
-        if (pageError != null) {
-            return pageError;
-        }
+        PageParamGuard.validate(page, pageSize);
         // 查询已发布的通知（包含通知和公告两种类型）
         LambdaQueryWrapper<SysNotice> wrapper = new LambdaQueryWrapper<SysNotice>()
                 .eq(SysNotice::getStatus, "1")
@@ -238,10 +223,7 @@ public class AppEnterpriseController {
             @RequestParam(defaultValue = "20") Integer pageSize,
             @RequestParam(required = false) String keyword) {
         // 分页参数钳制（防全表扫描）
-        Result<PageResult<Map<String, Object>>> pageError = validatePageParams(page, pageSize);
-        if (pageError != null) {
-            return pageError;
-        }
+        PageParamGuard.validate(page, pageSize);
         LambdaQueryWrapper<SysUser> wrapper = new LambdaQueryWrapper<SysUser>()
                 .eq(SysUser::getStatus, "0"); // 只查正常状态用户（0=正常 1=停用）
 
@@ -312,10 +294,7 @@ public class AppEnterpriseController {
             @RequestParam(required = false) Integer status) {
 
         // 分页参数钳制（防全表扫描）
-        Result<PageResult<TodoItem>> pageError = validatePageParams(page, pageSize);
-        if (pageError != null) {
-            return pageError;
-        }
+        PageParamGuard.validate(page, pageSize);
 
         Long userId = AuthInterceptor.getCurrentUserId();
         if (userId == null) {

@@ -17,6 +17,7 @@ import com.linan.hr.service.IAttOvertimeRequestService;
 import com.linan.hr.service.IAttTravelRequestService;
 import com.linan.hr.service.IHrWorkLogService;
 import com.linan.system.service.ApprovalFlowFacade;
+import com.linan.core.common.api.PageParamGuard;
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
@@ -50,19 +51,6 @@ public class AppAttendanceController {
     /** 审批流程编排门面（统一 submit/revoke 编排并保证事务一致） */
     private final ApprovalFlowFacade flowFacade;
 
-    /**
-     * 统一的分页参数校验（防全表扫描）
-     */
-    private Result<Void> validatePageParams(Integer pageNum, Integer pageSize) {
-        if (pageNum == null || pageNum < 1) {
-            return Result.error("页码必须 ≥ 1");
-        }
-        if (pageSize == null || pageSize < 1 || pageSize > 100) {
-            return Result.error("每页条数必须在 1-100 之间");
-        }
-        return null; // 合法
-    }
-
     // ==================== 请假申请 ====================
 
     /**
@@ -77,10 +65,7 @@ public class AppAttendanceController {
             @RequestParam(required = false) String status) {
 
         // 分页参数钳制
-        Result<Void> pageError = validatePageParams(page, pageSize);
-        if (pageError != null) {
-            return Result.error(pageError.getMsg());
-        }
+        PageParamGuard.validate(page, pageSize);
 
         Long userId = AuthInterceptor.getCurrentUserId();
         if (userId == null) {
@@ -204,10 +189,7 @@ public class AppAttendanceController {
             @RequestParam(required = false) String status) {
 
         // 分页参数钳制
-        Result<Void> pageError = validatePageParams(page, pageSize);
-        if (pageError != null) {
-            return Result.error(pageError.getMsg());
-        }
+        PageParamGuard.validate(page, pageSize);
 
         Long userId = AuthInterceptor.getCurrentUserId();
         if (userId == null) {
@@ -319,10 +301,7 @@ public class AppAttendanceController {
             @RequestParam(required = false) String status) {
 
         // 分页参数钳制
-        Result<Void> pageError = validatePageParams(page, pageSize);
-        if (pageError != null) {
-            return Result.error(pageError.getMsg());
-        }
+        PageParamGuard.validate(page, pageSize);
 
         Long userId = AuthInterceptor.getCurrentUserId();
         if (userId == null) {
@@ -433,10 +412,7 @@ public class AppAttendanceController {
             @RequestParam(required = false) String logType) {
 
         // 分页参数钳制
-        Result<Void> pageError = validatePageParams(page, pageSize);
-        if (pageError != null) {
-            return Result.error(pageError.getMsg());
-        }
+        PageParamGuard.validate(page, pageSize);
 
         Long userId = AuthInterceptor.getCurrentUserId();
         if (userId == null) {

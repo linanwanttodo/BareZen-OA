@@ -10,6 +10,7 @@ import com.linan.core.security.RequirePermission;
 import com.linan.system.entity.SysWebhook;
 import com.linan.system.service.ISysWebhookService;
 import com.linan.system.service.impl.SysWebhookServiceImpl;
+import com.linan.core.common.api.PageParamGuard;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -47,9 +48,7 @@ public class SysWebhookController {
             @Parameter(description = "每页条数") @RequestParam(defaultValue = "10") Integer pageSize,
             @Parameter(description = "订阅名称模糊查询（可选）") @RequestParam(required = false) String name) {
 
-        if (pageNum < 1 || pageSize < 1 || pageSize > 100) {
-            return Result.error("分页参数不合法");
-        }
+        PageParamGuard.validate(pageNum, pageSize);
 
         LambdaQueryWrapper<SysWebhook> wrapper = new LambdaQueryWrapper<>();
         if (name != null && !name.isEmpty()) {
