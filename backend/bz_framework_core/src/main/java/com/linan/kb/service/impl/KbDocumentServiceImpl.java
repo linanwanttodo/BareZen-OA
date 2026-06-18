@@ -12,6 +12,7 @@ import com.linan.kb.service.IKbDocumentService;
 import com.linan.kb.service.IKbDocumentVersionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -33,6 +34,7 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
     private static final String STATUS_DRAFT = "0";
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public boolean createDocument(KbDocument doc) {
         if (doc.getStatus() == null || doc.getStatus().isEmpty()) {
             doc.setStatus(STATUS_DRAFT);
@@ -54,6 +56,7 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public boolean updateDocument(KbDocument doc) {
         KbDocument old = getById(doc.getId());
         if (old == null) {

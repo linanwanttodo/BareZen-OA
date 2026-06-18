@@ -2,7 +2,9 @@ package com.linan.plugin.salary.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
@@ -74,5 +76,7 @@ public class SalaryStructure {
     private LocalDateTime updateTime;
 
     @Schema(description = "删除标记")
+    @TableLogic
+    @JsonIgnore
     private Integer delFlag;
 }

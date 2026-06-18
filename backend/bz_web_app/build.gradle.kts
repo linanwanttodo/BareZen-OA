@@ -37,10 +37,11 @@ dependencies {
     // Quartz 定时任务
     implementation("org.springframework.boot:spring-boot-starter-quartz")
 
-    // JWT（WebSocket 认证需要）
-    implementation("io.jsonwebtoken:jjwt-api:0.12.5")
-    runtimeOnly("io.jsonwebtoken:jjwt-impl:0.12.5")
-    runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.12.5")
+    // JWT（WebSocket 认证需要）：版本必须与 bz_framework_core 一致，
+    // 否则 Gradle 冲突仲裁向下取版本，core 声明的 CVE-2024-31033 修复会失效
+    implementation("io.jsonwebtoken:jjwt-api:0.12.6")
+    runtimeOnly("io.jsonwebtoken:jjwt-impl:0.12.6")
+    runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.12.6")
 
     // MyBatis-Plus（LambdaQueryWrapper、Page 等在 web 模块中直接使用）
     implementation("com.baomidou:mybatis-plus-spring-boot3-starter:3.5.7")
