@@ -41,6 +41,9 @@ public class TodoAggregationServiceImpl implements TodoAggregationService {
 
     private static final String STATUS_PENDING = "0";
 
+    /** 关键字命中查询上限：防短关键字把整表主键载入内存并拼出超大 IN 子句（对齐 7d7c00d 的聚合查询 LIMIT 1000 约定） */
+    private static final String APPLICANT_HIT_LIMIT = "LIMIT 1000";
+
     private final IAttLeaveRequestService leaveService;
     private final IAttOvertimeRequestService overtimeService;
     private final IAttTravelRequestService travelService;
@@ -154,23 +157,28 @@ public class TodoAggregationServiceImpl implements TodoAggregationService {
                 "total", total);
     }
 
-    /** 按申请人姓名模糊匹配 5 类业务表，返回业务类型 -> 命中单据 ID 集合（仅取主键，量小） */
+    /** 按申请人姓名模糊匹配 5 类业务表，返回业务类型 -> 命中单据 ID 集合（每类最多 APPLICANT_HIT_LIMIT 条） */
     private Map<String, Set<Long>> findApplicantHits(String keyword) {
         Map<String, Set<Long>> hits = new java.util.HashMap<>();
         hits.put("leave", leaveService.lambdaQuery()
                 .like(AttLeaveRequest::getUserName, keyword)
+                .last(APPLICANT_HIT_LIMIT)
                 .list().stream().map(AttLeaveRequest::getId).collect(Collectors.toSet()));
         hits.put("overtime", overtimeService.lambdaQuery()
                 .like(AttOvertimeRequest::getUserName, keyword)
+                .last(APPLICANT_HIT_LIMIT)
                 .list().stream().map(AttOvertimeRequest::getId).collect(Collectors.toSet()));
         hits.put("travel", travelService.lambdaQuery()
                 .like(AttTravelRequest::getUserName, keyword)
+                .last(APPLICANT_HIT_LIMIT)
                 .list().stream().map(AttTravelRequest::getId).collect(Collectors.toSet()));
         hits.put("vehicle", vehicleService.lambdaQuery()
                 .like(OfficeVehicleRequest::getApplicantName, keyword)
+                .last(APPLICANT_HIT_LIMIT)
                 .list().stream().map(OfficeVehicleRequest::getId).collect(Collectors.toSet()));
         hits.put("supply", supplyRequestService.lambdaQuery()
                 .like(OfficeSupplyRequest::getUserName, keyword)
+                .last(APPLICANT_HIT_LIMIT)
                 .list().stream().map(OfficeSupplyRequest::getId).collect(Collectors.toSet()));
         return hits;
     }

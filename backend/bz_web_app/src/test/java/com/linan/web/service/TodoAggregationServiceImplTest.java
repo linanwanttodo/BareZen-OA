@@ -33,6 +33,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -218,5 +220,36 @@ class TodoAggregationServiceImplTest {
         Map<String, Long> summary = todoService.summary(1L);
 
         assertEquals(0L, summary.get("total"));
+    }
+
+    /** stub 业务 service 的 lambdaQuery 链为自返回 mock，便于 verify 链上被调用的约束 */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private <T> LambdaQueryChainWrapper<T> stubChainQuery(IService<T> service, List<T> records) {
+        LambdaQueryChainWrapper<T> chain = mock(LambdaQueryChainWrapper.class);
+        when(service.lambdaQuery()).thenReturn(chain);
+        when(chain.like(any(), any())).thenReturn(chain);
+        when(chain.list()).thenReturn(records);
+        lenient().when(chain.last(anyString())).thenReturn(chain);
+        return chain;
+    }
+
+    @Test
+    @DisplayName("page：关键字命中的五类查询均带 LIMIT 1000，防无界扫描")
+    void page_keywordHits_allCappedByLimit() {
+        List<LambdaQueryChainWrapper<?>> chains = List.of(
+                stubChainQuery(leaveService, List.of()),
+                stubChainQuery(overtimeService, List.of()),
+                stubChainQuery(travelService, List.of()),
+                stubChainQuery(vehicleService, List.of()),
+                stubChainQuery(supplyRequestService, List.of()));
+
+        PageResult<TodoAggregationService.TodoItem> result = todoService.page(1L, 1, 10, null, "张");
+
+        assertEquals(0, result.getTotal());
+        for (LambdaQueryChainWrapper<?> chain : chains) {
+            verify(chain).last("LIMIT 1000");
+        }
+        // 五表皆无命中时在引擎分页前提前返回
+        verify(taskService, never()).page(any(IPage.class), any(Wrapper.class));
     }
 }
