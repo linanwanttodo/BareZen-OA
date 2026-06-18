@@ -41,7 +41,9 @@ public class TodoCenterController {
     @GetMapping("/page")
     public Result<PageResult<TodoAggregationService.TodoItem>> list(
             @RequestParam(defaultValue = "1") Integer pageNum,
-            @RequestParam(defaultValue = "10") Integer pageSize) {
+            @RequestParam(defaultValue = "10") Integer pageSize,
+            @RequestParam(required = false) String type,
+            @RequestParam(required = false) String keyword) {
 
         // 参数钳制：pageNum 非法或 pageSize 越界直接拒绝，防数据库分页负数/超大扫描
         if (pageNum < 1 || pageSize < 1 || pageSize > 100) {
@@ -51,7 +53,7 @@ public class TodoCenterController {
         if (userId == null) {
             return Result.error("请先登录");
         }
-        return Result.success(todoService.page(userId, pageNum, pageSize));
+        return Result.success(todoService.page(userId, pageNum, pageSize, type, keyword));
     }
 
     /**

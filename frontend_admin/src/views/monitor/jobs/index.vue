@@ -1,5 +1,26 @@
 <template>
   <div class="page-container">
+    <!-- 搜索区域 -->
+    <t-card class="mb-4">
+      <t-form :model="searchForm" layout="inline" @submit-success="handleSearch">
+        <t-form-item field="jobName" :label="$t('monitor.jobs.jobName')">
+          <t-input v-model="searchForm.jobName" :placeholder="$t('common.inputPlaceholder')" allow-clear style="width: 180px" />
+        </t-form-item>
+        <t-form-item field="status" :label="$t('common.status')">
+          <t-select v-model="searchForm.status" :placeholder="$t('common.selectPlaceholder')" clearable style="width: 140px">
+            <t-option value="1" :label="$t('common.normal')" />
+            <t-option value="0" :label="$t('common.disable')" />
+          </t-select>
+        </t-form-item>
+        <t-form-item>
+          <t-space>
+            <t-button theme="primary" html-type="submit">{{ $t('common.search') }}</t-button>
+            <t-button @click="handleReset">{{ $t('common.reset') }}</t-button>
+          </t-space>
+        </t-form-item>
+      </t-form>
+    </t-card>
+
     <t-card>
       <template #title>
         <div class="flex items-center justify-between w-full">
@@ -83,6 +104,7 @@ const { t } = useI18n()
 const loading = ref(false)
 const tableData = ref<SysJob[]>([])
 const pagination = reactive({ current: 1, pageSize: 10, total: 0 })
+const searchForm = reactive<{ jobName: string; status: string | undefined }>({ jobName: '', status: undefined })
 const editVisible = ref(false)
 const isAdd = ref(false)
 const editForm = reactive({ jobName: '', invokeTarget: '', cronExpression: '', status: '1' as string, remark: '' })
@@ -93,12 +115,29 @@ onMounted(() => loadData())
 async function loadData() {
   loading.value = true
   try {
-    const res = await getJobPageApi({ pageNum: pagination.current, pageSize: pagination.pageSize })
+    const res = await getJobPageApi({
+      pageNum: pagination.current,
+      pageSize: pagination.pageSize,
+      jobName: searchForm.jobName || undefined,
+      status: searchForm.status || undefined,
+    })
     tableData.value = res.data?.list || []
     pagination.total = res.data?.total || 0
   } finally {
     loading.value = false
   }
+}
+
+function handleSearch() {
+  pagination.current = 1
+  loadData()
+}
+
+function handleReset() {
+  searchForm.jobName = ''
+  searchForm.status = undefined
+  pagination.current = 1
+  loadData()
 }
 
 function handleAdd() {

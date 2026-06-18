@@ -64,7 +64,18 @@
         <t-row :gutter="16">
           <t-col :span="12">
             <t-form-item field="userId" :label="$t('salary.userId')" required>
-              <t-input-number v-model="form.userId" :min="1" :decimal-places="0" style="width: 100%" :placeholder="$t('salary.userIdPlaceholder')" :disabled="isEdit" />
+              <t-select
+                v-model="form.userId"
+                filterable
+                remote
+                :loading="userSearching"
+                :options="userOptions"
+                :placeholder="$t('salary.userSearchPlaceholder')"
+                style="width: 100%"
+                :disabled="isEdit"
+                @search="handleUserSearch"
+                @change="handleUserChange"
+              />
             </t-form-item>
           </t-col>
           <t-col :span="12">
@@ -142,6 +153,7 @@ import {
   getSalaryStructurePageApi, addSalaryStructureApi, updateSalaryStructureApi, deleteSalaryStructureApi,
   type SalaryStructure,
 } from '@/api/salary'
+import { getUserListApi, type SysUser } from '@/api/user'
 
 const { t } = useI18n()
 const loading = ref(false)
@@ -152,9 +164,41 @@ const isEdit = ref(false)
 
 const searchForm = reactive({ keyword: '' })
 const pagination = reactive({ current: 1, pageSize: 10, total: 0 })
-// userId 在接口中为 string（后端 Long 序列化），表单经 input-number 以 number 绑定
-type StructureForm = Omit<Partial<SalaryStructure>, 'userId'> & { userId?: number }
+// userId 后端 Long 序列化为 string，选择器直接以 string id 作为选项值
+type StructureForm = Omit<Partial<SalaryStructure>, 'userId'> & { userId?: string | number }
 const form = reactive<StructureForm>({})
+
+/** 员工远程搜索选择器（登录名/昵称模糊匹配） */
+const userOptions = ref<Array<{ value: string; label: string }>>([])
+const userSearching = ref(false)
+let userSearchTimer: ReturnType<typeof setTimeout> | null = null
+
+function toOption(u: SysUser) {
+  return { value: String(u.id), label: `${u.nickName || u.userName}（${u.userName}）` }
+}
+
+async function fetchUsers(kw: string) {
+  userSearching.value = true
+  try {
+    const res = await getUserListApi({ pageNum: 1, pageSize: 20, userName: kw || undefined, status: '0' })
+    userOptions.value = (res.data.list || []).map(toOption)
+  } finally {
+    userSearching.value = false
+  }
+}
+
+function handleUserSearch(kw: string) {
+  if (userSearchTimer) clearTimeout(userSearchTimer)
+  userSearchTimer = setTimeout(() => fetchUsers(kw.trim()), 300)
+}
+
+function handleUserChange(val: unknown) {
+  const hit = userOptions.value.find((o) => o.value === String(val))
+  if (hit) {
+    // 选中后自动回填姓名（取昵称部分）
+    form.userName = hit.label.replace(/（.*）$/, '')
+  }
+}
 
 function num(v: unknown): number {
   const n = Number(v)
@@ -207,14 +251,16 @@ function handleAdd() {
   Object.keys(form).forEach((k) => delete (form as Record<string, unknown>)[k])
   form.baseSalary = 0
   form.performanceSalary = 0
+  userOptions.value = []
+  fetchUsers('')
   editVisible.value = true
 }
 
 function handleEdit(record: SalaryStructure) {
   isEdit.value = true
   Object.assign(form, record)
-  // Long id 序列化为 string，input-number 需要 number
-  form.userId = Number(record.userId)
+  // 编辑时锁定员工，选项回填当前值保证选择器有展示文案
+  userOptions.value = [{ value: String(record.userId), label: record.userName || String(record.userId) }]
   editVisible.value = true
 }
 

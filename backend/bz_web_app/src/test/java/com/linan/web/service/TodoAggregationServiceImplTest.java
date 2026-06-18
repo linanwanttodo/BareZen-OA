@@ -123,7 +123,7 @@ class TodoAggregationServiceImplTest {
         supply.setCreateTime(LocalDateTime.of(2026, 8, 5, 11, 0));
         stubListQuery(supplyRequestService, List.of(supply));
 
-        PageResult<TodoAggregationService.TodoItem> result = todoService.page(1L, 1, 10);
+        PageResult<TodoAggregationService.TodoItem> result = todoService.page(1L, 1, 10, null, null);
 
         // 数据库分页元数据透传
         assertEquals(3, result.getTotal());
@@ -168,7 +168,7 @@ class TodoAggregationServiceImplTest {
         taskPage.setRecords(List.of(task(1L, "salary", 501L)));
         when(taskService.page(any(IPage.class), any(Wrapper.class))).thenReturn(taskPage);
 
-        PageResult<TodoAggregationService.TodoItem> result = todoService.page(1L, 1, 10);
+        PageResult<TodoAggregationService.TodoItem> result = todoService.page(1L, 1, 10, null, null);
 
         assertTrue(result.getList().isEmpty());
         verify(leaveService, never()).lambdaQuery();
@@ -185,7 +185,7 @@ class TodoAggregationServiceImplTest {
         when(taskService.page(any(IPage.class), any(Wrapper.class))).thenReturn(taskPage);
         stubListQuery(leaveService, List.of()); // 查不到业务记录
 
-        PageResult<TodoAggregationService.TodoItem> result = todoService.page(1L, 1, 10);
+        PageResult<TodoAggregationService.TodoItem> result = todoService.page(1L, 1, 10, null, null);
 
         assertTrue(result.getList().isEmpty());
     }

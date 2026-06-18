@@ -49,15 +49,31 @@ public class TodoAggregationServiceImpl implements TodoAggregationService {
     private final IApprovalFlowTaskService taskService;
 
     @Override
-    public PageResult<TodoItem> page(Long userId, int pageNum, int pageSize) {
+    public PageResult<TodoItem> page(Long userId, int pageNum, int pageSize, String type, String keyword) {
         // 引擎待审节点数据库分页：status=0 且（any 节点对所有审批人 或 指定审批人仅本人）
+        LambdaQueryWrapper<ApprovalFlowTask> qw = new LambdaQueryWrapper<ApprovalFlowTask>()
+                .eq(ApprovalFlowTask::getStatus, STATUS_PENDING)
+                .and(w -> w.isNull(ApprovalFlowTask::getApproverId)
+                        .or().eq(ApprovalFlowTask::getApproverId, userId));
+        if (type != null && !type.isBlank()) {
+            qw.eq(ApprovalFlowTask::getBizType, type.trim());
+        }
+        // 关键字过滤：按申请人姓名模糊匹配各业务表，命中 bizId 集合下推到任务层，保持分页语义准确
+        if (keyword != null && !keyword.isBlank()) {
+            Map<String, Set<Long>> hitIdsByType = findApplicantHits(keyword.trim());
+            boolean any = hitIdsByType.values().stream().anyMatch(s -> !s.isEmpty());
+            if (!any) {
+                return emptyPage(pageNum, pageSize);
+            }
+            qw.and(w -> hitIdsByType.forEach((bt, ids) -> {
+                if (!ids.isEmpty()) {
+                    w.or(x -> x.eq(ApprovalFlowTask::getBizType, bt).in(ApprovalFlowTask::getBizId, ids));
+                }
+            }));
+        }
         IPage<ApprovalFlowTask> taskPage = taskService.page(
                 new Page<>(pageNum, pageSize),
-                new LambdaQueryWrapper<ApprovalFlowTask>()
-                        .eq(ApprovalFlowTask::getStatus, STATUS_PENDING)
-                        .and(w -> w.isNull(ApprovalFlowTask::getApproverId)
-                                .or().eq(ApprovalFlowTask::getApproverId, userId))
-                        .orderByDesc(ApprovalFlowTask::getCreateTime));
+                qw.orderByDesc(ApprovalFlowTask::getCreateTime));
 
         // 按业务类型收集本页 bizId，批量查业务表（避免 N+1）
         Map<String, Set<Long>> idsByType = taskPage.getRecords().stream()
@@ -136,6 +152,38 @@ public class TodoAggregationServiceImpl implements TodoAggregationService {
                 "vehicle", vehicleCount,
                 "supply", supplyCount,
                 "total", total);
+    }
+
+    /** 按申请人姓名模糊匹配 5 类业务表，返回业务类型 -> 命中单据 ID 集合（仅取主键，量小） */
+    private Map<String, Set<Long>> findApplicantHits(String keyword) {
+        Map<String, Set<Long>> hits = new java.util.HashMap<>();
+        hits.put("leave", leaveService.lambdaQuery()
+                .like(AttLeaveRequest::getUserName, keyword)
+                .list().stream().map(AttLeaveRequest::getId).collect(Collectors.toSet()));
+        hits.put("overtime", overtimeService.lambdaQuery()
+                .like(AttOvertimeRequest::getUserName, keyword)
+                .list().stream().map(AttOvertimeRequest::getId).collect(Collectors.toSet()));
+        hits.put("travel", travelService.lambdaQuery()
+                .like(AttTravelRequest::getUserName, keyword)
+                .list().stream().map(AttTravelRequest::getId).collect(Collectors.toSet()));
+        hits.put("vehicle", vehicleService.lambdaQuery()
+                .like(OfficeVehicleRequest::getApplicantName, keyword)
+                .list().stream().map(OfficeVehicleRequest::getId).collect(Collectors.toSet()));
+        hits.put("supply", supplyRequestService.lambdaQuery()
+                .like(OfficeSupplyRequest::getUserName, keyword)
+                .list().stream().map(OfficeSupplyRequest::getId).collect(Collectors.toSet()));
+        return hits;
+    }
+
+    /** 关键字无任何命中时的空分页结果（保持分页元数据一致） */
+    private PageResult<TodoItem> emptyPage(int pageNum, int pageSize) {
+        PageResult<TodoItem> result = new PageResult<>();
+        result.setTotal(0);
+        result.setPageNum(pageNum);
+        result.setPageSize(pageSize);
+        result.setPages(0);
+        result.setList(List.of());
+        return result;
     }
 
     /** 引擎某业务类型当前待审节点数（指定审批人节点仅本人可见） */

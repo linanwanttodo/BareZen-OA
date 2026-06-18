@@ -31,8 +31,10 @@ public interface TodoAggregationService {
      * 分页聚合待办事项（基于审批引擎待审节点数据库分页）
      *
      * @param userId   当前登录用户（指定审批人节点仅本人可见）
+     * @param type     业务类型过滤（leave/overtime/travel/vehicle/supply，空则全部）
+     * @param keyword  申请人姓名模糊过滤（匹配任一业务表申请人即命中）
      */
-    PageResult<TodoItem> page(Long userId, int pageNum, int pageSize);
+    PageResult<TodoItem> page(Long userId, int pageNum, int pageSize, String type, String keyword);
 
     /** 待办分类统计（5 类引擎待审节点数） */
     Map<String, Long> summary(Long userId);

@@ -68,7 +68,9 @@ public class SysUserController extends BaseController<SysUser, ISysUserService> 
         LambdaQueryWrapper<SysUser> wrapper = new LambdaQueryWrapper<>();
 
         if (userName != null && !userName.isEmpty()) {
-            wrapper.like(SysUser::getUserName, userName);
+            // 登录名或昵称任一模糊匹配，便于按真实姓名搜索（供选择器等场景使用）
+            wrapper.and(w -> w.like(SysUser::getUserName, userName)
+                    .or().like(SysUser::getNickName, userName));
         }
         if (status != null && !status.isEmpty()) {
             wrapper.eq(SysUser::getStatus, status);

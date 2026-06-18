@@ -68,7 +68,7 @@ class TodoCenterControllerTest {
     @Test
     @DisplayName("pageNum=0 直接返回参数错误，不触达聚合服务")
     void list_pageNumZero_rejected() {
-        Result<PageResult<TodoAggregationService.TodoItem>> result = controller.list(0, 10);
+        Result<PageResult<TodoAggregationService.TodoItem>> result = controller.list(0, 10, null, null);
 
         assertEquals(500, result.getCode());
         assertTrue(result.getMsg().contains("分页参数不合法"));
@@ -78,7 +78,7 @@ class TodoCenterControllerTest {
     @Test
     @DisplayName("pageSize=1000 越界直接返回参数错误，不触达聚合服务")
     void list_pageSizeTooLarge_rejected() {
-        Result<PageResult<TodoAggregationService.TodoItem>> result = controller.list(1, 1000);
+        Result<PageResult<TodoAggregationService.TodoItem>> result = controller.list(1, 1000, null, null);
 
         assertEquals(500, result.getCode());
         assertTrue(result.getMsg().contains("分页参数不合法"));
@@ -88,7 +88,7 @@ class TodoCenterControllerTest {
     @Test
     @DisplayName("pageSize=0 直接返回参数错误")
     void list_pageSizeZero_rejected() {
-        Result<PageResult<TodoAggregationService.TodoItem>> result = controller.list(1, 0);
+        Result<PageResult<TodoAggregationService.TodoItem>> result = controller.list(1, 0, null, null);
 
         assertEquals(500, result.getCode());
         assertTrue(result.getMsg().contains("分页参数不合法"));
@@ -101,13 +101,13 @@ class TodoCenterControllerTest {
         PageResult<TodoAggregationService.TodoItem> pr = new PageResult<>();
         pr.setTotal(2);
         pr.setList(java.util.List.of());
-        when(todoService.page(1L, 1, 10)).thenReturn(pr);
+        when(todoService.page(1L, 1, 10, null, null)).thenReturn(pr);
 
-        Result<PageResult<TodoAggregationService.TodoItem>> result = controller.list(1, 10);
+        Result<PageResult<TodoAggregationService.TodoItem>> result = controller.list(1, 10, null, null);
 
         assertEquals(200, result.getCode());
         assertEquals(2, result.getData().getTotal());
-        verify(todoService).page(1L, 1, 10);
+        verify(todoService).page(1L, 1, 10, null, null);
     }
 
     @Test

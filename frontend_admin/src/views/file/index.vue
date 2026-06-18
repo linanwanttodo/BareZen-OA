@@ -37,6 +37,28 @@
           </template>
         </div>
 
+        <!-- 当前目录内搜索 -->
+        <t-form class="mb-4" :model="searchForm" layout="inline" @submit-success="handleSearch">
+          <t-form-item field="originalName" :label="$t('file.fileName')">
+            <t-input v-model="searchForm.originalName" :placeholder="$t('common.inputPlaceholder')" allow-clear style="width: 180px" />
+          </t-form-item>
+          <t-form-item field="fileType" :label="$t('file.fileType')">
+            <t-select v-model="searchForm.fileType" :placeholder="$t('common.selectPlaceholder')" clearable style="width: 140px">
+              <t-option value="image" :label="$t('file.typeImage')" />
+              <t-option value="document" :label="$t('file.typeDocument')" />
+              <t-option value="video" :label="$t('file.typeVideo')" />
+              <t-option value="audio" :label="$t('file.typeAudio')" />
+              <t-option value="other" :label="$t('file.typeOther')" />
+            </t-select>
+          </t-form-item>
+          <t-form-item>
+            <t-space>
+              <t-button theme="primary" html-type="submit">{{ $t('common.search') }}</t-button>
+              <t-button @click="handleSearchReset">{{ $t('common.reset') }}</t-button>
+            </t-space>
+          </t-form-item>
+        </t-form>
+
         <div v-if="loading" class="flex h-64 items-center justify-center">
           <t-loading size="28px" :text="$t('common.loading')" />
         </div>
@@ -158,6 +180,7 @@ function goToLevel(idx: number) {
 const loading = ref(false)
 const tableData = ref<SysFileItem[]>([])
 const pagination = reactive({ current: 1, pageSize: 10, total: 0 })
+const searchForm = reactive<{ originalName: string; fileType: string | undefined }>({ originalName: '', fileType: undefined })
 
 async function loadList() {
   loading.value = true
@@ -166,12 +189,26 @@ async function loadList() {
       pageNum: pagination.current,
       pageSize: pagination.pageSize,
       folderId: currentFolderId.value || null,
+      originalName: searchForm.originalName || undefined,
+      fileType: searchForm.fileType || undefined,
     })
     tableData.value = res.data.list
     pagination.total = res.data.total
   } finally {
     loading.value = false
   }
+}
+
+function handleSearch() {
+  pagination.current = 1
+  loadList()
+}
+
+function handleSearchReset() {
+  searchForm.originalName = ''
+  searchForm.fileType = undefined
+  pagination.current = 1
+  loadList()
 }
 
 // ============ 上传 ============
