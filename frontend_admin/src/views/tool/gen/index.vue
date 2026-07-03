@@ -38,7 +38,7 @@
     <!-- 代码预览弹窗 -->
     <t-dialog v-model:visible="previewVisible" :title="$t('tool.gen.codePreview')" :footer="false" :style="{ width: '80%' }" @cancel="previewVisible = false">
       <t-tabs v-if="previewData">
-        <t-tab-panel v-for="(code, filename) in previewData" :key="filename" :title="getFileName(filename)">
+        <t-tab-panel v-for="(code, filename) in previewData" :key="filename" :value="filename" :label="getFileName(filename)">
           <div class="flex justify-between mb-2">
             <span class="text-sm text-wecom-text-tertiary">{{ filename }}</span>
             <t-button size="mini" @click="copyCode(code)">{{ $t('tool.gen.copy') }}</t-button>

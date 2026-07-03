@@ -2,8 +2,8 @@
   <div class="page-container">
     <!-- Tab：用品管理 / 申领记录 -->
     <t-tabs v-model:active-key="activeTab" class="mb-4">
-      <t-tab-panel key="supply" :title="$t('supply.supplyList')" />
-      <t-tab-panel key="request" :title="$t('supply.requestList')" />
+      <t-tab-panel value="supply" :label="$t('supply.supplyList')" />
+      <t-tab-panel value="request" :label="$t('supply.requestList')" />
     </t-tabs>
 
     <!-- 用品管理 -->

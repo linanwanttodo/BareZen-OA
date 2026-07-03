@@ -9,9 +9,9 @@
 
     <!-- Tab 切换 -->
     <t-tabs v-model:active-key="activeTab" class="mb-6" @change="onTabChange">
-      <t-tab-panel key="leave" :title="$t('attendance.leave')" />
-      <t-tab-panel key="overtime" :title="$t('attendance.overtime')" />
-      <t-tab-panel key="travel" :title="$t('attendance.travel')" />
+      <t-tab-panel value="leave" :label="$t('attendance.leave')" />
+      <t-tab-panel value="overtime" :label="$t('attendance.overtime')" />
+      <t-tab-panel value="travel" :label="$t('attendance.travel')" />
     </t-tabs>
 
     <div v-if="activeTab === 'leave'">

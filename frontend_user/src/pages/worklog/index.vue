@@ -48,9 +48,9 @@
     <!-- 我的日志列表 -->
     <t-card :title="$t('worklog.myLogs')">
       <t-tabs v-model:active-key="logTypeFilter" @change="loadLogs">
-        <t-tab-panel key="" :title="$t('worklog.all')" />
-        <t-tab-panel key="daily" :title="$t('worklog.typeDaily')" />
-        <t-tab-panel key="weekly" :title="$t('worklog.typeWeekly')" />
+        <t-tab-panel value="" :label="$t('worklog.all')" />
+        <t-tab-panel value="daily" :label="$t('worklog.typeDaily')" />
+        <t-tab-panel value="weekly" :label="$t('worklog.typeWeekly')" />
       </t-tabs>
       <t-loading :loading="loading">
         <div v-if="logs.length" class="space-y-3">

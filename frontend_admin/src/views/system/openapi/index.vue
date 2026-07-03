@@ -2,8 +2,8 @@
   <div class="page-container">
     <!-- Tab：API Key / Webhook -->
     <t-tabs v-model:active-key="activeTab" class="mb-4">
-      <t-tab-panel key="apiKey" :title="$t('openapi.apiKeyTab')" />
-      <t-tab-panel key="webhook" :title="$t('openapi.webhookTab')" />
+      <t-tab-panel value="apiKey" :label="$t('openapi.apiKeyTab')" />
+      <t-tab-panel value="webhook" :label="$t('openapi.webhookTab')" />
     </t-tabs>
 
     <!-- API Key 管理 -->

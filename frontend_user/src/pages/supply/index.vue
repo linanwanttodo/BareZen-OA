@@ -7,8 +7,8 @@
 
     <!-- Tab：可申领 / 我的申领 -->
     <t-tabs v-model:active-key="activeTab" class="mb-6" @change="onTabChange">
-      <t-tab-panel key="supply" :title="$t('supplyApply.available')" />
-      <t-tab-panel key="request" :title="$t('supplyApply.myRequests')" />
+      <t-tab-panel value="supply" :label="$t('supplyApply.available')" />
+      <t-tab-panel value="request" :label="$t('supplyApply.myRequests')" />
     </t-tabs>
 
     <!-- 可申领用品 -->
