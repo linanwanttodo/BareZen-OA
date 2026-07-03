@@ -6,7 +6,7 @@
       <p class="mt-2 text-sm text-[var(--wecom-text-tertiary)]">登录你的企业账户</p>
     </div>
 
-    <t-form :data="formData" layout="vertical" @submit-success="onSubmit" class="space-y-2">
+    <t-form :data="formData" layout="vertical" :on-submit="onSubmit" class="space-y-2">
       <t-form-item name="username" :label="$t('auth.username')" :rules="[{ required: true, message: '请输入用户名' }]">
         <t-input
           v-model="formData.username"
@@ -53,7 +53,7 @@
       <t-form-item class="!mb-0 mt-2">
         <t-button
           theme="primary"
-          html-type="submit"
+          type="submit"
           long
           size="large"
           :loading="loading"

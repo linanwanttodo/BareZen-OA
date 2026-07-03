@@ -41,7 +41,7 @@ describe('用户端 t-form 约定', () => {
     expect(offenders).toEqual([])
   })
 
-  it('声明了 rules 的表单要么走 @submit-success，要么挂 ref + validate 闸门', () => {
+  it('声明了 rules 的表单要么走 :on-submit，要么挂 ref + validate 闸门', () => {
     // 只约束「有规则要执行」的表单：没声明 rules 的表单挂闸门是空转，
     // 而其必填口径要由业务/DB 约束确定，不靠猜来加规则
     const missing: string[] = []
@@ -55,10 +55,31 @@ describe('用户端 t-form 约定', () => {
         const body = src.slice(close, formEnd)
         if (!/:rules=/.test(body)) continue
         if (openTag.includes('layout="inline"')) continue
-        if (openTag.includes('ref=') || openTag.includes('@submit-success')) continue
+        if (openTag.includes('ref=') || openTag.includes(':on-submit')) continue
         missing.push(`${rel(file)}: ${(/:(\w+)=/.exec(openTag)?.[1]) ?? '表单'}`)
       }
     }
     expect(missing).toEqual([])
   })
+  it('Form 用 :on-submit 回调，不得写不存在的 @submit-success 事件', () => {
+    // tdesign-vue-next 1.20.7 的 Form 只有 onSubmit / onReset 两个 prop 回调，
+    // 没有 submit-success 事件。写成 @submit-success 时回调永不触发，
+    // 表现为「登录」按钮点了没反应且无任何告警。
+    const offenders: string[] = []
+    for (const file of files) {
+      if (/@submit-success=/.test(readFileSync(file, 'utf-8'))) offenders.push(rel(file))
+    }
+    expect(offenders).toEqual([])
+  })
+
+  it('提交按钮用 type="submit"，不得写不存在的 html-type', () => {
+    // TDesign Button 没有 htmlType prop，type 才是原生 submit/reset/button。
+    // 写成 html-type 会被当普通 attr 透传，type 仍为默认 "button"，不触发提交。
+    const offenders: string[] = []
+    for (const file of files) {
+      if (/html-type=/.test(readFileSync(file, 'utf-8'))) offenders.push(rel(file))
+    }
+    expect(offenders).toEqual([])
+  })
+
 })
