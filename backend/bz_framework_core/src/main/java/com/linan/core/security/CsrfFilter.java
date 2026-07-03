@@ -41,7 +41,14 @@ public class CsrfFilter implements Filter {
     /** 无需 CSRF 校验的路径前缀 */
     private static final String[] EXCLUDED_PATHS = {
             "/api/auth/v1/",
-            "/api/common/v1/"
+            "/api/common/v1/",
+            // SockJS 长连接握手：sockjs-client 建立 /ws/notify 时会依次用
+            // iframe / xhr_streaming / xhr / jsonp / htmlfile 探测可用传输方式，
+            // 其中 xhr_streaming 与 xhr 是 POST。这些探测请求不带 X-Requested-With
+            // 头，也不是浏览器表单提交，被 CSRF 校验误判为攻击并返回 403，
+            // 表现为 WebSocket 通知静默连不上（控制台刷 403 + EventSource MIME 报错）。
+            // 该路径由 SockJS 握手随机串鉴权（/ws/notify?token=xxx），不存在 CSRF 风险。
+            "/ws/"
     };
 
     /** 允许的跨域 Origin 白名单（与 CORS 配置共用，逗号分隔；空=仅允许同源） */

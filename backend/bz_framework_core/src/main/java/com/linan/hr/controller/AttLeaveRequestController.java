@@ -244,6 +244,50 @@ public class AttLeaveRequestController {
     }
 
     /**
+     * 修改请假申请（仅本人、仅待审批状态）
+     *
+     * <p>只允许改业务字段：状态/审批人/审批时间/审批意见由审批流写入，
+     * 不得经此接口篡改，故用稀疏实体交给 updateById（MP 默认 NOT_NULL
+     * 策略，未赋值字段不进 UPDATE 语句）。</p>
+     */
+    @Operation(summary = "修改请假申请", description = "修改本人提交且仍处于待审批状态的请假申请，仅业务字段可改")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "修改成功"),
+            @ApiResponse(responseCode = "400", description = "参数错误或业务规则限制"),
+            @ApiResponse(responseCode = "401", description = "未授权"),
+            @ApiResponse(responseCode = "403", description = "无权限")
+    })
+    @OperLog(title = "请假审批", businessType = 2)
+    @RequirePermission("hr:leave:edit")
+    @PutMapping("/{id}")
+    public Result<Void> update(
+            @Parameter(description = "请假记录ID", required = true)
+            @PathVariable Long id,
+            @Valid @RequestBody AttLeaveRequest body) {
+        AttLeaveRequest exist = leaveService.getById(id);
+        if (exist == null) {
+            return Result.error("请假记录不存在");
+        }
+        Long userId = AuthInterceptor.getCurrentUserId();
+        if (userId == null || !userId.equals(exist.getUserId())) {
+            return Result.error("仅可修改本人提交的申请");
+        }
+        if (!ApprovalStatus.PENDING.getValue().equals(exist.getStatus())) {
+            return Result.error("仅待审批状态的申请可修改");
+        }
+
+        AttLeaveRequest patch = new AttLeaveRequest();
+        patch.setId(id);
+        patch.setLeaveType(body.getLeaveType());
+        patch.setStartTime(body.getStartTime());
+        patch.setEndTime(body.getEndTime());
+        patch.setLeaveDays(body.getLeaveDays());
+        patch.setReason(body.getReason());
+        boolean ok = leaveService.updateById(patch);
+        return ok ? Result.success(null) : Result.error("修改失败");
+    }
+
+    /**
      * 删除请假记录
      */
     @Operation(summary = "删除请假记录")

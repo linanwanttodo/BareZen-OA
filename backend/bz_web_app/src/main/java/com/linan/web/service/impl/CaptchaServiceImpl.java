@@ -112,9 +112,11 @@ public class CaptchaServiceImpl implements CaptchaService {
 
         // 字符 — 每个字符随机旋转、偏移、颜色
         String[] colors = {"#333", "#2a5", "#c25", "#25c", "#c82", "#52c"};
-        int charWidth = (width - 30) / code.length();
+        // 左右各留 22px 安全边距：字形以 x 为中心（text-anchor=middle），
+        // 否则末位字符叠加字号与 ±20° 旋转后会越过画布右边界被裁切
+        int charWidth = (width - 44) / code.length();
         for (int i = 0; i < code.length(); i++) {
-            int x = 18 + i * charWidth + random.nextInt(8);
+            int x = 22 + i * charWidth + random.nextInt(6);
             int y = 30 + random.nextInt(12) - 6;
             int rotate = random.nextInt(40) - 20; // -20° ~ 20°
             String color = colors[random.nextInt(colors.length)];
@@ -122,7 +124,7 @@ public class CaptchaServiceImpl implements CaptchaService {
             svg.append("<text x='").append(x).append("' y='").append(y)
                .append("' font-size='").append(fontSize)
                .append("' fill='").append(color)
-               .append("' font-family='monospace' font-weight='bold'")
+               .append("' font-family='monospace' font-weight='bold' text-anchor='middle'")
                .append(" transform='rotate(").append(rotate).append(",").append(x).append(",").append(y).append(")'")
                .append(">").append(code.charAt(i)).append("</text>");
         }

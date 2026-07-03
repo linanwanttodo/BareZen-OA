@@ -4,6 +4,8 @@ import Components from 'unplugin-vue-components/vite'
 import { TDesignResolver } from 'unplugin-vue-components/resolvers'
 import { fileURLToPath, URL } from 'node:url'
 
+const proxyTarget = process.env.VITE_API_PROXY || 'http://localhost:8080'
+
 export default defineConfig({
   plugins: [
     vue(),
@@ -34,18 +36,21 @@ export default defineConfig({
     host: '0.0.0.0',
     proxy: {
       '/api': {
-        target: 'http://localhost:8080',
+        target: proxyTarget,
         changeOrigin: true,
       },
       '/ws': {
-        target: 'http://localhost:8080',
+        target: proxyTarget,
         changeOrigin: true,
         ws: true,
       },
     },
     headers: {
+      // 与 index.html 的 meta CSP 保持一致：浏览器对两份策略取交集，
+      // 这里漏掉 frame-src 会把 sockjs 的探测 iframe 全部拦掉，
+      // 表现为 WebSocket 通知连不上、控制台刷 403。
       'Content-Security-Policy':
-        "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' ws: wss:;",
+        "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' ws: wss:; frame-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self';",
     },
   },
   css: {

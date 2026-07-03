@@ -48,11 +48,8 @@ public class PermissionGatewayImpl implements PermissionGateway {
 
     @Override
     public Set<String> collectRolePermissions(Long userId) {
-        Set<String> perms = new HashSet<>();
-        for (SysRole role : rolesOf(userId)) {
-            perms.addAll(menuMapper.selectPermsByRoleId(role.getId()));
-        }
-        return perms;
+        // 一次 JOIN 取回全部权限，替代此前按角色数 N+1 查库
+        return new HashSet<>(menuMapper.selectPermsByUserId(userId));
     }
 
     @Override

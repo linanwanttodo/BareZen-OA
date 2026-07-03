@@ -2,7 +2,7 @@
   <div class="page-container">
     <!-- 搜索区域 -->
     <t-card class="mb-4">
-      <t-form :data="searchForm" :label-width="80" @submit-success="handleSearch">
+      <t-form :data="searchForm" :label-width="80" :on-submit="handleSearch">
         <t-form-item name="jobName" :label="$t('monitor.jobs.jobName')" :rules="[{ required: true, message: t('validation.required', { field: t('monitor.jobs.jobName') }) }]">
           <t-input v-model="searchForm.jobName" :placeholder="$t('common.inputPlaceholder')" allow-clear />
         </t-form-item>

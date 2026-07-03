@@ -9,7 +9,7 @@
     <!-- 用品管理 -->
     <template v-if="activeTab === 'supply'">
       <t-card class="mb-4">
-        <t-form :data="searchForm" :label-width="80" @submit-success="handleSearch">
+        <t-form :data="searchForm" :label-width="80" :on-submit="handleSearch">
           <t-form-item name="supplyName" :label="$t('supply.supplyName')">
             <t-input v-model="searchForm.supplyName" :placeholder="$t('common.inputPlaceholder')" allow-clear />
           </t-form-item>

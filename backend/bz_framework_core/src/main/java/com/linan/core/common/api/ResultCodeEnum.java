@@ -13,6 +13,7 @@ public enum ResultCodeEnum {
     UNAUTHORIZED(401, "未登录或Token已过期"),
     FORBIDDEN(403, "没有访问权限"),
     VALIDATE_FAILED(400, "参数检验失败"),
+    NOT_FOUND(404, "资源不存在"),
     FAILED(500, "系统异常，请稍后重试");
 
     private final int code;

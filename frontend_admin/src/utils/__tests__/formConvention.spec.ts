@@ -53,11 +53,28 @@ describe('t-form 约定', () => {
       for (const m of src.matchAll(/<t-form\s((?:(?!<\/t-form>)[\s\S])*?)>/g)) {
         const attrs = m[1]
         if (attrs.includes('layout="inline"') || !/:data=/.test(attrs)) continue
-        // type=submit + @submit-success 时 TDesign 提交前自动校验，无需手工闸门
-        if (attrs.includes('@submit-success')) continue
+        // 搜索表单走 :on-submit：TDesign 提交前自动校验并回调，无需手工闸门。
+        // 注意必须写 :on-submit（prop 回调），tdesign-vue-next 1.20.7 的 Form
+        // 没有 submit-success 事件，写成 @submit-success 不报错不警告、回调永不触发，
+        // 表现为查询按钮点了没反应。
+        if (attrs.includes(':on-submit')) continue
         if (!/ref="/.test(attrs)) missing.push(`${rel(f)}: ${/:(\w+)=/.exec(attrs)?.[1] ?? '表单'}`)
       }
     }
     expect(missing).toEqual([])
+  })
+
+  it('Form 一律用 :on-submit 回调，不得写不存在的 @submit-success 事件', () => {
+    // tdesign-vue-next 1.20.7 的 Form 只提供 onSubmit / onReset 两个 prop 回调
+    // （见 node_modules/.../es/form/form.mjs，渲染 form 时绑的是 onSubmit 属性）。
+    // 历史上 28 个页面写成 @submit-success，事件名不存在 → Vue 把它当普通
+    // 自定义事件监听，validate 通过后调的是 props.onSubmit，回调永不执行，
+    // 全站筛选表单的「查询」按钮点了没反应，且不产生任何告警。
+    const offenders: string[] = []
+    for (const f of files) {
+      const src = readFileSync(f, 'utf-8')
+      if (/@submit-success=/.test(src)) offenders.push(rel(f))
+    }
+    expect(offenders).toEqual([])
   })
 })

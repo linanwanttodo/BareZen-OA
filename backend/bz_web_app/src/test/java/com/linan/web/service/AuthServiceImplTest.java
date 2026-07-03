@@ -226,13 +226,15 @@ class AuthServiceImplTest {
         role.setId(10L);
         role.setRoleKey("common");
         when(roleMapper.selectRolesByUserId(3L)).thenReturn(List.of(role));
-        when(menuMapper.selectPermsByRoleId(10L)).thenReturn(List.of("system:user:list"));
+        when(menuMapper.selectPermsByUserId(3L)).thenReturn(List.of("system:user:list"));
 
         CurrentUserVO vo = authService.getCurrentUser(3L);
 
         assertEquals("alice", vo.getUserName());
         assertEquals(List.of("common"), vo.getRoles());
         assertEquals(Set.of("system:user:list"), vo.getPermissions());
+        // 锁死收敛后的查询形态：权限必须一次按 userId 取回，不得回退为逐角色 N+1
+        verify(menuMapper, never()).selectPermsByRoleId(anyLong());
     }
 
     @Test
@@ -267,5 +269,26 @@ class AuthServiceImplTest {
                 () -> authService.register("bob", "NewPass1!"));
         assertEquals("注册功能已关闭", ex.getMessage());
         verify(userMapper, never()).insert(any(SysUser.class));
+    }
+
+    @Test
+    @DisplayName("修改密码成功后作废该用户全部会话，而非仅当前 Token")
+    void changePassword_kicksAllSessions() {
+        SysUser user = new SysUser();
+        user.setId(7L);
+        user.setPassword(PasswordUtil.encode("oldPass1!"));
+        when(userMapper.selectById(7L)).thenReturn(user);
+
+        ChangePasswordRequest req = new ChangePasswordRequest();
+        req.setOldPassword("oldPass1!");
+        req.setNewPassword("NewPass1!");
+
+        authService.changePassword(7L, req, "Bearer t");
+
+        // 写入用户级失效时间点：早于该时刻签发的 Token 由 AuthInterceptor 一律拒绝
+        org.springframework.data.redis.core.ValueOperations<String, Object> valueOps =
+                redisTemplate.opsForValue();
+        verify(valueOps).set(eq("token:kick:7"), anyLong(), eq(24L),
+                eq(java.util.concurrent.TimeUnit.HOURS));
     }
 }

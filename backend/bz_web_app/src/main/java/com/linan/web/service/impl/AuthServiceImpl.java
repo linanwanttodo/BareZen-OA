@@ -287,10 +287,8 @@ public class AuthServiceImpl implements IAuthService {
         }
 
         List<SysRole> roles = roleMapper.selectRolesByUserId(userId);
-        Set<String> permissions = new HashSet<>();
-        for (SysRole role : roles) {
-            permissions.addAll(menuMapper.selectPermsByRoleId(role.getId()));
-        }
+        // 一次 JOIN 取回全部权限，替代此前按角色数 N+1 查库
+        Set<String> permissions = new HashSet<>(menuMapper.selectPermsByUserId(userId));
 
         CurrentUserVO vo = new CurrentUserVO();
         vo.setUserId(user.getId());
@@ -329,7 +327,19 @@ public class AuthServiceImpl implements IAuthService {
         userMapper.updateById(user);
 
         blacklistCurrentToken(authHeader);
+        kickAllTokensAfter(userId, System.currentTimeMillis());
         clearAuthCookie();
+    }
+
+    /**
+     * 让该用户在 issuedAtMillis 之前签发的全部 Token 失效（改密场景）。
+     * TTL 取 Token 最长生命周期：更早签发的 Token 必然在此之前自然过期。
+     */
+    private void kickAllTokensAfter(Long userId, long issuedAtMillis) {
+        if (userId == null) {
+            return;
+        }
+        redisTemplate.opsForValue().set("token:kick:" + userId, issuedAtMillis, 24, TimeUnit.HOURS);
     }
 
     @Override

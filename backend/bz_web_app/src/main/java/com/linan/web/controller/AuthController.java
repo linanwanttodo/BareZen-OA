@@ -81,7 +81,7 @@ public class AuthController {
     @RateLimit(key = "auth:register", limit = 5, window = 60)
     @Operation(summary = "用户注册（受 auth.register-enabled 开关控制）")
     @PostMapping("/register")
-    public Result<Void> register(@RequestBody com.linan.system.entity.SysUser user) {
+    public Result<Void> register(@Valid @RequestBody com.linan.system.entity.SysUser user) {
         authService.register(user.getUserName(), user.getPassword());
         return Result.success(null);
     }

@@ -31,7 +31,7 @@
         </div>
 
         <!-- 当前目录内搜索 -->
-        <t-form class="mb-4" :data="searchForm" :label-width="80" @submit-success="handleSearch">
+        <t-form class="mb-4" :data="searchForm" :label-width="80" :on-submit="handleSearch">
           <t-form-item name="originalName" :label="$t('file.fileName')">
             <t-input v-model="searchForm.originalName" :placeholder="$t('common.inputPlaceholder')" allow-clear />
           </t-form-item>

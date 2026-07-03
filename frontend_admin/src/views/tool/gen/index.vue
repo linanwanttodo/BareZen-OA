@@ -1,7 +1,7 @@
 <template>
   <div class="page-container">
     <t-card class="mb-4">
-      <t-form :data="{ tableName: searchKey }" :label-width="80" @submit-success="handleSearch">
+      <t-form :data="{ tableName: searchKey }" :label-width="80" :on-submit="handleSearch">
         <t-form-item name="tableName" :label="$t('tool.gen.tableNameLabel')">
           <t-input v-model="searchKey" :placeholder="$t('tool.gen.searchPlaceholder')" allow-clear />
         </t-form-item>

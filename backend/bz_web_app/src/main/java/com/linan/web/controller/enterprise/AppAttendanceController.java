@@ -18,6 +18,7 @@ import com.linan.hr.service.IAttTravelRequestService;
 import com.linan.hr.service.IHrWorkLogService;
 import com.linan.system.service.ApprovalFlowFacade;
 import com.linan.core.common.api.PageParamGuard;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
@@ -88,7 +89,7 @@ public class AppAttendanceController {
     @Operation(summary = "提交请假申请")
     @PostMapping("/leaves")
     @Transactional(rollbackFor = Exception.class)
-    public Result<Void> submitLeave(@RequestBody AttLeaveRequest request) {
+    public Result<Void> submitLeave(@Valid @RequestBody AttLeaveRequest request) {
         Long userId = AuthInterceptor.getCurrentUserId();
         if (userId == null) {
             return Result.error("请先登录");
@@ -212,7 +213,7 @@ public class AppAttendanceController {
     @Operation(summary = "提交加班申请")
     @PostMapping("/overtimes")
     @Transactional(rollbackFor = Exception.class)
-    public Result<Void> submitOvertime(@RequestBody AttOvertimeRequest request) {
+    public Result<Void> submitOvertime(@Valid @RequestBody AttOvertimeRequest request) {
         Long userId = AuthInterceptor.getCurrentUserId();
         if (userId == null) {
             return Result.error("请先登录");
@@ -324,7 +325,7 @@ public class AppAttendanceController {
     @Operation(summary = "提交出差申请")
     @PostMapping("/travels")
     @Transactional(rollbackFor = Exception.class)
-    public Result<Void> submitTravel(@RequestBody AttTravelRequest request) {
+    public Result<Void> submitTravel(@Valid @RequestBody AttTravelRequest request) {
         Long userId = AuthInterceptor.getCurrentUserId();
         if (userId == null) {
             return Result.error("请先登录");
@@ -434,7 +435,7 @@ public class AppAttendanceController {
      */
     @Operation(summary = "提交工作日志")
     @PostMapping("/worklogs")
-    public Result<Void> submitWorkLog(@RequestBody HrWorkLog workLog) {
+    public Result<Void> submitWorkLog(@Valid @RequestBody HrWorkLog workLog) {
         Long userId = AuthInterceptor.getCurrentUserId();
         if (userId == null) {
             return Result.error("请先登录");
@@ -459,7 +460,7 @@ public class AppAttendanceController {
     @Operation(summary = "更新工作日志")
     @PutMapping("/worklogs")
     @OperLog(title = "工作日志", businessType = 2)
-    public Result<Void> updateWorkLog(@RequestBody HrWorkLog workLog) {
+    public Result<Void> updateWorkLog(@Valid @RequestBody HrWorkLog workLog) {
         Long userId = AuthInterceptor.getCurrentUserId();
         if (userId == null) {
             return Result.error("请先登录");

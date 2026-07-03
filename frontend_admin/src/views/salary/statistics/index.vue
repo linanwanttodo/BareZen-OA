@@ -2,7 +2,7 @@
   <div class="page-container">
     <!-- 筛选 -->
     <t-card class="mb-4">
-      <t-form :data="searchForm" :label-width="80" @submit-success="loadData">
+      <t-form :data="searchForm" :label-width="80" :on-submit="loadData">
         <t-form-item name="paymentMonth" :label="$t('salary.paymentMonth')">
           
 <t-date-picker v-model="searchForm.paymentMonth" mode="month" format="YYYY-MM" value-type="YYYY-MM" clearable :placeholder="$t('common.all')" />

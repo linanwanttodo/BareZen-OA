@@ -29,7 +29,7 @@
               <p class="mt-1 text-sm text-[var(--wecom-text-tertiary)]">{{ $t('login.loginInfo') }}</p>
             </div>
 
-            <t-form :data="formData" layout="vertical" @submit-success="onSubmit" class="space-y-2">
+            <t-form :data="formData" layout="vertical" :on-submit="onSubmit" class="space-y-2">
               <t-form-item name="username" :label="$t('login.username')" :rules="[{ required: true, message: $t('login.usernameRequired') }]">
                 <t-input v-model="formData.username" :placeholder="$t('login.usernameRequired')" size="large" clearable />
               </t-form-item>

@@ -2,7 +2,7 @@
   <div class="page-container">
     <!-- 搜索区域 -->
     <t-card class="mb-4">
-      <t-form :data="searchForm" :label-width="80" @submit-success="handleSearch">
+      <t-form :data="searchForm" :label-width="80" :on-submit="handleSearch">
         <t-form-item name="title" :label="$t('office.bookingTitle')">
           <t-input v-model="searchForm.title" :placeholder="$t('common.inputPlaceholder')" allow-clear />
         </t-form-item>

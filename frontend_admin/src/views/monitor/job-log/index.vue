@@ -2,7 +2,7 @@
   <div class="page-container">
     <t-card :bordered="false" class="bz-list-panel">
       <!-- 筛选区：标签左置 + 栅格等宽，查询/重置固定在右端（对齐 Starter list/base） -->
-      <t-form :data="searchForm" :label-width="80" colon @submit-success="handleSearch">
+      <t-form :data="searchForm" :label-width="80" colon :on-submit="handleSearch">
         <t-row :gutter="[24, 24]">
           <t-col :span="3">
             <t-form-item name="status" :label="$t('monitor.jobLog.status')">

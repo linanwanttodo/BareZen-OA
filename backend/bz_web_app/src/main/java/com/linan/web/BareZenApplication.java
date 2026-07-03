@@ -32,14 +32,11 @@ import org.springframework.scheduling.annotation.EnableScheduling;
  * @since 1.0-SNAPSHOT
  */
 @SpringBootApplication(scanBasePackages = {
-        "com.linan.core",
-        "com.linan.system",
-        "com.linan.system.monitor",
-        "com.linan.hr",
-        "com.linan.asset",
-        "com.linan.office",
-        "com.linan.kb",
-        "com.linan.web"
+        // 单一基包覆盖 com.linan 下全部模块（core/system/hr/asset/office/kb/plugin/web）。
+        // 原先逐个枚举业务包的写法已经出过一次事故：新增 com.linan.plugin 时忘了加进来，
+        // 工资模块的控制器完全没注册，/api/salary/v1/** 全部 404、三个管理端页面空白，
+        // 而编译与单元测试全都通过 —— 枚举式白名单每加一个模块都要改这里，必然再漏。
+        "com.linan"
 })
 @EnableAsync
 @EnableCaching

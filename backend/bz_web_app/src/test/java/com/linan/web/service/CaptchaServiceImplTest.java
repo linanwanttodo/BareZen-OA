@@ -100,4 +100,31 @@ class CaptchaServiceImplTest {
 
         verify(redisTemplate, never()).opsForValue();
     }
+
+    @Test
+    @DisplayName("generate：字形以 x 居中且落在安全边距内（避免末位贴边）")
+    void generate_glyphsCenteredWithMargins() {
+        final int width = 160;
+        // 排布含随机抖动与旋转，重复取样才能覆盖最不利的组合
+        for (int round = 0; round < 300; round++) {
+            String svg = new String(java.util.Base64.getDecoder().decode(
+                    captchaService.generate().get("captchaBase64").split(",")[1]),
+                    java.nio.charset.StandardCharsets.UTF_8);
+            var matcher = java.util.regex.Pattern.compile("<text[^>]*>").matcher(svg);
+            int seen = 0;
+            while (matcher.find()) {
+                seen++;
+                String tag = matcher.group();
+                var xm = java.util.regex.Pattern.compile("x='(\\d+)'").matcher(tag);
+                assertTrue(xm.find(), "字符标签缺少 x 坐标: " + tag);
+                int x = Integer.parseInt(xm.group(1));
+                // 居中锚点：字形向两侧均匀伸展，旋转后不会整体右偏贴边
+                assertTrue(tag.contains("text-anchor='middle'"),
+                        "字形必须居中锚定，实际标签: " + tag);
+                assertTrue(x >= 22 && x <= width - 22,
+                        "字符中心 x 需留在 22px 安全边距内，实际 x=" + x);
+            }
+            assertEquals(6, seen, "每次应绘制 6 个字符");
+        }
+    }
 }

@@ -4,7 +4,14 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/logo.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' ws: wss:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'" />
+    <!-- CSP 说明：
+         frame-src 不能写 'none' —— sockjs-client 建立 /ws/notify 长连接时，
+         会先用隐藏 iframe 试探（iframe.html / xhr_streaming / xhr / jsonp / htmlfile），
+         'none' 会把整条链路拦掉，控制台刷满 403 且 WebSocket 通知静默失效。
+         这里只放开同源：sockjs 的探测 iframe 全部是 /ws/notify/**。
+         另：浏览器对 meta 与响应头两份 CSP 取交集，vite dev 的响应头也必须同步放宽，
+         否则只改 meta 无效（见 vite.config.ts headers）。 -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' ws: wss:; frame-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'" />
     <title>BareZen OA Admin</title>
   </head>
   <body>

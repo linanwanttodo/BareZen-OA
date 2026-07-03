@@ -2,7 +2,7 @@
   <div class="page-container">
     <!-- 搜索区域 -->
     <t-card class="mb-4">
-      <t-form :data="searchForm" :label-width="80" @submit-success="handleSearch">
+      <t-form :data="searchForm" :label-width="80" :on-submit="handleSearch">
         <t-form-item name="status" :label="$t('travel.status')">
           <t-select v-model="searchForm.status" :placeholder="$t('common.all')" allow-clear>
             <t-option value="0">{{ $t('travel.statusPending') }}</t-option>

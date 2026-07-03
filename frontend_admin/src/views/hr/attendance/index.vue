@@ -2,7 +2,7 @@
   <div class="page-container">
     <!-- 搜索区域 -->
     <t-card class="mb-4">
-      <t-form :data="searchForm" :label-width="80" @submit-success="handleSearch">
+      <t-form :data="searchForm" :label-width="80" :on-submit="handleSearch">
         <t-form-item name="month" :label="$t('attendanceStat.month')">
           <t-select v-model="searchForm.month" @change="handleSearch">
             <t-option v-for="m in monthOptions" :key="m.value" :value="m.value">{{ m.label }}</t-option>

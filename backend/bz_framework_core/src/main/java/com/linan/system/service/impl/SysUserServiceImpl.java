@@ -16,7 +16,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -89,7 +91,9 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
             throw new BusinessException("单次批量创建不能超过200条");
         }
 
-        int created = 0;
+        // 先整体校验、再统一写入：此前逐条 selectCount 查库（N+1）并用 subList 两两比对
+        // 列表内重复（O(n²)）；改为一次 IN 查询 + 一个 Set 完成同等校验，语义与文案不变
+        Set<String> names = new LinkedHashSet<>();
         for (SysUser user : users) {
             if (user == null) {
                 throw new BusinessException("存在空用户数据，已回滚");
@@ -102,22 +106,21 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
             if (policyMsg != null) {
                 throw new BusinessException("用户 [" + user.getUserName() + "] " + policyMsg + "，已回滚");
             }
-            // 用户名唯一性检查（含列表内重复）
-            Long count = baseMapper.selectCount(
-                    new LambdaQueryWrapper<SysUser>()
-                            .eq(SysUser::getUserName, user.getUserName().trim()));
-            if (count > 0) {
-                throw new BusinessException("用户名 [" + user.getUserName() + "] 已存在，已回滚");
+            if (!names.add(user.getUserName().trim())) {
+                throw new BusinessException("列表中存在重复用户名 [" + user.getUserName() + "]，已回滚");
             }
-            if (created > 0) {
-                boolean dupInList = users.subList(0, created).stream()
-                        .anyMatch(u -> u.getUserName() != null
-                                && u.getUserName().trim().equals(user.getUserName().trim()));
-                if (dupInList) {
-                    throw new BusinessException("列表中存在重复用户名 [" + user.getUserName() + "]，已回滚");
-                }
-            }
+        }
 
+        List<SysUser> taken = baseMapper.selectList(
+                new LambdaQueryWrapper<SysUser>()
+                        .select(SysUser::getUserName)
+                        .in(SysUser::getUserName, names));
+        if (!taken.isEmpty()) {
+            throw new BusinessException("用户名 [" + taken.get(0).getUserName() + "] 已存在，已回滚");
+        }
+
+        int created = 0;
+        for (SysUser user : users) {
             // 昵称缺省取用户名
             if (user.getNickName() == null || user.getNickName().isBlank()) {
                 user.setNickName(user.getUserName().trim());

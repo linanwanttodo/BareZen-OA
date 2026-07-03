@@ -82,10 +82,15 @@ public class WebSocketConfig implements WebSocketConfigurer {
                     .setAllowedOrigins(origins)
                     .withSockJS();
         } else {
-            // 开发环境：仅允许 localhost 来源
+            // 开发环境：放行 localhost / 127.0.0.1 的任意端口。
+            // 原先只写 setAllowedOrigins("http://localhost:5173", "http://localhost:5174")，
+            // 但 localhost 与 127.0.0.1 是两个不同的 Origin —— 用 http://127.0.0.1:5173
+            // 访问前端时握手会被 Spring 的 Origin 校验拒绝（响应 "Invalid CORS request"），
+            // 表现为 WebSocket 通知静默连不上、控制台刷 403。
+            // 端口通配是为了 vite 端口被占用自动换端口时不失效。
             registry.addHandler(handler, "/ws/notify")
                     .addInterceptors(authInterceptor)
-                    .setAllowedOrigins("http://localhost:5173", "http://localhost:5174")
+                    .setAllowedOriginPatterns("http://localhost:*", "http://127.0.0.1:*")
                     .withSockJS();
         }
     }

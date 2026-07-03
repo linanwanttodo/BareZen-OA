@@ -56,3 +56,17 @@ dependencies {
     // 测试依赖（由根构建脚本统一管理版本）
     testImplementation("org.springframework.boot:spring-boot-starter-test")
 }
+
+tasks.test {
+    // Gradle 守护进程不会继承本次命令行的环境变量，故同时支持 -P 属性转发给测试 JVM，
+    // 保证 TEST_DB_* 在守护进程复用下也能抵达
+    listOf("TEST_DB_URL", "TEST_DB_USER", "TEST_DB_PASSWORD").forEach { key ->
+        (project.findProperty(key) as? String)?.let { environment(key, it) }
+    }
+
+    testLogging {
+        events("passed", "skipped", "failed")
+        showExceptions = true
+        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+    }
+}

@@ -192,6 +192,19 @@ public class AuthInterceptor implements HandlerInterceptor {
             // 如果 Token 无效（过期、伪造、格式错误），会抛出对应的异常
             Claims claims = jwtUtil.parseToken(token);
 
+            Long userId = claims.get("userId", Long.class);
+            String username = claims.get("username", String.class);
+
+            // 改密/管理员下线后，该用户此前签发的全部 Token 必须立即作废：
+            // 仅拉黑当前请求携带的那一个 Token，会让其他设备上的旧会话继续存活
+            Object kickedFrom = redisTemplate.opsForValue().get("token:kick:" + userId);
+            Date issuedAt = claims.getIssuedAt();
+            if (kickedFrom != null && issuedAt != null
+                    && issuedAt.getTime() < Long.parseLong(kickedFrom.toString())) {
+                writeUnauthorizedResponse(response, "账号凭据已变更，请重新登录");
+                return false;
+            }
+
             // 3. 滑动 Token 刷新：如果剩余时间不足一半，签发新 Token
             //    同时将旧 Token 摘要加入 Redis 黑名单（TTL 设为旧 Token 剩余有效期），
             //    避免高频请求场景下旧 Token 仍可被复用，造成多个有效 Token 并存滥用。
@@ -204,8 +217,6 @@ public class AuthInterceptor implements HandlerInterceptor {
                         oldTtlSeconds, java.util.concurrent.TimeUnit.SECONDS);
 
                 // 签发新 Token，放入响应头（前端拦截器检测到 X-Access-Token 后更新本地存储）
-                Long userId = claims.get("userId", Long.class);
-                String username = claims.get("username", String.class);
                 String newToken = jwtUtil.createToken(userId, username);
                 response.setHeader("X-Access-Token", newToken);
                 // 同步刷新 httpOnly Cookie（bz_token），保证 Header/Cookie 双通道一致
@@ -213,8 +224,6 @@ public class AuthInterceptor implements HandlerInterceptor {
             }
 
             // 解析成功，存入 ThreadLocal（供全链路使用）和 request 属性
-            Long userId = claims.get("userId", Long.class);
-            String username = claims.get("username", String.class);
             currentUserIdHolder.set(userId);
             currentUsernameHolder.set(username);
             request.setAttribute("userId", userId);

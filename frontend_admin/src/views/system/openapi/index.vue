@@ -9,7 +9,7 @@
     <!-- API Key 管理 -->
     <template v-if="activeTab === 'apiKey'">
       <t-card class="mb-4">
-        <t-form :data="keySearchForm" :label-width="80" @submit-success="handleKeySearch">
+        <t-form :data="keySearchForm" :label-width="80" :on-submit="handleKeySearch">
           <t-form-item name="keyName" :label="$t('openapi.keyName')">
             <t-input v-model="keySearchForm.keyName" :placeholder="$t('common.inputPlaceholder')" allow-clear />
           </t-form-item>
@@ -70,7 +70,7 @@
     <!-- Webhook 管理 -->
     <template v-else>
       <t-card class="mb-4">
-        <t-form :data="hookSearchForm" :label-width="80" @submit-success="handleHookSearch">
+        <t-form :data="hookSearchForm" :label-width="80" :on-submit="handleHookSearch">
           <t-form-item name="name" :label="$t('openapi.name')">
             <t-input v-model="hookSearchForm.name" :placeholder="$t('common.inputPlaceholder')" allow-clear />
           </t-form-item>

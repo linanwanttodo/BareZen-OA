@@ -2,7 +2,7 @@
   <div class="page-container">
     <!-- 搜索区域 -->
     <t-card class="mb-4" :bordered="true">
-      <t-form :data="searchForm" :label-width="80" @submit-success="handleSearch">
+      <t-form :data="searchForm" :label-width="80" :on-submit="handleSearch">
         <t-form-item name="roleName" :label="$t('role.roleName')">
           <t-input v-model="searchForm.roleName" :placeholder="$t('role.roleName')" allow-clear />
         </t-form-item>

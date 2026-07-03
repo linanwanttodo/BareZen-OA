@@ -14,6 +14,7 @@ import com.linan.office.service.IOfficeSupplyRequestService;
 import com.linan.office.service.IOfficeSupplyService;
 import com.linan.system.service.ApprovalFlowFacade;
 import com.linan.core.common.api.PageParamGuard;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
@@ -100,7 +101,7 @@ public class AppSupplyController {
     @Operation(summary = "提交申领")
     @PostMapping("/requests")
     @Transactional(rollbackFor = Exception.class)
-    public Result<Void> submitRequest(@RequestBody OfficeSupplyRequest request) {
+    public Result<Void> submitRequest(@Valid @RequestBody OfficeSupplyRequest request) {
         Long userId = AuthInterceptor.getCurrentUserId();
         if (userId == null) {
             return Result.error("请先登录");

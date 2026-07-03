@@ -4,6 +4,9 @@ import com.linan.core.common.api.Result;
 import com.linan.core.common.api.ResultCodeEnum;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.ConstraintViolationException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -54,6 +57,17 @@ public class GlobalExceptionHandler {
     public Result<?> handleMissingParams(MissingServletRequestParameterException e) {
         log.warn("缺少必填参数: {}", e.getMessage());
         return new Result<>(ResultCodeEnum.VALIDATE_FAILED.getCode(), "缺少必填参数: " + e.getParameterName(), null);
+    }
+
+    /**
+     * 未匹配到任何处理器时 Spring 抛 NoResourceFoundException。此前落入兜底分支，
+     * 探测性请求会返回 500 并在日志里打完整堆栈，掩盖真实故障。
+     */
+    @ExceptionHandler(NoResourceFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public Result<?> handleNoResource(NoResourceFoundException e) {
+        log.warn("资源不存在: {} {}", e.getHttpMethod(), e.getResourcePath());
+        return new Result<>(ResultCodeEnum.NOT_FOUND.getCode(), "资源不存在", null);
     }
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)

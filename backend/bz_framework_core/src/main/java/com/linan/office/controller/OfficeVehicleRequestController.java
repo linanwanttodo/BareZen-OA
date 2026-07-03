@@ -211,6 +211,42 @@ public class OfficeVehicleRequestController {
     }
 
     /**
+     * 修改用车申请（仅本人、仅待审批状态）
+     *
+     * <p>只允许改业务字段：状态/审批人/审批时间/审批意见由审批流写入，
+     * 不得经此接口篡改，故用稀疏实体交给 updateById（MP 默认 NOT_NULL
+     * 策略，未赋值字段不进 UPDATE 语句）。归属字段为 applicantId。</p>
+     */
+    @Operation(summary = "修改用车申请", description = "修改本人提交且仍处于待审批状态的用车申请，仅业务字段可改")
+    @OperLog(title = "用车申请", businessType = 2)
+    @RequirePermission("office:vehicle:edit")
+    @PutMapping("/{id}")
+    public Result<Void> update(@PathVariable Long id, @Valid @RequestBody OfficeVehicleRequest body) {
+        OfficeVehicleRequest exist = vehicleService.getById(id);
+        if (exist == null) {
+            return Result.error("申请不存在");
+        }
+        Long userId = AuthInterceptor.getCurrentUserId();
+        if (userId == null || !userId.equals(exist.getApplicantId())) {
+            return Result.error("仅可修改本人提交的申请");
+        }
+        if (!ApprovalStatus.PENDING.getValue().equals(exist.getStatus())) {
+            return Result.error("仅待审批状态的申请可修改");
+        }
+
+        OfficeVehicleRequest patch = new OfficeVehicleRequest();
+        patch.setId(id);
+        patch.setVehicleType(body.getVehicleType());
+        patch.setPurpose(body.getPurpose());
+        patch.setStartTime(body.getStartTime());
+        patch.setEndTime(body.getEndTime());
+        patch.setDestination(body.getDestination());
+        patch.setPassengerCount(body.getPassengerCount());
+        boolean ok = vehicleService.updateById(patch);
+        return ok ? Result.success(null) : Result.error("修改失败");
+    }
+
+    /**
      * 删除用车申请
      */
     @Operation(summary = "删除用车申请")

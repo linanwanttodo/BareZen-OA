@@ -25,7 +25,11 @@ import java.util.List;
 public class AttLeaveRequestServiceImpl extends ServiceImpl<AttLeaveRequestMapper, AttLeaveRequest>
         implements IAttLeaveRequestService {
 
-    private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    /**
+     * 管理端 t-date-picker 用 value-type="YYYY-MM-DD HH:mm" 提交（不带秒），
+     * 严格 yyyy-MM-dd HH:mm:ss 会解析失败并被误报成时间顺序错误，故秒设为可选段。
+     */
+    private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm[:ss]");
 
     @Override
     @Transactional(rollbackFor = Exception.class)

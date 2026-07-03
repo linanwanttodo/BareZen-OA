@@ -10,6 +10,7 @@ import com.linan.core.security.interceptor.AuthInterceptor;
 import com.linan.hr.entity.HrSchedule;
 import com.linan.hr.service.IHrScheduleService;
 import com.linan.core.common.api.PageParamGuard;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -73,7 +74,7 @@ public class AppScheduleController {
      */
     @Operation(summary = "新增日程")
     @PostMapping
-    public Result<Void> addSchedule(@RequestBody HrSchedule schedule) {
+    public Result<Void> addSchedule(@Valid @RequestBody HrSchedule schedule) {
         Long userId = AuthInterceptor.getCurrentUserId();
         if (userId == null) {
             return Result.error("请先登录");
@@ -133,7 +134,7 @@ public class AppScheduleController {
      */
     @Operation(summary = "更新日程")
     @PutMapping
-    public Result<Void> updateSchedule(@RequestBody HrSchedule schedule) {
+    public Result<Void> updateSchedule(@Valid @RequestBody HrSchedule schedule) {
         Long userId = AuthInterceptor.getCurrentUserId();
         if (userId == null) {
             return Result.error("请先登录");
