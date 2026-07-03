@@ -7,7 +7,7 @@
         </t-form-item>
         <t-form-item>
           <t-space>
-            <t-button theme="primary" html-type="submit">{{ $t('common.search') }}</t-button>
+            <t-button theme="primary" type="submit">{{ $t('common.search') }}</t-button>
             <t-button @click="searchKey = ''; handleSearch()">{{ $t('common.reset') }}</t-button>
           </t-space>
         </t-form-item>

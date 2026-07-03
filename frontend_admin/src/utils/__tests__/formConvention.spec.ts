@@ -78,3 +78,19 @@ describe('t-form 约定', () => {
     expect(offenders).toEqual([])
   })
 })
+
+describe('表单提交按钮约定', () => {
+  it('提交按钮用 type="submit"，不得写不存在的 html-type', () => {
+    // tdesign-vue-next 的 Button 没有 htmlType prop：官方 API 只有
+    // theme / variant / size / shape / loading / tag / type，其中 type
+    // 就是原生 submit/reset/button。
+    // 写成 html-type="submit" 会被当作普通 attr 透传给 <button>，type 仍为
+    // 默认 "button"，点击不触发表单提交 —— 表现为「查询」按钮点了没反应，
+    // 且 Vue 不会给任何告警（26 个页面中招）。
+    const offenders: string[] = []
+    for (const f of files) {
+      if (/html-type=/.test(readFileSync(f, 'utf-8'))) offenders.push(rel(f))
+    }
+    expect(offenders).toEqual([])
+  })
+})

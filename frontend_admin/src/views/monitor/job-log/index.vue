@@ -15,7 +15,7 @@
           <t-col :span="3" class="bz-list-ops">
             <t-form-item>
               <t-space>
-                <t-button theme="primary" html-type="submit">{{ $t('common.search') }}</t-button>
+                <t-button theme="primary" type="submit">{{ $t('common.search') }}</t-button>
                 <t-button theme="default" variant="base" @click="handleReset">{{ $t('common.reset') }}</t-button>
               </t-space>
             </t-form-item>
