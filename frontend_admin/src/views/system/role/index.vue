@@ -77,7 +77,7 @@
 
     <!-- 新增/编辑弹窗 -->
     <t-dialog
-      v-model="formDialogVisible"
+      v-model:visible="formDialogVisible"
       :title="formType === 'add' ? $t('role.addRole') : $t('role.editRole')"
       :width="520"
       :mask-closable="false"
@@ -114,7 +114,7 @@
 
     <!-- 分配菜单权限弹窗 -->
     <t-dialog
-      v-model="menuDialogVisible"
+      v-model:visible="menuDialogVisible"
       :title="$t('role.assignMenuTitle')"
       :width="560"
       :mask-closable="false"

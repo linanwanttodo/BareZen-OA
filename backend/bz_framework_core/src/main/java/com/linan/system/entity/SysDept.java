@@ -30,8 +30,8 @@ public class SysDept extends BaseEntity {
     /** 负责人 */
     private String leader;
 
-    /** 联系电话 */
-    @Pattern(regexp = "^1[3-9]\\d{9}$", message = "联系电话格式不正确")
+    /** 联系电话（可留空；留空时不做格式校验） */
+    @Pattern(regexp = "^$|^1[3-9]\\d{9}$", message = "联系电话格式不正确")
     private String phone;
 
     /** 邮箱 */

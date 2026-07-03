@@ -34,12 +34,12 @@ public class SysUser extends BaseEntity {
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String password;
 
-    /** 邮箱 */
+    /** 邮箱（可留空；留空时不做格式校验） */
     @Email(message = "邮箱格式不正确")
     private String email;
 
-    /** 手机号 */
-    @Pattern(regexp = "^1[3-9]\\d{9}$", message = "手机号格式不正确")
+    /** 手机号（可留空；留空时不做格式校验） */
+    @Pattern(regexp = "^$|^1[3-9]\\d{9}$", message = "手机号格式不正确")
     private String phone;
 
     /** 性别：0=男 1=女 2=未知（与数据库 sys_user.sex COMMENT 保持一致） */

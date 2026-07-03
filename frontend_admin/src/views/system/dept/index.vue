@@ -69,7 +69,7 @@
 
     <!-- 新增/编辑弹窗 -->
     <t-dialog
-      v-model="formVisible"
+      v-model:visible="formVisible"
       :title="formTitle"
       :width="520"
       :mask-closable="false"

@@ -86,7 +86,7 @@
 
     <!-- 新增/编辑弹窗 -->
     <t-dialog
-      v-model="formDialogVisible"
+      v-model:visible="formDialogVisible"
       :title="formType === 'add' ? $t('user.addUser') : $t('user.editUser')"
       :width="640"
       :mask-closable="false"
@@ -148,7 +148,7 @@
 
     <!-- 分配角色弹窗 -->
     <t-dialog
-      v-model="roleDialogVisible"
+      v-model:visible="roleDialogVisible"
       :title="$t('user.assignRole')"
       :width="480"
       :mask-closable="false"
@@ -170,7 +170,7 @@
 
     <!-- 重置密码弹窗 -->
     <t-dialog
-      v-model="resetPwdVisible"
+      v-model:visible="resetPwdVisible"
       :title="$t('user.resetPwd')"
       :width="400"
       :mask-closable="false"
@@ -200,7 +200,7 @@
 
     <!-- 批量创建账号弹窗 -->
     <t-dialog
-      v-model="batchVisible"
+      v-model:visible="batchVisible"
       :title="$t('user.batchAdd')"
       :width="640"
       @confirm="handleBatchAdd"
@@ -226,7 +226,7 @@
 
     <!-- 分配部门弹窗 -->
     <t-dialog
-      v-model="deptDialogVisible"
+      v-model:visible="deptDialogVisible"
       :title="$t('user.assignDept')"
       :width="560"
       :mask-closable="false"

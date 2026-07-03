@@ -109,7 +109,7 @@
 
     <!-- 字典类型 新增/编辑弹窗 -->
     <t-dialog
-      v-model="typeFormVisible"
+      v-model:visible="typeFormVisible"
       :header="typeFormType === 'add' ? $t('dict.addType') : $t('dict.editType')"
       width="480px"
       :close-on-overlay-click="false"
@@ -134,7 +134,7 @@
 
     <!-- 字典数据 新增/编辑弹窗 -->
     <t-dialog
-      v-model="dataFormVisible"
+      v-model:visible="dataFormVisible"
       :header="dataFormType === 'add' ? $t('dict.addData') : $t('dict.editData')"
       width="560px"
       :close-on-overlay-click="false"

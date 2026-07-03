@@ -78,7 +78,7 @@
 
     <!-- 新增/编辑弹窗 -->
     <t-dialog
-      v-model="formDialogVisible"
+      v-model:visible="formDialogVisible"
       :title="formType === 'add' ? $t('menu.addMenu') : $t('menu.editMenu')"
       :width="640"
       :mask-closable="false"

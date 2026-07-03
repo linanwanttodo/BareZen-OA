@@ -33,7 +33,7 @@
 
     <!-- 编辑资料弹窗 -->
     <t-dialog
-      v-model="showEditDialog"
+      v-model:visible="showEditDialog"
       :header="$t('profile.editProfileTitle')"
       width="480px"
       :close-on-overlay-click="false"
