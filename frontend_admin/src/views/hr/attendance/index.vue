@@ -1,44 +1,51 @@
 <template>
   <div class="page-container">
     <!-- 搜索区域 -->
-    <t-card class="mb-4">
+    <t-card class="bz-list-panel">
       <t-form :data="searchForm" :label-width="80" :on-submit="handleSearch">
-        <t-form-item name="month" :label="$t('attendanceStat.month')">
-          <t-select v-model="searchForm.month" @change="handleSearch">
-            <t-option v-for="m in monthOptions" :key="m.value" :value="m.value">{{ m.label }}</t-option>
-          </t-select>
-        </t-form-item>
-        <t-form-item name="deptId" :label="$t('attendanceStat.dept')">
-          
-<!-- TODO(tree-select): data 字段 key/title 需转为 value/label --><t-tree-select
-            v-model="searchForm.deptId"
-            :data="deptTree"
-            :field-names="{ key: 'id', title: 'deptName', children: 'children' }"
-            :placeholder="$t('common.all')"
-            allow-clear
-            style="width: 200px"
-          />
-        </t-form-item>
-        <t-form-item name="userName" :label="$t('attendanceStat.userName')">
-          <t-input
-            v-model="searchForm.userName"
-            :placeholder="$t('attendanceStat.userNamePlaceholder')"
-            allow-clear
-           
-            @press-enter="handleSearch"
-          />
-        </t-form-item>
-        <t-form-item>
-          <t-space>
-            <t-button theme="primary" type="submit">{{ $t('common.search') }}</t-button>
-            <t-button @click="handleReset">{{ $t('common.reset') }}</t-button>
-          </t-space>
-        </t-form-item>
+        <t-row :gutter="[24, 24]">
+        <t-col :span="3">
+          <t-form-item name="month" :label="$t('attendanceStat.month')">
+            <t-select v-model="searchForm.month" @change="handleSearch">
+              <t-option v-for="m in monthOptions" :key="m.value" :value="m.value">{{ m.label }}</t-option>
+            </t-select>
+          </t-form-item>
+        </t-col>
+        <t-col :span="3">
+          <t-form-item name="deptId" :label="$t('attendanceStat.dept')">
+            
+  <!-- TODO(tree-select): data 字段 key/title 需转为 value/label --><t-tree-select
+              v-model="searchForm.deptId"
+              :data="deptTree"
+              :field-names="{ key: 'id', title: 'deptName', children: 'children' }"
+              :placeholder="$t('common.all')"
+              allow-clear
+              style="width: 200px"
+            />
+          </t-form-item>
+        </t-col>
+        <t-col :span="3">
+          <t-form-item name="userName" :label="$t('attendanceStat.userName')">
+            <t-input
+              v-model="searchForm.userName"
+              :placeholder="$t('attendanceStat.userNamePlaceholder')"
+              allow-clear
+             
+              @press-enter="handleSearch"
+            />
+          </t-form-item>
+        </t-col>
+        <t-col :span="3" class="bz-list-ops">
+          <t-form-item>
+            <t-space>
+              <t-button theme="primary" type="submit">{{ $t('common.search') }}</t-button>
+              <t-button @click="handleReset">{{ $t('common.reset') }}</t-button>
+            </t-space>
+          </t-form-item>
+        </t-col>
+        </t-row>
       </t-form>
-    </t-card>
 
-    <!-- 统计表格 -->
-    <t-card>
       <template #title>
         <div class="flex items-center justify-between w-full">
           <span>{{ $t('attendanceStat.title') }}</span>

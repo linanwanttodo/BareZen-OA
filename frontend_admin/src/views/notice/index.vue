@@ -1,6 +1,6 @@
 <template>
   <div class="page-container">
-    <t-card>
+    <t-card :bordered="false" class="bz-list-panel">
         <div class="flex flex-wrap items-end gap-3">
           <t-form-item :label="$t('notice.noticeTitle')">
             <t-input v-model="searchForm.noticeTitle" :placeholder="$t('notice.noticePlaceholder')" style="width: 200px" />
@@ -16,9 +16,7 @@
             <t-button @click="handleReset">{{ $t('common.reset') }}</t-button>
           </div>
         </div>
-    </t-card>
 
-    <t-card class="mt-4">
       <div class="bz-list-toolbar bz-list-toolbar--first">
         <t-space>
           <t-button v-permission="PERM.system.noticeAdd" theme="primary" @click="handleAdd">

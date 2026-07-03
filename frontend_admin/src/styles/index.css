@@ -278,8 +278,23 @@ body {
   margin-top: var(--td-comp-margin-xxl);
 }
 
+/* 合并卡片后筛选表单与工具条相邻，给表单底部留出间距，
+   否则工具条按钮会贴住筛选区的最后一行控件。
+   注意不能写成 > .t-form + .bz-list-toolbar：t-card 内部有一层
+   t-loading__parent 包裹，直接子选择器匹配不到。 */
+.bz-list-panel .t-form + .bz-list-toolbar {
+  margin-top: var(--td-comp-margin-xxl);
+}
+
 /* 表格纵向对齐与行悬浮底色由 t-table 的 vertical-align / :hover 属性控制，
    与 Starter list/base 一致，页面按需开启（见 script 中的 TABLE_PROPS 注入）。 */
+
+/* 操作列内的动作按钮不折行：列宽按动作数给足，窄屏时横向滚动，
+   而不是把「编辑 / 分配角色 / 分配部门 / 重置密码 / 删除」挤成两行 */
+.bz-list-panel .t-table__body td:last-child .t-space,
+.bz-list-panel .t-table__body td:last-child .t-space-item {
+  white-space: nowrap;
+}
 
 /* ---- 关键指标卡（对齐 TDesign Starter dashboard/top-panel）----
    官方为 t-row/t-col 栅格，卡片需在同行内等高：t-col 默认 stretch，

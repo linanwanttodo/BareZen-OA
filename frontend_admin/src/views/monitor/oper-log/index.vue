@@ -1,7 +1,7 @@
 <template>
   <div class="page-container">
     <!-- 搜索区域 -->
-    <t-card class="mb-4">
+    <t-card class="bz-list-panel">
       <div class="pt-6">
         <div class="flex flex-wrap items-end gap-4">
           <t-form-item :label="$t('monitor.operLog.title')">
@@ -34,10 +34,7 @@
           </div>
         </div>
       </div>
-    </t-card>
 
-    <!-- 表格区域 -->
-    <t-card>
       <div class="bz-list-toolbar bz-list-toolbar--first">
         <t-space>
           <t-button @click="loadTable">

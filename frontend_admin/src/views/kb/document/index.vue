@@ -1,33 +1,40 @@
 <template>
   <div class="page-container">
     <!-- 搜索区域 -->
-    <t-card class="mb-4">
+    <t-card class="bz-list-panel">
       <t-form :data="searchForm" :label-width="80" :on-submit="handleSearch">
-        <t-form-item name="title" :label="$t('kb.title')">
-          <t-input v-model="searchForm.title" :placeholder="$t('common.inputPlaceholder')" allow-clear />
-        </t-form-item>
-        <t-form-item name="categoryId" :label="$t('kb.category')">
-          <t-select v-model="searchForm.categoryId" :placeholder="$t('common.all')" allow-clear>
-            <t-option v-for="c in categories" :key="c.id" :value="c.id">{{ c.name }}</t-option>
-          </t-select>
-        </t-form-item>
-        <t-form-item name="status" :label="$t('common.status')">
-          <t-select v-model="searchForm.status" :placeholder="$t('common.all')" allow-clear>
-            <t-option value="0">{{ $t('kb.statusDraft') }}</t-option>
-            <t-option value="1">{{ $t('kb.statusPublished') }}</t-option>
-          </t-select>
-        </t-form-item>
-        <t-form-item>
-          <t-space>
-            <t-button theme="primary" type="submit">{{ $t('common.search') }}</t-button>
-            <t-button @click="handleReset">{{ $t('common.reset') }}</t-button>
-          </t-space>
-        </t-form-item>
+        <t-row :gutter="[24, 24]">
+        <t-col :span="3">
+          <t-form-item name="title" :label="$t('kb.title')">
+            <t-input v-model="searchForm.title" :placeholder="$t('common.inputPlaceholder')" allow-clear />
+          </t-form-item>
+        </t-col>
+        <t-col :span="3">
+          <t-form-item name="categoryId" :label="$t('kb.category')">
+            <t-select v-model="searchForm.categoryId" :placeholder="$t('common.all')" allow-clear>
+              <t-option v-for="c in categories" :key="c.id" :value="c.id">{{ c.name }}</t-option>
+            </t-select>
+          </t-form-item>
+        </t-col>
+        <t-col :span="3">
+          <t-form-item name="status" :label="$t('common.status')">
+            <t-select v-model="searchForm.status" :placeholder="$t('common.all')" allow-clear>
+              <t-option value="0">{{ $t('kb.statusDraft') }}</t-option>
+              <t-option value="1">{{ $t('kb.statusPublished') }}</t-option>
+            </t-select>
+          </t-form-item>
+        </t-col>
+        <t-col :span="3" class="bz-list-ops">
+          <t-form-item>
+            <t-space>
+              <t-button theme="primary" type="submit">{{ $t('common.search') }}</t-button>
+              <t-button @click="handleReset">{{ $t('common.reset') }}</t-button>
+            </t-space>
+          </t-form-item>
+        </t-col>
+        </t-row>
       </t-form>
-    </t-card>
 
-    <!-- 表格 -->
-    <t-card>
       <div class="bz-list-toolbar bz-list-toolbar--first">
         <t-space>
           <t-button v-permission="PERM.kb.documentAdd" theme="primary" @click="handleAdd">

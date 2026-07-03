@@ -1,27 +1,33 @@
 <template>
   <div class="page-container">
     <!-- 搜索区域 -->
-    <t-card class="mb-4">
+    <t-card class="bz-list-panel">
       <t-form :data="searchForm" :label-width="80" :on-submit="handleSearch">
-        <t-form-item name="jobName" :label="$t('monitor.jobs.jobName')" :rules="[{ required: true, message: t('validation.required', { field: t('monitor.jobs.jobName') }) }]">
-          <t-input v-model="searchForm.jobName" :placeholder="$t('common.inputPlaceholder')" allow-clear />
-        </t-form-item>
-        <t-form-item name="status" :label="$t('common.status')">
-          <t-select v-model="searchForm.status" :placeholder="$t('common.selectPlaceholder')" clearable>
-            <t-option value="1" :label="$t('common.normal')" />
-            <t-option value="0" :label="$t('common.disable')" />
-          </t-select>
-        </t-form-item>
-        <t-form-item>
-          <t-space>
-            <t-button theme="primary" type="submit">{{ $t('common.search') }}</t-button>
-            <t-button @click="handleReset">{{ $t('common.reset') }}</t-button>
-          </t-space>
-        </t-form-item>
+        <t-row :gutter="[24, 24]">
+        <t-col :span="3">
+          <t-form-item name="jobName" :label="$t('monitor.jobs.jobName')" :rules="[{ required: true, message: t('validation.required', { field: t('monitor.jobs.jobName') }) }]">
+            <t-input v-model="searchForm.jobName" :placeholder="$t('common.inputPlaceholder')" allow-clear />
+          </t-form-item>
+        </t-col>
+        <t-col :span="3">
+          <t-form-item name="status" :label="$t('common.status')">
+            <t-select v-model="searchForm.status" :placeholder="$t('common.selectPlaceholder')" clearable>
+              <t-option value="1" :label="$t('common.normal')" />
+              <t-option value="0" :label="$t('common.disable')" />
+            </t-select>
+          </t-form-item>
+        </t-col>
+        <t-col :span="3" class="bz-list-ops">
+          <t-form-item>
+            <t-space>
+              <t-button theme="primary" type="submit">{{ $t('common.search') }}</t-button>
+              <t-button @click="handleReset">{{ $t('common.reset') }}</t-button>
+            </t-space>
+          </t-form-item>
+        </t-col>
+        </t-row>
       </t-form>
-    </t-card>
 
-    <t-card>
       <div class="bz-list-toolbar bz-list-toolbar--first">
         <t-space>
           <t-button v-permission="PERM.monitor.jobAdd" theme="primary" size="small" @click="handleAdd">

@@ -1,6 +1,6 @@
 <template>
   <div class="page-container">
-    <t-card class="mb-4">
+    <t-card class="bz-list-panel">
       <t-form :data="{ tableName: searchKey }" :label-width="80" :on-submit="handleSearch">
         <t-form-item name="tableName" :label="$t('tool.gen.tableNameLabel')">
           <t-input v-model="searchKey" :placeholder="$t('tool.gen.searchPlaceholder')" allow-clear />
@@ -12,9 +12,7 @@
           </t-space>
         </t-form-item>
       </t-form>
-    </t-card>
 
-    <t-card>
       <template #title>
         <span>{{ $t('tool.gen.title') }}</span>
       </template>
