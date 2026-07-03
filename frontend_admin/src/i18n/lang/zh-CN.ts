@@ -49,6 +49,14 @@ export default {
     payment: '工资发放',
     statistics: '工资统计',
   },
+  /** 多标签页右键菜单（对齐 TDesign Starter layout.tagTabs） */
+  tagTabs: {
+    refresh: '刷新',
+    closeLeft: '关闭左侧',
+    closeRight: '关闭右侧',
+    closeOther: '关闭其他',
+  },
+
   common: {
     id: 'ID',
     add: '新增',
