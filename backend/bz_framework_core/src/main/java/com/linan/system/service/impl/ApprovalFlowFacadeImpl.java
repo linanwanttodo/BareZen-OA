@@ -7,7 +7,9 @@ import com.linan.system.entity.ApprovalFlowTask;
 import com.linan.system.service.ApprovalFlowEngineService;
 import com.linan.system.service.ApprovalFlowFacade;
 import com.linan.system.service.IApprovalFlowLogService;
+import com.linan.core.spi.permission.PermissionGateway;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,9 +30,14 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ApprovalFlowFacadeImpl implements ApprovalFlowFacade {
 
+    /** 管理员代审开关（默认关闭）。开启后 admin 可审批自己提交的申请，日志中标注「管理员代审（自审）」。 */
+    @Value("${approval.self-approve.enabled:false}")
+    private boolean selfApproveEnabled;
+
     private final ApprovalFlowEngineService flowEngine;
     private final IApprovalFlowLogService flowLogService;
     private final ApplicationEventPublisher eventPublisher;
+    private final PermissionGateway permissionGateway;
 
     @Override
     @org.springframework.transaction.annotation.Transactional(rollbackFor = Exception.class)
@@ -65,13 +72,21 @@ public class ApprovalFlowFacadeImpl implements ApprovalFlowFacade {
     @org.springframework.transaction.annotation.Transactional(rollbackFor = Exception.class)
     public void approve(String bizType, Long bizId, Long approverId, String approverName,
                         String action, String remark, ApprovalBizHandler handler) {
-        // 禁止自审自批
-        if (approverId != null && approverId.equals(handler.applicantId())) {
+        // 禁止自审自批。默认对所有人生效；仅当 approval.self-approve.enabled=true
+        // 且审批人持有 admin 角色时放行（小微团队里管理员往往是唯一审批人，
+        // 完全禁止会导致流程死锁），放行时在流程日志中标注「管理员代审（自审）」保持可审计。
+        boolean isSelfApproval = approverId != null && approverId.equals(handler.applicantId());
+        boolean adminOverride = isSelfApproval && selfApproveEnabled
+                && approverId != null && permissionGateway.isAdmin(approverId);
+        if (isSelfApproval && !adminOverride) {
             throw new BusinessException("不能审批自己的申请");
         }
 
         ApprovalFlowEngineService.ApprovalResult result =
                 flowEngine.approve(bizType, bizId, approverId, approverName, action, remark);
+
+        // 管理员代审时在节点名后缀标注，普通审批保持原样
+        String nodeSuffix = adminOverride ? "（管理员代审）" : "";
 
         if (result.isFinished()) {
             // 终态：驳回或末节点通过，原子更新业务表（并发兜底：后到者受影响行数为 0）
@@ -82,7 +97,8 @@ public class ApprovalFlowFacadeImpl implements ApprovalFlowFacade {
             if (!ok) {
                 throw new BusinessException("该记录已审批，不能重复操作");
             }
-            flowLogService.record(bizType, bizId, result.isApproved() ? "审批通过" : "审批驳回",
+            flowLogService.record(bizType, bizId,
+                    (result.isApproved() ? "审批通过" : "审批驳回") + nodeSuffix,
                     target, approverId, approverName, remark);
             // 结果通知申请人（通过/驳回均推送）
             ApprovalFlowFacade.NotifyText txt = handler.resultNotify(result.isApproved(), remark);

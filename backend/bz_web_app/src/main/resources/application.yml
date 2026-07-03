@@ -148,6 +148,20 @@ jwt:
 auth:
   register-enabled: ${AUTH_REGISTER_ENABLED:false}
 
+# ---- 审批流 ----
+approval:
+  # 管理员代审：默认关闭（禁止任何形式的自审自批）。
+  #
+  # 背景：小微团队里管理员往往是唯一有审批权的人，完全禁止自审会导致
+  # 「库里只有管理员一个账号时所有申请都无人可审」的流程死锁。开启后，
+  # 持有 admin 角色的用户可审批自己提交的申请，但会在流程日志中标注
+  # 「管理员代审（自审）」，操作日志同样留痕，保持可审计。
+  #
+  # 内控要求高的场景保持关闭（默认）；确有代审需求时显式设为 true。
+  # 注意：普通用户始终不能自审，此开关只对 admin 角色生效。
+  self-approve:
+    enabled: ${APPROVAL_SELF_APPROVE_ENABLED:false}
+
 # ---- 安全 ----
 # 是否信任反向代理透传的客户端 IP 头（X-Forwarded-For / X-Real-IP）。
 #   默认 false：只取 socket 直连地址（getRemoteAddr），防客户端伪造 IP 绕过限流/误伤他人；

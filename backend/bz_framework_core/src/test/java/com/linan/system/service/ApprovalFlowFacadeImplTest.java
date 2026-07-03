@@ -52,10 +52,27 @@ class ApprovalFlowFacadeImplTest {
     @Mock
     private ApplicationEventPublisher eventPublisher;
 
+    @Mock
+    private com.linan.core.spi.permission.PermissionGateway permissionGateway;
+
     private ApprovalFlowFacade facade;
 
+    /** 默认：管理员代审开关关闭（与 application.yml 默认值一致） */
     private ApprovalFlowFacadeImpl newFacade() {
-        return new ApprovalFlowFacadeImpl(flowEngine, flowLogService, eventPublisher);
+        return newFacade(false);
+    }
+
+    private ApprovalFlowFacadeImpl newFacade(boolean selfApproveEnabled) {
+        ApprovalFlowFacadeImpl f = new ApprovalFlowFacadeImpl(
+                flowEngine, flowLogService, eventPublisher, permissionGateway);
+        try {
+            var field = ApprovalFlowFacadeImpl.class.getDeclaredField("selfApproveEnabled");
+            field.setAccessible(true);
+            field.set(f, selfApproveEnabled);
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException("注入 selfApproveEnabled 失败", e);
+        }
+        return f;
     }
 
     /** 无自定义回调的默认 handler（applicantId 非 OPERATOR_ID，供自审/归属用例自定义） */
@@ -147,6 +164,70 @@ class ApprovalFlowFacadeImplTest {
 
         assertTrue(ex.getMessage().contains("不能审批自己的申请"));
         verify(flowEngine, never()).approve(any(), any(), any(), any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("approve：代审开关开启但审批人非 admin → 仍拒绝自审")
+    void approve_selfApproval_switchOnButNotAdmin_rejected() {
+        facade = newFacade(true);
+        when(permissionGateway.isAdmin(APPROVER_ID)).thenReturn(false);
+
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> facade.approve(BIZ_TYPE, BIZ_ID, APPROVER_ID, APPROVER_NAME, "pass", null,
+                        handler(APPROVER_ID, true)));
+
+        assertTrue(ex.getMessage().contains("不能审批自己的申请"));
+        verify(flowEngine, never()).approve(any(), any(), any(), any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("approve：代审开关开启 + 审批人是 admin → 放行且日志标注「管理员代审」")
+    void approve_selfApproval_adminOverride_allowedAndMarked() {
+        facade = newFacade(true);
+        when(permissionGateway.isAdmin(APPROVER_ID)).thenReturn(true);
+        when(flowEngine.approve(BIZ_TYPE, BIZ_ID, APPROVER_ID, APPROVER_NAME, "pass", "代审通过"))
+                .thenReturn(new ApprovalFlowEngineService.ApprovalResult(true, true, 1, "主管审批"));
+
+        facade.approve(BIZ_TYPE, BIZ_ID, APPROVER_ID, APPROVER_NAME, "pass", "代审通过",
+                new ApprovalFlowFacade.ApprovalBizHandler() {
+                    @Override
+                    public Long applicantId() {
+                        return APPROVER_ID;
+                    }
+
+                    @Override
+                    public boolean cancel() {
+                        return true;
+                    }
+
+                    @Override
+                    public String currentStatus() {
+                        return ApprovalStatus.PENDING.getValue();
+                    }
+
+                    @Override
+                    public boolean finish(String targetStatus, Long id, String name, String remark) {
+                        return true;
+                    }
+                });
+
+        verify(flowLogService).record(BIZ_TYPE, BIZ_ID, "审批通过（管理员代审）",
+                ApprovalStatus.APPROVED.getValue(), APPROVER_ID, APPROVER_NAME, "代审通过");
+    }
+
+    @Test
+    @DisplayName("approve：代审开关关闭时 admin 也被拒绝（默认内控口径，且不查 admin 身份）")
+    void approve_selfApproval_switchOff_adminAlsoRejected() {
+        facade = newFacade(false);
+        // 不 stub isAdmin：开关关闭时实现根本不该调用它，
+        // 若误调用会因返回默认值 false 而让本用例「碰巧通过」，掩盖回归。
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> facade.approve(BIZ_TYPE, BIZ_ID, APPROVER_ID, APPROVER_NAME, "pass", null,
+                        handler(APPROVER_ID, true)));
+
+        assertTrue(ex.getMessage().contains("不能审批自己的申请"));
+        verify(flowEngine, never()).approve(any(), any(), any(), any(), any(), any());
+        verify(permissionGateway, never()).isAdmin(any());
     }
 
     @Test
