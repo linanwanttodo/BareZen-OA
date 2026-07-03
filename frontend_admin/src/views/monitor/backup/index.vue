@@ -110,7 +110,7 @@ function formatSize(bytes: number): string {
 
 /** 表格列定义（由 Arco 列模板迁移，自定义单元格见模板同名插槽） */
 const tableColumns = computed(() => [
-    { colKey: 'filename', title: t('monitor.backup.filename') },
+    { colKey: 'filename', title: t('monitor.backup.backupName') },
     { colKey: 'fileSize', title: t('monitor.backup.fileSize'), width: 120 },
     { colKey: 'createTime', title: t('monitor.backup.backupTime'), width: 170 },
     { colKey: 'col_3', title: t('common.operate'), width: 160, align: 'right' },

@@ -174,17 +174,19 @@ onMounted(() => {
   loadTable()
 })
 
-/** 表格列定义（由 Arco 列模板迁移，自定义单元格见模板同名插槽） */
+/** 表格列定义（字段对应 OnlineUser 实体：userName/nickName/loginIp/loginLocation/browser/os/loginTime） */
 const tableColumns = computed(() => [
-    { colKey: 'col_0', title: t('common.operate'), width: 50 },
-    { colKey: 'userId', title: '' },
-    { colKey: 'nickName', title: t('user.nickName') },
-    { colKey: 'loginIp', title: t('monitor.online.ipAddr') },
-    { colKey: 'loginLocation', title: '' },
-    { colKey: 'browser', title: '' },
-    { colKey: 'os', title: '' },
-    { colKey: 'loginTime', title: t('monitor.online.loginTime') },
-    { colKey: 'col_8', title: t('common.operate'), align: 'right' },
+    // 首列是行选择框。此前 col_0 误标成 common.operate，且 loginLocation/browser/os
+    // 的 title 都是空串 —— 表头因此出现两个「操作」，后续列名整体错位、多列无名。
+    { colKey: 'col_0', title: '', width: 46, fixed: 'left' },
+    { colKey: 'nickName', title: t('user.nickName'), width: 150, ellipsis: true, fixed: 'left' },
+    { colKey: 'loginIp', title: t('monitor.online.ipAddr'), width: 120 },
+    { colKey: 'loginLocation', title: t('monitor.online.loginLocation'), width: 110, ellipsis: true },
+    { colKey: 'browser', title: t('monitor.online.browser'), width: 100, ellipsis: true },
+    { colKey: 'os', title: t('monitor.online.os'), width: 100, ellipsis: true },
+    { colKey: 'loginTime', title: t('monitor.online.loginTime'), width: 150 },
+    // 操作列固定右侧：本页列数多，横向滚动时「强制下线」必须始终可见
+    { colKey: 'col_8', title: t('common.operate'), width: 100, fixed: 'right' },
   ])
 
 </script>
