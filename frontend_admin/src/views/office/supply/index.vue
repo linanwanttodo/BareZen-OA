@@ -8,7 +8,7 @@
 
     <!-- 用品管理 -->
     <template v-if="activeTab === 'supply'">
-      <t-card class="mb-4">
+      <t-card class="bz-list-panel">
         <t-form :data="searchForm" :label-width="80" :on-submit="handleSearch">
           <t-form-item name="supplyName" :label="$t('supply.supplyName')">
             <t-input v-model="searchForm.supplyName" :placeholder="$t('common.inputPlaceholder')" allow-clear />
@@ -28,9 +28,6 @@
             </t-space>
           </t-form-item>
         </t-form>
-      </t-card>
-
-      <t-card>
         <div class="bz-list-toolbar bz-list-toolbar--first">
           <t-space>
             <t-button v-permission="PERM.office.supplyAdd" theme="primary" @click="openSupplyAdd">
@@ -56,7 +53,6 @@
           <div v-if="pagination.total > 0" class="mt-4 flex justify-end">
             <t-pagination v-model:current="pagination.current" :total="pagination.total" :page-size="pagination.pageSize" @change="loadSupplies" />
           </div>
-        
       </t-card>
     </template>
 

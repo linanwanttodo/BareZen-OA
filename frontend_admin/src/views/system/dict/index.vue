@@ -49,7 +49,7 @@
       </t-card>
 
       <!-- 右侧：字典数据 -->
-      <t-card :bordered="true" class="flex flex-col">
+      <t-card :bordered="false" class="bz-list-panel flex flex-col">
         <!-- 行级操作：表格上方独立工具条（对齐 TDesign Starter list/base）。
              标题里的「当前字典类型」标签有信息量，保留在工具条左侧。 -->
         <div class="bz-list-toolbar bz-list-toolbar--first">

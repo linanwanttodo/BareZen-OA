@@ -1,21 +1,15 @@
 <template>
   <div class="page-container">
     <!-- 工具栏 -->
-    <t-card class="mb-4">
-      <div class="flex items-center justify-between">
-        <span class="text-sm text-[var(--wecom-text-secondary)]">{{ $t('asset.categoryDesc') }}</span>
+    <!-- 列表容器：说明 + 工具条 + 表格共用一张白卡（对齐 TDesign Starter list/base） -->
+    <t-card :bordered="false" class="bz-list-panel">
+      <div class="bz-list-toolbar bz-list-toolbar--first">
+        <span class="text-sm text-[var(--td-text-color-secondary)]">{{ $t('asset.categoryDesc') }}</span>
         <t-button v-permission="PERM.asset.categoryAdd" theme="primary" @click="handleAdd">
           <template #icon><icon-plus /></template>
           {{ $t('common.add') }}
         </t-button>
       </div>
-    </t-card>
-
-    <!-- 分类列表 -->
-    <t-card>
-      <template #title>
-        <span>{{ $t('asset.category') }}</span>
-      </template>
 
       
           <t-table :loading="loading" row-key="id" :data="tableData" :columns="tableColumns" :pagination="false" :hover="true" vertical-align="top">

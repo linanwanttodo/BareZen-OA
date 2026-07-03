@@ -38,7 +38,7 @@
     </t-row>
 
     <!-- 待办列表 -->
-    <t-card>
+    <t-card :bordered="false" class="bz-list-panel">
       <template #title>
         <span>{{ $t('todoCenter.pendingList') }}</span>
       </template>

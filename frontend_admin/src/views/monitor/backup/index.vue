@@ -1,24 +1,18 @@
 <template>
   <div class="page-container">
-    <t-card class="mb-4">
-      <div class="flex items-center justify-between">
+    <!-- 列表容器：标题说明 + 工具条 + 表格共用一张白卡（对齐 TDesign Starter list/base） -->
+    <t-card :bordered="false" class="bz-list-panel">
+      <div class="bz-list-toolbar bz-list-toolbar--first">
         <div>
           <h3 class="text-base font-medium">{{ $t('monitor.backup.backupTitle') }}</h3>
-          <p class="text-sm text-wecom-text-tertiary mt-1">{{ $t('monitor.backup.backupDesc') }}</p>
+          <p class="text-sm text-[var(--td-text-color-placeholder)] mt-1">{{ $t('monitor.backup.backupDesc') }}</p>
         </div>
         <t-button v-permission="PERM.system.backupAdd" theme="primary" :loading="creating" @click="handleCreate">
           <template #icon><icon-plus /></template>
           {{ $t('monitor.backup.createBackup') }}
         </t-button>
       </div>
-    </t-card>
 
-    <t-card>
-      <template #title>
-        <span>{{ $t('monitor.backup.backupList') }}</span>
-      </template>
-
-      
           <t-table :loading="loading" row-key="filename" :data="backupList" :columns="tableColumns" :pagination="false" :hover="true" vertical-align="top">
     <template #filename="{ row }">
                 <span class="font-mono text-sm">{{ row.filename }}</span>

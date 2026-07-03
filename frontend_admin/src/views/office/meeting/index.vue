@@ -60,7 +60,7 @@
     </t-card>
 
     <!-- 预订记录 -->
-    <t-card>
+    <t-card :bordered="false" class="bz-list-panel">
       <template #title>
         <span>{{ $t('office.bookingList') }}</span>
       </template>

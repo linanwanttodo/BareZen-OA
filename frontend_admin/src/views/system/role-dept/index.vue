@@ -44,7 +44,7 @@
     </t-card>
 
     <!-- 右侧用户列表 -->
-    <t-card class="user-content">
+    <t-card :bordered="false" class="bz-list-panel user-content">
       <template #title>
         <div class="flex items-center justify-between w-full">
           <div class="flex items-center gap-3">

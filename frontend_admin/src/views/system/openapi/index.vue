@@ -8,7 +8,7 @@
 
     <!-- API Key 管理 -->
     <template v-if="activeTab === 'apiKey'">
-      <t-card class="mb-4">
+      <t-card class="bz-list-panel">
         <t-form :data="keySearchForm" :label-width="80" :on-submit="handleKeySearch">
           <t-form-item name="keyName" :label="$t('openapi.keyName')">
             <t-input v-model="keySearchForm.keyName" :placeholder="$t('common.inputPlaceholder')" allow-clear />
@@ -20,9 +20,6 @@
             </t-space>
           </t-form-item>
         </t-form>
-      </t-card>
-
-      <t-card>
         <div class="bz-list-toolbar bz-list-toolbar--first">
           <t-space>
             <t-button v-permission="PERM.system.apiKeyAdd" theme="primary" @click="openKeyCreate">
@@ -63,13 +60,12 @@
               @change="loadKeys"
             />
           </div>
-        
       </t-card>
     </template>
 
     <!-- Webhook 管理 -->
     <template v-else>
-      <t-card class="mb-4">
+      <t-card class="bz-list-panel">
         <t-form :data="hookSearchForm" :label-width="80" :on-submit="handleHookSearch">
           <t-form-item name="name" :label="$t('openapi.name')">
             <t-input v-model="hookSearchForm.name" :placeholder="$t('common.inputPlaceholder')" allow-clear />
@@ -81,9 +77,6 @@
             </t-space>
           </t-form-item>
         </t-form>
-      </t-card>
-
-      <t-card>
         <!-- 行级操作：表格上方独立工具条（对齐 TDesign Starter list/base），
              不放 t-card #title 插槽 -->
         <div class="bz-list-toolbar bz-list-toolbar--first">
@@ -128,7 +121,6 @@
               @change="loadHooks"
             />
           </div>
-        
       </t-card>
     </template>
 

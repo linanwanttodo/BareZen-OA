@@ -1,6 +1,6 @@
 <template>
   <div class="page-container">
-    <t-card>
+    <t-card :bordered="false" class="bz-list-panel">
       <div class="bz-list-toolbar bz-list-toolbar--first">
         <t-space>
           <t-button v-permission="PERM.system.fileUpload" theme="primary" :loading="uploading" @click="triggerUpload">
