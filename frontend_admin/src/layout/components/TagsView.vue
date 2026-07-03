@@ -11,7 +11,7 @@
         :key="tag.path"
         :value="tag.path"
         :label="tagLabel(tag)"
-        :closable="!tag.affix"
+        :removable="!tag.affix"
       />
     </t-tabs>
   </div>

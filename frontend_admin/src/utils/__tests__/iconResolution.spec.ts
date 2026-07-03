@@ -67,3 +67,18 @@ describe('图标可解析性', () => {
     expect(missing).toEqual([])
   })
 })
+
+describe('TDesign prop 名约定', () => {
+  it('t-tab-panel 用 removable，不用不存在的 closable', () => {
+    // tdesign-vue-next 的 TabPanel 没有 closable prop（见 es/tabs/tab-panel-props.d.ts），
+    // 可关闭标记叫 removable。写成 :closable 时不报错、不警告，
+    // 但关闭按钮永远不渲染 —— 表现为「标签页开了就关不掉，只能刷页面」。
+    const offenders: string[] = []
+    for (const f of collectFiles(join(SRC_ROOT, '..'), '.vue')) {
+      if (/t-tab-panel[\s\S]{0,200}?\s:closable=/.test(readFileSync(f, 'utf-8'))) {
+        offenders.push(f)
+      }
+    }
+    expect(offenders).toEqual([])
+  })
+})

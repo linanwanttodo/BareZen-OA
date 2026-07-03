@@ -274,6 +274,16 @@ onMounted(() => {
   position: relative;
   min-height: 100vh;
   overflow: hidden;
+  /* 根容器兜底纯白：body 用的是 --td-bg-color-page（#f3f3f3 灰），
+     登录页按官方口径整屏纯白，避免两面板之间的缝隙透出灰底 */
+  background: #fff;
+}
+
+/* 暗色模式：登录页跟随页面底色（官方 .dark.login-wrapper 的口径）。
+   本项目暗色用 <html theme-mode="dark"> 属性而非 class，见 utils/theme.ts。 */
+:global(html[theme-mode='dark']) .login-page,
+:global(html[theme-mode='dark']) .login-form-panel {
+  background: var(--td-bg-color-page);
 }
 
 /* ---- 面板通用 ---- */
@@ -287,14 +297,23 @@ onMounted(() => {
   will-change: transform;
 }
 
-/* ---- 图片面板（白底，与 design-system/brand/logo-on-white.png 白底无缝融合） ---- */
+/* ---- 图片面板 ----
+   对齐 TDesign Starter login/index.less：浅色模式背景是纯白 white，
+   暗色模式才用 --td-bg-color-page。此处若用容器色 token，暗色下会发灰，
+   且与 logo-on-white.png 的白底衔接出现色差。 */
 .login-visual {
   left: 0;
-  background: var(--wecom-bg-card);
+  background: #fff;
   border-right: 1px solid var(--wecom-border);
   display: flex;
   align-items: center;
   justify-content: center;
+}
+/* 暗色模式跟随页面底色（官方 .dark.login-wrapper 的口径）。
+   本项目暗色用 <html theme-mode="dark"> 属性而非 class，见 utils/theme.ts。 */
+:global(html[theme-mode='dark']) .login-visual {
+  background: var(--td-bg-color-page);
+  border-right-color: var(--td-component-stroke);
 }
 .mode-register .login-visual {
   transform: translateX(100%);
@@ -317,10 +336,13 @@ onMounted(() => {
   letter-spacing: 0.5px;
 }
 
-/* ---- 表单面板 ---- */
+/* ---- 表单面板 ----
+   对齐 TDesign Starter：登录页整屏是纯白（官方 .light.login-wrapper 用 white），
+   两侧面板都不用页面灰底 --td-bg-color-page（该 token 本身是 #f3f3f3 灰）。
+   暗色模式才切到页面底色。 */
 .login-form-panel {
   left: 50%;
-  background: var(--wecom-bg-page);
+  background: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
