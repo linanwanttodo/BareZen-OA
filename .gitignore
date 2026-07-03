@@ -59,3 +59,6 @@ Thumbs.db
 # --- 会话/静态扫描报告（不该入库） ---
 .omo/
 qodana.sarif.json
+
+# 运行时产生的数据库备份（DbBackupController 写入）
+backend/bz_web_app/backup/
