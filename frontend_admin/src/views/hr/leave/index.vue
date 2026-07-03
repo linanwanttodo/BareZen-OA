@@ -99,7 +99,7 @@
     <!-- 请假申请弹窗 -->
     <t-dialog v-model:visible="addVisible" :title="$t('leave.apply')" :width="560"
              @confirm="handleSubmit" @cancel="addVisible = false" :ok-loading="submitting">
-      <t-form :data="form" layout="vertical">
+      <t-form ref="formRef" :data="form" layout="vertical">
         <t-form-item name="leaveType" :label="$t('leave.leaveType')" required>
           <t-select v-model="form.leaveType">
             <t-option value="annual">{{ $t('leave.typeAnnual') }}</t-option>
@@ -130,7 +130,7 @@
     <!-- 审批弹窗 -->
     <t-dialog v-model:visible="approveVisible" :title="$t('leave.approve')" :width="480"
              @confirm="handleApprove" @cancel="approveVisible = false" :ok-loading="approving">
-      <t-form :data="approveForm" layout="vertical">
+      <t-form ref="approveFormRef" :data="approveForm" layout="vertical">
         <t-form-item :label="$t('leave.approveAction')" required>
           <t-radio-group v-model="approveForm.action" variant="default-filled">
             <t-radio value="pass">{{ $t('leave.approvePass') }}</t-radio>
@@ -148,7 +148,7 @@
 <script setup lang="ts">
 import { PERM } from '@/utils/constants'
 import { ref, computed, reactive, onMounted, onActivated } from 'vue'
-import { MessagePlugin } from 'tdesign-vue-next'
+import { MessagePlugin, type FormInstanceFunctions } from 'tdesign-vue-next'
 import { getLeavePageApi, submitLeaveApi, approveLeaveApi, revokeLeaveApi, deleteLeaveApi, type AttLeaveRequest } from '@/api/leave'
 import { getFlowLogsApi, getFlowTasksApi, type ApprovalFlowNode, type ApprovalFlowTask } from '@/api/flowlog'
 import { useUserStore } from '@/stores/user'
@@ -178,6 +178,7 @@ interface LeaveForm {
   reason: string
 }
 
+const formRef = ref<FormInstanceFunctions>()
 const form = reactive<LeaveForm>({
   leaveType: 'annual',
   leaveDays: 1,
@@ -187,6 +188,7 @@ const form = reactive<LeaveForm>({
   reason: '',
 })
 
+const approveFormRef = ref<FormInstanceFunctions>()
 const approveForm = reactive<{ id: string; action: 'pass' | 'reject'; remark: string }>({
   id: '',
   action: 'pass',
@@ -251,6 +253,8 @@ function handleAdd() {
 }
 
 async function handleSubmit() {
+  // tdesign 1.20.7 的 validate() 通过时返回 true；用 !== true 判定「未通过」
+  if ((await formRef.value?.validate()) !== true) return
   if (!form.startTime || !form.endTime) {
     MessagePlugin.warning(t('common.msg.leaveTimeRequired'))
     return
@@ -285,6 +289,8 @@ function openApprove(record: AttLeaveRequest) {
 }
 
 async function handleApprove() {
+  // tdesign 1.20.7 的 validate() 通过时返回 true；用 !== true 判定「未通过」
+  if ((await approveFormRef.value?.validate()) !== true) return
   approving.value = true
   try {
     await approveLeaveApi(approveForm.id, approveForm.action, approveForm.remark)

@@ -96,7 +96,7 @@
       @confirm="onFormConfirm"
       @cancel="formDialogVisible = false"
     >
-      <t-form :data="formData" layout="vertical">
+      <t-form ref="formDataRef" :data="formData" layout="vertical">
         <t-row :gutter="16">
           <t-col :span="12">
             <t-form-item name="userName" :label="$t('user.userName')" :rules="[{ required: true, message: $t('user.userName') + $t('validation.required', { field: '' }) }]">
@@ -186,7 +186,7 @@
           <span style="font-weight: 500">{{ currentUser.nickName }}（{{ currentUser.userName }}）</span>
         </t-space>
       </div>
-      <t-form :data="resetPwdData" layout="vertical">
+      <t-form ref="resetPwdRef" :data="resetPwdData" layout="vertical">
         <t-form-item name="password" :label="$t('user.newPassword')" :rules="[{ required: true, message: $t('user.newPassword') + $t('validation.required', { field: '' }) }]">
           <t-input v-model="resetPwdData.password" :placeholder="$t('user.newPassword')" />
         </t-form-item>
@@ -267,7 +267,7 @@
 <script setup lang="ts">
 import { PERM } from '@/utils/constants'
 import { ref, reactive, computed, onMounted } from 'vue'
-import { MessagePlugin, DialogPlugin } from 'tdesign-vue-next'
+import { MessagePlugin, DialogPlugin, type FormInstanceFunctions } from 'tdesign-vue-next'
 import { useI18n } from 'vue-i18n'
 import {
   getUserListApi,
@@ -407,6 +407,7 @@ const defaultFormData = {
   remark: '',
 }
 
+const formDataRef = ref<FormInstanceFunctions>()
 const formData = reactive({ ...defaultFormData })
 
 function handleAdd() {
@@ -432,6 +433,8 @@ function handleEdit(row: SysUser) {
 }
 
 async function onFormConfirm() {
+  // tdesign 1.20.7 的 validate() 通过时返回 true；用 !== true 判定「未通过」
+  if ((await formDataRef.value?.validate()) !== true) return
   try {
     if (formType.value === 'add') {
       await addUserApi({ ...formData })
@@ -491,6 +494,7 @@ async function onRoleConfirm() {
 
 // ============ 重置密码 ============
 const resetPwdVisible = ref(false)
+const resetPwdRef = ref<FormInstanceFunctions>()
 const resetPwdData = reactive({ password: '' })
 
 function handleResetPwd(row: SysUser) {
@@ -500,6 +504,8 @@ function handleResetPwd(row: SysUser) {
 }
 
 async function onResetPwdConfirm() {
+  // tdesign 1.20.7 的 validate() 通过时返回 true；用 !== true 判定「未通过」
+  if ((await resetPwdRef.value?.validate()) !== true) return
   if (!currentUser.value) return
   if (!passwordRules.value.every((r) => r.valid)) {
     MessagePlugin.warning(t('user.batchPwdError', { name: currentUser.value.userName }))

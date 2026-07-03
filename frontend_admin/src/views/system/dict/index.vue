@@ -115,7 +115,7 @@
       @confirm="onTypeFormConfirm"
       @close="typeFormVisible = false"
     >
-      <t-form :data="typeFormData" layout="vertical">
+      <t-form ref="typeFormRef" :data="typeFormData" layout="vertical">
         <t-form-item name="dictName" :label="$t('dict.dictName')" :rules="[{ required: true, message: $t('dict.dictName') }]">
           <t-input v-model="typeFormData.dictName" :placeholder="$t('dict.dictName')" />
         </t-form-item>
@@ -140,7 +140,7 @@
       @confirm="onDataFormConfirm"
       @close="dataFormVisible = false"
     >
-      <t-form :data="dataFormData" layout="vertical">
+      <t-form ref="dataFormRef" :data="dataFormData" layout="vertical">
         <t-form-item :label="$t('dict.dictType')">
           <t-input :model-value="selectedType?.dictType" disabled />
         </t-form-item>
@@ -203,7 +203,7 @@
 <script setup lang="ts">
 import { PERM } from '@/utils/constants'
 import { ref, reactive, computed, onMounted } from 'vue'
-import { MessagePlugin, DialogPlugin } from 'tdesign-vue-next'
+import { MessagePlugin, DialogPlugin, type FormInstanceFunctions } from 'tdesign-vue-next'
 import { useI18n } from 'vue-i18n'
 import {
   getDictTypePageApi,
@@ -265,6 +265,7 @@ const typeFormVisible = ref(false)
 const typeFormType = ref<'add' | 'edit'>('add')
 
 const defaultTypeFormData = { id: undefined as string | undefined, dictName: '', dictType: '', status: '1' }
+const typeFormRef = ref<FormInstanceFunctions>()
 const typeFormData = reactive({ ...defaultTypeFormData })
 
 function handleAddType() {
@@ -280,6 +281,8 @@ function handleEditType(item: SysDictType) {
 }
 
 async function onTypeFormConfirm() {
+  // tdesign 1.20.7 的 validate() 通过时返回 true；用 !== true 判定「未通过」
+  if ((await typeFormRef.value?.validate()) !== true) return
   try {
     if (typeFormType.value === 'add') {
       await addDictTypeApi({ ...typeFormData })
@@ -362,6 +365,7 @@ const defaultDataFormData = {
   isDefault: 'N',
   status: '1',
 }
+const dataFormRef = ref<FormInstanceFunctions>()
 const dataFormData = reactive({ ...defaultDataFormData })
 
 function handleAddData() {
@@ -387,6 +391,8 @@ function handleEditData(row: SysDictData) {
 }
 
 async function onDataFormConfirm() {
+  // tdesign 1.20.7 的 validate() 通过时返回 true；用 !== true 判定「未通过」
+  if ((await dataFormRef.value?.validate()) !== true) return
   try {
     const payload = { ...dataFormData, dictSort: Number(dataFormData.dictSort) || 0 }
     if (dataFormType.value === 'add') {

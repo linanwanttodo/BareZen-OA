@@ -79,7 +79,7 @@
     <!-- 生成草稿弹窗 -->
     <t-dialog v-model:visible="generateVisible" :title="$t('salary.generate')" :width="440"
              @confirm="handleGenerate" @cancel="generateVisible = false" :ok-loading="generating">
-      <t-form :data="generateForm" layout="vertical">
+      <t-form ref="generateFormRef" :data="generateForm" layout="vertical">
         <t-form-item name="paymentMonth" :label="$t('salary.paymentMonth')" required>
           
 <t-date-picker v-model="generateForm.paymentMonth" mode="month" format="YYYY-MM" value-type="YYYY-MM" style="width: 100%" :placeholder="$t('salary.monthPlaceholder')" />
@@ -95,7 +95,7 @@
 <script setup lang="ts">
 import { PERM } from '@/utils/constants'
 import { ref, computed, reactive, onMounted } from 'vue'
-import { MessagePlugin } from 'tdesign-vue-next'
+import { MessagePlugin, type FormInstanceFunctions } from 'tdesign-vue-next'
 import { useI18n } from 'vue-i18n'
 import {
   getSalaryPaymentPageApi, generateSalaryPaymentApi, executeSalaryPaymentApi,
@@ -112,6 +112,7 @@ const generateVisible = ref(false)
 
 const searchForm = reactive({ paymentMonth: '', paymentStatus: '', keyword: '' })
 const pagination = reactive({ current: 1, pageSize: 10, total: 0 })
+const generateFormRef = ref<FormInstanceFunctions>()
 const generateForm = reactive({ paymentMonth: '' })
 
 /** 仅未发放记录可勾选执行 */
@@ -168,6 +169,8 @@ function openGenerate() {
 }
 
 async function handleGenerate() {
+  // tdesign 1.20.7 的 validate() 通过时返回 true；用 !== true 判定「未通过」
+  if ((await generateFormRef.value?.validate()) !== true) return
   if (!generateForm.paymentMonth) {
     MessagePlugin.warning(t('salary.monthRequired'))
     return

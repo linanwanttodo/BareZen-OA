@@ -88,7 +88,7 @@
       @confirm="onFormConfirm"
       @cancel="formDialogVisible = false"
     >
-      <t-form :data="formData" layout="vertical">
+      <t-form ref="formDataRef" :data="formData" layout="vertical">
         <t-form-item name="parentId" :label="$t('menu.parentMenu')">
           
 <!-- TODO(tree-select): data 字段 key/title 需转为 value/label --><t-tree-select
@@ -166,7 +166,7 @@
 <script setup lang="ts">
 import { PERM } from '@/utils/constants'
 import { ref, reactive, computed, onMounted } from 'vue'
-import { MessagePlugin, DialogPlugin } from 'tdesign-vue-next'
+import { MessagePlugin, DialogPlugin, type FormInstanceFunctions } from 'tdesign-vue-next'
 import { useI18n } from 'vue-i18n'
 import {
   getMenuListApi,
@@ -320,6 +320,7 @@ const defaultFormData = {
   remark: '',
 }
 
+const formDataRef = ref<FormInstanceFunctions>()
 const formData = reactive({ ...defaultFormData })
 
 function onMenuTypeChange() {
@@ -365,6 +366,8 @@ function handleEdit(row: SysMenu) {
 }
 
 async function onFormConfirm() {
+  // tdesign 1.20.7 的 validate() 通过时返回 true；用 !== true 判定「未通过」
+  if ((await formDataRef.value?.validate()) !== true) return
   try {
     const payload = { ...formData, orderNum: Number(formData.orderNum) || 0 }
     if (formType.value === 'add') {

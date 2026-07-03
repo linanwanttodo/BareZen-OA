@@ -60,10 +60,10 @@
     <!-- 编辑弹窗 -->
     <t-dialog v-model:visible="editVisible" :title="isEdit ? $t('salary.editStructure') : $t('salary.addStructure')"
              :width="640" @confirm="handleSave" @cancel="editVisible = false" :ok-loading="saving">
-      <t-form :data="form" layout="vertical">
+      <t-form ref="formRef" :data="form" layout="vertical">
         <t-row :gutter="16">
           <t-col :span="12">
-            <t-form-item name="userId" :label="$t('salary.userId')" required>
+            <t-form-item name="userId" :label="$t('salary.userId')" :rules="[{ required: true, message: t('validation.required', { field: t('salary.userId') }) }]">
               <t-select
                 v-model="form.userId"
                 filterable
@@ -79,7 +79,7 @@
             </t-form-item>
           </t-col>
           <t-col :span="12">
-            <t-form-item name="userName" :label="$t('salary.userName')" required>
+            <t-form-item name="userName" :label="$t('salary.userName')" :rules="[{ required: true, message: t('validation.required', { field: t('salary.userName') }) }]">
               <t-input v-model="form.userName" :placeholder="$t('common.inputPlaceholder')" />
             </t-form-item>
           </t-col>
@@ -147,7 +147,7 @@
 <script setup lang="ts">
 import { PERM } from '@/utils/constants'
 import { ref, computed, reactive, onMounted } from 'vue'
-import { MessagePlugin } from 'tdesign-vue-next'
+import { MessagePlugin, type FormInstanceFunctions } from 'tdesign-vue-next'
 import { useI18n } from 'vue-i18n'
 import {
   getSalaryStructurePageApi, addSalaryStructureApi, updateSalaryStructureApi, deleteSalaryStructureApi,
@@ -166,6 +166,7 @@ const searchForm = reactive({ keyword: '' })
 const pagination = reactive({ current: 1, pageSize: 10, total: 0 })
 // userId 后端 Long 序列化为 string，选择器直接以 string id 作为选项值
 type StructureForm = Omit<Partial<SalaryStructure>, 'userId'> & { userId?: string | number }
+const formRef = ref<FormInstanceFunctions>()
 const form = reactive<StructureForm>({})
 
 /** 员工远程搜索选择器（登录名/昵称模糊匹配） */
@@ -265,8 +266,9 @@ function handleEdit(record: SalaryStructure) {
 }
 
 async function handleSave() {
-  if (!form.userId || !form.userName) {
-    MessagePlugin.warning(t('salary.userRequired'))
+  // tdesign 1.20.7 的 validate() 通过时返回 true；用 !== true 判定「未通过」
+  if ((await formRef.value?.validate()) !== true) {
+    
     return
   }
   saving.value = true

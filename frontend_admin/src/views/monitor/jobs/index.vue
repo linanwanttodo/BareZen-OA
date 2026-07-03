@@ -3,7 +3,7 @@
     <!-- 搜索区域 -->
     <t-card class="mb-4">
       <t-form :data="searchForm" :label-width="80" @submit-success="handleSearch">
-        <t-form-item name="jobName" :label="$t('monitor.jobs.jobName')">
+        <t-form-item name="jobName" :label="$t('monitor.jobs.jobName')" :rules="[{ required: true, message: t('validation.required', { field: t('monitor.jobs.jobName') }) }]">
           <t-input v-model="searchForm.jobName" :placeholder="$t('common.inputPlaceholder')" allow-clear />
         </t-form-item>
         <t-form-item name="status" :label="$t('common.status')">
@@ -68,14 +68,14 @@
     </t-card>
 
     <t-dialog v-model:visible="editVisible" :header="isAdd ? $t('monitor.jobs.addJob') : $t('monitor.jobs.editJob')" @confirm="handleSave" @close="editVisible = false">
-      <t-form :data="editForm" auto-label-width>
+      <t-form ref="editFormRef" :data="editForm" auto-label-width>
         <t-form-item name="jobName" :label="$t('monitor.jobs.jobName')">
           <t-input v-model="editForm.jobName" :placeholder="$t('common.inputPlaceholder')" />
         </t-form-item>
-        <t-form-item name="invokeTarget" :label="$t('monitor.jobs.invokeTarget')">
+        <t-form-item name="invokeTarget" :label="$t('monitor.jobs.invokeTarget')" :rules="[{ required: true, message: t('validation.required', { field: t('monitor.jobs.invokeTarget') }) }]">
           <t-input v-model="editForm.invokeTarget" placeholder="例: cleanTask.cleanOperLog()" />
         </t-form-item>
-        <t-form-item name="cronExpression" :label="$t('monitor.jobs.cronExpression')">
+        <t-form-item name="cronExpression" :label="$t('monitor.jobs.cronExpression')" :rules="[{ required: true, message: t('validation.required', { field: t('monitor.jobs.cronExpression') }) }]">
           <t-input v-model="editForm.cronExpression" placeholder="例: 0 0 2 * * ?" />
         </t-form-item>
         <t-form-item name="status" :label="$t('common.status')">
@@ -95,7 +95,7 @@
 <script setup lang="ts">
 import { PERM } from '@/utils/constants'
 import { ref, computed, reactive, onMounted } from 'vue'
-import {  MessagePlugin  } from 'tdesign-vue-next'
+import { MessagePlugin, type FormInstanceFunctions } from 'tdesign-vue-next'
 import { useI18n } from 'vue-i18n'
 import { getJobPageApi, addJobApi, updateJobApi, deleteJobApi, resumeJobApi, pauseJobApi, runJobApi } from '@/api/job'
 import type { SysJob } from '@/api/job'
@@ -107,6 +107,7 @@ const pagination = reactive({ current: 1, pageSize: 10, total: 0 })
 const searchForm = reactive<{ jobName: string; status: string | undefined }>({ jobName: '', status: undefined })
 const editVisible = ref(false)
 const isAdd = ref(false)
+const editFormRef = ref<FormInstanceFunctions>()
 const editForm = reactive({ jobName: '', invokeTarget: '', cronExpression: '', status: '1' as string, remark: '' })
 let editingId: string | null = null
 
@@ -154,6 +155,8 @@ function handleEdit(row: SysJob) {
 }
 
 async function handleSave() {
+  // tdesign 1.20.7 的 validate() 通过时返回 true；用 !== true 判定「未通过」
+  if ((await editFormRef.value?.validate()) !== true) return
   if (isAdd.value) {
     await addJobApi(editForm)
     MessagePlugin.success(t('monitor.jobs.addSuccess'))

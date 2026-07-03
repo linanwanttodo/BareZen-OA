@@ -102,7 +102,7 @@
     <!-- 用车申请弹窗 -->
     <t-dialog v-model:visible="addVisible" :title="$t('office.applyVehicle')" :width="560"
              @confirm="handleSubmit" @cancel="addVisible = false" :ok-loading="submitting">
-      <t-form :data="form" layout="vertical">
+      <t-form ref="formRef" :data="form" layout="vertical">
         <t-form-item name="vehicleType" :label="$t('office.vehicleType')" required>
           <t-select v-model="form.vehicleType">
             <t-option value="car">{{ $t('office.typeCar') }}</t-option>
@@ -136,7 +136,7 @@
     <!-- 审批弹窗 -->
     <t-dialog v-model:visible="approveVisible" :title="$t('office.approve')" :width="480"
              @confirm="handleApprove" @cancel="approveVisible = false" :ok-loading="approving">
-      <t-form :data="approveForm" layout="vertical">
+      <t-form ref="approveFormRef" :data="approveForm" layout="vertical">
         <t-form-item :label="$t('office.approveAction')" required>
           <t-radio-group v-model="approveForm.action" variant="default-filled">
             <t-radio value="pass">{{ $t('office.approvePass') }}</t-radio>
@@ -154,7 +154,7 @@
 <script setup lang="ts">
 import { PERM } from '@/utils/constants'
 import { ref, computed, reactive, onMounted } from 'vue'
-import { MessagePlugin } from 'tdesign-vue-next'
+import { MessagePlugin, type FormInstanceFunctions } from 'tdesign-vue-next'
 import { getVehiclePageApi, submitVehicleApi, approveVehicleApi, cancelVehicleApi, deleteVehicleApi, type OfficeVehicleRequest } from '@/api/office'
 import { getFlowLogsApi, getFlowTasksApi, type ApprovalFlowNode, type ApprovalFlowTask } from '@/api/flowlog'
 import { useUserStore } from '@/stores/user'
@@ -173,12 +173,14 @@ const searchForm = reactive({ applicantName: '', status: '' })
 
 const pagination = reactive({ current: 1, pageSize: 10, total: 0 })
 
+const formRef = ref<FormInstanceFunctions>()
 const form = reactive<Partial<OfficeVehicleRequest>>({
   vehicleType: 'car',
   passengerCount: 1,
   applicantName: userStore.userInfo?.nickName || '',
 })
 
+const approveFormRef = ref<FormInstanceFunctions>()
 const approveForm = reactive<{ id: string; action: 'pass' | 'reject'; remark: string }>({
   id: '',
   action: 'pass',
@@ -244,6 +246,8 @@ function handleAdd() {
 }
 
 async function handleSubmit() {
+  // tdesign 1.20.7 的 validate() 通过时返回 true；用 !== true 判定「未通过」
+  if ((await formRef.value?.validate()) !== true) return
   if (!form.startTime || !form.endTime) {
     MessagePlugin.warning(t('common.msg.vehicleTimeRequired'))
     return
@@ -280,6 +284,8 @@ function openApprove(record: OfficeVehicleRequest) {
 }
 
 async function handleApprove() {
+  // tdesign 1.20.7 的 validate() 通过时返回 true；用 !== true 判定「未通过」
+  if ((await approveFormRef.value?.validate()) !== true) return
   approving.value = true
   try {
     await approveVehicleApi(approveForm.id, approveForm.action, approveForm.remark)

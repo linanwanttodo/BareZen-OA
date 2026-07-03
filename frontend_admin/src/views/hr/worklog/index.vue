@@ -69,7 +69,7 @@
     <!-- 新增/编辑弹窗 -->
     <t-dialog v-model:visible="editVisible" :title="isEdit ? $t('worklog.editLog') : $t('worklog.addLog')"
              :width="640" @confirm="handleSave" @cancel="editVisible = false" :ok-loading="saving">
-      <t-form :data="form" layout="vertical">
+      <t-form ref="formRef" :data="form" layout="vertical">
         <t-row :gutter="16">
           <t-col :span="12">
             <t-form-item name="logType" :label="$t('worklog.logType')" required>
@@ -114,7 +114,7 @@
     <!-- 批阅弹窗 -->
     <t-dialog v-model:visible="reviewVisible" :title="$t('worklog.review')" :width="480"
              @confirm="handleReview" @cancel="reviewVisible = false" :ok-loading="reviewing">
-      <t-form :data="reviewForm" layout="vertical">
+      <t-form ref="reviewFormRef" :data="reviewForm" layout="vertical">
         <t-form-item name="remark" :label="$t('worklog.reviewRemark')">
           <t-textarea v-model="reviewForm.remark" :placeholder="$t('common.inputPlaceholder')" :max-length="500" show-word-limit />
         </t-form-item>
@@ -126,7 +126,7 @@
 <script setup lang="ts">
 import { PERM } from '@/utils/constants'
 import { ref, computed, reactive, onMounted } from 'vue'
-import { MessagePlugin } from 'tdesign-vue-next'
+import { MessagePlugin, type FormInstanceFunctions } from 'tdesign-vue-next'
 import { getWorkLogPageApi, addWorkLogApi, updateWorkLogApi, deleteWorkLogApi, reviewWorkLogApi, type HrWorkLog } from '@/api/worklog'
 import { useUserStore } from '@/stores/user'
 import { useI18n } from 'vue-i18n'
@@ -145,7 +145,9 @@ const currentLog = ref<HrWorkLog | null>(null)
 
 const searchForm = reactive({ logType: '', userName: '' })
 const pagination = reactive({ current: 1, pageSize: 10, total: 0 })
+const formRef = ref<FormInstanceFunctions>()
 const form = reactive<Partial<HrWorkLog>>({})
+const reviewFormRef = ref<FormInstanceFunctions>()
 const reviewForm = reactive<{ id: string; remark: string }>({ id: '', remark: '' })
 
 async function loadData() {
@@ -182,6 +184,8 @@ function handleEdit(record: HrWorkLog) {
 }
 
 async function handleSave() {
+  // tdesign 1.20.7 的 validate() 通过时返回 true；用 !== true 判定「未通过」
+  if ((await formRef.value?.validate()) !== true) return
   if (!form.content) {
     MessagePlugin.warning(t('common.msg.contentRequired'))
     return
@@ -219,6 +223,8 @@ function openReview(record: HrWorkLog) {
 }
 
 async function handleReview() {
+  // tdesign 1.20.7 的 validate() 通过时返回 true；用 !== true 判定「未通过」
+  if ((await reviewFormRef.value?.validate()) !== true) return
   reviewing.value = true
   try {
     await reviewWorkLogApi(reviewForm.id, reviewForm.remark)

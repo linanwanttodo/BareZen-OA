@@ -66,14 +66,14 @@
 
     <!-- 编辑弹窗 -->
     <t-dialog v-model:visible="editVisible" :header="$t('config.editConfig')" @confirm="handleSave" @close="editVisible = false">
-      <t-form :data="editForm" auto-label-width>
+      <t-form ref="editFormRef" :data="editForm" auto-label-width>
         <t-form-item name="configName" :label="$t('config.configName')">
           <t-input v-model="editForm.configName" disabled />
         </t-form-item>
         <t-form-item name="configKey" :label="$t('config.configKey')">
           <t-input v-model="editForm.configKey" disabled />
         </t-form-item>
-        <t-form-item name="configValue" :label="$t('config.configValue')">
+        <t-form-item name="configValue" :label="$t('config.configValue')" :rules="[{ required: true, message: t('validation.required', { field: t('config.configValue') }) }]">
           <t-input v-model="editForm.configValue" />
         </t-form-item>
         <t-form-item name="status" :label="$t('common.status')">
@@ -93,7 +93,7 @@
 <script setup lang="ts">
 import { PERM } from '@/utils/constants'
 import { ref, computed, reactive, onMounted } from 'vue'
-import {  MessagePlugin  } from 'tdesign-vue-next'
+import { MessagePlugin, type FormInstanceFunctions } from 'tdesign-vue-next'
 import { useI18n } from 'vue-i18n'
 import { getConfigPageApi, updateConfigApi, clearConfigCacheApi, type SysConfig } from '@/api/config'
 
@@ -104,6 +104,7 @@ const tableData = ref<SysConfig[]>([])
 const pagination = reactive({ current: 1, pageSize: 10, total: 0 })
 const searchForm = reactive({ configName: '', configKey: '' })
 const editVisible = ref(false)
+const editFormRef = ref<FormInstanceFunctions>()
 const editForm = reactive({ id: '', configName: '', configKey: '', configValue: '', status: '1', remark: '' })
 
 onMounted(() => loadData())
@@ -128,6 +129,8 @@ function handleEdit(row: SysConfig) {
 }
 
 async function handleSave() {
+  // tdesign 1.20.7 的 validate() 通过时返回 true；用 !== true 判定「未通过」
+  if ((await editFormRef.value?.validate()) !== true) return
   await updateConfigApi({ id: editForm.id, configValue: editForm.configValue, status: editForm.status, remark: editForm.remark })
   MessagePlugin.success(t('config.updateSuccess'))
   editVisible.value = false

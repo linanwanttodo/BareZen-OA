@@ -134,8 +134,8 @@
 
     <!-- 创建 API Key 弹窗 -->
     <t-dialog v-model:visible="keyCreateVisible" :title="$t('openapi.addApiKey')" @confirm="handleKeyCreate" @cancel="keyCreateVisible = false">
-      <t-form :data="keyCreateForm" auto-label-width>
-        <t-form-item name="keyName" :label="$t('openapi.keyName')" required>
+      <t-form ref="keyCreateFormRef" :data="keyCreateForm" auto-label-width>
+        <t-form-item name="keyName" :label="$t('openapi.keyName')" :rules="[{ required: true, message: t('validation.required', { field: t('openapi.keyName') }) }]">
           <t-input v-model="keyCreateForm.keyName" :max-length="50" :placeholder="$t('openapi.keyNamePlaceholder')" />
         </t-form-item>
         <t-form-item name="scopes" :label="$t('openapi.scopes')">
@@ -150,8 +150,8 @@
 
     <!-- 编辑 API Key 弹窗 -->
     <t-dialog v-model:visible="keyEditVisible" :title="$t('openapi.editApiKey')" @confirm="handleKeyEdit" @cancel="keyEditVisible = false">
-      <t-form :data="keyEditForm" auto-label-width>
-        <t-form-item name="keyName" :label="$t('openapi.keyName')" required>
+      <t-form ref="keyEditFormRef" :data="keyEditForm" auto-label-width>
+        <t-form-item name="keyName" :label="$t('openapi.keyName')" :rules="[{ required: true, message: t('validation.required', { field: t('openapi.keyName') }) }]">
           <t-input v-model="keyEditForm.keyName" :max-length="50" :placeholder="$t('openapi.keyNamePlaceholder')" />
         </t-form-item>
         <t-form-item name="scopes" :label="$t('openapi.scopes')">
@@ -182,14 +182,14 @@
 
     <!-- 创建 Webhook 弹窗 -->
     <t-dialog v-model:visible="hookCreateVisible" :title="$t('openapi.addWebhook')" @confirm="handleHookCreate" @cancel="hookCreateVisible = false">
-      <t-form :data="hookCreateForm" auto-label-width>
-        <t-form-item name="name" :label="$t('openapi.name')" required>
+      <t-form ref="hookCreateFormRef" :data="hookCreateForm" auto-label-width>
+        <t-form-item name="name" :label="$t('openapi.name')" :rules="[{ required: true, message: t('validation.required', { field: t('openapi.name') }) }]">
           <t-input v-model="hookCreateForm.name" :max-length="50" :placeholder="$t('openapi.namePlaceholder')" />
         </t-form-item>
-        <t-form-item name="url" :label="$t('openapi.url')" required>
+        <t-form-item name="url" :label="$t('openapi.url')" :rules="[{ required: true, message: t('validation.required', { field: t('openapi.url') }) }]">
           <t-input v-model="hookCreateForm.url" :placeholder="$t('openapi.urlPlaceholder')" />
         </t-form-item>
-        <t-form-item name="events" :label="$t('openapi.events')" required>
+        <t-form-item name="events" :label="$t('openapi.events')" :rules="[{ required: true, message: t('validation.required', { field: t('openapi.events') }) }]">
           <t-input v-model="hookCreateForm.events" :placeholder="$t('openapi.eventsPlaceholder')" />
         </t-form-item>
         <t-form-item name="secret" :label="$t('openapi.secret')">
@@ -200,14 +200,14 @@
 
     <!-- 编辑 Webhook 弹窗 -->
     <t-dialog v-model:visible="hookEditVisible" :title="$t('openapi.editWebhook')" @confirm="handleHookEdit" @cancel="hookEditVisible = false">
-      <t-form :data="hookEditForm" auto-label-width>
-        <t-form-item name="name" :label="$t('openapi.name')" required>
+      <t-form ref="hookEditFormRef" :data="hookEditForm" auto-label-width>
+        <t-form-item name="name" :label="$t('openapi.name')" :rules="[{ required: true, message: t('validation.required', { field: t('openapi.name') }) }]">
           <t-input v-model="hookEditForm.name" :max-length="50" :placeholder="$t('openapi.namePlaceholder')" />
         </t-form-item>
-        <t-form-item name="url" :label="$t('openapi.url')" required>
+        <t-form-item name="url" :label="$t('openapi.url')" :rules="[{ required: true, message: t('validation.required', { field: t('openapi.url') }) }]">
           <t-input v-model="hookEditForm.url" :placeholder="$t('openapi.urlPlaceholder')" />
         </t-form-item>
-        <t-form-item name="events" :label="$t('openapi.events')" required>
+        <t-form-item name="events" :label="$t('openapi.events')" :rules="[{ required: true, message: t('validation.required', { field: t('openapi.events') }) }]">
           <t-input v-model="hookEditForm.events" :placeholder="$t('openapi.eventsPlaceholder')" />
         </t-form-item>
         <t-form-item name="secret" :label="$t('openapi.secret')">
@@ -221,7 +221,7 @@
 <script setup lang="ts">
 import { PERM } from '@/utils/constants'
 import { ref, computed, reactive, onMounted } from 'vue'
-import { MessagePlugin } from 'tdesign-vue-next'
+import { MessagePlugin, type FormInstanceFunctions } from 'tdesign-vue-next'
 import { useI18n } from 'vue-i18n'
 import {
   getApiKeyPageApi,
@@ -249,11 +249,13 @@ const keyPagination = reactive({ current: 1, pageSize: 10, total: 0 })
 const keySearchForm = reactive({ keyName: '' })
 
 const keyCreateVisible = ref(false)
+const keyCreateFormRef = ref<FormInstanceFunctions>()
 const keyCreateForm = reactive({ keyName: '', scopes: '', expireTime: '' })
 const keyResultVisible = ref(false)
 const createdPlainKey = ref('')
 
 const keyEditVisible = ref(false)
+const keyEditFormRef = ref<FormInstanceFunctions>()
 const keyEditForm = reactive({ id: '', keyName: '', scopes: '', expireTime: '' as string | undefined })
 
 onMounted(() => loadKeys())
@@ -280,6 +282,8 @@ function openKeyCreate() {
 }
 
 async function handleKeyCreate() {
+  // tdesign 1.20.7 的 validate() 通过时返回 true；用 !== true 判定「未通过」
+  if ((await keyCreateFormRef.value?.validate()) !== true) return
   if (!keyCreateForm.keyName.trim()) {
     MessagePlugin.warning(t('openapi.keyNameRequired'))
     return
@@ -305,6 +309,8 @@ function openKeyEdit(row: ApiKeyItem) {
 }
 
 async function handleKeyEdit() {
+  // tdesign 1.20.7 的 validate() 通过时返回 true；用 !== true 判定「未通过」
+  if ((await keyEditFormRef.value?.validate()) !== true) return
   if (!keyEditForm.keyName.trim()) {
     MessagePlugin.warning(t('openapi.keyNameRequired'))
     return
@@ -347,9 +353,11 @@ const hookPagination = reactive({ current: 1, pageSize: 10, total: 0 })
 const hookSearchForm = reactive({ name: '' })
 
 const hookCreateVisible = ref(false)
+const hookCreateFormRef = ref<FormInstanceFunctions>()
 const hookCreateForm = reactive({ name: '', url: '', events: '', secret: '' })
 
 const hookEditVisible = ref(false)
+const hookEditFormRef = ref<FormInstanceFunctions>()
 const hookEditForm = reactive({ id: '', name: '', url: '', events: '', secret: '' })
 
 async function loadHooks() {
@@ -375,6 +383,8 @@ function openHookCreate() {
 }
 
 async function handleHookCreate() {
+  // tdesign 1.20.7 的 validate() 通过时返回 true；用 !== true 判定「未通过」
+  if ((await hookCreateFormRef.value?.validate()) !== true) return
   if (!hookCreateForm.name.trim() || !hookCreateForm.url.trim() || !hookCreateForm.events.trim()) {
     MessagePlugin.warning(t('openapi.hookRequired'))
     return
@@ -404,6 +414,8 @@ function openHookEdit(row: WebhookItem) {
 }
 
 async function handleHookEdit() {
+  // tdesign 1.20.7 的 validate() 通过时返回 true；用 !== true 判定「未通过」
+  if ((await hookEditFormRef.value?.validate()) !== true) return
   if (!hookEditForm.name.trim() || !hookEditForm.url.trim() || !hookEditForm.events.trim()) {
     MessagePlugin.warning(t('openapi.hookRequired'))
     return

@@ -79,7 +79,7 @@
       @confirm="onFormSubmit"
       @cancel="formVisible = false"
     >
-      <t-form :data="formData" layout="vertical">
+      <t-form ref="formDataRef" :data="formData" layout="vertical">
         <t-form-item name="parentId" :label="$t('dept.parentDept')">
           
 <!-- TODO(tree-select): data 字段 key/title 需转为 value/label --><t-tree-select
@@ -125,7 +125,7 @@
 <script setup lang="ts">
 import { PERM } from '@/utils/constants'
 import { ref, onMounted, computed } from 'vue'
-import { MessagePlugin, DialogPlugin } from 'tdesign-vue-next'
+import { MessagePlugin, DialogPlugin, type FormInstanceFunctions } from 'tdesign-vue-next'
 import { useI18n } from 'vue-i18n'
 import { getDeptTreeApi, addDeptApi, updateDeptApi, deleteDeptApi, getDeptApi } from '@/api/dept'
 import type { SysDept } from '@/api/dept'
@@ -278,6 +278,7 @@ const parentTreeData = computed(() => {
   return [{ id: '', deptName: t('dept.topLevel'), children: allData.value }]
 })
 
+const formDataRef = ref<FormInstanceFunctions>()
 const formData = ref({
   parentId: '' as string,
   deptName: '',
@@ -325,6 +326,8 @@ async function handleEdit(row: SysDept) {
 }
 
 async function onFormSubmit() {
+  // tdesign 1.20.7 的 validate() 通过时返回 true；用 !== true 判定「未通过」
+  if ((await formDataRef.value?.validate()) !== true) return
   try {
     const payload = {
       ...formData.value,

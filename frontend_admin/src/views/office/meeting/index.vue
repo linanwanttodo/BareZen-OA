@@ -95,7 +95,7 @@
     <!-- 新增会议室弹窗 -->
     <t-dialog v-model:visible="roomDialogVisible" :title="isRoomEdit ? $t('office.editRoom') : $t('office.addRoom')" :width="520"
              @confirm="handleSaveRoom" @cancel="cancelRoomEdit" :ok-loading="saving">
-      <t-form :data="roomForm" layout="vertical">
+      <t-form ref="roomFormRef" :data="roomForm" layout="vertical">
         <t-form-item name="roomName" :label="$t('office.roomName')" required>
           <t-input v-model="roomForm.roomName" :placeholder="$t('common.inputPlaceholder')" />
         </t-form-item>
@@ -120,7 +120,7 @@
     <!-- 会议预订弹窗（新增/编辑共用） -->
     <t-dialog v-model:visible="bookingVisible" :title="isBookingEdit ? $t('office.editBooking') : $t('office.bookMeeting')" :width="560"
              @confirm="handleSaveBooking" @cancel="cancelBooking" :ok-loading="saving">
-      <t-form :data="bookingForm" layout="vertical">
+      <t-form ref="bookingFormRef" :data="bookingForm" layout="vertical">
         <t-form-item name="roomId" :label="$t('office.roomName')" required>
           <t-select v-model="bookingForm.roomId" :placeholder="$t('common.selectPlaceholder')">
             <t-option v-for="room in roomOptions" :key="room.id" :value="room.id">{{ room.roomName }}</t-option>
@@ -150,7 +150,7 @@
 <script setup lang="ts">
 import { PERM } from '@/utils/constants'
 import { ref, reactive, onMounted, onActivated, computed } from 'vue'
-import { MessagePlugin } from 'tdesign-vue-next'
+import { MessagePlugin, type FormInstanceFunctions } from 'tdesign-vue-next'
 import {
   getRoomPageApi, getAvailableRoomsApi, addRoomApi, updateRoomApi, deleteRoomApi,
   getBookingPageApi, addBookingApi, updateBookingApi, deleteBookingApi,
@@ -176,7 +176,9 @@ const searchForm = reactive({ title: '', roomId: '' })
 
 const pagination = reactive({ current: 1, pageSize: 10, total: 0 })
 
+const roomFormRef = ref<FormInstanceFunctions>()
 const roomForm = reactive<Partial<OfficeMeetingRoom>>({})
+const bookingFormRef = ref<FormInstanceFunctions>()
 const bookingForm = reactive<Partial<OfficeMeetingBooking>>({})
 
 function openRoomAdd() {
@@ -247,6 +249,8 @@ function openRoomEdit(room: OfficeMeetingRoom) {
 }
 
 async function handleSaveRoom() {
+  // tdesign 1.20.7 的 validate() 通过时返回 true；用 !== true 判定「未通过」
+  if ((await roomFormRef.value?.validate()) !== true) return
   if (!roomForm.roomName) {
     MessagePlugin.warning(t('common.msg.meetingRoomRequired'))
     return
@@ -298,6 +302,8 @@ function openBookingEdit(record: OfficeMeetingBooking) {
 }
 
 async function handleSaveBooking() {
+  // tdesign 1.20.7 的 validate() 通过时返回 true；用 !== true 判定「未通过」
+  if ((await bookingFormRef.value?.validate()) !== true) return
   if (!bookingForm.roomId || !bookingForm.title) {
     MessagePlugin.warning(t('common.msg.meetingInfoRequired'))
     return

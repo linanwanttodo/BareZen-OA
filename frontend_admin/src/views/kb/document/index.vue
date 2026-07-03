@@ -78,8 +78,8 @@
     <!-- 新增/编辑弹窗 -->
     <t-dialog v-model:visible="editVisible" :title="isEdit ? $t('kb.editDoc') : $t('kb.addDoc')"
              :width="720" @confirm="handleSave" @cancel="editVisible = false" :ok-loading="saving">
-      <t-form :data="form" layout="vertical">
-        <t-form-item name="title" :label="$t('kb.title')" required>
+      <t-form ref="formRef" :data="form" layout="vertical">
+        <t-form-item name="title" :label="$t('kb.title')" :rules="[{ required: true, message: t('validation.required', { field: t('kb.title') }) }]">
           <t-input v-model="form.title" :placeholder="$t('common.inputPlaceholder')" />
         </t-form-item>
         <t-row :gutter="16">
@@ -132,7 +132,7 @@
 <script setup lang="ts">
 import { PERM } from '@/utils/constants'
 import { ref, reactive, onMounted, computed } from 'vue'
-import { MessagePlugin } from 'tdesign-vue-next'
+import { MessagePlugin, type FormInstanceFunctions } from 'tdesign-vue-next'
 import DOMPurify from 'dompurify'
 import { getDocPageApi, getDocApi, addDocApi, updateDocApi, deleteDocApi, changeDocStatusApi, getDocVersionsApi, getKbCategoryListApi, type KbDocument, type KbDocumentVersion, type KbCategory } from '@/api/kb'
 import { useUserStore } from '@/stores/user'
@@ -157,6 +157,7 @@ const searchForm = reactive({ title: '', categoryId: '' as string, status: '' })
 
 const pagination = reactive({ current: 1, pageSize: 10, total: 0 })
 
+const formRef = ref<FormInstanceFunctions>()
 const form = reactive<Partial<KbDocument>>({})
 
 const safeContent = computed(() => {
@@ -231,8 +232,9 @@ function handleEdit(record: KbDocument) {
 }
 
 async function handleSave() {
-  if (!form.title) {
-    MessagePlugin.warning(t('common.msg.docTitleRequired'))
+  // tdesign 1.20.7 的 validate() 通过时返回 true；用 !== true 判定「未通过」
+  if ((await formRef.value?.validate()) !== true) {
+    
     return
   }
   saving.value = true

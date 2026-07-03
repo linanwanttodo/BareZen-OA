@@ -68,19 +68,20 @@
 
     <!-- 新增/编辑弹窗 -->
     <t-dialog v-model:visible="dialogVisible" :title="isEdit ? $t('common.edit') : $t('common.add')" :width="560" :unmount-on-close="true" @before-ok="handleSave">
-      <t-form :data="form" layout="vertical">
-        <t-form-item name="title" :label="$t('schedule.title')" required>
+      <t-form ref="formRef" :data="form" layout="vertical">
+        <t-form-item name="title" :label="$t('schedule.title')" :rules="[{ required: true, message: t('validation.required', { field: t('schedule.title') }) }]">
           <t-input v-model="form.title" :placeholder="$t('common.inputPlaceholder')" />
         </t-form-item>
         <t-form-item name="userName" :label="$t('schedule.userName')">
           <t-input v-model="form.userName" :placeholder="$t('schedule.userNamePlaceholder')" />
         </t-form-item>
-        <t-form-item name="timeRange" :label="$t('schedule.timeRange')" required>
-          
-<t-date-picker v-model="form.startTime" show-time value-type="YYYY-MM-DD HH:mm" style="width: calc(50% - 12px)" :placeholder="$t('schedule.startTime')" />
+        <!-- name 必须指向 :data 里真实存在的字段。历史上用展示用的 name="timeRange"，
+             而控件绑的是 form.startTime/form.endTime —— 该键恒为 undefined，
+             挂 required 会永远报错并阻塞提交。正确做法是锚定真实字段。 -->
+        <t-form-item name="startTime" :label="$t('schedule.timeRange')" :rules="[{ required: true, message: t('validation.required', { field: t('schedule.startTime') }) }]">
+          <t-date-picker v-model="form.startTime" show-time value-type="YYYY-MM-DD HH:mm" style="width: calc(50% - 12px)" :placeholder="$t('schedule.startTime')" />
           <span class="mx-2">~</span>
-          
-<t-date-picker v-model="form.endTime" show-time value-type="YYYY-MM-DD HH:mm" style="width: calc(50% - 12px)" :placeholder="$t('schedule.endTime')" />
+          <t-date-picker v-model="form.endTime" show-time value-type="YYYY-MM-DD HH:mm" style="width: calc(50% - 12px)" :placeholder="$t('schedule.endTime')" />
         </t-form-item>
         <t-form-item name="location" :label="$t('schedule.location')">
           <t-input v-model="form.location" :placeholder="$t('common.inputPlaceholder')" />
@@ -104,7 +105,7 @@
 <script setup lang="ts">
 import { PERM } from '@/utils/constants'
 import { ref, computed, reactive, onMounted } from 'vue'
-import { MessagePlugin } from 'tdesign-vue-next'
+import { MessagePlugin, type FormInstanceFunctions } from 'tdesign-vue-next'
 import { useI18n } from 'vue-i18n'
 import { getSchedulePageApi, addScheduleApi, updateScheduleApi, deleteScheduleApi, type HrSchedule } from '@/api/schedule'
 
@@ -113,6 +114,7 @@ const loading = ref(false)
 const tableData = ref<HrSchedule[]>([])
 const dialogVisible = ref(false)
 const isEdit = ref(false)
+const formRef = ref<FormInstanceFunctions>()
 const form = reactive<Partial<HrSchedule>>({})
 const saving = ref(false)
 // Arco DatePicker 类型声明未建模 daterange（update:modelValue 声明为单值），
@@ -186,13 +188,9 @@ function openEdit(record: HrSchedule) {
 }
 
 async function handleSave(done: (closed: boolean) => void) {
-  if (!form.title) {
-    MessagePlugin.warning(t('schedule.titleRequired'))
-    done(false)
-    return
-  }
-  if (!form.startTime || !form.endTime) {
-    MessagePlugin.warning(t('schedule.timeRequired'))
+  // tdesign 1.20.7 的 validate() 通过时返回 true；用 !== true 判定「未通过」。
+  // 本页走 t-dialog 的 @before-ok，需用 done(false) 阻止关闭，而不是直接 return。
+  if ((await formRef.value?.validate()) !== true) {
     done(false)
     return
   }

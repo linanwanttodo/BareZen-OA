@@ -67,7 +67,7 @@
     <!-- 新增/编辑弹窗 -->
     <t-dialog v-model:visible="editVisible" :title="isEdit ? $t('flowTemplate.editNode') : $t('flowTemplate.addNode')"
              :width="480" @confirm="handleSave" @cancel="editVisible = false" :ok-loading="saving">
-      <t-form :data="form" layout="vertical">
+      <t-form ref="formRef" :data="form" layout="vertical">
         <t-form-item name="bizType" :label="$t('flowTemplate.bizType')" required>
           <t-select v-model="form.bizType" :disabled="isEdit" :placeholder="$t('flowTemplate.bizTypePlaceholder')">
             <t-option v-for="item in bizTypeOptions" :key="item.value" :value="item.value">{{ item.label }}</t-option>
@@ -93,7 +93,7 @@
 <script setup lang="ts">
 import { PERM } from '@/utils/constants'
 import { ref, computed, reactive, onMounted } from 'vue'
-import { MessagePlugin } from 'tdesign-vue-next'
+import { MessagePlugin, type FormInstanceFunctions } from 'tdesign-vue-next'
 import { useI18n } from 'vue-i18n'
 import { getFlowTemplatePageApi, addFlowTemplateApi, updateFlowTemplateApi, deleteFlowTemplateApi, type FlowTemplate } from '@/api/flow-template'
 
@@ -118,6 +118,7 @@ const pagination = reactive({ current: 1, pageSize: 10, total: 0 })
 const searchForm = reactive({ bizType: '' })
 const editVisible = ref(false)
 const isEdit = ref(false)
+const formRef = ref<FormInstanceFunctions>()
 const form = reactive<Partial<FlowTemplate>>({})
 
 onMounted(() => loadData())
@@ -152,9 +153,10 @@ function handleEdit(record: FlowTemplate) {
 }
 
 async function handleSave() {
-  if (!form.bizType) { MessagePlugin.warning(t('flowTemplate.bizTypeRequired')); return }
-  if (!form.nodeSeq) { MessagePlugin.warning(t('flowTemplate.nodeSeqRequired')); return }
-  if (!form.nodeName?.trim()) { MessagePlugin.warning(t('flowTemplate.nodeNameRequired')); return }
+  // tdesign 1.20.7 的 validate() 通过时返回 true；用 !== true 判定「未通过」
+  if ((await formRef.value?.validate()) !== true) {
+    return
+  }
   saving.value = true
   try {
     if (isEdit.value) {

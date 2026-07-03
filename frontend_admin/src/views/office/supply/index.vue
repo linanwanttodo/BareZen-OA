@@ -106,7 +106,7 @@
     <!-- 用品新增/编辑弹窗 -->
     <t-dialog v-model:visible="supplyDialogVisible" :title="isSupplyEdit ? $t('supply.editSupply') : $t('supply.addSupply')"
              :width="520" @confirm="handleSaveSupply" @cancel="supplyDialogVisible = false" :ok-loading="saving">
-      <t-form :data="supplyForm" layout="vertical">
+      <t-form ref="supplyFormRef" :data="supplyForm" layout="vertical">
         <t-form-item name="supplyName" :label="$t('supply.supplyName')" required>
           <t-input v-model="supplyForm.supplyName" :placeholder="$t('common.inputPlaceholder')" />
         </t-form-item>
@@ -159,7 +159,7 @@
     <!-- 审批弹窗 -->
     <t-dialog v-model:visible="approveVisible" :title="$t('supply.approve')" :width="480"
              @confirm="handleApprove" @cancel="approveVisible = false" :ok-loading="approving">
-      <t-form :data="approveForm" layout="vertical">
+      <t-form ref="approveFormRef" :data="approveForm" layout="vertical">
         <t-form-item :label="$t('supply.approveAction')" required>
           <t-radio-group v-model="approveForm.action" variant="default-filled">
             <t-radio value="pass">{{ $t('supply.approvePass') }}</t-radio>
@@ -178,7 +178,7 @@
 import { PERM } from '@/utils/constants'
 import { ref, computed, reactive, onMounted, onActivated } from 'vue'
 import { useRoute } from 'vue-router'
-import { MessagePlugin } from 'tdesign-vue-next'
+import { MessagePlugin, type FormInstanceFunctions } from 'tdesign-vue-next'
 import {
   getSupplyPageApi, addSupplyApi, updateSupplyApi, deleteSupplyApi,
   getSupplyRequestPageApi, approveSupplyRequestApi, deleteSupplyRequestApi,
@@ -206,7 +206,9 @@ const searchForm = reactive({ supplyName: '', category: '' })
 const pagination = reactive({ current: 1, pageSize: 10, total: 0 })
 const requestPagination = reactive({ current: 1, pageSize: 10, total: 0 })
 const requestStatusFilter = ref('')
+const supplyFormRef = ref<FormInstanceFunctions>()
 const supplyForm = reactive<Partial<OfficeSupply>>({})
+const approveFormRef = ref<FormInstanceFunctions>()
 const approveForm = reactive<{ id: string; action: 'pass' | 'reject'; remark: string }>({ id: '', action: 'pass', remark: '' })
 
 const categoryMap: Record<string, string> = { stationery: 'enums.supplyCategory.stationery', electronics: 'enums.supplyCategory.electronics', cleaning: 'enums.supplyCategory.cleaning', other: 'enums.supplyCategory.other' }
@@ -265,6 +267,8 @@ function openSupplyEdit(record: OfficeSupply) {
 }
 
 async function handleSaveSupply() {
+  // tdesign 1.20.7 的 validate() 通过时返回 true；用 !== true 判定「未通过」
+  if ((await supplyFormRef.value?.validate()) !== true) return
   if (!supplyForm.supplyName) { MessagePlugin.warning(t('common.msg.supplyNameRequired')); return }
   saving.value = true
   try {
@@ -290,6 +294,8 @@ function openApprove(record: OfficeSupplyRequest) {
 }
 
 async function handleApprove() {
+  // tdesign 1.20.7 的 validate() 通过时返回 true；用 !== true 判定「未通过」
+  if ((await approveFormRef.value?.validate()) !== true) return
   approving.value = true
   try {
     await approveSupplyRequestApi(approveForm.id, approveForm.action, approveForm.remark)

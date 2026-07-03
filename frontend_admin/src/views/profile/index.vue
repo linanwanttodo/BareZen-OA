@@ -40,7 +40,7 @@
       @confirm="onEditSubmit"
       @close="showEditDialog = false"
     >
-      <t-form :data="editForm" layout="vertical">
+      <t-form ref="editFormRef" :data="editForm" layout="vertical">
         <t-form-item name="nickName" :label="$t('profile.nickName')" :rules="formRules.nickName">
           <t-input v-model="editForm.nickName" :placeholder="$t('profile.nickNamePlaceholder')" />
         </t-form-item>
@@ -58,7 +58,7 @@
 <script setup lang="ts">
 import { computed, ref, reactive, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import {  MessagePlugin  } from 'tdesign-vue-next'
+import { MessagePlugin, type FormInstanceFunctions } from 'tdesign-vue-next'
 import { useUserStore } from '@/stores/user'
 import { updateUserApi } from '@/api/user'
 
@@ -79,6 +79,7 @@ const profileData = computed(() => [
 // ---- 编辑资料 ----
 const showEditDialog = ref(false)
 
+const editFormRef = ref<FormInstanceFunctions>()
 const editForm = reactive({
   nickName: '',
   email: '',
@@ -99,6 +100,8 @@ watch(showEditDialog, (val) => {
 })
 
 async function onEditSubmit() {
+  // tdesign 1.20.7 的 validate() 通过时返回 true；用 !== true 判定「未通过」
+  if ((await editFormRef.value?.validate()) !== true) return
   const userId = userStore.userInfo?.userId
   if (!userId) return
 

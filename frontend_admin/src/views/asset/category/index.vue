@@ -39,8 +39,8 @@
     <!-- 新增/编辑弹窗 -->
     <t-dialog v-model:visible="editVisible" :header="isEdit ? $t('asset.editCategory') : $t('asset.addCategory')"
              width="480px" @confirm="handleSave" @close="editVisible = false" :ok-loading="saving">
-      <t-form :data="form" layout="vertical">
-        <t-form-item name="name" :label="$t('asset.categoryName')" required>
+      <t-form ref="formRef" :data="form" layout="vertical">
+        <t-form-item name="name" :label="$t('asset.categoryName')" :rules="[{ required: true, message: t('asset.categoryNameRequired') }]">
           <t-input v-model="form.name" :placeholder="$t('common.inputPlaceholder')" />
         </t-form-item>
         <t-form-item name="sort" :label="$t('asset.categorySort')">
@@ -60,7 +60,7 @@
 <script setup lang="ts">
 import { PERM } from '@/utils/constants'
 import { ref, computed, reactive, onMounted } from 'vue'
-import {  MessagePlugin  } from 'tdesign-vue-next'
+import { MessagePlugin, type FormInstanceFunctions } from 'tdesign-vue-next'
 import { useI18n } from 'vue-i18n'
 import { getCategoryListApi, addCategoryApi, updateCategoryApi, deleteCategoryApi, type AssetCategory } from '@/api/asset'
 
@@ -72,6 +72,7 @@ const editVisible = ref(false)
 const isEdit = ref(false)
 
 const form = reactive<Partial<AssetCategory>>({})
+const formRef = ref<FormInstanceFunctions>()
 
 async function loadData() {
   loading.value = true
@@ -98,10 +99,9 @@ function handleEdit(record: AssetCategory) {
 }
 
 async function handleSave() {
-  if (!form.name) {
-    MessagePlugin.warning(t('asset.categoryNameRequired'))
-    return
-  }
+  // tdesign-vue-next 1.20.7 的 validate() 通过时返回 true；写成 if (await x.validate()) 会把
+  // 「校验通过」当成失败而永远进不到保存分支，故一律用 !== true 判定「未通过」
+  if ((await formRef.value?.validate()) !== true) return
   saving.value = true
   try {
     if (isEdit.value) {

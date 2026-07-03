@@ -85,7 +85,7 @@
     <!-- 编辑弹窗 -->
     <t-dialog v-model:visible="editVisible" :title="isEdit ? $t('asset.editItem') : $t('asset.addItem')"
              :width="640" @confirm="handleSave" @cancel="editVisible = false" :ok-loading="saving">
-      <t-form :data="form" layout="vertical">
+      <t-form ref="formRef" :data="form" layout="vertical">
         <t-row :gutter="16">
           <t-col :span="12">
             <t-form-item name="assetNo" :label="$t('asset.assetNo')" required>
@@ -163,7 +163,7 @@
     </t-dialog>
     <!-- 借用弹窗 -->
     <t-dialog v-model:visible="borrowVisible" :title="$t('asset.borrow')" :width="480" @confirm="handleBorrowSave" :ok-loading="saving">
-      <t-form :data="borrowForm" layout="vertical">
+      <t-form ref="borrowFormRef" :data="borrowForm" layout="vertical">
         <t-form-item name="borrowerName" :label="$t('asset.borrowerName')" required>
           <t-input v-model="borrowForm.borrowerName" :placeholder="$t('common.inputPlaceholder')" />
         </t-form-item>
@@ -192,7 +192,7 @@
 <script setup lang="ts">
 import { PERM } from '@/utils/constants'
 import { ref, computed, reactive, onMounted } from 'vue'
-import { MessagePlugin } from 'tdesign-vue-next'
+import { MessagePlugin, type FormInstanceFunctions } from 'tdesign-vue-next'
 import { getAssetPageApi, addAssetApi, updateAssetApi, deleteAssetApi, scrapAssetApi, borrowAssetApi, returnAssetApi, getBorrowRecordsApi, getCategoryListApi, type AssetItem, type AssetBorrowRecord, type AssetCategory } from '@/api/asset'
 import { useI18n } from 'vue-i18n'
 
@@ -217,7 +217,9 @@ const searchForm = reactive({
 
 const pagination = reactive({ current: 1, pageSize: 10, total: 0 })
 
+const formRef = ref<FormInstanceFunctions>()
 const form = reactive<Partial<AssetItem>>({})
+const borrowFormRef = ref<FormInstanceFunctions>()
 const borrowForm = reactive<{ borrowerName: string; expectReturnTime?: string; remark?: string }>({ borrowerName: '' })
 
 const categoryMap: Record<string, string> = {
@@ -304,6 +306,8 @@ function handleEdit(record: AssetItem) {
 }
 
 async function handleSave() {
+  // tdesign 1.20.7 的 validate() 通过时返回 true；用 !== true 判定「未通过」
+  if ((await formRef.value?.validate()) !== true) return
   if (!form.assetNo || !form.assetName) {
     MessagePlugin.warning(t('common.msg.assetNoNameRequired'))
     return
@@ -344,6 +348,8 @@ function handleBorrow(record: AssetItem) {
 }
 
 async function handleBorrowSave() {
+  // tdesign 1.20.7 的 validate() 通过时返回 true；用 !== true 判定「未通过」
+  if ((await borrowFormRef.value?.validate()) !== true) return
   if (!borrowForm.borrowerName) {
     MessagePlugin.warning(t('asset.borrowerNameRequired'))
     return

@@ -87,7 +87,7 @@
       @confirm="onFormConfirm"
       @cancel="formDialogVisible = false"
     >
-      <t-form :data="formData" layout="vertical">
+      <t-form ref="formDataRef" :data="formData" layout="vertical">
         <t-form-item name="roleName" :label="$t('role.roleName')" :rules="[{ required: true, message: $t('role.roleName') }]">
           <t-input v-model="formData.roleName" :placeholder="$t('role.roleName')" />
         </t-form-item>
@@ -154,7 +154,7 @@
 <script setup lang="ts">
 import { PERM } from '@/utils/constants'
 import { ref, reactive, computed, onMounted } from 'vue'
-import { MessagePlugin, DialogPlugin } from 'tdesign-vue-next'
+import { MessagePlugin, DialogPlugin, type FormInstanceFunctions } from 'tdesign-vue-next'
 import { useI18n } from 'vue-i18n'
 import {
   getRoleListApi,
@@ -294,6 +294,7 @@ const defaultFormData = {
   remark: '',
 }
 
+const formDataRef = ref<FormInstanceFunctions>()
 const formData = reactive({ ...defaultFormData })
 
 function handleAdd() {
@@ -316,6 +317,8 @@ function handleEdit(row: SysRole) {
 }
 
 async function onFormConfirm() {
+  // tdesign 1.20.7 的 validate() 通过时返回 true；用 !== true 判定「未通过」
+  if ((await formDataRef.value?.validate()) !== true) return
   try {
     const payload = { ...formData, roleSort: Number(formData.roleSort) || 0 }
     if (formType.value === 'add') {

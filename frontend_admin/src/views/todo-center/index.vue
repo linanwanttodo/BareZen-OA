@@ -93,7 +93,7 @@
           </t-descriptions>
         </t-card>
       </template>
-      <t-form :data="approveForm" layout="vertical">
+      <t-form ref="approveFormRef" :data="approveForm" layout="vertical">
         <t-form-item :label="$t('todoCenter.approveAction')" required>
           <t-radio-group v-model="approveForm.action" variant="default-filled">
             <t-radio value="pass">{{ $t('todoCenter.approvePass') }}</t-radio>
@@ -111,7 +111,7 @@
 <script setup lang="ts">
 import { PERM } from '@/utils/constants'
 import { ref, computed, reactive, onMounted, onActivated } from 'vue'
-import {  MessagePlugin  } from 'tdesign-vue-next'
+import { MessagePlugin, type FormInstanceFunctions } from 'tdesign-vue-next'
 import { getTodoPageApi, getTodoSummaryApi, type TodoItem } from '@/api/todo'
 import { approveLeaveApi } from '@/api/leave'
 import { approveVehicleApi } from '@/api/office'
@@ -126,6 +126,7 @@ const summary = reactive<{ leave?: number; vehicle?: number; total?: number }>({
 
 const pagination = reactive({ current: 1, pageSize: 10, total: 0 })
 
+const approveFormRef = ref<FormInstanceFunctions>()
 const approveForm = reactive<{ item: TodoItem | null; action: 'pass' | 'reject'; remark: string }>({
   item: null,
   action: 'pass',
@@ -156,6 +157,8 @@ function openApprove(record: TodoItem) {
 }
 
 async function handleApprove() {
+  // tdesign 1.20.7 的 validate() 通过时返回 true；用 !== true 判定「未通过」
+  if ((await approveFormRef.value?.validate()) !== true) return
   const item = approveForm.item
   if (!item) return
   approving.value = true

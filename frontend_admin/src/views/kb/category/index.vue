@@ -39,8 +39,8 @@
     <!-- 新增/编辑弹窗 -->
     <t-dialog v-model:visible="editVisible" :header="isEdit ? $t('kb.editCategory') : $t('kb.addCategory')"
              width="480px" @confirm="handleSave" @close="editVisible = false" :ok-loading="saving">
-      <t-form :data="form" layout="vertical">
-        <t-form-item name="name" :label="$t('kb.categoryName')" required>
+      <t-form ref="formRef" :data="form" layout="vertical">
+        <t-form-item name="name" :label="$t('kb.categoryName')" :rules="[{ required: true, message: t('kb.categoryName') }]">
           <t-input v-model="form.name" :placeholder="$t('common.inputPlaceholder')" />
         </t-form-item>
         <t-form-item name="sort" :label="$t('kb.categorySort')">
@@ -60,7 +60,7 @@
 <script setup lang="ts">
 import { PERM } from '@/utils/constants'
 import { ref, computed, reactive, onMounted } from 'vue'
-import {  MessagePlugin  } from 'tdesign-vue-next'
+import { MessagePlugin, type FormInstanceFunctions } from 'tdesign-vue-next'
 import { useI18n } from 'vue-i18n'
 import { getKbCategoryListApi, addKbCategoryApi, updateKbCategoryApi, deleteKbCategoryApi, type KbCategory } from '@/api/kb'
 
@@ -72,6 +72,7 @@ const editVisible = ref(false)
 const isEdit = ref(false)
 
 const form = reactive<Partial<KbCategory>>({})
+const formRef = ref<FormInstanceFunctions>()
 
 async function loadData() {
   loading.value = true
@@ -98,10 +99,8 @@ function handleEdit(record: KbCategory) {
 }
 
 async function handleSave() {
-  if (!form.name) {
-    MessagePlugin.warning(t('kb.categoryNameRequired'))
-    return
-  }
+  // validate() 通过时返回 true；用 !== true 判定「未通过」，否则校验成功反被拦下
+  if ((await formRef.value?.validate()) !== true) return
   saving.value = true
   try {
     if (isEdit.value) {

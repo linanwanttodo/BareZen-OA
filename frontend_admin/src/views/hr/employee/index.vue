@@ -72,15 +72,15 @@
     <!-- 编辑弹窗 -->
     <t-dialog v-model:visible="editVisible" :title="isEdit ? $t('hr.editEmployee') : $t('hr.addEmployee')"
              :width="600" @confirm="handleSave" @cancel="editVisible = false" :ok-loading="saving">
-      <t-form :data="form" layout="vertical">
+      <t-form ref="formRef" :data="form" layout="vertical">
         <t-row :gutter="16">
           <t-col :span="12">
-            <t-form-item name="empNo" :label="$t('hr.empNo')" required>
+            <t-form-item name="empNo" :label="$t('hr.empNo')" :rules="[{ required: true, message: t('validation.required', { field: t('hr.empNo') }) }]">
               <t-input v-model="form.empNo" :placeholder="$t('common.inputPlaceholder')" />
             </t-form-item>
           </t-col>
           <t-col :span="12">
-            <t-form-item name="name" :label="$t('hr.name')" required>
+            <t-form-item name="name" :label="$t('hr.name')" :rules="[{ required: true, message: t('validation.required', { field: t('hr.name') }) }]">
               <t-input v-model="form.name" :placeholder="$t('common.inputPlaceholder')" />
             </t-form-item>
           </t-col>
@@ -183,7 +183,7 @@
 <script setup lang="ts">
 import { PERM } from '@/utils/constants'
 import { ref, computed, reactive, onMounted } from 'vue'
-import { MessagePlugin } from 'tdesign-vue-next'
+import { MessagePlugin, type FormInstanceFunctions } from 'tdesign-vue-next'
 import { getEmployeePageApi, addEmployeeApi, updateEmployeeApi, deleteEmployeeApi, type HrEmployee } from '@/api/hr'
 import { getDeptTreeApi, type SysDept } from '@/api/dept'
 import { useI18n } from 'vue-i18n'
@@ -209,6 +209,7 @@ const pagination = reactive({
   total: 0,
 })
 
+const formRef = ref<FormInstanceFunctions>()
 const form = reactive<Partial<HrEmployee>>({})
 
 function genderText(gender: string | undefined): string {
@@ -283,8 +284,9 @@ function handleEdit(record: HrEmployee) {
 }
 
 async function handleSave() {
-  if (!form.empNo || !form.name) {
-    MessagePlugin.warning(t('common.msg.empNoNameRequired'))
+  // tdesign 1.20.7 的 validate() 通过时返回 true；用 !== true 判定「未通过」
+  if ((await formRef.value?.validate()) !== true) {
+    
     return
   }
   saving.value = true

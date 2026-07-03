@@ -109,7 +109,7 @@
 
     <!-- 新建文件夹 -->
     <t-dialog v-model:visible="createFolderVisible" :title="$t('file.createFolder')" @confirm="handleCreateFolder" @cancel="createFolderVisible = false">
-      <t-form :data="folderForm" layout="vertical">
+      <t-form ref="folderFormRef" :data="folderForm" layout="vertical">
         <t-form-item name="name" :label="$t('file.folderName')">
           <t-input v-model="folderForm.name" :placeholder="$t('file.folderNamePlaceholder')" @press-enter="handleCreateFolder" />
         </t-form-item>
@@ -118,7 +118,7 @@
 
     <!-- 重命名 -->
     <t-dialog v-model:visible="renameVisible" :title="$t('file.rename')" @confirm="handleRename" @cancel="renameVisible = false">
-      <t-form :data="renameForm" layout="vertical">
+      <t-form ref="renameFormRef" :data="renameForm" layout="vertical">
         <t-form-item name="name" :label="$t('file.fileName')">
           <t-input v-model="renameForm.name" :placeholder="$t('file.renamePlaceholder')" @press-enter="handleRename" />
         </t-form-item>
@@ -136,7 +136,7 @@
 import { PERM } from '@/utils/constants'
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { MessagePlugin } from 'tdesign-vue-next'
+import { MessagePlugin, type FormInstanceFunctions } from 'tdesign-vue-next'
 import { formatDateTime } from '@/utils/format'
 import {
   uploadFileApi,
@@ -270,6 +270,7 @@ function getDownloadFilename(header: string | undefined, fallback: string): stri
 
 // ============ 新建文件夹 ============
 const createFolderVisible = ref(false)
+const folderFormRef = ref<FormInstanceFunctions>()
 const folderForm = reactive({ name: '' })
 
 function openCreateFolder() {
@@ -278,6 +279,8 @@ function openCreateFolder() {
 }
 
 async function handleCreateFolder() {
+  // tdesign 1.20.7 的 validate() 通过时返回 true；用 !== true 判定「未通过」
+  if ((await folderFormRef.value?.validate()) !== true) return
   const name = folderForm.name.trim()
   if (!name) {
     MessagePlugin.warning(t('file.nameRequired'))
@@ -295,6 +298,7 @@ async function handleCreateFolder() {
 
 // ============ 重命名 ============
 const renameVisible = ref(false)
+const renameFormRef = ref<FormInstanceFunctions>()
 const renameForm = reactive({ name: '' })
 const renameTarget = ref<SysFileItem | null>(null)
 
@@ -305,6 +309,8 @@ function openRename(record: SysFileItem) {
 }
 
 async function handleRename() {
+  // tdesign 1.20.7 的 validate() 通过时返回 true；用 !== true 判定「未通过」
+  if ((await renameFormRef.value?.validate()) !== true) return
   const name = renameForm.name.trim()
   if (!name || !renameTarget.value) {
     MessagePlugin.warning(t('file.nameRequired'))
