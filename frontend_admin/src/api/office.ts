@@ -124,6 +124,11 @@ export function submitVehicleApi(data: Partial<OfficeVehicleRequest>) {
   return request.post<void>('/office/v1/vehicles', data)
 }
 
+/** 修改用车申请（仅本人、仅待审批状态） */
+export function updateVehicleApi(id: string, data: Partial<OfficeVehicleRequest>) {
+  return request.put<void>(`/office/v1/vehicles/${id}`, data)
+}
+
 /** 审批用车申请 */
 export function approveVehicleApi(id: string, action: 'pass' | 'reject', remark?: string) {
   return request.put<void>(`/office/v1/vehicles/${id}/approve`, null, {

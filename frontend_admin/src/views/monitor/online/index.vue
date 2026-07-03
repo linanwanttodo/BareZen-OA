@@ -19,11 +19,7 @@
           </div>
         </div>
       </template>
-        <div v-if="loading" class="flex items-center justify-center h-64">
-          <t-loading size="28px" :text="$t('common.loading')" />
-        </div>
-        <template v-else>
-            <t-table row-key="id" :data="tableData" :columns="tableColumns" :pagination="false">
+            <t-table :loading="loading" row-key="id" :data="tableData" :columns="tableColumns" :pagination="false" :hover="true" vertical-align="top">
     <template #col_0="{ row }">
                   <t-checkbox :model-value="selectedTokens.includes(rowKey(row))" @change="() => toggleRow(rowKey(row))" />
                 </template>
@@ -52,10 +48,9 @@
               @change="onPageChange"
             />
           </div>
-        </template>
     </t-card>
 
-    <t-dialog v-model="confirmDialogVisible" :header="$t('common.confirm')" @close="confirmDialogVisible = false">
+    <t-dialog v-model:visible="confirmDialogVisible" :header="$t('common.confirm')" @close="confirmDialogVisible = false">
       <p class="text-sm text-[var(--foreground)]">{{ confirmDialogTitle }}</p>
       <template #footer>
         <div class="flex justify-end gap-2">

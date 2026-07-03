@@ -146,12 +146,12 @@ onMounted(() => {
 .stat-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16px;
-  margin-bottom: 32px;
+  gap: var(--td-size-6);
+  margin-bottom: var(--td-size-10);
 }
 .stat-value {
-  margin-top: 4px;
-  font-size: 24px;
+  margin-top: var(--td-size-2);
+  font-size: var(--td-font-size-headline-small);
   font-weight: 600;
   color: var(--wecom-text-primary);
 }
@@ -162,25 +162,25 @@ onMounted(() => {
   justify-content: space-between;
   border: 1px solid var(--wecom-border);
   border-radius: var(--td-radius-small);
-  padding: 12px 16px;
+  padding: var(--td-size-5) var(--td-size-6);
 }
 .list-item:hover {
   background: var(--wecom-bg-hover);
 }
 /* 快捷入口卡片 */
 .quick-entry-card {
-  margin-top: 24px;
+  margin-top: var(--td-size-8);
 }
 .quick-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
+  gap: var(--td-size-5);
 }
 .quick-entry-btn {
   height: auto;
-  padding: 16px;
+  padding: var(--td-size-6);
   flex-direction: column;
-  gap: 8px;
+  gap: var(--td-size-4);
   white-space: normal;
 }
 .quick-entry-btn:hover {

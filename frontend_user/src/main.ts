@@ -18,7 +18,7 @@ import {
 import 'tdesign-vue-next/es/style/index.css'
 import 'tdesign-vue-next/es/message/style/index.css'
 import 'tdesign-vue-next/es/dialog/style/index.css'
-import './styles/tdesign-theme.css'
+
 import App from './App.vue'
 import router from './router'
 import { i18n } from './i18n'

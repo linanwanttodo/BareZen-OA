@@ -9,10 +9,10 @@
 
     <!-- 提交日志表单 -->
     <t-card class="mb-6" :title="formTitle">
-      <t-form :model="form" layout="vertical">
+      <t-form ref="formRef" :data="form" layout="vertical">
         <t-row :gutter="16">
           <t-col :span="8">
-            <t-form-item :label="$t('worklog.logType')" required>
+            <t-form-item :label="$t('worklog.logType')" required name="logType" :rules="[{ required: true, message: $t('validation.required', { field: $t('worklog.logType') }) }]">
               <t-select v-model="form.logType">
                 <t-option value="daily">{{ $t('worklog.typeDaily') }}</t-option>
                 <t-option value="weekly">{{ $t('worklog.typeWeekly') }}</t-option>
@@ -31,7 +31,7 @@
             </t-form-item>
           </t-col>
         </t-row>
-        <t-form-item :label="$t('worklog.content')" required>
+        <t-form-item :label="$t('worklog.content')" required name="content" :rules="[{ required: true, message: $t('validation.required', { field: $t('worklog.content') }) }]">
           <t-textarea v-model="form.content" :placeholder="$t('worklog.contentPlaceholder')" :auto-size="{ minRows: 6, maxRows: 14 }" />
         </t-form-item>
         <t-space>
@@ -91,9 +91,9 @@
     </t-card>
 
     <!-- 编辑弹窗 -->
-    <t-dialog v-model="editVisible" :title="$t('worklog.editTitle')" @confirm="handleEditSubmit" @cancel="editVisible = false">
-      <t-form :model="editForm" layout="vertical">
-        <t-form-item :label="$t('worklog.content')" required>
+    <t-dialog v-model:visible="editVisible" :header="$t('worklog.editTitle')" @confirm="handleEditSubmit" @cancel="editVisible = false">
+      <t-form ref="editFormRef" :data="editForm" layout="vertical">
+        <t-form-item :label="$t('worklog.content')" required name="content" :rules="[{ required: true, message: $t('validation.required', { field: $t('worklog.content') }) }]">
           <t-textarea v-model="editForm.content" :auto-size="{ minRows: 6, maxRows: 14 }" />
         </t-form-item>
       </t-form>
@@ -103,7 +103,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
-import { MessagePlugin } from 'tdesign-vue-next'
+import { MessagePlugin, type FormInstanceFunctions } from 'tdesign-vue-next'
 import { getMyWorkLogsApi, submitWorkLogApi, updateWorkLogApi, deleteWorkLogApi, type WorkLog } from '@/api/enterprise'
 import { useUserStore } from '@/stores/user'
 
@@ -114,9 +114,13 @@ const logs = ref<WorkLog[]>([])
 const logTypeFilter = ref('')
 const editingId = ref<string | null>(null)
 const editVisible = ref(false)
+const editFormRef = ref<FormInstanceFunctions>()
+
 const editForm = reactive({ content: '' })
 
 const pagination = reactive({ current: 1, pageSize: 10, total: 0 })
+
+const formRef = ref<FormInstanceFunctions>()
 
 const form = reactive<Partial<WorkLog>>({
   logType: 'daily',
@@ -137,6 +141,8 @@ async function loadLogs() {
 }
 
 async function handleSubmit() {
+  // 校验不通过则中止提交，字段错误就地显示
+  if (await formRef.value?.validate() !== true) return
   if (!form.content || !form.content.trim()) {
     MessagePlugin.warning('请填写日志内容')
     return
@@ -173,6 +179,8 @@ function cancelEdit() {
 }
 
 async function handleEditSubmit() {
+  // 校验不通过则中止提交，字段错误就地显示
+  if (await editFormRef.value?.validate() !== true) return
   if (!editForm.content || !editForm.content.trim()) {
     MessagePlugin.warning('请填写日志内容')
     return

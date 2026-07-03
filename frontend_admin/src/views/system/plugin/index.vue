@@ -11,8 +11,8 @@
         </div>
       </template>
 
-      <t-loading :loading="loading">
-        <t-table row-key="pluginId" :data="plugins" :columns="tableColumns" :pagination="false">
+      
+        <t-table :loading="loading" row-key="pluginId" :data="plugins" :columns="tableColumns" :pagination="false" :hover="true" vertical-align="top">
           <template #status="{ row }">
             <t-tag :theme="statusTheme(row.status)" variant="light">{{ statusText(row.status) }}</t-tag>
           </template>
@@ -33,7 +33,7 @@
           </template>
         </t-table>
         <t-empty v-if="!loading && !plugins.length" :description="$t('common.noData')" />
-      </t-loading>
+      
     </t-card>
   </div>
 </template>

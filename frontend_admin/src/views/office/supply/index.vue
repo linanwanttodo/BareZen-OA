@@ -9,12 +9,12 @@
     <!-- 用品管理 -->
     <template v-if="activeTab === 'supply'">
       <t-card class="mb-4">
-        <t-form :model="searchForm" layout="inline" @submit-success="handleSearch">
-          <t-form-item field="supplyName" :label="$t('supply.supplyName')">
-            <t-input v-model="searchForm.supplyName" :placeholder="$t('common.inputPlaceholder')" allow-clear style="width: 180px" />
+        <t-form :data="searchForm" :label-width="80" @submit-success="handleSearch">
+          <t-form-item name="supplyName" :label="$t('supply.supplyName')">
+            <t-input v-model="searchForm.supplyName" :placeholder="$t('common.inputPlaceholder')" allow-clear />
           </t-form-item>
-          <t-form-item field="category" :label="$t('supply.category')">
-            <t-select v-model="searchForm.category" :placeholder="$t('common.all')" allow-clear style="width: 140px">
+          <t-form-item name="category" :label="$t('supply.category')">
+            <t-select v-model="searchForm.category" :placeholder="$t('common.all')" allow-clear>
               <t-option value="stationery">{{ $t('supply.catStationery') }}</t-option>
               <t-option value="electronics">{{ $t('supply.catElectronics') }}</t-option>
               <t-option value="cleaning">{{ $t('supply.catCleaning') }}</t-option>
@@ -41,12 +41,12 @@
           </div>
         </template>
 
-        <t-loading :loading="loading">
-            <t-table row-key="id" :data="tableData" :columns="tableColumns" :pagination="false">
+        
+            <t-table :loading="loading" row-key="id" :data="tableData" :columns="tableColumns" :pagination="false" :hover="true" vertical-align="top">
     <template #category="{ row }">{{ categoryText(row.category) }}</template>
     <template #operate="{ row }">
                 <t-space>
-                  <t-button v-permission="PERM.office.supplyEdit" size="small" @click="openSupplyEdit(row)">{{ $t('common.edit') }}</t-button>
+                  <t-link theme="primary" v-permission="PERM.office.supplyEdit" @click="openSupplyEdit(row)">{{ $t('common.edit') }}</t-link>
                   <t-popconfirm :content="$t('common.deleteConfirm')" @confirm="handleDeleteSupply(row)">
                     <t-button v-permission="PERM.office.supplyDelete" size="small" theme="danger">{{ $t('common.delete') }}</t-button>
                   </t-popconfirm>
@@ -57,7 +57,7 @@
           <div v-if="pagination.total > 0" class="mt-4 flex justify-end">
             <t-pagination v-model:current="pagination.current" :total="pagination.total" :page-size="pagination.pageSize" @change="loadSupplies" />
           </div>
-        </t-loading>
+        
       </t-card>
     </template>
 
@@ -67,7 +67,7 @@
         <template #title>
           <div class="flex items-center justify-between w-full">
             <span>{{ $t('supply.requestList') }}</span>
-            <t-select v-model="requestStatusFilter" :placeholder="$t('common.all')" allow-clear style="width: 140px" @change="loadRequests">
+            <t-select v-model="requestStatusFilter" :placeholder="$t('common.all')" allow-clear @change="loadRequests">
               <t-option value="0">{{ $t('supply.statusPending') }}</t-option>
               <t-option value="1">{{ $t('supply.statusApproved') }}</t-option>
               <t-option value="2">{{ $t('supply.statusRejected') }}</t-option>
@@ -76,19 +76,19 @@
           </div>
         </template>
 
-        <t-loading :loading="requestLoading">
-            <t-table row-key="id" :data="requestData" :columns="tableColumns2" :pagination="false">
+        
+            <t-table :loading="requestLoading" row-key="id" :data="requestData" :columns="tableColumns2" :pagination="false" :hover="true" vertical-align="top">
     <template #status="{ row }">
-                <t-tag :color="statusColor(row.status)">{{ statusText(row.status) }}</t-tag>
+                <t-tag :color="statusColor(row.status)" variant="light">{{ statusText(row.status) }}</t-tag>
               </template>
     <template #approverName="{ row }">{{ row.approverName || '-' }}</template>
     <template #operate="{ row }">
                 <t-space>
-                  <t-button v-if="row.status === '0'" v-permission="PERM.office.supplyApprove" size="small" theme="primary" @click="openApprove(row)">
+                  <t-link theme="primary" v-if="row.status === '0'" v-permission="PERM.office.supplyApprove" @click="openApprove(row)">
                     {{ $t('supply.approve') }}
-                  </t-button>
-                  <t-button v-if="row.approveRemark" size="small" @click="showRemark(row)">{{ $t('supply.viewRemark') }}</t-button>
-                  <t-button size="small" @click="openFlow(row)">{{ $t('supply.flow') }}</t-button>
+                  </t-link>
+                  <t-link theme="primary" v-if="row.approveRemark" @click="showRemark(row)">{{ $t('supply.viewRemark') }}</t-link>
+                  <t-link theme="primary" @click="openFlow(row)">{{ $t('supply.flow') }}</t-link>
                   <t-popconfirm :content="$t('common.deleteConfirm')" @confirm="handleDeleteRequest(row)">
                     <t-button v-permission="PERM.office.supplyDelete" size="small" theme="danger">{{ $t('common.delete') }}</t-button>
                   </t-popconfirm>
@@ -99,20 +99,20 @@
           <div v-if="requestPagination.total > 0" class="mt-4 flex justify-end">
             <t-pagination v-model:current="requestPagination.current" :total="requestPagination.total" :page-size="requestPagination.pageSize" @change="loadRequests" />
           </div>
-        </t-loading>
+        
       </t-card>
     </template>
 
     <!-- 用品新增/编辑弹窗 -->
-    <t-dialog v-model="supplyDialogVisible" :title="isSupplyEdit ? $t('supply.editSupply') : $t('supply.addSupply')"
+    <t-dialog v-model:visible="supplyDialogVisible" :title="isSupplyEdit ? $t('supply.editSupply') : $t('supply.addSupply')"
              :width="520" @confirm="handleSaveSupply" @cancel="supplyDialogVisible = false" :ok-loading="saving">
-      <t-form :model="supplyForm" layout="vertical">
-        <t-form-item field="supplyName" :label="$t('supply.supplyName')" required>
+      <t-form :data="supplyForm" layout="vertical">
+        <t-form-item name="supplyName" :label="$t('supply.supplyName')" required>
           <t-input v-model="supplyForm.supplyName" :placeholder="$t('common.inputPlaceholder')" />
         </t-form-item>
         <t-row :gutter="16">
           <t-col :span="12">
-            <t-form-item field="category" :label="$t('supply.category')">
+            <t-form-item name="category" :label="$t('supply.category')">
               <t-select v-model="supplyForm.category">
                 <t-option value="stationery">{{ $t('supply.catStationery') }}</t-option>
                 <t-option value="electronics">{{ $t('supply.catElectronics') }}</t-option>
@@ -122,29 +122,29 @@
             </t-form-item>
           </t-col>
           <t-col :span="12">
-            <t-form-item field="spec" :label="$t('supply.spec')">
+            <t-form-item name="spec" :label="$t('supply.spec')">
               <t-input v-model="supplyForm.spec" :placeholder="$t('common.inputPlaceholder')" />
             </t-form-item>
           </t-col>
           <t-col :span="12">
-            <t-form-item field="stock" :label="$t('supply.stock')" required>
+            <t-form-item name="stock" :label="$t('supply.stock')" required>
               <t-input-number v-model="supplyForm.stock" :min="0" style="width: 100%" />
             </t-form-item>
           </t-col>
           <t-col :span="12">
-            <t-form-item field="unit" :label="$t('supply.unit')">
+            <t-form-item name="unit" :label="$t('supply.unit')">
               <t-input v-model="supplyForm.unit" :placeholder="$t('common.inputPlaceholder')" />
             </t-form-item>
           </t-col>
         </t-row>
-        <t-form-item field="remark" :label="$t('common.remark')">
+        <t-form-item name="remark" :label="$t('common.remark')">
           <t-textarea v-model="supplyForm.remark" :placeholder="$t('common.inputPlaceholder')" :max-length="500" show-word-limit />
         </t-form-item>
       </t-form>
     </t-dialog>
 
     <!-- 流程进度弹窗 -->
-    <t-dialog v-model="flowVisible" :title="$t('supply.flow')" :width="520" footer-only>
+    <t-dialog v-model:visible="flowVisible" :title="$t('supply.flow')" :width="520" footer-only>
       <t-steps v-if="flowNodes.length" direction="vertical" :current="currentStep">
         <t-step-item
           v-for="node in flowNodes"
@@ -157,16 +157,16 @@
     </t-dialog>
 
     <!-- 审批弹窗 -->
-    <t-dialog v-model="approveVisible" :title="$t('supply.approve')" :width="480"
+    <t-dialog v-model:visible="approveVisible" :title="$t('supply.approve')" :width="480"
              @confirm="handleApprove" @cancel="approveVisible = false" :ok-loading="approving">
-      <t-form :model="approveForm" layout="vertical">
+      <t-form :data="approveForm" layout="vertical">
         <t-form-item :label="$t('supply.approveAction')" required>
           <t-radio-group v-model="approveForm.action" variant="default-filled">
             <t-radio value="pass">{{ $t('supply.approvePass') }}</t-radio>
             <t-radio value="reject">{{ $t('supply.approveReject') }}</t-radio>
           </t-radio-group>
         </t-form-item>
-        <t-form-item field="remark" :label="$t('supply.approveRemark')">
+        <t-form-item name="remark" :label="$t('supply.approveRemark')">
           <t-textarea v-model="approveForm.remark" :placeholder="$t('common.inputPlaceholder')" :max-length="500" show-word-limit />
         </t-form-item>
       </t-form>

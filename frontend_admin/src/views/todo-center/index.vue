@@ -31,7 +31,7 @@
               <div class="text-sm text-[var(--muted-foreground)]">{{ $t('todoCenter.vehicle') }}</div>
               <div class="mt-1 text-2xl font-semibold">{{ summary.vehicle ?? '-' }}</div>
             </div>
-            <icon-drive class="text-2xl" style="color: var(--primary)" />
+            <icon-copy class="text-2xl" style="color: var(--primary)" />
           </div>
         </t-card>
       </t-col>
@@ -43,22 +43,22 @@
         <span>{{ $t('todoCenter.pendingList') }}</span>
       </template>
 
-      <t-loading :loading="loading">
-          <t-table row-key="id" :data="tableData" :columns="tableColumns" :pagination="false">
+      
+          <t-table :loading="loading" row-key="id" :data="tableData" :columns="tableColumns" :pagination="false" :hover="true" vertical-align="top">
     <template #type="{ row }">
-                <t-tag :theme="row.type === 'leave' ? 'primary' : 'warning'">{{ row.typeName }}</t-tag>
+                <t-tag :theme="row.type === 'leave' ? 'primary' : 'warning'" variant="light">{{ row.typeName }}</t-tag>
               </template>
     <template #startTime="{ row }">
                 <span class="text-sm">{{ row.startTime }}<br />{{ row.endTime }}</span>
               </template>
     <template #operate="{ row }">
                 <t-space>
-                  <t-button v-permission="PERM.hr.leaveApprove" v-if="row.type === 'leave'" size="small" theme="primary" @click="openApprove(row)">
+                  <t-link theme="primary" v-permission="PERM.hr.leaveApprove" v-if="row.type === 'leave'" @click="openApprove(row)">
                     {{ $t('todoCenter.approve') }}
-                  </t-button>
-                  <t-button v-permission="PERM.office.vehicleApprove" v-if="row.type === 'vehicle'" size="small" theme="primary" @click="openApprove(row)">
+                  </t-link>
+                  <t-link theme="primary" v-permission="PERM.office.vehicleApprove" v-if="row.type === 'vehicle'" @click="openApprove(row)">
                     {{ $t('todoCenter.approve') }}
-                  </t-button>
+                  </t-link>
                 </t-space>
               </template>
   </t-table>
@@ -71,11 +71,11 @@
             @change="loadData"
           />
         </div>
-      </t-loading>
+      
     </t-card>
 
     <!-- 审批弹窗 -->
-    <t-dialog v-model="approveVisible" :header="$t('todoCenter.approve')" width="520px"
+    <t-dialog v-model:visible="approveVisible" :header="$t('todoCenter.approve')" width="520px"
              @confirm="handleApprove" @close="approveVisible = false" :ok-loading="approving"
              :ok-button-props="{ disabled: !approveForm.item }">
       <template v-if="approveForm.item">
@@ -93,7 +93,7 @@
           </t-descriptions>
         </t-card>
       </template>
-      <t-form :model="approveForm" layout="vertical">
+      <t-form :data="approveForm" layout="vertical">
         <t-form-item :label="$t('todoCenter.approveAction')" required>
           <t-radio-group v-model="approveForm.action" variant="default-filled">
             <t-radio value="pass">{{ $t('todoCenter.approvePass') }}</t-radio>

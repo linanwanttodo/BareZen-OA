@@ -40,7 +40,7 @@
       @confirm="onEditSubmit"
       @close="showEditDialog = false"
     >
-      <t-form :model="editForm" layout="vertical">
+      <t-form :data="editForm" layout="vertical">
         <t-form-item name="nickName" :label="$t('profile.nickName')" :rules="formRules.nickName">
           <t-input v-model="editForm.nickName" :placeholder="$t('profile.nickNamePlaceholder')" />
         </t-form-item>

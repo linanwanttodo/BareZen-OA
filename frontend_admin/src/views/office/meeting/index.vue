@@ -2,12 +2,12 @@
   <div class="page-container">
     <!-- 搜索区域 -->
     <t-card class="mb-4">
-      <t-form :model="searchForm" layout="inline" @submit-success="handleSearch">
-        <t-form-item field="title" :label="$t('office.bookingTitle')">
-          <t-input v-model="searchForm.title" :placeholder="$t('common.inputPlaceholder')" allow-clear style="width: 200px" />
+      <t-form :data="searchForm" :label-width="80" @submit-success="handleSearch">
+        <t-form-item name="title" :label="$t('office.bookingTitle')">
+          <t-input v-model="searchForm.title" :placeholder="$t('common.inputPlaceholder')" allow-clear />
         </t-form-item>
-        <t-form-item field="roomId" :label="$t('office.roomName')">
-          <t-select v-model="searchForm.roomId" :placeholder="$t('common.all')" allow-clear style="width: 180px">
+        <t-form-item name="roomId" :label="$t('office.roomName')">
+          <t-select v-model="searchForm.roomId" :placeholder="$t('common.all')" allow-clear>
             <t-option v-for="room in roomOptions" :key="room.id" :value="room.id">{{ room.roomName }}</t-option>
           </t-select>
         </t-form-item>
@@ -67,14 +67,14 @@
       <template #title>
         <span>{{ $t('office.bookingList') }}</span>
       </template>
-      <t-loading :loading="loading">
-          <t-table row-key="id" :data="tableData" :columns="tableColumns" :pagination="false">
+      
+          <t-table :loading="loading" row-key="id" :data="tableData" :columns="tableColumns" :pagination="false" :hover="true" vertical-align="top">
     <template #startTime="{ row }">
                 <span class="text-sm">{{ row.startTime }} ~ {{ row.endTime }}</span>
               </template>
     <template #col_5="{ row }">
                 <t-space>
-                  <t-button v-permission="PERM.office.meetingEdit" size="small" @click="openBookingEdit(row)">{{ $t('common.edit') }}</t-button>
+                  <t-link theme="primary" v-permission="PERM.office.meetingEdit" @click="openBookingEdit(row)">{{ $t('common.edit') }}</t-link>
                   <t-popconfirm :content="$t('common.deleteConfirm')" @confirm="handleDeleteBooking(row)">
                     <t-button v-permission="PERM.office.meetingDelete" size="small" theme="danger">{{ $t('common.delete') }}</t-button>
                   </t-popconfirm>
@@ -89,26 +89,26 @@
             @change="loadBookings"
           />
         </div>
-      </t-loading>
+      
     </t-card>
 
     <!-- 新增会议室弹窗 -->
-    <t-dialog v-model="roomDialogVisible" :title="isRoomEdit ? $t('office.editRoom') : $t('office.addRoom')" :width="520"
+    <t-dialog v-model:visible="roomDialogVisible" :title="isRoomEdit ? $t('office.editRoom') : $t('office.addRoom')" :width="520"
              @confirm="handleSaveRoom" @cancel="cancelRoomEdit" :ok-loading="saving">
-      <t-form :model="roomForm" layout="vertical">
-        <t-form-item field="roomName" :label="$t('office.roomName')" required>
+      <t-form :data="roomForm" layout="vertical">
+        <t-form-item name="roomName" :label="$t('office.roomName')" required>
           <t-input v-model="roomForm.roomName" :placeholder="$t('common.inputPlaceholder')" />
         </t-form-item>
-        <t-form-item field="capacity" :label="$t('office.capacity')">
+        <t-form-item name="capacity" :label="$t('office.capacity')">
           <t-input-number v-model="roomForm.capacity" :min="0" style="width: 100%" />
         </t-form-item>
-        <t-form-item field="location" :label="$t('office.location')">
+        <t-form-item name="location" :label="$t('office.location')">
           <t-input v-model="roomForm.location" :placeholder="$t('common.inputPlaceholder')" />
         </t-form-item>
-        <t-form-item field="equipment" :label="$t('office.equipment')">
+        <t-form-item name="equipment" :label="$t('office.equipment')">
           <t-input v-model="roomForm.equipment" :placeholder="$t('common.inputPlaceholder')" />
         </t-form-item>
-        <t-form-item field="status" :label="$t('common.status')">
+        <t-form-item name="status" :label="$t('common.status')">
           <t-select v-model="roomForm.status">
             <t-option value="0">{{ $t('office.roomAvailable') }}</t-option>
             <t-option value="1">{{ $t('office.roomDisabled') }}</t-option>
@@ -118,28 +118,28 @@
     </t-dialog>
 
     <!-- 会议预订弹窗（新增/编辑共用） -->
-    <t-dialog v-model="bookingVisible" :title="isBookingEdit ? $t('office.editBooking') : $t('office.bookMeeting')" :width="560"
+    <t-dialog v-model:visible="bookingVisible" :title="isBookingEdit ? $t('office.editBooking') : $t('office.bookMeeting')" :width="560"
              @confirm="handleSaveBooking" @cancel="cancelBooking" :ok-loading="saving">
-      <t-form :model="bookingForm" layout="vertical">
-        <t-form-item field="roomId" :label="$t('office.roomName')" required>
+      <t-form :data="bookingForm" layout="vertical">
+        <t-form-item name="roomId" :label="$t('office.roomName')" required>
           <t-select v-model="bookingForm.roomId" :placeholder="$t('common.selectPlaceholder')">
             <t-option v-for="room in roomOptions" :key="room.id" :value="room.id">{{ room.roomName }}</t-option>
           </t-select>
         </t-form-item>
-        <t-form-item field="title" :label="$t('office.bookingTitle')" required>
+        <t-form-item name="title" :label="$t('office.bookingTitle')" required>
           <t-input v-model="bookingForm.title" :placeholder="$t('common.inputPlaceholder')" />
         </t-form-item>
-        <t-form-item field="timeRange" :label="$t('office.timeRange')" required>
+        <t-form-item name="timeRange" :label="$t('office.timeRange')" required>
           
-<t-date-picker v-model="bookingForm.startTime" show-time value-type="YYYY-MM-DD HH:mm" style="width: 240px" :placeholder="$t('office.startTime')" />
+<t-date-picker v-model="bookingForm.startTime" show-time value-type="YYYY-MM-DD HH:mm" :placeholder="$t('office.startTime')" />
           <span class="mx-2">~</span>
           
-<t-date-picker v-model="bookingForm.endTime" show-time value-type="YYYY-MM-DD HH:mm" style="width: 240px" :placeholder="$t('office.endTime')" />
+<t-date-picker v-model="bookingForm.endTime" show-time value-type="YYYY-MM-DD HH:mm" :placeholder="$t('office.endTime')" />
         </t-form-item>
-        <t-form-item field="attendees" :label="$t('office.attendees')">
+        <t-form-item name="attendees" :label="$t('office.attendees')">
           <t-input v-model="bookingForm.attendees" :placeholder="$t('office.attendeesPlaceholder')" />
         </t-form-item>
-        <t-form-item field="remark" :label="$t('common.remark')">
+        <t-form-item name="remark" :label="$t('common.remark')">
           <t-textarea v-model="bookingForm.remark" :placeholder="$t('common.inputPlaceholder')" :max-length="500" show-word-limit />
         </t-form-item>
       </t-form>

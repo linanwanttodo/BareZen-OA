@@ -1,9 +1,9 @@
 <template>
   <div class="page-container">
     <t-card class="mb-4">
-      <t-form :model="{ tableName: searchKey }" layout="inline" @submit-success="handleSearch">
-        <t-form-item field="tableName" :label="$t('tool.gen.tableNameLabel')">
-          <t-input v-model="searchKey" :placeholder="$t('tool.gen.searchPlaceholder')" allow-clear style="width: 240px" />
+      <t-form :data="{ tableName: searchKey }" :label-width="80" @submit-success="handleSearch">
+        <t-form-item name="tableName" :label="$t('tool.gen.tableNameLabel')">
+          <t-input v-model="searchKey" :placeholder="$t('tool.gen.searchPlaceholder')" allow-clear />
         </t-form-item>
         <t-form-item>
           <t-space>
@@ -19,8 +19,8 @@
         <span>{{ $t('tool.gen.title') }}</span>
       </template>
 
-      <t-loading :loading="loading">
-          <t-table row-key="tableName" :data="tableList" :columns="tableColumns" :pagination="false">
+      
+          <t-table :loading="loading" row-key="tableName" :data="tableList" :columns="tableColumns" :pagination="false" :hover="true" vertical-align="top">
     <template #tableName="{ row }">
                 <span class="font-mono">{{ row.tableName }}</span>
               </template>
@@ -29,16 +29,16 @@
               </template>
     <template #col_3="{ row }">
                 <t-space>
-                  <t-button size="small" @click="handlePreview(row)">{{ $t('tool.gen.preview') }}</t-button>
-                  <t-button size="small" theme="primary" @click="handleGenerate(row)">{{ $t('tool.gen.generate') }}</t-button>
+                  <t-link theme="primary" @click="handlePreview(row)">{{ $t('tool.gen.preview') }}</t-link>
+                  <t-link theme="primary" @click="handleGenerate(row)">{{ $t('tool.gen.generate') }}</t-link>
                 </t-space>
               </template>
   </t-table>
-      </t-loading>
+      
     </t-card>
 
     <!-- 代码预览弹窗 -->
-    <t-dialog v-model="previewVisible" :title="$t('tool.gen.codePreview')" :footer="false" :style="{ width: '80%' }" @cancel="previewVisible = false">
+    <t-dialog v-model:visible="previewVisible" :title="$t('tool.gen.codePreview')" :footer="false" :style="{ width: '80%' }" @cancel="previewVisible = false">
       <t-tabs v-if="previewData">
         <t-tab-panel v-for="(code, filename) in previewData" :key="filename" :title="getFileName(filename)">
           <div class="flex justify-between mb-2">

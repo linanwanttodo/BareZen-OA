@@ -1,4 +1,7 @@
 export default {
+  validation: {
+    required: '{field} is required',
+  },
   common: {
     loading: 'Loading...',
     noData: 'No Data',
@@ -25,6 +28,7 @@ export default {
     loginTitle: 'BareZen Portal',
     welcomeBack: 'Welcome Back',
     loginSuccess: 'Login Successful',
+    rememberMe: 'Remember Me',
   },
   dashboard: {
     title: 'Dashboard',

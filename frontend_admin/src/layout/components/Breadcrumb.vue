@@ -14,6 +14,7 @@
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
+import { labelFromPath } from '@/utils/menuLabel'
 
 interface Crumb {
   path: string
@@ -25,24 +26,31 @@ const { t, te } = useI18n()
 
 /**
  * 面包屑层级：取 route.matched 中有 title 的记录，
- * title 优先走 i18n（route.* 键名约定，与 TagsView/菜单一致），无翻译则用原值。
+ * 文案按 path 末段推导 route.* 键（与导航栏、标签页同一套约定），无翻译则用原值。
  */
 const crumbs = computed<Crumb[]>(() => {
   return route.matched
     .filter((r) => r.meta?.title)
     .map((r) => {
       const raw = r.meta.title as string
-      const key = `route.${String(r.name)}`
-      const title = te(key) ? t(key) : raw
-      return { path: r.path, title }
+      return { path: r.path, title: labelFromPath(r.path, raw, t, te) }
     })
 })
 </script>
 
 <style scoped>
+/* 位于 .bz-content 内部，随内容区一起留白，故不设底色与边框 */
 .page-breadcrumb {
-  padding: var(--wecom-spacing-sm) var(--wecom-spacing-xl);
-  background: var(--wecom-bg-card);
-  border-bottom: 1px solid var(--wecom-border);
+  font-size: var(--td-font-size-body-small);
+  line-height: var(--td-line-height-body-small);
+}
+/* TDesign 在 __inner 上重复声明了 font: body-medium，只改根节点会被内层覆盖 */
+.page-breadcrumb :deep(.t-breadcrumb__inner) {
+  font-size: var(--td-font-size-body-small);
+  line-height: var(--td-line-height-body-small);
+}
+/* 分隔符图标默认 body-large(16px)，比文字还大，一并收小 */
+.page-breadcrumb :deep(.t-breadcrumb__item .t-icon) {
+  font-size: var(--td-font-size-body-small);
 }
 </style>

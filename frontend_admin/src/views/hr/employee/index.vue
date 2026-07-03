@@ -2,15 +2,15 @@
   <div class="page-container">
     <!-- 搜索区域 -->
     <t-card class="mb-4">
-      <t-form :model="searchForm" layout="inline" @submit-success="handleSearch">
-        <t-form-item field="name" :label="$t('hr.name')">
-          <t-input v-model="searchForm.name" :placeholder="$t('common.inputPlaceholder')" allow-clear style="width: 180px" />
+      <t-form :data="searchForm" :label-width="80" @submit-success="handleSearch">
+        <t-form-item name="name" :label="$t('hr.name')">
+          <t-input v-model="searchForm.name" :placeholder="$t('common.inputPlaceholder')" allow-clear />
         </t-form-item>
-        <t-form-item field="empNo" :label="$t('hr.empNo')">
-          <t-input v-model="searchForm.empNo" :placeholder="$t('common.inputPlaceholder')" allow-clear style="width: 180px" />
+        <t-form-item name="empNo" :label="$t('hr.empNo')">
+          <t-input v-model="searchForm.empNo" :placeholder="$t('common.inputPlaceholder')" allow-clear />
         </t-form-item>
-        <t-form-item field="status" :label="$t('common.status')">
-          <t-select v-model="searchForm.status" :placeholder="$t('common.all')" allow-clear style="width: 140px">
+        <t-form-item name="status" :label="$t('common.status')">
+          <t-select v-model="searchForm.status" :placeholder="$t('common.all')" allow-clear>
             <t-option value="0">{{ $t('hr.statusProbation') }}</t-option>
             <t-option value="1">{{ $t('hr.statusActive') }}</t-option>
             <t-option value="2">{{ $t('hr.statusLeft') }}</t-option>
@@ -37,8 +37,8 @@
         </div>
       </template>
 
-      <t-loading :loading="loading">
-          <t-table row-key="id" :data="tableData" :columns="tableColumns" :pagination="false">
+      
+          <t-table :loading="loading" row-key="id" :data="tableData" :columns="tableColumns" :pagination="false" :hover="true" vertical-align="top">
     <template #gender="{ row }">
                 {{ genderText(row.gender) }}
               </template>
@@ -46,11 +46,11 @@
                 {{ employmentText(row.employmentType) }}
               </template>
     <template #status="{ row }">
-                <t-tag :color="statusColor(row.status)">{{ statusText(row.status) }}</t-tag>
+                <t-tag :color="statusColor(row.status)" variant="light">{{ statusText(row.status) }}</t-tag>
               </template>
     <template #col_9="{ row }">
                 <t-space>
-                  <t-button v-permission="PERM.hr.employeeEdit" size="small" @click="handleEdit(row)">{{ $t('common.edit') }}</t-button>
+                  <t-link theme="primary" v-permission="PERM.hr.employeeEdit" @click="handleEdit(row)">{{ $t('common.edit') }}</t-link>
                   <t-popconfirm :content="$t('common.deleteConfirm')" @confirm="handleDelete(row)">
                     <t-button v-permission="PERM.hr.employeeDelete" size="small" theme="danger">{{ $t('common.delete') }}</t-button>
                   </t-popconfirm>
@@ -66,26 +66,26 @@
             @change="loadData"
           />
         </div>
-      </t-loading>
+      
     </t-card>
 
     <!-- 编辑弹窗 -->
-    <t-dialog v-model="editVisible" :title="isEdit ? $t('hr.editEmployee') : $t('hr.addEmployee')"
+    <t-dialog v-model:visible="editVisible" :title="isEdit ? $t('hr.editEmployee') : $t('hr.addEmployee')"
              :width="600" @confirm="handleSave" @cancel="editVisible = false" :ok-loading="saving">
-      <t-form :model="form" layout="vertical">
+      <t-form :data="form" layout="vertical">
         <t-row :gutter="16">
           <t-col :span="12">
-            <t-form-item field="empNo" :label="$t('hr.empNo')" required>
+            <t-form-item name="empNo" :label="$t('hr.empNo')" required>
               <t-input v-model="form.empNo" :placeholder="$t('common.inputPlaceholder')" />
             </t-form-item>
           </t-col>
           <t-col :span="12">
-            <t-form-item field="name" :label="$t('hr.name')" required>
+            <t-form-item name="name" :label="$t('hr.name')" required>
               <t-input v-model="form.name" :placeholder="$t('common.inputPlaceholder')" />
             </t-form-item>
           </t-col>
           <t-col :span="12">
-            <t-form-item field="gender" :label="$t('hr.gender')">
+            <t-form-item name="gender" :label="$t('hr.gender')">
               <t-select v-model="form.gender">
                 <t-option value="0">{{ $t('hr.genderMale') }}</t-option>
                 <t-option value="1">{{ $t('hr.genderFemale') }}</t-option>
@@ -94,7 +94,7 @@
             </t-form-item>
           </t-col>
           <t-col :span="12">
-            <t-form-item field="deptId" :label="$t('hr.deptName')">
+            <t-form-item name="deptId" :label="$t('hr.deptName')">
               
 <!-- TODO(tree-select): data 字段 key/title 需转为 value/label --><t-tree-select
                 v-model="form.deptId"
@@ -108,39 +108,39 @@
             </t-form-item>
           </t-col>
           <t-col :span="12">
-            <t-form-item field="position" :label="$t('hr.position')">
+            <t-form-item name="position" :label="$t('hr.position')">
               <t-input v-model="form.position" :placeholder="$t('common.inputPlaceholder')" />
             </t-form-item>
           </t-col>
           <t-col :span="12">
-            <t-form-item field="phone" :label="$t('hr.phone')">
+            <t-form-item name="phone" :label="$t('hr.phone')">
               <t-input v-model="form.phone" :placeholder="$t('common.inputPlaceholder')" />
             </t-form-item>
           </t-col>
           <t-col :span="12">
-            <t-form-item field="email" :label="$t('hr.email')">
+            <t-form-item name="email" :label="$t('hr.email')">
               <t-input v-model="form.email" :placeholder="$t('common.inputPlaceholder')" />
             </t-form-item>
           </t-col>
           <t-col :span="12">
-            <t-form-item field="idCard" :label="$t('hr.idCard')">
+            <t-form-item name="idCard" :label="$t('hr.idCard')">
               <t-input v-model="form.idCard" :placeholder="$t('common.inputPlaceholder')" />
             </t-form-item>
           </t-col>
           <t-col :span="12">
-            <t-form-item field="hireDate" :label="$t('hr.hireDate')">
+            <t-form-item name="hireDate" :label="$t('hr.hireDate')">
               
 <t-date-picker v-model="form.hireDate" style="width: 100%"  value-type="YYYY-MM-DD" />
             </t-form-item>
           </t-col>
           <t-col :span="12">
-            <t-form-item field="leaveDate" :label="$t('hr.leaveDate')">
+            <t-form-item name="leaveDate" :label="$t('hr.leaveDate')">
               
 <t-date-picker v-model="form.leaveDate" style="width: 100%"  value-type="YYYY-MM-DD" />
             </t-form-item>
           </t-col>
           <t-col :span="12">
-            <t-form-item field="employmentType" :label="$t('hr.employmentType')">
+            <t-form-item name="employmentType" :label="$t('hr.employmentType')">
               <t-select v-model="form.employmentType">
                 <t-option value="0">{{ $t('hr.empFullTime') }}</t-option>
                 <t-option value="1">{{ $t('hr.empIntern') }}</t-option>
@@ -150,7 +150,7 @@
             </t-form-item>
           </t-col>
           <t-col :span="12">
-            <t-form-item field="education" :label="$t('hr.education')">
+            <t-form-item name="education" :label="$t('hr.education')">
               <t-select v-model="form.education" allow-clear>
                 <t-option value="高中">高中</t-option>
                 <t-option value="大专">大专</t-option>
@@ -161,7 +161,7 @@
             </t-form-item>
           </t-col>
           <t-col :span="12">
-            <t-form-item field="status" :label="$t('common.status')">
+            <t-form-item name="status" :label="$t('common.status')">
               <t-select v-model="form.status">
                 <t-option value="0">{{ $t('hr.statusProbation') }}</t-option>
                 <t-option value="1">{{ $t('hr.statusActive') }}</t-option>
@@ -170,7 +170,7 @@
             </t-form-item>
           </t-col>
           <t-col :span="24">
-            <t-form-item field="remark" :label="$t('common.remark')">
+            <t-form-item name="remark" :label="$t('common.remark')">
               <t-textarea v-model="form.remark" :placeholder="$t('common.inputPlaceholder')" :max-length="500" show-word-limit />
             </t-form-item>
           </t-col>

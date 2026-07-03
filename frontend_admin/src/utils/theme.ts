@@ -21,14 +21,9 @@ export function applyTheme(dark: boolean): void {
   window.dispatchEvent(new Event('bz-theme-change'))
 }
 
-/** 应用启动时调用：恢复用户偏好（无记录则跟随系统 prefers-color-scheme） */
+/** 应用启动时调用：仅恢复用户显式选择过的暗色偏好，未设置过一律浅色 */
 export function initTheme(): void {
-  const saved = localStorage.getItem(STORAGE_KEY)
-  let dark = saved === 'dark'
-  if (saved === null) {
-    dark = window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false
-  }
-  if (dark) {
+  if (localStorage.getItem(STORAGE_KEY) === 'dark') {
     document.documentElement.setAttribute('theme-mode', 'dark')
   }
 }

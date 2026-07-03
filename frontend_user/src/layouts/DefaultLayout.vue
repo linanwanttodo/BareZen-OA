@@ -87,18 +87,18 @@
 
     <!-- 修改密码弹窗 -->
     <t-dialog
-      v-model="pwdDialogVisible"
+      v-model:visible="pwdDialogVisible"
       header="修改密码"
       :width="400"
       :mask-closable="false"
       @confirm="onPwdSubmit"
       @cancel="pwdDialogVisible = false"
     >
-      <t-form :model="pwdForm" layout="vertical">
-        <t-form-item field="oldPassword" label="旧密码">
+      <t-form :data="pwdForm" layout="vertical">
+        <t-form-item name="oldPassword" label="旧密码">
           <t-input v-model="pwdForm.oldPassword" placeholder="请输入旧密码" />
         </t-form-item>
-        <t-form-item field="newPassword" label="新密码">
+        <t-form-item name="newPassword" label="新密码">
           <t-input v-model="pwdForm.newPassword" placeholder="请输入新密码" />
         </t-form-item>
         <!-- 密码强度指示条（仿大型网站） -->
@@ -122,7 +122,7 @@
             <span>{{ rule.label }}</span>
           </p>
         </div>
-        <t-form-item field="confirmPassword" label="确认新密码">
+        <t-form-item name="confirmPassword" label="确认新密码">
           <t-input v-model="pwdForm.confirmPassword" placeholder="请再次输入新密码" />
         </t-form-item>
       </t-form>
@@ -331,7 +331,7 @@ async function onPwdSubmit() {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-right: 48px;
+  margin-right: var(--td-size-13);
   flex-shrink: 0;
 }
 .user-header__logo {
@@ -342,7 +342,7 @@ async function onPwdSubmit() {
   justify-content: center;
 }
 .user-header__brand {
-  font-size: 16px;
+  font-size: var(--td-font-size-body-large);
   font-weight: 600;
   color: var(--foreground);
 }
@@ -350,12 +350,12 @@ async function onPwdSubmit() {
 .user-header__nav {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--td-size-2);
   flex: 1;
 }
 .user-header__nav-item {
-  padding: 6px 16px;
-  font-size: 14px;
+  padding: var(--td-size-3) var(--td-size-6);
+  font-size: var(--td-font-size-body-medium);
   color: var(--muted-foreground);
   border-radius: var(--td-radius-default);
   cursor: pointer;
@@ -374,7 +374,7 @@ async function onPwdSubmit() {
 .user-header__nav-group {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--td-size-2);
 }
 .user-header__nav-group-icon {
   transition: transform 0.2s;
@@ -385,15 +385,15 @@ async function onPwdSubmit() {
 
 .user-header__right {
   flex-shrink: 0;
-  margin-left: 24px;
+  margin-left: var(--td-size-8);
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--td-size-4);
 }
 .user-header__bell {
   display: flex;
   align-items: center;
-  padding: 6px;
+  padding: var(--td-size-3);
   border-radius: var(--td-radius-default);
   cursor: pointer;
   color: var(--muted-foreground);
@@ -405,9 +405,9 @@ async function onPwdSubmit() {
 .user-header__user {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--td-size-4);
   cursor: pointer;
-  padding: 4px 8px;
+  padding: var(--td-size-2) var(--td-size-4);
   border-radius: var(--td-radius-default);
 }
 .user-header__user:hover {
@@ -419,28 +419,28 @@ async function onPwdSubmit() {
   border-radius: var(--wecom-radius-md);
   background: var(--wecom-primary);
   color: var(--primary-foreground);
-  font-size: 12px;
+  font-size: var(--td-font-size-body-small);
   font-weight: 600;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 .user-header__username {
-  font-size: 14px;
+  font-size: var(--td-font-size-body-medium);
   color: var(--foreground);
 }
 
 /* 主内容 */
 .user-main {
   flex: 1;
-  padding: 24px 32px;
+  padding: var(--td-size-8) var(--td-size-10);
 }
 
 /* 页脚 */
 .user-footer {
   background: var(--card);
   border-top: 1px solid var(--border);
-  padding: 20px 32px;
+  padding: var(--td-size-7) var(--td-size-10);
 }
 .user-footer__inner {
   display: flex;
@@ -452,8 +452,8 @@ async function onPwdSubmit() {
 .user-footer__left {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 14px;
+  gap: var(--td-size-4);
+  font-size: var(--td-font-size-body-medium);
   color: var(--muted-foreground);
 }
 .user-footer__logo {
@@ -461,7 +461,7 @@ async function onPwdSubmit() {
   height: 24px;
 }
 .user-footer p {
-  font-size: 13px;
+  font-size: var(--td-font-size-body-medium);
   color: var(--muted-foreground);
 }
 
@@ -471,7 +471,7 @@ async function onPwdSubmit() {
     padding: 0 12px;
   }
   .user-header__left {
-    margin-right: 8px;
+    margin-right: var(--td-size-4);
   }
   .user-header__brand {
     display: none; /* 窄屏隐藏品牌文字，仅保留 Logo */
@@ -487,25 +487,25 @@ async function onPwdSubmit() {
   }
   .user-header__nav-item {
     padding: 6px 10px;
-    font-size: 13px;
+    font-size: var(--td-font-size-body-medium);
     white-space: nowrap;
     flex-shrink: 0;
   }
   .user-header__right {
-    margin-left: 8px;
+    margin-left: var(--td-size-4);
   }
   .user-header__username {
     display: none; /* 窄屏仅显示头像，姓名移入下拉菜单 */
   }
   .user-main {
-    padding: 12px;
+    padding: var(--td-size-5);
   }
   .user-footer {
-    padding: 12px;
+    padding: var(--td-size-5);
   }
   .user-footer__inner {
     flex-direction: column;
-    gap: 8px;
+    gap: var(--td-size-4);
   }
 }
 </style>

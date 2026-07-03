@@ -69,21 +69,21 @@
             <t-button theme="primary" size="small" @click="loadData">{{ $t('common.search') }}</t-button>
           </div>
 
-          <t-loading :loading="dataLoading">
-              <t-table row-key="id" :data="dataTable" :columns="tableColumns" :pagination="false">
+          
+              <t-table :loading="dataLoading" row-key="id" :data="dataTable" :columns="tableColumns" :pagination="false" :hover="true" vertical-align="top">
     <template #isDefault="{ row }">
-                    <t-tag :theme="row.isDefault === 'Y' ? 'primary' : 'default'" size="small">
+                    <t-tag :theme="row.isDefault === 'Y' ? 'primary' : 'default'" size="small" variant="light">
                       {{ row.isDefault === 'Y' ? $t('common.yes') : $t('common.no') }}
                     </t-tag>
                   </template>
     <template #status="{ row }">
-                    <t-tag :theme="row.status === '1' ? 'success' : 'danger'" size="small">
+                    <t-tag :theme="row.status === '1' ? 'success' : 'danger'" size="small" variant="light">
                       {{ row.status === '1' ? $t('common.normal') : $t('common.disable') }}
                     </t-tag>
                   </template>
     <template #col_6="{ row }">
                     <t-space>
-                      <t-button v-permission="PERM.system.dictEdit" size="small" @click="handleEditData(row)">{{ $t('common.edit') }}</t-button>
+                      <t-link theme="primary" v-permission="PERM.system.dictEdit" @click="handleEditData(row)">{{ $t('common.edit') }}</t-link>
                       <t-popconfirm v-permission="PERM.system.dictDelete" :content="$t('dict.deleteDataConfirm')" @confirm="handleDeleteData(row)">
                         <t-button size="small" theme="danger">{{ $t('common.delete') }}</t-button>
                       </t-popconfirm>
@@ -100,7 +100,7 @@
                 @change="onDataPageChange"
               />
             </div>
-          </t-loading>
+          
         </template>
         <t-empty v-else :description="$t('dict.selectTypeHint')" />
       </t-card>
@@ -115,7 +115,7 @@
       @confirm="onTypeFormConfirm"
       @close="typeFormVisible = false"
     >
-      <t-form :model="typeFormData" layout="vertical">
+      <t-form :data="typeFormData" layout="vertical">
         <t-form-item name="dictName" :label="$t('dict.dictName')" :rules="[{ required: true, message: $t('dict.dictName') }]">
           <t-input v-model="typeFormData.dictName" :placeholder="$t('dict.dictName')" />
         </t-form-item>
@@ -140,7 +140,7 @@
       @confirm="onDataFormConfirm"
       @close="dataFormVisible = false"
     >
-      <t-form :model="dataFormData" layout="vertical">
+      <t-form :data="dataFormData" layout="vertical">
         <t-form-item :label="$t('dict.dictType')">
           <t-input :model-value="selectedType?.dictType" disabled />
         </t-form-item>

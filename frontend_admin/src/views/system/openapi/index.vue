@@ -9,9 +9,9 @@
     <!-- API Key 管理 -->
     <template v-if="activeTab === 'apiKey'">
       <t-card class="mb-4">
-        <t-form :model="keySearchForm" layout="inline" @submit-success="handleKeySearch">
-          <t-form-item field="keyName" :label="$t('openapi.keyName')">
-            <t-input v-model="keySearchForm.keyName" :placeholder="$t('common.inputPlaceholder')" allow-clear style="width: 200px" />
+        <t-form :data="keySearchForm" :label-width="80" @submit-success="handleKeySearch">
+          <t-form-item name="keyName" :label="$t('openapi.keyName')">
+            <t-input v-model="keySearchForm.keyName" :placeholder="$t('common.inputPlaceholder')" allow-clear />
           </t-form-item>
           <t-form-item>
             <t-space>
@@ -33,8 +33,8 @@
           </div>
         </template>
 
-        <t-loading :loading="keyLoading">
-            <t-table row-key="id" :data="keyData" :columns="tableColumns" :pagination="false">
+        
+            <t-table :loading="keyLoading" row-key="id" :data="keyData" :columns="tableColumns" :pagination="false" :hover="true" vertical-align="top">
     <template #maskedKey="{ row }">
                   <span class="font-mono text-sm">{{ row.maskedKey }}</span>
                 </template>
@@ -48,7 +48,7 @@
                 </template>
     <template #col_5="{ row }">
                   <t-space>
-                    <t-button v-permission="PERM.system.apiKeyEdit" size="small" @click="openKeyEdit(row)">{{ $t('common.edit') }}</t-button>
+                    <t-link theme="primary" v-permission="PERM.system.apiKeyEdit" @click="openKeyEdit(row)">{{ $t('common.edit') }}</t-link>
                     <t-popconfirm :content="$t('common.deleteConfirm')" @confirm="handleKeyDelete(row)">
                       <t-button v-permission="PERM.system.apiKeyDelete" size="small" theme="danger">{{ $t('common.delete') }}</t-button>
                     </t-popconfirm>
@@ -64,16 +64,16 @@
               @change="loadKeys"
             />
           </div>
-        </t-loading>
+        
       </t-card>
     </template>
 
     <!-- Webhook 管理 -->
     <template v-else>
       <t-card class="mb-4">
-        <t-form :model="hookSearchForm" layout="inline" @submit-success="handleHookSearch">
-          <t-form-item field="name" :label="$t('openapi.name')">
-            <t-input v-model="hookSearchForm.name" :placeholder="$t('common.inputPlaceholder')" allow-clear style="width: 200px" />
+        <t-form :data="hookSearchForm" :label-width="80" @submit-success="handleHookSearch">
+          <t-form-item name="name" :label="$t('openapi.name')">
+            <t-input v-model="hookSearchForm.name" :placeholder="$t('common.inputPlaceholder')" allow-clear />
           </t-form-item>
           <t-form-item>
             <t-space>
@@ -95,8 +95,8 @@
           </div>
         </template>
 
-        <t-loading :loading="hookLoading">
-            <t-table row-key="id" :data="hookData" :columns="tableColumns2" :pagination="false">
+        
+            <t-table :loading="hookLoading" row-key="id" :data="hookData" :columns="tableColumns2" :pagination="false" :hover="true" vertical-align="top">
     <template #url="{ row }">
                   <t-link :href="row.url" target="_blank">{{ row.url }}</t-link>
                 </template>
@@ -112,7 +112,7 @@
                 </template>
     <template #operate="{ row }">
                   <t-space>
-                    <t-button v-permission="PERM.system.webhookEdit" size="small" @click="openHookEdit(row)">{{ $t('common.edit') }}</t-button>
+                    <t-link theme="primary" v-permission="PERM.system.webhookEdit" @click="openHookEdit(row)">{{ $t('common.edit') }}</t-link>
                     <t-popconfirm :content="$t('common.deleteConfirm')" @confirm="handleHookDelete(row)">
                       <t-button v-permission="PERM.system.webhookDelete" size="small" theme="danger">{{ $t('common.delete') }}</t-button>
                     </t-popconfirm>
@@ -128,20 +128,20 @@
               @change="loadHooks"
             />
           </div>
-        </t-loading>
+        
       </t-card>
     </template>
 
     <!-- 创建 API Key 弹窗 -->
-    <t-dialog v-model="keyCreateVisible" :title="$t('openapi.addApiKey')" @confirm="handleKeyCreate" @cancel="keyCreateVisible = false">
-      <t-form :model="keyCreateForm" auto-label-width>
-        <t-form-item field="keyName" :label="$t('openapi.keyName')" required>
+    <t-dialog v-model:visible="keyCreateVisible" :title="$t('openapi.addApiKey')" @confirm="handleKeyCreate" @cancel="keyCreateVisible = false">
+      <t-form :data="keyCreateForm" auto-label-width>
+        <t-form-item name="keyName" :label="$t('openapi.keyName')" required>
           <t-input v-model="keyCreateForm.keyName" :max-length="50" :placeholder="$t('openapi.keyNamePlaceholder')" />
         </t-form-item>
-        <t-form-item field="scopes" :label="$t('openapi.scopes')">
+        <t-form-item name="scopes" :label="$t('openapi.scopes')">
           <t-input v-model="keyCreateForm.scopes" :placeholder="$t('openapi.scopesPlaceholder')" />
         </t-form-item>
-        <t-form-item field="expireTime" :label="$t('openapi.expireTime')">
+        <t-form-item name="expireTime" :label="$t('openapi.expireTime')">
           
 <t-date-picker v-model="keyCreateForm.expireTime" show-time value-type="YYYY-MM-DD HH:mm" style="width: 100%" :placeholder="$t('openapi.expireTimePlaceholder')" />
         </t-form-item>
@@ -149,15 +149,15 @@
     </t-dialog>
 
     <!-- 编辑 API Key 弹窗 -->
-    <t-dialog v-model="keyEditVisible" :title="$t('openapi.editApiKey')" @confirm="handleKeyEdit" @cancel="keyEditVisible = false">
-      <t-form :model="keyEditForm" auto-label-width>
-        <t-form-item field="keyName" :label="$t('openapi.keyName')" required>
+    <t-dialog v-model:visible="keyEditVisible" :title="$t('openapi.editApiKey')" @confirm="handleKeyEdit" @cancel="keyEditVisible = false">
+      <t-form :data="keyEditForm" auto-label-width>
+        <t-form-item name="keyName" :label="$t('openapi.keyName')" required>
           <t-input v-model="keyEditForm.keyName" :max-length="50" :placeholder="$t('openapi.keyNamePlaceholder')" />
         </t-form-item>
-        <t-form-item field="scopes" :label="$t('openapi.scopes')">
+        <t-form-item name="scopes" :label="$t('openapi.scopes')">
           <t-input v-model="keyEditForm.scopes" :placeholder="$t('openapi.scopesPlaceholder')" />
         </t-form-item>
-        <t-form-item field="expireTime" :label="$t('openapi.expireTime')">
+        <t-form-item name="expireTime" :label="$t('openapi.expireTime')">
           
 <t-date-picker v-model="keyEditForm.expireTime" show-time value-type="YYYY-MM-DD HH:mm" style="width: 100%" :placeholder="$t('openapi.expireTimePlaceholder')" allow-clear />
         </t-form-item>
@@ -165,7 +165,7 @@
     </t-dialog>
 
     <!-- 创建成功：明文 Key 仅显示一次 -->
-    <t-dialog v-model="keyResultVisible" :title="$t('openapi.createdTitle')" :footer="false" @cancel="keyResultVisible = false">
+    <t-dialog v-model:visible="keyResultVisible" :title="$t('openapi.createdTitle')" :footer="false" @cancel="keyResultVisible = false">
       <t-alert type="warning" class="mb-4">{{ $t('openapi.createdOnce') }}</t-alert>
       <t-input :model-value="createdPlainKey" readonly>
         <template #suffix>
@@ -181,36 +181,36 @@
     </t-dialog>
 
     <!-- 创建 Webhook 弹窗 -->
-    <t-dialog v-model="hookCreateVisible" :title="$t('openapi.addWebhook')" @confirm="handleHookCreate" @cancel="hookCreateVisible = false">
-      <t-form :model="hookCreateForm" auto-label-width>
-        <t-form-item field="name" :label="$t('openapi.name')" required>
+    <t-dialog v-model:visible="hookCreateVisible" :title="$t('openapi.addWebhook')" @confirm="handleHookCreate" @cancel="hookCreateVisible = false">
+      <t-form :data="hookCreateForm" auto-label-width>
+        <t-form-item name="name" :label="$t('openapi.name')" required>
           <t-input v-model="hookCreateForm.name" :max-length="50" :placeholder="$t('openapi.namePlaceholder')" />
         </t-form-item>
-        <t-form-item field="url" :label="$t('openapi.url')" required>
+        <t-form-item name="url" :label="$t('openapi.url')" required>
           <t-input v-model="hookCreateForm.url" :placeholder="$t('openapi.urlPlaceholder')" />
         </t-form-item>
-        <t-form-item field="events" :label="$t('openapi.events')" required>
+        <t-form-item name="events" :label="$t('openapi.events')" required>
           <t-input v-model="hookCreateForm.events" :placeholder="$t('openapi.eventsPlaceholder')" />
         </t-form-item>
-        <t-form-item field="secret" :label="$t('openapi.secret')">
+        <t-form-item name="secret" :label="$t('openapi.secret')">
           <t-input v-model="hookCreateForm.secret" :placeholder="$t('openapi.secretTip')" />
         </t-form-item>
       </t-form>
     </t-dialog>
 
     <!-- 编辑 Webhook 弹窗 -->
-    <t-dialog v-model="hookEditVisible" :title="$t('openapi.editWebhook')" @confirm="handleHookEdit" @cancel="hookEditVisible = false">
-      <t-form :model="hookEditForm" auto-label-width>
-        <t-form-item field="name" :label="$t('openapi.name')" required>
+    <t-dialog v-model:visible="hookEditVisible" :title="$t('openapi.editWebhook')" @confirm="handleHookEdit" @cancel="hookEditVisible = false">
+      <t-form :data="hookEditForm" auto-label-width>
+        <t-form-item name="name" :label="$t('openapi.name')" required>
           <t-input v-model="hookEditForm.name" :max-length="50" :placeholder="$t('openapi.namePlaceholder')" />
         </t-form-item>
-        <t-form-item field="url" :label="$t('openapi.url')" required>
+        <t-form-item name="url" :label="$t('openapi.url')" required>
           <t-input v-model="hookEditForm.url" :placeholder="$t('openapi.urlPlaceholder')" />
         </t-form-item>
-        <t-form-item field="events" :label="$t('openapi.events')" required>
+        <t-form-item name="events" :label="$t('openapi.events')" required>
           <t-input v-model="hookEditForm.events" :placeholder="$t('openapi.eventsPlaceholder')" />
         </t-form-item>
-        <t-form-item field="secret" :label="$t('openapi.secret')">
+        <t-form-item name="secret" :label="$t('openapi.secret')">
           <t-input v-model="hookEditForm.secret" :placeholder="$t('openapi.secretTip')" />
         </t-form-item>
       </t-form>

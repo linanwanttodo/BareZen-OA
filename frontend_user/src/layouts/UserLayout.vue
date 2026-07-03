@@ -59,7 +59,7 @@ const router = useRouter()
   height: 28px;
 }
 .user-header__brand {
-  font-size: 16px;
+  font-size: var(--td-font-size-body-large);
   font-weight: 600;
   color: var(--wecom-text-primary);
 }

@@ -36,6 +36,11 @@ export function submitTravelApi(data: Partial<AttTravelRequest>) {
   return request.post<void>('/hr/v1/travels', data)
 }
 
+/** 修改出差申请（仅本人、仅待审批状态） */
+export function updateTravelApi(id: string, data: Partial<AttTravelRequest>) {
+  return request.put<void>(`/hr/v1/travels/${id}`, data)
+}
+
 /** 审批出差（pass/reject） */
 export function approveTravelApi(id: string, action: 'pass' | 'reject', remark?: string) {
   return request.put<void>(`/hr/v1/travels/${id}/approve`, null, {

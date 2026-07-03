@@ -2,9 +2,9 @@
   <div class="page-container">
     <!-- 搜索区域 -->
     <t-card class="mb-4">
-      <t-form :model="searchForm" layout="inline" @submit-success="handleSearch">
-        <t-form-item field="status" :label="$t('leave.status')">
-          <t-select v-model="searchForm.status" :placeholder="$t('common.all')" allow-clear style="width: 140px">
+      <t-form :data="searchForm" :label-width="80" @submit-success="handleSearch">
+        <t-form-item name="status" :label="$t('leave.status')">
+          <t-select v-model="searchForm.status" :placeholder="$t('common.all')" allow-clear>
             <t-option value="0">{{ $t('leave.statusPending') }}</t-option>
             <t-option value="1">{{ $t('leave.statusApproved') }}</t-option>
             <t-option value="2">{{ $t('leave.statusRejected') }}</t-option>
@@ -32,25 +32,25 @@
         </div>
       </template>
 
-      <t-loading :loading="loading">
-          <t-table row-key="id" :data="tableData" :columns="tableColumns" :pagination="false">
+      
+          <t-table :loading="loading" row-key="id" :data="tableData" :columns="tableColumns" :pagination="false" :hover="true" vertical-align="top">
     <template #leaveType="{ row }">{{ leaveTypeText(row.leaveType) }}</template>
     <template #timeRange="{ row }">
                 <span class="text-sm">{{ row.startTime }} ~ {{ row.endTime }}</span>
               </template>
     <template #status="{ row }">
-                <t-tag :color="statusColor(row.status)">{{ statusText(row.status) }}</t-tag>
+                <t-tag :color="statusColor(row.status)" variant="light">{{ statusText(row.status) }}</t-tag>
               </template>
     <template #approverName="{ row }">{{ row.approverName || '-' }}</template>
     <template #operate="{ row }">
                 <t-space>
                   <template v-if="row.status === '0'">
-                    <t-button v-permission="PERM.hr.leaveApprove" size="small" theme="primary" @click="openApprove(row)">
+                    <t-link theme="primary" v-permission="PERM.hr.leaveApprove" @click="openApprove(row)">
                       {{ $t('leave.approve') }}
-                    </t-button>
-                    <t-button size="small" @click="handleRevoke(row)">
+                    </t-link>
+                    <t-link theme="primary" @click="handleRevoke(row)">
                       {{ $t('leave.revoke') }}
-                    </t-button>
+                    </t-link>
                   </template>
                   <t-button v-if="row.approveRemark" size="small" @click="showRemark(row)">
                     {{ $t('leave.viewRemark') }}
@@ -71,11 +71,11 @@
             @change="loadData"
           />
         </div>
-      </t-loading>
+      
     </t-card>
 
     <!-- 流程进度弹窗：优先渲染引擎节点链（任务态），未接入引擎回退事件流 -->
-    <t-dialog v-model="flowVisible" :title="$t('leave.flow')" :width="520" footer-only>
+    <t-dialog v-model:visible="flowVisible" :title="$t('leave.flow')" :width="520" footer-only>
       <t-steps v-if="flowTasks.length" direction="vertical" :current="taskCurrent">
         <t-step-item
           v-for="task in flowTasks"
@@ -97,10 +97,10 @@
     </t-dialog>
 
     <!-- 请假申请弹窗 -->
-    <t-dialog v-model="addVisible" :title="$t('leave.apply')" :width="560"
+    <t-dialog v-model:visible="addVisible" :title="$t('leave.apply')" :width="560"
              @confirm="handleSubmit" @cancel="addVisible = false" :ok-loading="submitting">
-      <t-form :model="form" layout="vertical">
-        <t-form-item field="leaveType" :label="$t('leave.leaveType')" required>
+      <t-form :data="form" layout="vertical">
+        <t-form-item name="leaveType" :label="$t('leave.leaveType')" required>
           <t-select v-model="form.leaveType">
             <t-option value="annual">{{ $t('leave.typeAnnual') }}</t-option>
             <t-option value="sick">{{ $t('leave.typeSick') }}</t-option>
@@ -111,33 +111,33 @@
             <t-option value="other">{{ $t('leave.typeOther') }}</t-option>
           </t-select>
         </t-form-item>
-        <t-form-item field="timeRange" :label="$t('leave.timeRange')" required>
+        <t-form-item name="timeRange" :label="$t('leave.timeRange')" required>
           
-<t-date-picker v-model="form.startTime" show-time value-type="YYYY-MM-DD HH:mm" style="width: 260px" :placeholder="$t('leave.startTime')" />
+<t-date-picker v-model="form.startTime" show-time value-type="YYYY-MM-DD HH:mm" :placeholder="$t('leave.startTime')" />
           <span class="mx-2">~</span>
           
-<t-date-picker v-model="form.endTime" show-time value-type="YYYY-MM-DD HH:mm" style="width: 260px" :placeholder="$t('leave.endTime')" />
+<t-date-picker v-model="form.endTime" show-time value-type="YYYY-MM-DD HH:mm" :placeholder="$t('leave.endTime')" />
         </t-form-item>
-        <t-form-item field="leaveDays" :label="$t('leave.leaveDays')">
+        <t-form-item name="leaveDays" :label="$t('leave.leaveDays')">
           <t-input-number v-model="form.leaveDays" :min="0.5" :step="0.5" style="width: 100%" :placeholder="$t('leave.leaveDaysPlaceholder')" />
         </t-form-item>
-        <t-form-item field="reason" :label="$t('leave.reason')" required>
+        <t-form-item name="reason" :label="$t('leave.reason')" required>
           <t-textarea v-model="form.reason" :placeholder="$t('common.inputPlaceholder')" :max-length="500" show-word-limit />
         </t-form-item>
       </t-form>
     </t-dialog>
 
     <!-- 审批弹窗 -->
-    <t-dialog v-model="approveVisible" :title="$t('leave.approve')" :width="480"
+    <t-dialog v-model:visible="approveVisible" :title="$t('leave.approve')" :width="480"
              @confirm="handleApprove" @cancel="approveVisible = false" :ok-loading="approving">
-      <t-form :model="approveForm" layout="vertical">
+      <t-form :data="approveForm" layout="vertical">
         <t-form-item :label="$t('leave.approveAction')" required>
           <t-radio-group v-model="approveForm.action" variant="default-filled">
             <t-radio value="pass">{{ $t('leave.approvePass') }}</t-radio>
             <t-radio value="reject">{{ $t('leave.approveReject') }}</t-radio>
           </t-radio-group>
         </t-form-item>
-        <t-form-item field="remark" :label="$t('leave.approveRemark')">
+        <t-form-item name="remark" :label="$t('leave.approveRemark')">
           <t-textarea v-model="approveForm.remark" :placeholder="$t('common.inputPlaceholder')" :max-length="500" show-word-limit />
         </t-form-item>
       </t-form>

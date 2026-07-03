@@ -2,21 +2,21 @@
   <div class="page-container">
     <!-- 搜索区域 -->
     <t-card class="mb-4">
-      <t-form :model="searchForm" layout="inline" @submit-success="handleSearch">
-        <t-form-item field="userName" :label="$t('schedule.userName')">
-          <t-input v-model="searchForm.userName" :placeholder="$t('common.inputPlaceholder')" allow-clear style="width: 160px" />
+      <t-form :data="searchForm" :label-width="80" @submit-success="handleSearch">
+        <t-form-item name="userName" :label="$t('schedule.userName')">
+          <t-input v-model="searchForm.userName" :placeholder="$t('common.inputPlaceholder')" allow-clear />
         </t-form-item>
-        <t-form-item field="status" :label="$t('schedule.status')">
-          <t-select v-model="searchForm.status" :placeholder="$t('common.all')" allow-clear style="width: 140px">
+        <t-form-item name="status" :label="$t('schedule.status')">
+          <t-select v-model="searchForm.status" :placeholder="$t('common.all')" allow-clear>
             <t-option value="0">{{ $t('schedule.statusTodo') }}</t-option>
             <t-option value="1">{{ $t('schedule.statusDoing') }}</t-option>
             <t-option value="2">{{ $t('schedule.statusDone') }}</t-option>
             <t-option value="3">{{ $t('schedule.statusCancelled') }}</t-option>
           </t-select>
         </t-form-item>
-        <t-form-item field="dateRange" :label="$t('schedule.dateRange')">
+        <t-form-item name="dateRange" :label="$t('schedule.dateRange')">
           
-<t-date-picker v-model="searchForm.dateRange" type="daterange" style="width: 260px"  value-type="YYYY-MM-DD" />
+<t-date-picker v-model="searchForm.dateRange" type="daterange"  value-type="YYYY-MM-DD" />
         </t-form-item>
         <t-form-item>
           <t-space>
@@ -36,17 +36,17 @@
         </t-button>
       </template>
 
-      <t-loading :loading="loading">
-          <t-table row-key="id" :data="tableData" :columns="tableColumns" :pagination="false">
+      
+          <t-table :loading="loading" row-key="id" :data="tableData" :columns="tableColumns" :pagination="false" :hover="true" vertical-align="top">
     <template #timeRange="{ row }">
                 <span class="text-sm">{{ row.startTime }} ~ {{ row.endTime }}</span>
               </template>
     <template #status="{ row }">
-                <t-tag :color="statusColor(row.status)">{{ statusText(row.status) }}</t-tag>
+                <t-tag :color="statusColor(row.status)" variant="light">{{ statusText(row.status) }}</t-tag>
               </template>
     <template #operate="{ row }">
                 <t-space>
-                  <t-button v-permission="PERM.hr.scheduleEdit" size="small" @click="openEdit(row)">{{ $t('common.edit') }}</t-button>
+                  <t-link theme="primary" v-permission="PERM.hr.scheduleEdit" @click="openEdit(row)">{{ $t('common.edit') }}</t-link>
                   <t-popconfirm :content="$t('common.deleteConfirm')" @confirm="handleDelete(row)">
                     <t-button v-permission="PERM.hr.scheduleDelete" size="small" theme="danger">{{ $t('common.delete') }}</t-button>
                   </t-popconfirm>
@@ -63,29 +63,29 @@
             @change="loadData"
           />
         </div>
-      </t-loading>
+      
     </t-card>
 
     <!-- 新增/编辑弹窗 -->
-    <t-dialog v-model="dialogVisible" :title="isEdit ? $t('common.edit') : $t('common.add')" :width="560" :unmount-on-close="true" @before-ok="handleSave">
-      <t-form :model="form" layout="vertical">
-        <t-form-item field="title" :label="$t('schedule.title')" required>
+    <t-dialog v-model:visible="dialogVisible" :title="isEdit ? $t('common.edit') : $t('common.add')" :width="560" :unmount-on-close="true" @before-ok="handleSave">
+      <t-form :data="form" layout="vertical">
+        <t-form-item name="title" :label="$t('schedule.title')" required>
           <t-input v-model="form.title" :placeholder="$t('common.inputPlaceholder')" />
         </t-form-item>
-        <t-form-item field="userName" :label="$t('schedule.userName')">
+        <t-form-item name="userName" :label="$t('schedule.userName')">
           <t-input v-model="form.userName" :placeholder="$t('schedule.userNamePlaceholder')" />
         </t-form-item>
-        <t-form-item field="timeRange" :label="$t('schedule.timeRange')" required>
+        <t-form-item name="timeRange" :label="$t('schedule.timeRange')" required>
           
 <t-date-picker v-model="form.startTime" show-time value-type="YYYY-MM-DD HH:mm" style="width: calc(50% - 12px)" :placeholder="$t('schedule.startTime')" />
           <span class="mx-2">~</span>
           
 <t-date-picker v-model="form.endTime" show-time value-type="YYYY-MM-DD HH:mm" style="width: calc(50% - 12px)" :placeholder="$t('schedule.endTime')" />
         </t-form-item>
-        <t-form-item field="location" :label="$t('schedule.location')">
+        <t-form-item name="location" :label="$t('schedule.location')">
           <t-input v-model="form.location" :placeholder="$t('common.inputPlaceholder')" />
         </t-form-item>
-        <t-form-item field="status" :label="$t('schedule.status')">
+        <t-form-item name="status" :label="$t('schedule.status')">
           <t-select v-model="form.status">
             <t-option value="0">{{ $t('schedule.statusTodo') }}</t-option>
             <t-option value="1">{{ $t('schedule.statusDoing') }}</t-option>
@@ -93,7 +93,7 @@
             <t-option value="3">{{ $t('schedule.statusCancelled') }}</t-option>
           </t-select>
         </t-form-item>
-        <t-form-item field="description" :label="$t('schedule.description')">
+        <t-form-item name="description" :label="$t('schedule.description')">
           <t-textarea v-model="form.description" :placeholder="$t('common.inputPlaceholder')" :max-length="1000" show-word-limit />
         </t-form-item>
       </t-form>

@@ -2,12 +2,12 @@
   <div class="page-container">
     <!-- 搜索区域 -->
     <t-card class="mb-4">
-      <t-form :model="searchForm" layout="inline" @submit-success="handleSearch">
+      <t-form :data="searchForm" :label-width="80" @submit-success="handleSearch">
         <t-form-item name="userName" :label="$t('monitor.logininfor.userName')">
-          <t-input v-model="searchForm.userName" :placeholder="$t('common.inputPlaceholder')" clearable style="width: 200px" />
+          <t-input v-model="searchForm.userName" :placeholder="$t('common.inputPlaceholder')" clearable />
         </t-form-item>
         <t-form-item name="status" :label="$t('monitor.logininfor.status')">
-          <t-select v-model="searchForm.status" :placeholder="$t('common.selectPlaceholder')" allow-clear style="width: 120px">
+          <t-select v-model="searchForm.status" :placeholder="$t('common.selectPlaceholder')" allow-clear>
             <t-option value="0">{{ $t('monitor.logininfor.success') }}</t-option>
             <t-option value="1">{{ $t('monitor.logininfor.fail') }}</t-option>
           </t-select>
@@ -35,10 +35,10 @@
         </div>
       </template>
 
-      <t-loading :loading="loading">
-          <t-table row-key="id" :data="tableData" :columns="tableColumns" :pagination="false">
+      
+          <t-table :loading="loading" row-key="id" :data="tableData" :columns="tableColumns" :pagination="false" :hover="true" vertical-align="top">
     <template #status="{ row }">
-                <t-tag :theme="row.status === '0' ? 'success' : 'danger'">
+                <t-tag :theme="row.status === '0' ? 'success' : 'danger'" variant="light">
                   {{ row.status === '0' ? $t('monitor.logininfor.success') : $t('monitor.logininfor.fail') }}
                 </t-tag>
               </template>
@@ -52,7 +52,7 @@
             @change="loadData"
           />
         </div>
-      </t-loading>
+      
     </t-card>
   </div>
 </template>

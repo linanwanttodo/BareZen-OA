@@ -11,6 +11,12 @@
 
 /* ===== 1. 设计令牌（全部转发 TDesign token，禁止裸色值） ===== */
 :root {
+  /* ── 字体族 ──
+     TDesign 原生 --td-font-family 只列 macOS/Windows 族名且无通用兜底，
+     Linux/Android 上全部落空会退回衬线体，故补本机字体 + sans-serif */
+  --td-font-family: "PingFang SC", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial,
+    "Noto Sans CJK SC", "Source Han Sans SC", sans-serif;
+
   /* ── 品牌色 ── */
   --wecom-primary: var(--td-brand-color-7);
   --wecom-primary-hover: var(--td-brand-color-8);
@@ -47,14 +53,14 @@
   --wecom-border-strong: var(--td-border-level-2-color);
   --wecom-border-focus: var(--td-brand-color);
 
-  /* ── 间距系统（TDesign 无间距 token，保留为布局常量）── */
-  --wecom-spacing-xs: 4px;
-  --wecom-spacing-sm: 8px;
-  --wecom-spacing-md: 12px;
-  --wecom-spacing-lg: 16px;
-  --wecom-spacing-xl: 24px;
-  --wecom-spacing-xxl: 32px;
-  --wecom-spacing-xxxl: 48px;
+  /* ── 间距系统（转发 TDesign --td-size-* 刻度，数值与原常量一致）── */
+  --wecom-spacing-xs: var(--td-size-2);    /* 4px  */
+  --wecom-spacing-sm: var(--td-size-4);    /* 8px  */
+  --wecom-spacing-md: var(--td-size-5);    /* 12px */
+  --wecom-spacing-lg: var(--td-size-6);    /* 16px */
+  --wecom-spacing-xl: var(--td-size-8);    /* 24px */
+  --wecom-spacing-xxl: var(--td-size-10);  /* 32px */
+  --wecom-spacing-xxxl: var(--td-size-13); /* 48px */
 
   /* ── 圆角系统（对齐 TDesign radius token）── */
   --wecom-radius-sm: var(--td-radius-small);
@@ -69,10 +75,11 @@
   --wecom-shadow-lg: var(--td-shadow-3);
   --wecom-shadow-xl: var(--td-shadow-3);
 
-  /* ── 布局尺寸 ── */
+  /* ── 布局尺寸 ──
+     侧边栏宽度不在此声明：.t-default-menu 已内置 232px / 折叠 64px
+     （tdesign es/menu/style/index.css），侧栏直接继承即可，
+     在此另设数值会与组件内建值打架。 */
   --wecom-header-height: 56px;
-  --wecom-sidebar-collapsed: 64px;
-  --wecom-sidebar-expanded: 210px;
   --wecom-tags-height: 36px;
 
   /* ── 过渡动画（TDesign 无动效时长 token，保留为动效常量）── */
@@ -203,8 +210,170 @@ body {
 }
 
 /* ===== 7. 布局工具 ===== */
+/* 相邻按钮间距（对齐 TDesign Starter style/layout.less 的 .t-button + .t-button）。
+   此前按钮成组处只能靠 t-space 撑开，裸排的相邻按钮会贴死。 */
+.t-button + .t-button {
+  margin-left: var(--td-comp-margin-s);
+}
+/* 传输器 / 跳页器 / mini 分页内部自带紧凑间距，排除掉上面的全局规则 */
+.t-transfer,
+.t-jumper,
+.t-pagination-mini {
+  .t-button + .t-button {
+    margin-left: 0;
+  }
+}
+
+/* 页面留白由 layout 的 .bz-content 统一提供，页面根容器不得再加 padding */
 .page-container {
-  padding: var(--wecom-spacing-xl);
+  min-height: 100%;
+}
+
+/* 个人中心：内容限宽居中 */
+.profile-inner {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+/* ---- 列表页统一容器（对齐 TDesign Starter list/base）----
+   官方为 <t-card class="list-card-container" :bordered="false">，
+   内边距 --td-comp-paddingTB-xxl / --td-comp-paddingLR-xxl、卡片体 padding:0。
+   筛选区与表格共用这一张白卡，不再拆成两张 t-card */
+.bz-list-panel {
+  background: var(--td-bg-color-container);
+  border-radius: var(--td-radius-medium);
+  padding: var(--td-comp-paddingTB-xxl) var(--td-comp-paddingLR-xxl);
+}
+/* 字段撑满所在栅格列，取代逐页硬编码的 style="width:180px" */
+.bz-list-panel .form-item-content {
+  width: 100%;
+}
+/* 查询/重置固定在操作列右端 */
+.bz-list-ops {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+/* 新增/批量/导出等行级操作：表格上方独立工具条，不放卡片 #title。
+   官方为 .left-operation-container { margin-bottom: var(--td-comp-margin-xxl) }，
+   这里改为上下留白，与工具条和分页各拉开一个官方间距刻度 */
+.bz-list-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: var(--td-comp-margin-xxl);
+  margin-bottom: var(--td-comp-margin-xxl);
+  gap: var(--td-comp-margin-s);
+}
+/* 无筛选区的页面工具条就是首个元素，不需要再拉开间距 */
+.bz-list-toolbar:first-child {
+  margin-top: 0;
+}
+/* 分页右对齐，与表格拉开官方 xx 间距刻度 */
+.bz-list-pager {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: var(--td-comp-margin-xxl);
+}
+
+/* 表格纵向对齐与行悬浮底色由 t-table 的 vertical-align / :hover 属性控制，
+   与 Starter list/base 一致，页面按需开启（见 script 中的 TABLE_PROPS 注入）。 */
+
+/* ---- 关键指标卡（对齐 TDesign Starter dashboard/top-panel）----
+   官方为 t-row/t-col 栅格，卡片需在同行内等高：t-col 默认 stretch，
+   补 height:100% 让每张卡随最高的一张撑满，避免数值位数不同造成卡片底边参差 */
+.metric-card {
+  height: 100%;
+  padding: var(--td-comp-paddingTB-xl) var(--td-comp-paddingLR-xxl);
+  cursor: pointer;
+}
+.metric-card .t-card__header,
+.metric-card .t-card__body,
+.metric-card .t-card__footer {
+  padding: 0;
+}
+.metric-card .t-card__title {
+  font: var(--td-font-body-medium);
+  color: var(--td-text-color-secondary);
+}
+.metric-card .t-card__body {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: space-between;
+  margin: var(--td-comp-margin-s) 0 var(--td-comp-margin-xxl);
+}
+.metric-card__value {
+  font-family: var(--td-font-family);
+  font-size: var(--td-font-size-headline-medium);
+  line-height: var(--td-line-height-headline-medium);
+  font-weight: 600;
+  color: var(--td-text-color-primary);
+}
+.metric-card__badge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--td-comp-size-xxxl);
+  height: var(--td-comp-size-xxxl);
+  border-radius: 50%;
+  background: var(--td-brand-color-light);
+  color: var(--td-brand-color);
+  font-size: 24px;
+}
+.metric-card__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--td-text-color-placeholder);
+  font: var(--td-font-body-medium);
+}
+.metric-card__arrow {
+  font-size: var(--td-comp-size-xxxs);
+}
+
+/* 首卡反色：品牌蓝底白字，徽标改用中间色阶保证可辨 */
+.metric-card--main {
+  background: var(--td-brand-color);
+}
+.metric-card--main .t-card__title,
+.metric-card--main .metric-card__value,
+.metric-card--main .metric-card__footer {
+  color: var(--td-text-color-anti);
+}
+.metric-card--main .metric-card__hint {
+  opacity: 0.6;
+}
+.metric-card--main .metric-card__badge {
+  background: var(--td-brand-color-5);
+  color: var(--td-text-color-anti);
+}
+
+/* ---- 内容型卡片：统一标题层级与内边距 ---- */
+.panel-card {
+  padding: var(--td-comp-paddingTB-xl) var(--td-comp-paddingLR-xxl);
+}
+.panel-card .t-card__header,
+.panel-card .t-card__body {
+  padding: 0;
+}
+.panel-card .t-card__header {
+  margin-bottom: var(--td-comp-margin-xl);
+}
+.panel-card .t-card__title {
+  font-size: var(--td-font-size-body-large);
+  line-height: var(--td-line-height-body-large);
+  font-weight: 600;
+}
+.panel-card .t-card__subtitle {
+  margin-top: var(--td-comp-margin-xs);
+  font-size: var(--td-font-size-body-small);
+  line-height: var(--td-line-height-body-small);
+  color: var(--td-text-color-placeholder);
 }
 
 /* ===== 8. NProgress ===== */

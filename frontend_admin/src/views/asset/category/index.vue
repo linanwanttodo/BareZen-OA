@@ -17,29 +17,29 @@
         <span>{{ $t('asset.category') }}</span>
       </template>
 
-      <t-loading :loading="loading">
-          <t-table row-key="id" :data="tableData" :columns="tableColumns" :pagination="false">
+      
+          <t-table :loading="loading" row-key="id" :data="tableData" :columns="tableColumns" :pagination="false" :hover="true" vertical-align="top">
     <template #status="{ row }">
-                <t-tag :theme="row.status === 1 ? 'success' : 'default'">
+                <t-tag :theme="row.status === 1 ? 'success' : 'default'" variant="light">
                   {{ row.status === 1 ? $t('common.enabled') : $t('common.disabled') }}
                 </t-tag>
               </template>
     <template #col_3="{ row }">
                 <t-space>
-                  <t-button v-permission="PERM.asset.categoryEdit" size="small" @click="handleEdit(row)">{{ $t('common.edit') }}</t-button>
+                  <t-link theme="primary" v-permission="PERM.asset.categoryEdit" @click="handleEdit(row)">{{ $t('common.edit') }}</t-link>
                   <t-popconfirm :content="$t('common.deleteConfirm')" @confirm="handleDelete(row)">
                     <t-button v-permission="PERM.asset.categoryDelete" size="small" theme="danger">{{ $t('common.delete') }}</t-button>
                   </t-popconfirm>
                 </t-space>
               </template>
   </t-table>
-      </t-loading>
+      
     </t-card>
 
     <!-- 新增/编辑弹窗 -->
-    <t-dialog v-model="editVisible" :header="isEdit ? $t('asset.editCategory') : $t('asset.addCategory')"
+    <t-dialog v-model:visible="editVisible" :header="isEdit ? $t('asset.editCategory') : $t('asset.addCategory')"
              width="480px" @confirm="handleSave" @close="editVisible = false" :ok-loading="saving">
-      <t-form :model="form" layout="vertical">
+      <t-form :data="form" layout="vertical">
         <t-form-item name="name" :label="$t('asset.categoryName')" required>
           <t-input v-model="form.name" :placeholder="$t('common.inputPlaceholder')" />
         </t-form-item>

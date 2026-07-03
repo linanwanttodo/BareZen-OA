@@ -6,8 +6,8 @@
       <p class="mt-2 text-sm text-[var(--wecom-text-tertiary)]">登录你的企业账户</p>
     </div>
 
-    <t-form :model="formData" layout="vertical" @submit-success="onSubmit" class="space-y-2">
-      <t-form-item field="username" :label="$t('auth.username')" :rules="[{ required: true, message: '请输入用户名' }]">
+    <t-form :data="formData" layout="vertical" @submit-success="onSubmit" class="space-y-2">
+      <t-form-item name="username" :label="$t('auth.username')" :rules="[{ required: true, message: '请输入用户名' }]">
         <t-input
           v-model="formData.username"
           placeholder="请输入用户名"
@@ -16,7 +16,7 @@
         />
       </t-form-item>
 
-      <t-form-item field="password" :label="$t('auth.password')" :rules="[{ required: true, message: '请输入密码' }]">
+      <t-form-item name="password" :label="$t('auth.password')" :rules="[{ required: true, message: '请输入密码' }]">
         <t-input
           v-model="formData.password"
           placeholder="请输入密码"
@@ -24,7 +24,7 @@
         />
       </t-form-item>
 
-      <t-form-item field="captchaCode" :label="$t('auth.captcha')" :rules="[{ required: true, message: '请输入验证码' }]">
+      <t-form-item name="captchaCode" :label="$t('auth.captcha')" :rules="[{ required: true, message: '请输入验证码' }]">
         <div class="flex items-center gap-3 w-full">
           <t-input
             v-model="formData.captchaCode"
@@ -41,6 +41,12 @@
             <img v-if="captchaImg" :src="captchaImg" alt="验证码" class="h-full w-[120px]" />
             <span v-else class="text-xs text-[var(--wecom-text-tertiary)]">加载中</span>
           </div>
+        </div>
+      </t-form-item>
+
+      <t-form-item class="!mb-0 mt-2">
+        <div class="flex items-center">
+          <t-checkbox v-model="formData.remember">{{ $t('auth.rememberMe') }}</t-checkbox>
         </div>
       </t-form-item>
 
@@ -69,6 +75,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useUserStore } from '@/stores/user'
 import { getCaptchaApi } from '@/api/auth'
+import { persistToken } from '@/utils/auth'
 import { MessagePlugin } from 'tdesign-vue-next'
 import { safeRedirect } from '@/utils/url'
 
@@ -84,6 +91,7 @@ const formData = reactive({
   username: '',
   password: '',
   captchaCode: '',
+  remember: false,
 })
 
 async function refreshCaptcha() {
@@ -105,6 +113,12 @@ async function onSubmit() {
       captchaCode: formData.captchaCode,
       uuid: captchaUuid.value,
     })
+    if (formData.remember) {
+      persistToken(userStore.token)
+      localStorage.setItem('bz_user_remember', JSON.stringify({ username: formData.username }))
+    } else {
+      localStorage.removeItem('bz_user_remember')
+    }
     MessagePlugin.success(t('auth.loginSuccess'))
     const redirect = (route.query.redirect as string) || '/'
     router.push(safeRedirect(redirect))
@@ -117,5 +131,15 @@ async function onSubmit() {
 
 onMounted(() => {
   refreshCaptcha()
+  const saved = localStorage.getItem('bz_user_remember')
+  if (saved) {
+    try {
+      const data = JSON.parse(saved)
+      formData.username = data.username || ''
+      formData.remember = true
+    } catch {
+      // ignore
+    }
+  }
 })
 </script>

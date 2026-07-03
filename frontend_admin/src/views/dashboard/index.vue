@@ -3,105 +3,127 @@
     <t-loading size="28px" :text="$t('common.loading')" />
   </div>
   <div v-else class="dashboard-container">
-    <!-- 统计卡片 -->
-    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      <t-card v-for="card in statCards" :key="card.title" class="p-5">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-sm text-[var(--wecom-text-tertiary)]">{{ $t(card.titleKey) }}</p>
-            <p class="mt-1 text-2xl font-semibold text-[var(--wecom-text-primary)]">{{ card.value }}</p>
-          </div>
-          <component :is="card.icon" size="20px" class="text-[var(--wecom-text-disabled)]" />
-        </div>
-      </t-card>
-    </div>
+    <!-- 关键指标：t-row/t-col 栅格 + 首卡反色 + 圆形图标徽标（对齐 TDesign Starter dashboard/top-panel） -->
+    <t-row :gutter="[16, 16]">
+      <t-col v-for="(card, i) in statCards" :key="card.key" :xs="6" :xl="3">
+        <t-card
+          :title="$t(card.titleKey)"
+          :bordered="false"
+          class="metric-card"
+          :class="{ 'metric-card--main': i === 0 }"
+          @click="router.push(card.route)"
+        >
+          <div class="metric-card__value">{{ card.value }}</div>
+          <span class="metric-card__badge">
+            <component :is="card.icon" />
+          </span>
+          <template #footer>
+            <div class="metric-card__footer">
+              <span class="metric-card__hint">{{ $t('common.detail') }}</span>
+              <chevron-right-icon class="metric-card__arrow" />
+            </div>
+          </template>
+        </t-card>
+      </t-col>
+    </t-row>
 
     <!-- 图表区域 -->
-    <div class="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-12">
-      <t-card class="p-5 lg:col-span-8">
-        <div class="mb-2 flex items-baseline justify-between">
-          <h3 class="text-base font-semibold text-[var(--foreground)]">{{ $t('dashboard.visitTrend') }}</h3>
-          <span class="text-xs text-[var(--muted-foreground)]">{{ $t('dashboard.last7Days') }}</span>
-        </div>
-        <div ref="lineChartRef" class="chart-container"></div>
-      </t-card>
-      <t-card class="p-5 lg:col-span-4">
-        <div class="mb-2 flex items-baseline justify-between">
-          <h3 class="text-base font-semibold text-[var(--foreground)]">{{ $t('dashboard.userDistribution') }}</h3>
-          <span class="text-xs text-[var(--muted-foreground)]">{{ $t('dashboard.byRole') }}</span>
-        </div>
-        <div ref="pieChartRef" class="chart-container"></div>
-      </t-card>
-    </div>
+    <t-row :gutter="[16, 16]" class="mt-4">
+      <t-col :xs="12" :lg="8">
+        <t-card
+          class="panel-card"
+          :bordered="false"
+          :title="$t('dashboard.visitTrend')"
+          :subtitle="$t('dashboard.last7Days')"
+        >
+          <div ref="lineChartRef" class="chart-container"></div>
+        </t-card>
+      </t-col>
+      <t-col :xs="12" :lg="4">
+        <t-card
+          class="panel-card"
+          :bordered="false"
+          :title="$t('dashboard.userDistribution')"
+          :subtitle="$t('dashboard.byRole')"
+        >
+          <div ref="pieChartRef" class="chart-container"></div>
+        </t-card>
+      </t-col>
+    </t-row>
 
     <!-- 审批效率 -->
-    <t-card class="mt-4 p-5">
-      <div class="mb-3 flex items-center justify-between">
-        <h3 class="text-base font-semibold text-[var(--foreground)]">{{ $t('dashboard.approvalStats') }}</h3>
-        <span class="text-xs text-[var(--muted-foreground)]">{{ $t('dashboard.approvalStatsHint') }}</span>
-      </div>
-      <div v-if="approvalStats.length" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        <div v-for="s in approvalStats" :key="s.type" class="rounded-wecom-md border border-[var(--wecom-border)] p-4">
-          <p class="text-sm font-medium text-[var(--wecom-text-primary)]">{{ s.typeName }}</p>
-          <p class="mt-2 flex items-baseline gap-3">
-            <span class="text-xl font-semibold text-[var(--wecom-text-primary)]">{{ s.pending }}</span>
-            <span class="text-xs text-[var(--wecom-text-tertiary)]">{{ $t('dashboard.pendingApproval') }}</span>
-          </p>
-          <p class="mt-2 text-xs text-[var(--wecom-text-tertiary)]">
-            {{ $t('dashboard.avgHours') }}: <span class="text-[var(--wecom-text-primary)]">{{ s.avgHours }}h</span>
-            · {{ $t('dashboard.rejectRate') }}: <span class="text-[var(--wecom-text-primary)]">{{ s.rejectRate }}%</span>
-          </p>
-        </div>
-      </div>
-      <p v-else class="py-6 text-center text-sm text-[var(--wecom-text-tertiary)]">{{ $t('dashboard.noApprovalStats') }}</p>
+    <t-card
+      class="mt-4 panel-card"
+      :bordered="false"
+      :title="$t('dashboard.approvalStats')"
+      :subtitle="$t('dashboard.approvalStatsHint')"
+    >
+      <t-table
+        v-if="approvalStats.length"
+        row-key="type"
+        :data="approvalStats"
+        :columns="approvalColumns"
+        :pagination="false"
+        :hover="true"
+        vertical-align="top"
+      >
+        <template #pending="{ row }">
+          <span :class="row.pending > 0 ? 'approval-pending--active' : ''">{{ row.pending }}</span>
+        </template>
+        <template #avgHours="{ row }">{{ row.avgHours }}h</template>
+        <template #rejectRate="{ row }">{{ row.rejectRate }}%</template>
+      </t-table>
+      <p v-else class="py-6 text-center text-sm text-[var(--td-text-color-placeholder)]">{{ $t('dashboard.noApprovalStats') }}</p>
     </t-card>
 
     <!-- 公告 + 最近操作 -->
-    <div class="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
-      <t-card class="p-5">
-        <div class="mb-3 flex items-center justify-between">
-          <h3 class="text-sm font-medium text-[var(--foreground)]">{{ $t('dashboard.latestNotices') }}</h3>
-          <t-link theme="primary" hover="color" class="text-xs" @click="router.push('/notice')">{{ $t('common.viewAll') }}</t-link>
-        </div>
-        <div v-if="notices.length" class="divide-y divide-[var(--border)]">
-          <div v-for="item in notices" :key="item.id" class="flex items-center justify-between py-3">
-            <div class="flex items-center gap-2 min-w-0">
-              <t-tag :theme="item.noticeType === '1' ? 'primary' : 'default'" class="shrink-0 text-xs">
-                {{ item.noticeType === '1' ? $t('notice.typeNotice') : $t('notice.typeAnnouncement') }}
-              </t-tag>
-              <span class="truncate text-sm text-[var(--foreground)]" @click="handleNoticeClick(item)">{{ item.noticeTitle }}</span>
+    <t-row :gutter="[16, 16]" class="mt-4">
+      <t-col :xs="12" :lg="6">
+        <t-card class="panel-card" :bordered="false" :title="$t('dashboard.latestNotices')">
+          <template #actions>
+            <t-link theme="primary" hover="color" class="text-xs" @click="router.push('/notice')">{{ $t('common.viewAll') }}</t-link>
+          </template>
+          <div v-if="notices.length" class="divide-y divide-[var(--border)]">
+            <div v-for="item in notices" :key="item.id" class="flex items-center justify-between py-3">
+              <div class="flex items-center gap-2 min-w-0">
+                <t-tag :theme="item.noticeType === '1' ? 'primary' : 'default'" variant="light" class="shrink-0 text-xs">
+                  {{ item.noticeType === '1' ? $t('notice.typeNotice') : $t('notice.typeAnnouncement') }}
+                </t-tag>
+                <span class="truncate text-sm text-[var(--foreground)]" @click="handleNoticeClick(item)">{{ item.noticeTitle }}</span>
+              </div>
+              <span class="shrink-0 text-xs text-[var(--muted-foreground)]">{{ formatDateTime(item.createTime) }}</span>
             </div>
-            <span class="shrink-0 text-xs text-[var(--muted-foreground)]">{{ formatDateTime(item.createTime) }}</span>
           </div>
-        </div>
-        <p v-else class="py-8 text-center text-sm text-[var(--muted-foreground)]">{{ $t('dashboard.noNotices') }}</p>
-      </t-card>
+          <p v-else class="py-8 text-center text-sm text-[var(--muted-foreground)]">{{ $t('dashboard.noNotices') }}</p>
+        </t-card>
+      </t-col>
 
-      <t-card class="p-5">
-        <div class="mb-3 flex items-center justify-between">
-          <h3 class="text-sm font-medium text-[var(--foreground)]">{{ $t('dashboard.recentLogs') }}</h3>
-          <t-link theme="primary" hover="color" class="text-xs" @click="router.push('/monitor/oper-log')">{{ $t('common.viewAll') }}</t-link>
-        </div>
-        <div v-if="operLogs.length" class="divide-y divide-[var(--border)]">
-          <div v-for="item in operLogs" :key="item.id" class="py-3">
-            <div class="flex items-center gap-2">
-              <t-tag :theme="businessTypeVariant(item.businessType) === 'default' ? 'primary' : businessTypeVariant(item.businessType) === 'destructive' ? 'danger' : 'primary'" class="text-xs">{{ businessTypeText(item.businessType) }}</t-tag>
-              <span class="text-sm text-[var(--foreground)]">{{ item.title }}</span>
+      <t-col :xs="12" :lg="6">
+        <t-card class="panel-card" :bordered="false" :title="$t('dashboard.recentLogs')">
+          <template #actions>
+            <t-link theme="primary" hover="color" class="text-xs" @click="router.push('/monitor/oper-log')">{{ $t('common.viewAll') }}</t-link>
+          </template>
+          <div v-if="operLogs.length" class="divide-y divide-[var(--border)]">
+            <div v-for="item in operLogs" :key="item.id" class="py-3">
+              <div class="flex items-center gap-2">
+                <t-tag :theme="businessTypeVariant(item.businessType)" variant="light" class="text-xs">{{ businessTypeText(item.businessType) }}</t-tag>
+                <span class="text-sm text-[var(--foreground)]">{{ item.title }}</span>
+              </div>
+              <p class="mt-1 text-xs text-[var(--muted-foreground)]">
+                {{ item.operUser }} · {{ item.requestMethod }} ·
+                <span :class="item.status === 0 ? 'text-[var(--td-success-color)]' : 'text-[var(--td-error-color)]'">{{ operStatusText(item.status) }}</span>
+                · {{ item.costTime }}ms
+              </p>
             </div>
-            <p class="mt-1 text-xs text-[var(--muted-foreground)]">
-              {{ item.operUser }} · {{ item.requestMethod }} ·
-              <span :class="item.status === 0 ? 'text-[var(--wecom-success)]' : 'text-[var(--wecom-error)]'">{{ operStatusText(item.status) }}</span>
-              · {{ item.costTime }}ms
-            </p>
           </div>
-        </div>
-        <p v-else class="py-8 text-center text-sm text-[var(--muted-foreground)]">{{ $t('dashboard.noLogs') }}</p>
-      </t-card>
-    </div>
+          <p v-else class="py-8 text-center text-sm text-[var(--muted-foreground)]">{{ $t('dashboard.noLogs') }}</p>
+        </t-card>
+      </t-col>
+    </t-row>
 
 
     <!-- 公告详情弹窗 -->
-    <t-dialog v-model="noticeDialogVisible" :header="currentNotice?.noticeTitle || $t('dashboard.noticeDetail')" @close="noticeDialogVisible = false">
+    <t-dialog v-model:visible="noticeDialogVisible" :header="currentNotice?.noticeTitle || $t('dashboard.noticeDetail')" @close="noticeDialogVisible = false">
       <div v-if="currentNotice" class="notice-detail">
         <div class="notice-detail-meta">
           <t-tag :theme="currentNotice.noticeType === '1' ? 'primary' : 'default'">
@@ -120,7 +142,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, onActivated, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, onActivated, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import * as echarts from 'echarts/core'
@@ -137,6 +159,7 @@ import {
   AppIcon as IconApps,
   BrowseIcon as IconEye,
   NotificationIcon as IconNotification,
+  ChevronRightIcon,
 } from 'tdesign-icons-vue-next'
 echarts.use([LineChart, PieChart, GridComponent, TooltipComponent, LegendComponent, CanvasRenderer])
 import { formatDateTime, businessTypeText, operStatusText, businessTypeVariant } from '@/utils/format'
@@ -154,12 +177,13 @@ const router = useRouter()
 const loading = ref(true)
 
 // ============ 统计卡片 ============
+// route 取自 sys_menu 中真实存在的菜单 path，整卡点击直达对应管理页
 const statCards = ref([
-  { title: t('dashboard.userCount'), titleKey: 'dashboard.userCount', key: 'userCount', value: '-', icon: IconUser },
-  { title: t('dashboard.roleCount'), titleKey: 'dashboard.roleCount', key: 'roleCount', value: '-', icon: IconUserGroup },
-  { title: t('dashboard.menuCount'), titleKey: 'dashboard.menuCount', key: 'menuCount', value: '-', icon: IconApps },
-  { title: t('dashboard.onlineCount'), titleKey: 'dashboard.onlineCount', key: 'onlineCount', value: '-', icon: IconEye },
-  { title: t('dashboard.noticeCount'), titleKey: 'dashboard.noticeCount', key: 'noticeCount', value: '-', icon: IconNotification },
+  { title: t('dashboard.userCount'), titleKey: 'dashboard.userCount', key: 'userCount', value: '-', icon: IconUser, route: '/system/user' },
+  { title: t('dashboard.roleCount'), titleKey: 'dashboard.roleCount', key: 'roleCount', value: '-', icon: IconUserGroup, route: '/system/role' },
+  { title: t('dashboard.menuCount'), titleKey: 'dashboard.menuCount', key: 'menuCount', value: '-', icon: IconApps, route: '/system/menu' },
+  { title: t('dashboard.onlineCount'), titleKey: 'dashboard.onlineCount', key: 'onlineCount', value: '-', icon: IconEye, route: '/monitor/online' },
+  { title: t('dashboard.noticeCount'), titleKey: 'dashboard.noticeCount', key: 'noticeCount', value: '-', icon: IconNotification, route: '/notice' },
 ])
 
 function setStat(key: string, val: string) {
@@ -182,6 +206,14 @@ const operLogs = ref<SysOperLog[]>([])
 
 // ============ 审批效率 ============
 const approvalStats = ref<ApprovalStat[]>([])
+
+// 插槽名必须与 colKey 同名，否则 TDesign 静默不渲染该列的自定义内容
+const approvalColumns = computed(() => [
+  { colKey: 'typeName', title: t('dashboard.approvalType'), ellipsis: true },
+  { colKey: 'pending', title: t('dashboard.pendingApproval'), width: 120 },
+  { colKey: 'avgHours', title: t('dashboard.avgHours'), width: 180 },
+  { colKey: 'rejectRate', title: t('dashboard.rejectRate'), width: 120 },
+])
 
 // ============ 图表（企业微信色板，ECharts 不解析 CSS 变量，使用字面量） ============
 const lineChartRef = ref<HTMLElement>()
@@ -402,6 +434,12 @@ onUnmounted(() => {
 .dashboard-container {
   padding: 0;
   min-height: 100%;
+}
+
+/* ---- 审批效率：待办数大于 0 时给出行提示 ---- */
+.approval-pending--active {
+  color: var(--td-brand-color);
+  font-weight: 600;
 }
 
 /* ---- 图表 ---- */

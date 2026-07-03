@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import type { RouteRecordRaw } from 'vue-router'
 import type { SysMenu } from '@/types/menu'
+import { resolveMenuPath } from '@/utils/menuPath'
 
 export const usePermissionStore = defineStore('permission', () => {
   const routes = ref<RouteRecordRaw[]>([])
@@ -40,18 +41,30 @@ export const usePermissionStore = defineStore('permission', () => {
   }
 })
 
-/** 将后端菜单数据转换为前端路由格式 */
-function transformMenusToRoutes(menus: SysMenu[]): RouteRecordRaw[] {
+/**
+ * 将后端菜单数据转换为前端路由格式。
+ *
+ * path 一律经 resolveMenuPath 解析为完整绝对路径，与导航侧共用同一套拼接规则。
+ * 此前这里是「不以 / 开头就补一个 /」的简单规则，而 vue-router 中子路由的绝对
+ * path 会脱离父级：sys_menu 里相对约定插入的子菜单（如 kb 下的 category）被注册
+ * 成 /category，导航侧跳的却是 /kb/category → 404，且不同父级下的同名相对路径
+ * （/category、/statistics）会互相遮蔽。
+ */
+function transformMenusToRoutes(menus: SysMenu[], parent?: SysMenu): RouteRecordRaw[] {
   const routes: RouteRecordRaw[] = []
 
   for (const menu of menus) {
     if (menu.menuType === 'F') continue // 按钮级别不生成路由
 
+    const fullPath = resolveMenuPath(menu, parent)
+    // 外链不注册路由，由导航侧 window.open 打开
+    if (!fullPath || fullPath.startsWith('http')) continue
+
     // 动态路由需按条件逐步补充 component/redirect/children，
     // 用 Partial 先构建骨架，最终在 push 时断言为完整 RouteRecordRaw
     const route: Partial<RouteRecordRaw> = {
-      path: menu.path.startsWith('/') ? menu.path : `/${menu.path}`,
-      name: menu.path.replace(/\//g, '-').replace(/^-/, '') || `menu-${menu.id}`,
+      path: fullPath,
+      name: fullPath.replace(/^\//, '').replace(/\//g, '-') || `menu-${menu.id}`,
       meta: {
         title: menu.menuName,
         icon: menu.icon || undefined,
@@ -65,7 +78,7 @@ function transformMenusToRoutes(menus: SysMenu[]): RouteRecordRaw[] {
     }
 
     if (menu.children && menu.children.length > 0) {
-      const childRoutes = transformMenusToRoutes(menu.children)
+      const childRoutes = transformMenusToRoutes(menu.children, menu)
       if (childRoutes.length > 0) {
         // 如果有子路由，设置 redirect 到第一个子路由
         route.redirect = childRoutes[0].path

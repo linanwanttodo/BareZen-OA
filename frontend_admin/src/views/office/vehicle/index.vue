@@ -2,12 +2,12 @@
   <div class="page-container">
     <!-- 搜索区域 -->
     <t-card class="mb-4">
-      <t-form :model="searchForm" layout="inline" @submit-success="handleSearch">
-        <t-form-item field="applicantName" :label="$t('office.applicantName')">
-          <t-input v-model="searchForm.applicantName" :placeholder="$t('common.inputPlaceholder')" allow-clear style="width: 180px" />
+      <t-form :data="searchForm" :label-width="80" @submit-success="handleSearch">
+        <t-form-item name="applicantName" :label="$t('office.applicantName')">
+          <t-input v-model="searchForm.applicantName" :placeholder="$t('common.inputPlaceholder')" allow-clear />
         </t-form-item>
-        <t-form-item field="status" :label="$t('office.vehicleStatus')">
-          <t-select v-model="searchForm.status" :placeholder="$t('common.all')" allow-clear style="width: 140px">
+        <t-form-item name="status" :label="$t('office.vehicleStatus')">
+          <t-select v-model="searchForm.status" :placeholder="$t('common.all')" allow-clear>
             <t-option value="0">{{ $t('office.statusPending') }}</t-option>
             <t-option value="1">{{ $t('office.statusApproved') }}</t-option>
             <t-option value="2">{{ $t('office.statusRejected') }}</t-option>
@@ -35,25 +35,25 @@
         </div>
       </template>
 
-      <t-loading :loading="loading">
-          <t-table row-key="id" :data="tableData" :columns="tableColumns" :pagination="false">
+      
+          <t-table :loading="loading" row-key="id" :data="tableData" :columns="tableColumns" :pagination="false" :hover="true" vertical-align="top">
     <template #vehicleType="{ row }">{{ vehicleTypeText(row.vehicleType) }}</template>
     <template #timeRange="{ row }">
                 <span class="text-sm">{{ row.startTime }} ~ {{ row.endTime }}</span>
               </template>
     <template #status="{ row }">
-                <t-tag :color="statusColor(row.status)">{{ statusText(row.status) }}</t-tag>
+                <t-tag :color="statusColor(row.status)" variant="light">{{ statusText(row.status) }}</t-tag>
               </template>
     <template #approverName="{ row }">{{ row.approverName || '-' }}</template>
     <template #operate="{ row }">
                 <t-space>
                   <template v-if="row.status === '0'">
-                    <t-button v-permission="PERM.office.vehicleApprove" size="small" theme="primary" @click="openApprove(row)">
+                    <t-link theme="primary" v-permission="PERM.office.vehicleApprove" @click="openApprove(row)">
                       {{ $t('office.approve') }}
-                    </t-button>
-                    <t-button size="small" @click="handleCancel(row)">
+                    </t-link>
+                    <t-link theme="primary" @click="handleCancel(row)">
                       {{ $t('office.cancel') }}
-                    </t-button>
+                    </t-link>
                   </template>
                   <t-button v-if="row.approveRemark" size="small" @click="showRemark(row)">
                     {{ $t('office.viewRemark') }}
@@ -74,11 +74,11 @@
             @change="loadData"
           />
         </div>
-      </t-loading>
+      
     </t-card>
 
     <!-- 流程进度弹窗：优先渲染引擎节点链（任务态），未接入引擎回退事件流 -->
-    <t-dialog v-model="flowVisible" :title="$t('office.flow')" :width="520" footer-only>
+    <t-dialog v-model:visible="flowVisible" :title="$t('office.flow')" :width="520" footer-only>
       <t-steps v-if="flowTasks.length" direction="vertical" :current="taskCurrent">
         <t-step-item
           v-for="task in flowTasks"
@@ -100,10 +100,10 @@
     </t-dialog>
 
     <!-- 用车申请弹窗 -->
-    <t-dialog v-model="addVisible" :title="$t('office.applyVehicle')" :width="560"
+    <t-dialog v-model:visible="addVisible" :title="$t('office.applyVehicle')" :width="560"
              @confirm="handleSubmit" @cancel="addVisible = false" :ok-loading="submitting">
-      <t-form :model="form" layout="vertical">
-        <t-form-item field="vehicleType" :label="$t('office.vehicleType')" required>
+      <t-form :data="form" layout="vertical">
+        <t-form-item name="vehicleType" :label="$t('office.vehicleType')" required>
           <t-select v-model="form.vehicleType">
             <t-option value="car">{{ $t('office.typeCar') }}</t-option>
             <t-option value="van">{{ $t('office.typeVan') }}</t-option>
@@ -111,39 +111,39 @@
             <t-option value="other">{{ $t('office.typeOther') }}</t-option>
           </t-select>
         </t-form-item>
-        <t-form-item field="timeRange" :label="$t('office.timeRange')" required>
+        <t-form-item name="timeRange" :label="$t('office.timeRange')" required>
           
-<t-date-picker v-model="form.startTime" show-time value-type="YYYY-MM-DD HH:mm" style="width: 240px" :placeholder="$t('office.startTime')" />
+<t-date-picker v-model="form.startTime" show-time value-type="YYYY-MM-DD HH:mm" :placeholder="$t('office.startTime')" />
           <span class="mx-2">~</span>
           
-<t-date-picker v-model="form.endTime" show-time value-type="YYYY-MM-DD HH:mm" style="width: 240px" :placeholder="$t('office.endTime')" />
+<t-date-picker v-model="form.endTime" show-time value-type="YYYY-MM-DD HH:mm" :placeholder="$t('office.endTime')" />
         </t-form-item>
-        <t-form-item field="purpose" :label="$t('office.purpose')" required>
+        <t-form-item name="purpose" :label="$t('office.purpose')" required>
           <t-textarea v-model="form.purpose" :placeholder="$t('common.inputPlaceholder')" :max-length="200" show-word-limit />
         </t-form-item>
-        <t-form-item field="destination" :label="$t('office.destination')">
+        <t-form-item name="destination" :label="$t('office.destination')">
           <t-input v-model="form.destination" :placeholder="$t('common.inputPlaceholder')" />
         </t-form-item>
-        <t-form-item field="passengerCount" :label="$t('office.passengerCount')">
+        <t-form-item name="passengerCount" :label="$t('office.passengerCount')">
           <t-input-number v-model="form.passengerCount" :min="1" style="width: 100%" />
         </t-form-item>
-        <t-form-item field="deptName" :label="$t('office.deptName')">
+        <t-form-item name="deptName" :label="$t('office.deptName')">
           <t-input v-model="form.deptName" :placeholder="$t('common.inputPlaceholder')" />
         </t-form-item>
       </t-form>
     </t-dialog>
 
     <!-- 审批弹窗 -->
-    <t-dialog v-model="approveVisible" :title="$t('office.approve')" :width="480"
+    <t-dialog v-model:visible="approveVisible" :title="$t('office.approve')" :width="480"
              @confirm="handleApprove" @cancel="approveVisible = false" :ok-loading="approving">
-      <t-form :model="approveForm" layout="vertical">
+      <t-form :data="approveForm" layout="vertical">
         <t-form-item :label="$t('office.approveAction')" required>
           <t-radio-group v-model="approveForm.action" variant="default-filled">
             <t-radio value="pass">{{ $t('office.approvePass') }}</t-radio>
             <t-radio value="reject">{{ $t('office.approveReject') }}</t-radio>
           </t-radio-group>
         </t-form-item>
-        <t-form-item field="remark" :label="$t('office.approveRemark')">
+        <t-form-item name="remark" :label="$t('office.approveRemark')">
           <t-textarea v-model="approveForm.remark" :placeholder="$t('common.inputPlaceholder')" :max-length="500" show-word-limit />
         </t-form-item>
       </t-form>

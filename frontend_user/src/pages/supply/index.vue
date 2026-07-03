@@ -66,7 +66,7 @@
     </div>
 
     <!-- 流程进度弹窗 -->
-    <t-dialog v-model="flowVisible" :title="$t('supplyApply.flow')" :width="520" footer-only>
+    <t-dialog v-model:visible="flowVisible" :header="$t('supplyApply.flow')" :width="520" footer-only>
       <t-steps v-if="flowNodes.length" direction="vertical" :current="currentStep">
         <t-step-item
           v-for="node in flowNodes"
@@ -79,13 +79,13 @@
     </t-dialog>
 
     <!-- 申领弹窗 -->
-    <t-dialog v-model="applyVisible" :title="$t('supplyApply.apply')" :width="480"
+    <t-dialog v-model:visible="applyVisible" :header="$t('supplyApply.apply')" :width="480"
              @confirm="handleSubmit" @cancel="applyVisible = false" :ok-loading="submitting">
-      <t-form :model="applyForm" layout="vertical">
+      <t-form ref="applyFormRef" :data="applyForm" layout="vertical">
         <t-form-item :label="$t('supplyApply.supplyName')">
           <t-input :model-value="applyForm.supplyName" disabled />
         </t-form-item>
-        <t-form-item :label="$t('supplyApply.quantity')" required>
+        <t-form-item :label="$t('supplyApply.quantity')" required name="quantity" :rules="[{ required: true, message: $t('validation.required', { field: $t('supplyApply.quantity') }) }]">
           <t-input-number v-model="applyForm.quantity" :min="1" :max="applyForm.maxStock" style="width: 100%" />
         </t-form-item>
         <t-form-item :label="$t('supplyApply.reason')">
@@ -98,7 +98,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
-import { MessagePlugin } from 'tdesign-vue-next'
+import { MessagePlugin, type FormInstanceFunctions } from 'tdesign-vue-next'
 import {
   getSuppliesApi, getMySupplyRequestsApi, submitSupplyRequestApi, revokeSupplyRequestApi,
   getFlowLogsApi,
@@ -116,6 +116,8 @@ const supplies = ref<Supply[]>([])
 const requests = ref<SupplyRequest[]>([])
 const applyQuantities = reactive<Record<string, number>>({})
 const applyVisible = ref(false)
+
+const applyFormRef = ref<FormInstanceFunctions>()
 
 const applyForm = reactive<{ supplyId: string; supplyName: string; quantity: number; maxStock: number; reason: string }>({
   supplyId: '', supplyName: '', quantity: 1, maxStock: 99, reason: '',
@@ -164,6 +166,8 @@ function openApply(item: Supply) {
 }
 
 async function handleSubmit() {
+  // 校验不通过则中止提交，字段错误就地显示
+  if (await applyFormRef.value?.validate() !== true) return
   if (!applyForm.quantity || applyForm.quantity < 1) {
     MessagePlugin.warning('请填写申领数量')
     return

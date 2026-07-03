@@ -2,15 +2,15 @@
   <div class="page-container">
     <!-- 搜索区域 -->
     <t-card class="mb-4" :bordered="true">
-      <t-form :model="searchForm" layout="inline" @submit-success="handleSearch">
-        <t-form-item field="userName" :label="$t('user.userName')">
-          <t-input v-model="searchForm.userName" :placeholder="$t('user.userName')" allow-clear style="width: 180px" />
+      <t-form :data="searchForm" :label-width="80" @submit-success="handleSearch">
+        <t-form-item name="userName" :label="$t('user.userName')">
+          <t-input v-model="searchForm.userName" :placeholder="$t('user.userName')" allow-clear />
         </t-form-item>
-        <t-form-item field="phone" :label="$t('user.phone')">
-          <t-input v-model="searchForm.phone" :placeholder="$t('user.phone')" allow-clear style="width: 180px" />
+        <t-form-item name="phone" :label="$t('user.phone')">
+          <t-input v-model="searchForm.phone" :placeholder="$t('user.phone')" allow-clear />
         </t-form-item>
-        <t-form-item field="status" :label="$t('common.status')">
-          <t-select v-model="searchForm.status" :placeholder="$t('common.selectPlaceholder')" allow-clear style="width: 120px">
+        <t-form-item name="status" :label="$t('common.status')">
+          <t-select v-model="searchForm.status" :placeholder="$t('common.selectPlaceholder')" allow-clear>
             <t-option value="0">{{ $t('common.normal') }}</t-option>
             <t-option value="1">{{ $t('common.disable') }}</t-option>
           </t-select>
@@ -46,8 +46,8 @@
         </div>
       </template>
 
-      <t-loading :loading="loading">
-          <t-table row-key="id" :data="tableData" :columns="tableColumns" :pagination="false">
+      
+          <t-table :loading="loading" row-key="id" :data="tableData" :columns="tableColumns" :pagination="false" :hover="true" vertical-align="top">
     <template #sex="{ row }">
                 {{ row.sex === '0' ? $t('user.male') : row.sex === '1' ? $t('user.female') : $t('user.unknown') }}
               </template>
@@ -63,10 +63,10 @@
               </template>
     <template #col_8="{ row }">
                 <t-space>
-                  <t-button v-permission="PERM.system.userEdit" size="small" @click="handleEdit(row)">{{ $t('common.edit') }}</t-button>
-                  <t-button v-permission="PERM.system.userEdit" size="small" @click="handleAssignRole(row)">{{ $t('user.assignRole') }}</t-button>
-                  <t-button size="small" @click="handleAssignDept(row)">{{ $t('user.assignDept') }}</t-button>
-                  <t-button size="small" @click="handleResetPwd(row)">{{ $t('user.resetPwd') }}</t-button>
+                  <t-link theme="primary" v-permission="PERM.system.userEdit" @click="handleEdit(row)">{{ $t('common.edit') }}</t-link>
+                  <t-link theme="primary" v-permission="PERM.system.userEdit" @click="handleAssignRole(row)">{{ $t('user.assignRole') }}</t-link>
+                  <t-link theme="primary" @click="handleAssignDept(row)">{{ $t('user.assignDept') }}</t-link>
+                  <t-link theme="primary" @click="handleResetPwd(row)">{{ $t('user.resetPwd') }}</t-link>
                   <t-popconfirm v-permission="PERM.system.userDelete" :content="$t('user.deleteConfirm')" @confirm="handleDelete(row)">
                     <t-button size="small" theme="danger">{{ $t('common.delete') }}</t-button>
                   </t-popconfirm>
@@ -84,7 +84,7 @@
             @change="onPageChange"
           />
         </div>
-      </t-loading>
+      
     </t-card>
 
     <!-- 新增/编辑弹窗 -->
@@ -96,37 +96,37 @@
       @confirm="onFormConfirm"
       @cancel="formDialogVisible = false"
     >
-      <t-form :model="formData" layout="vertical">
+      <t-form :data="formData" layout="vertical">
         <t-row :gutter="16">
           <t-col :span="12">
-            <t-form-item field="userName" :label="$t('user.userName')" :rules="[{ required: true, message: $t('user.userName') + $t('validation.required', { field: '' }) }]">
+            <t-form-item name="userName" :label="$t('user.userName')" :rules="[{ required: true, message: $t('user.userName') + $t('validation.required', { field: '' }) }]">
               <t-input v-model="formData.userName" :placeholder="$t('user.userName')" :disabled="formType === 'edit'" />
             </t-form-item>
           </t-col>
           <t-col :span="12">
-            <t-form-item field="nickName" :label="$t('user.nickName')" :rules="[{ required: true, message: $t('user.nickName') }]">
+            <t-form-item name="nickName" :label="$t('user.nickName')" :rules="[{ required: true, message: $t('user.nickName') }]">
               <t-input v-model="formData.nickName" :placeholder="$t('user.nickName')" />
             </t-form-item>
           </t-col>
         </t-row>
-        <t-form-item v-if="formType === 'add'" field="password" :label="$t('login.password')" :rules="[{ required: true, message: $t('login.passwordRequired') }]">
+        <t-form-item v-if="formType === 'add'" name="password" :label="$t('login.password')" :rules="[{ required: true, message: $t('login.passwordRequired') }]">
           <t-input v-model="formData.password" :placeholder="$t('login.passwordRequired')" />
         </t-form-item>
         <t-row :gutter="16">
           <t-col :span="12">
-            <t-form-item field="phone" :label="$t('user.phone')">
+            <t-form-item name="phone" :label="$t('user.phone')">
               <t-input v-model="formData.phone" :placeholder="$t('user.phone')" />
             </t-form-item>
           </t-col>
           <t-col :span="12">
-            <t-form-item field="email" :label="$t('user.email')">
+            <t-form-item name="email" :label="$t('user.email')">
               <t-input v-model="formData.email" :placeholder="$t('user.email')" />
             </t-form-item>
           </t-col>
         </t-row>
         <t-row :gutter="16">
           <t-col :span="12">
-            <t-form-item field="sex" :label="$t('user.sex')">
+            <t-form-item name="sex" :label="$t('user.sex')">
               <t-radio-group v-model="formData.sex">
                 <t-radio value="0">{{ $t('user.male') }}</t-radio>
                 <t-radio value="1">{{ $t('user.female') }}</t-radio>
@@ -135,7 +135,7 @@
             </t-form-item>
           </t-col>
           <t-col :span="12">
-            <t-form-item field="status" :label="$t('common.status')">
+            <t-form-item name="status" :label="$t('common.status')">
               <t-radio-group v-model="formData.status">
                 <t-radio value="0">{{ $t('common.normal') }}</t-radio>
                 <t-radio value="1">{{ $t('common.disable') }}</t-radio>
@@ -143,7 +143,7 @@
             </t-form-item>
           </t-col>
         </t-row>
-        <t-form-item field="remark" :label="$t('common.remark')">
+        <t-form-item name="remark" :label="$t('common.remark')">
           <t-textarea v-model="formData.remark" :placeholder="$t('common.remark')" :max-length="200" show-word-limit />
         </t-form-item>
       </t-form>
@@ -186,8 +186,8 @@
           <span style="font-weight: 500">{{ currentUser.nickName }}（{{ currentUser.userName }}）</span>
         </t-space>
       </div>
-      <t-form :model="resetPwdData" layout="vertical">
-        <t-form-item field="password" :label="$t('user.newPassword')" :rules="[{ required: true, message: $t('user.newPassword') + $t('validation.required', { field: '' }) }]">
+      <t-form :data="resetPwdData" layout="vertical">
+        <t-form-item name="password" :label="$t('user.newPassword')" :rules="[{ required: true, message: $t('user.newPassword') + $t('validation.required', { field: '' }) }]">
           <t-input v-model="resetPwdData.password" :placeholder="$t('user.newPassword')" />
         </t-form-item>
         <div v-if="resetPwdData.password" class="mb-4 rounded-wecom-md bg-[var(--wecom-bg-container)] p-3 text-xs">
@@ -252,7 +252,7 @@
             v-if="checkedDeptKeys.includes(item.node.id)"
             :model-value="deptRoleMap[item.node.id] || '0'"
             size="small"
-            style="width: 120px"
+           
             @change="(v: string | number | boolean | Record<string, any> | (string | number | boolean | Record<string, any>)[]) => onDeptRoleChange(item.node.id, String(v))"
           >
             <t-option value="0">{{ $t('user.normalUser') }}</t-option>

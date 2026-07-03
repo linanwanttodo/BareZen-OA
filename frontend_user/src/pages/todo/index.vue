@@ -73,23 +73,23 @@
 
     <!-- 新增/编辑弹窗 -->
     <t-dialog
-      v-model="dialogVisible"
-      :title="isEdit ? $t('todo.edit') : $t('todo.add')"
+      v-model:visible="dialogVisible"
+      :header="isEdit ? $t('todo.edit') : $t('todo.add')"
       :width="520"
       :mask-closable="false"
       @confirm="onSubmit"
       @cancel="dialogVisible = false"
     >
-      <t-form :model="formData" layout="vertical">
-        <t-form-item field="title" :label="$t('todo.titleLabel')" :rules="[{ required: true, message: t('todo.titleRequired') }]">
+      <t-form ref="formRef" :data="formData" layout="vertical">
+        <t-form-item name="title" :label="$t('todo.titleLabel')" :rules="[{ required: true, message: t('todo.titleRequired') }]">
           <t-input v-model="formData.title" :placeholder="$t('todo.titlePlaceholder')" />
         </t-form-item>
-        <t-form-item field="description" :label="$t('todo.descriptionLabel')">
+        <t-form-item name="description" :label="$t('todo.descriptionLabel')">
           <t-textarea v-model="formData.description" :placeholder="$t('todo.descriptionPlaceholder')" />
         </t-form-item>
         <t-row :gutter="16">
           <t-col :span="12">
-            <t-form-item field="priority" :label="$t('todo.priorityLabel')">
+            <t-form-item name="priority" :label="$t('todo.priorityLabel')">
               <t-select v-model="formData.priority">
                 <t-option :value="0">{{ $t('todo.priorityLow') }}</t-option>
                 <t-option :value="1">{{ $t('todo.priorityMedium') }}</t-option>
@@ -99,7 +99,7 @@
             </t-form-item>
           </t-col>
           <t-col :span="12">
-            <t-form-item field="status" :label="$t('todo.statusLabel')">
+            <t-form-item name="status" :label="$t('todo.statusLabel')">
               <t-select v-model="formData.status">
                 <t-option :value="0">{{ $t('todo.statusTodo') }}</t-option>
                 <t-option :value="1">{{ $t('todo.statusInProgress') }}</t-option>
@@ -109,7 +109,7 @@
             </t-form-item>
           </t-col>
         </t-row>
-        <t-form-item field="dueDate" :label="$t('todo.dueDateLabel')">
+        <t-form-item name="dueDate" :label="$t('todo.dueDateLabel')">
           
 <t-date-picker v-model="formData.dueDate" value-type="YYYY-MM-DD" style="width: 100%" />
         </t-form-item>
@@ -121,7 +121,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { MessagePlugin, DialogPlugin } from 'tdesign-vue-next'
+import { MessagePlugin, DialogPlugin, type FormInstanceFunctions } from 'tdesign-vue-next'
 import { getTodoListApi, addTodoApi, updateTodoApi, deleteTodoApi } from '@/api/enterprise'
 import type { TodoItem } from '@/types/api'
 import { formatDate } from '@/utils/format'
@@ -136,6 +136,9 @@ const pageSize = ref(10)
 const statusFilter = ref<number | ''>('')
 
 // ---- 弹窗 ----
+// 表单实例：提交前调 validate() 触发各 t-form-item 的 rules
+const formRef = ref<FormInstanceFunctions>()
+
 const dialogVisible = ref(false)
 const isEdit = ref(false)
 const editingId = ref<string | null>(null)
@@ -221,6 +224,8 @@ async function onToggleDone(todo: TodoItem, checked: boolean) {
 }
 
 async function onSubmit() {
+  // 校验不通过则保持对话框打开，字段错误就地显示（t-dialog 确认不会自行关闭）
+  if (await formRef.value?.validate() !== true) return
   try {
     if (isEdit.value && editingId.value) {
       await updateTodoApi({

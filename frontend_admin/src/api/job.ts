@@ -48,3 +48,33 @@ export function pauseJobApi(id: string) {
 export function runJobApi(id: string) {
   return request.put<void>(`/system/v1/jobs/${encodeURIComponent(id)}/run`)
 }
+
+/* ==================== 任务日志（sys_job_log） ==================== */
+
+export interface SysJobLog {
+  id: string
+  jobId: string
+  jobName: string
+  jobGroup: string
+  invokeTarget: string
+  cronExpression: string
+  /** 执行状态：'0'=成功 '1'=失败（RuoYi 约定） */
+  status: string
+  errorMsg: string
+  startTime: string
+  stopTime: string
+  /** 耗时（毫秒） */
+  duration: number
+}
+
+export interface JobLogListParams {
+  pageNum?: number
+  pageSize?: number
+  jobId?: string
+  status?: string
+}
+
+/** 分页查询任务执行日志 */
+export function getJobLogPageApi(params: JobLogListParams) {
+  return request.get<PageData<SysJobLog>>('/system/v1/job-logs/page', { params })
+}

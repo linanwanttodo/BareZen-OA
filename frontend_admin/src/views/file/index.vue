@@ -38,12 +38,12 @@
         </div>
 
         <!-- 当前目录内搜索 -->
-        <t-form class="mb-4" :model="searchForm" layout="inline" @submit-success="handleSearch">
-          <t-form-item field="originalName" :label="$t('file.fileName')">
-            <t-input v-model="searchForm.originalName" :placeholder="$t('common.inputPlaceholder')" allow-clear style="width: 180px" />
+        <t-form class="mb-4" :data="searchForm" :label-width="80" @submit-success="handleSearch">
+          <t-form-item name="originalName" :label="$t('file.fileName')">
+            <t-input v-model="searchForm.originalName" :placeholder="$t('common.inputPlaceholder')" allow-clear />
           </t-form-item>
-          <t-form-item field="fileType" :label="$t('file.fileType')">
-            <t-select v-model="searchForm.fileType" :placeholder="$t('common.selectPlaceholder')" clearable style="width: 140px">
+          <t-form-item name="fileType" :label="$t('file.fileType')">
+            <t-select v-model="searchForm.fileType" :placeholder="$t('common.selectPlaceholder')" clearable>
               <t-option value="image" :label="$t('file.typeImage')" />
               <t-option value="document" :label="$t('file.typeDocument')" />
               <t-option value="video" :label="$t('file.typeVideo')" />
@@ -59,10 +59,7 @@
           </t-form-item>
         </t-form>
 
-        <div v-if="loading" class="flex h-64 items-center justify-center">
-          <t-loading size="28px" :text="$t('common.loading')" />
-        </div>
-          <t-table row-key="id" :data="tableData" :columns="tableColumns" :pagination="false">
+          <t-table :loading="loading" row-key="id" :data="tableData" :columns="tableColumns" :pagination="false" :hover="true" vertical-align="top">
     <template #fileName="{ row }">
                 <div class="flex items-center gap-2">
                   <icon-folder v-if="row.isFolder === 1" class="text-[var(--bz-warning)]" />
@@ -80,7 +77,7 @@
               </template>
     <template #fileType="{ row }">{{ getTypeText(row) }}</template>
     <template #scope="{ row }">
-                <t-tag :theme="row.scope === 'public' ? 'success' : 'default'" size="small">
+                <t-tag :theme="row.scope === 'public' ? 'success' : 'default'" size="small" variant="light">
                   {{ row.scope === 'public' ? $t('file.scopePublic') : $t('file.scopeAdmin') }}
                 </t-tag>
               </template>
@@ -111,25 +108,25 @@
     </t-card>
 
     <!-- 新建文件夹 -->
-    <t-dialog v-model="createFolderVisible" :title="$t('file.createFolder')" @confirm="handleCreateFolder" @cancel="createFolderVisible = false">
-      <t-form :model="folderForm" layout="vertical">
-        <t-form-item field="name" :label="$t('file.folderName')">
+    <t-dialog v-model:visible="createFolderVisible" :title="$t('file.createFolder')" @confirm="handleCreateFolder" @cancel="createFolderVisible = false">
+      <t-form :data="folderForm" layout="vertical">
+        <t-form-item name="name" :label="$t('file.folderName')">
           <t-input v-model="folderForm.name" :placeholder="$t('file.folderNamePlaceholder')" @press-enter="handleCreateFolder" />
         </t-form-item>
       </t-form>
     </t-dialog>
 
     <!-- 重命名 -->
-    <t-dialog v-model="renameVisible" :title="$t('file.rename')" @confirm="handleRename" @cancel="renameVisible = false">
-      <t-form :model="renameForm" layout="vertical">
-        <t-form-item field="name" :label="$t('file.fileName')">
+    <t-dialog v-model:visible="renameVisible" :title="$t('file.rename')" @confirm="handleRename" @cancel="renameVisible = false">
+      <t-form :data="renameForm" layout="vertical">
+        <t-form-item name="name" :label="$t('file.fileName')">
           <t-input v-model="renameForm.name" :placeholder="$t('file.renamePlaceholder')" @press-enter="handleRename" />
         </t-form-item>
       </t-form>
     </t-dialog>
 
     <!-- 删除确认 -->
-    <t-dialog v-model="deleteVisible" :title="$t('common.confirm')" @confirm="handleDelete" @cancel="deleteVisible = false">
+    <t-dialog v-model:visible="deleteVisible" :title="$t('common.confirm')" @confirm="handleDelete" @cancel="deleteVisible = false">
       <p class="text-sm text-[var(--foreground)]">{{ deleteConfirmText }}</p>
     </t-dialog>
   </div>

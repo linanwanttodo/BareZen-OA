@@ -36,6 +36,11 @@ export function submitOvertimeApi(data: Partial<AttOvertimeRequest>) {
   return request.post<void>('/hr/v1/overtimes', data)
 }
 
+/** 修改加班申请（仅本人、仅待审批状态） */
+export function updateOvertimeApi(id: string, data: Partial<AttOvertimeRequest>) {
+  return request.put<void>(`/hr/v1/overtimes/${id}`, data)
+}
+
 /** 审批加班（pass/reject） */
 export function approveOvertimeApi(id: string, action: 'pass' | 'reject', remark?: string) {
   return request.put<void>(`/hr/v1/overtimes/${id}/approve`, null, {

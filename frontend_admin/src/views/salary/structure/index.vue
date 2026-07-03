@@ -2,9 +2,9 @@
   <div class="page-container">
     <!-- 搜索区域 -->
     <t-card class="mb-4">
-      <t-form :model="searchForm" layout="inline" @submit-success="handleSearch">
-        <t-form-item field="keyword" :label="$t('salary.userName')">
-          <t-input v-model="searchForm.keyword" :placeholder="$t('common.inputPlaceholder')" allow-clear style="width: 180px" />
+      <t-form :data="searchForm" :label-width="80" @submit-success="handleSearch">
+        <t-form-item name="keyword" :label="$t('salary.userName')">
+          <t-input v-model="searchForm.keyword" :placeholder="$t('common.inputPlaceholder')" allow-clear />
         </t-form-item>
         <t-form-item>
           <t-space>
@@ -27,8 +27,8 @@
         </div>
       </template>
 
-      <t-loading :loading="loading">
-          <t-table row-key="id" :data="tableData" :columns="tableColumns" :pagination="false">
+      
+          <t-table :loading="loading" row-key="id" :data="tableData" :columns="tableColumns" :pagination="false" :hover="true" vertical-align="top">
     <template #baseSalary="{ row }">{{ money(num(row.baseSalary)) }}</template>
     <template #performanceSalary="{ row }">{{ money(num(row.performanceSalary)) }}</template>
     <template #totalIncome="{ row }">{{ money(totalOf(row)) }}</template>
@@ -38,7 +38,7 @@
               </template>
     <template #operate="{ row }">
                 <t-space>
-                  <t-button v-permission="PERM.salary.structureEdit" size="small" @click="handleEdit(row)">{{ $t('common.edit') }}</t-button>
+                  <t-link theme="primary" v-permission="PERM.salary.structureEdit" @click="handleEdit(row)">{{ $t('common.edit') }}</t-link>
                   <t-popconfirm :content="$t('common.deleteConfirm')" @confirm="handleDelete(row)">
                     <t-button v-permission="PERM.salary.structureDelete" size="small" theme="danger">{{ $t('common.delete') }}</t-button>
                   </t-popconfirm>
@@ -54,16 +54,16 @@
             @change="loadData"
           />
         </div>
-      </t-loading>
+      
     </t-card>
 
     <!-- 编辑弹窗 -->
-    <t-dialog v-model="editVisible" :title="isEdit ? $t('salary.editStructure') : $t('salary.addStructure')"
+    <t-dialog v-model:visible="editVisible" :title="isEdit ? $t('salary.editStructure') : $t('salary.addStructure')"
              :width="640" @confirm="handleSave" @cancel="editVisible = false" :ok-loading="saving">
-      <t-form :model="form" layout="vertical">
+      <t-form :data="form" layout="vertical">
         <t-row :gutter="16">
           <t-col :span="12">
-            <t-form-item field="userId" :label="$t('salary.userId')" required>
+            <t-form-item name="userId" :label="$t('salary.userId')" required>
               <t-select
                 v-model="form.userId"
                 filterable
@@ -79,52 +79,52 @@
             </t-form-item>
           </t-col>
           <t-col :span="12">
-            <t-form-item field="userName" :label="$t('salary.userName')" required>
+            <t-form-item name="userName" :label="$t('salary.userName')" required>
               <t-input v-model="form.userName" :placeholder="$t('common.inputPlaceholder')" />
             </t-form-item>
           </t-col>
           <t-col :span="12">
-            <t-form-item field="baseSalary" :label="$t('salary.baseSalary')">
+            <t-form-item name="baseSalary" :label="$t('salary.baseSalary')">
               <t-input-number v-model="form.baseSalary" :min="0" :decimal-places="2" style="width: 100%" />
             </t-form-item>
           </t-col>
           <t-col :span="12">
-            <t-form-item field="performanceSalary" :label="$t('salary.performanceSalary')">
+            <t-form-item name="performanceSalary" :label="$t('salary.performanceSalary')">
               <t-input-number v-model="form.performanceSalary" :min="0" :decimal-places="2" style="width: 100%" />
             </t-form-item>
           </t-col>
           <t-col :span="12">
-            <t-form-item field="positionAllowance" :label="$t('salary.positionAllowance')">
+            <t-form-item name="positionAllowance" :label="$t('salary.positionAllowance')">
               <t-input-number v-model="form.positionAllowance" :min="0" :decimal-places="2" style="width: 100%" />
             </t-form-item>
           </t-col>
           <t-col :span="12">
-            <t-form-item field="transportAllowance" :label="$t('salary.transportAllowance')">
+            <t-form-item name="transportAllowance" :label="$t('salary.transportAllowance')">
               <t-input-number v-model="form.transportAllowance" :min="0" :decimal-places="2" style="width: 100%" />
             </t-form-item>
           </t-col>
           <t-col :span="12">
-            <t-form-item field="mealAllowance" :label="$t('salary.mealAllowance')">
+            <t-form-item name="mealAllowance" :label="$t('salary.mealAllowance')">
               <t-input-number v-model="form.mealAllowance" :min="0" :decimal-places="2" style="width: 100%" />
             </t-form-item>
           </t-col>
           <t-col :span="12">
-            <t-form-item field="otherAllowance" :label="$t('salary.otherAllowance')">
+            <t-form-item name="otherAllowance" :label="$t('salary.otherAllowance')">
               <t-input-number v-model="form.otherAllowance" :min="0" :decimal-places="2" style="width: 100%" />
             </t-form-item>
           </t-col>
           <t-col :span="12">
-            <t-form-item field="socialInsurancePersonal" :label="$t('salary.socialInsurance')">
+            <t-form-item name="socialInsurancePersonal" :label="$t('salary.socialInsurance')">
               <t-input-number v-model="form.socialInsurancePersonal" :min="0" :decimal-places="2" style="width: 100%" />
             </t-form-item>
           </t-col>
           <t-col :span="12">
-            <t-form-item field="housingFundPersonal" :label="$t('salary.housingFund')">
+            <t-form-item name="housingFundPersonal" :label="$t('salary.housingFund')">
               <t-input-number v-model="form.housingFundPersonal" :min="0" :decimal-places="2" style="width: 100%" />
             </t-form-item>
           </t-col>
           <t-col :span="12">
-            <t-form-item field="incomeTax" :label="$t('salary.incomeTax')">
+            <t-form-item name="incomeTax" :label="$t('salary.incomeTax')">
               <t-input-number v-model="form.incomeTax" :min="0" :decimal-places="2" style="width: 100%" />
             </t-form-item>
           </t-col>
@@ -134,7 +134,7 @@
             </t-form-item>
           </t-col>
           <t-col :span="24">
-            <t-form-item field="remark" :label="$t('common.remark')">
+            <t-form-item name="remark" :label="$t('common.remark')">
               <t-textarea v-model="form.remark" :placeholder="$t('common.inputPlaceholder')" :max-length="500" show-word-limit />
             </t-form-item>
           </t-col>

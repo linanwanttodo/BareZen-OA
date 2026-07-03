@@ -1,4 +1,7 @@
 export default {
+  validation: {
+    required: '{field}不能为空',
+  },
   common: {
     loading: '加载中...',
     noData: '暂无数据',
@@ -25,6 +28,7 @@ export default {
     loginTitle: 'BareZen 企业门户',
     welcomeBack: '欢迎回来',
     loginSuccess: '登录成功',
+    rememberMe: '记住我',
   },
   dashboard: {
     title: '工作台',

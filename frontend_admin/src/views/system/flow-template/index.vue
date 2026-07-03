@@ -2,9 +2,9 @@
   <div class="page-container">
     <!-- 搜索区域 -->
     <t-card class="mb-4">
-      <t-form :model="searchForm" layout="inline" @submit-success="handleSearch">
-        <t-form-item field="bizType" :label="$t('flowTemplate.bizType')">
-          <t-select v-model="searchForm.bizType" :placeholder="$t('common.inputPlaceholder')" allow-clear style="width: 200px">
+      <t-form :data="searchForm" :label-width="80" @submit-success="handleSearch">
+        <t-form-item name="bizType" :label="$t('flowTemplate.bizType')">
+          <t-select v-model="searchForm.bizType" :placeholder="$t('common.inputPlaceholder')" allow-clear>
             <t-option v-for="item in bizTypeOptions" :key="item.value" :value="item.value">{{ item.label }}</t-option>
           </t-select>
         </t-form-item>
@@ -31,10 +31,10 @@
 
       <t-alert class="mb-4" :title="$t('flowTemplate.tip')" type="info" />
 
-      <t-loading :loading="loading">
-          <t-table row-key="id" :data="tableData" :columns="tableColumns" :pagination="false">
+      
+          <t-table :loading="loading" row-key="id" :data="tableData" :columns="tableColumns" :pagination="false" :hover="true" vertical-align="top">
     <template #bizType="{ row }">
-                <t-tag theme="primary">{{ bizTypeLabel(row.bizType) }}</t-tag>
+                <t-tag theme="primary" variant="light">{{ bizTypeLabel(row.bizType) }}</t-tag>
               </template>
     <template #enabled="{ row }">
                 <t-switch
@@ -45,7 +45,7 @@
               </template>
     <template #col_5="{ row }">
                 <t-space>
-                  <t-button v-permission="PERM.system.flowTemplateEdit" size="small" @click="handleEdit(row)">{{ $t('common.edit') }}</t-button>
+                  <t-link theme="primary" v-permission="PERM.system.flowTemplateEdit" @click="handleEdit(row)">{{ $t('common.edit') }}</t-link>
                   <t-popconfirm :content="$t('common.deleteConfirm')" @confirm="handleDelete(row)">
                     <t-button v-permission="PERM.system.flowTemplateDelete" size="small" theme="danger">{{ $t('common.delete') }}</t-button>
                   </t-popconfirm>
@@ -61,25 +61,25 @@
             @change="loadData"
           />
         </div>
-      </t-loading>
+      
     </t-card>
 
     <!-- 新增/编辑弹窗 -->
-    <t-dialog v-model="editVisible" :title="isEdit ? $t('flowTemplate.editNode') : $t('flowTemplate.addNode')"
+    <t-dialog v-model:visible="editVisible" :title="isEdit ? $t('flowTemplate.editNode') : $t('flowTemplate.addNode')"
              :width="480" @confirm="handleSave" @cancel="editVisible = false" :ok-loading="saving">
-      <t-form :model="form" layout="vertical">
-        <t-form-item field="bizType" :label="$t('flowTemplate.bizType')" required>
+      <t-form :data="form" layout="vertical">
+        <t-form-item name="bizType" :label="$t('flowTemplate.bizType')" required>
           <t-select v-model="form.bizType" :disabled="isEdit" :placeholder="$t('flowTemplate.bizTypePlaceholder')">
             <t-option v-for="item in bizTypeOptions" :key="item.value" :value="item.value">{{ item.label }}</t-option>
           </t-select>
         </t-form-item>
-        <t-form-item field="nodeSeq" :label="$t('flowTemplate.nodeSeq')" required>
+        <t-form-item name="nodeSeq" :label="$t('flowTemplate.nodeSeq')" required>
           <t-input-number v-model="form.nodeSeq" :min="1" :max="99" :disabled="isEdit" style="width: 100%" />
         </t-form-item>
-        <t-form-item field="nodeName" :label="$t('flowTemplate.nodeName')" required>
+        <t-form-item name="nodeName" :label="$t('flowTemplate.nodeName')" required>
           <t-input v-model="form.nodeName" :placeholder="$t('common.inputPlaceholder')" />
         </t-form-item>
-        <t-form-item field="enabled" :label="$t('common.status')">
+        <t-form-item name="enabled" :label="$t('common.status')">
           <t-radio-group v-model="form.enabled">
             <t-radio :value="1">{{ $t('common.enabled') }}</t-radio>
             <t-radio :value="0">{{ $t('common.disabled') }}</t-radio>

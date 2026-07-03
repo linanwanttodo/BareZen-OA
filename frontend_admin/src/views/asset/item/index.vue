@@ -2,20 +2,20 @@
   <div class="page-container">
     <!-- 搜索区域 -->
     <t-card class="mb-4">
-      <t-form :model="searchForm" layout="inline" @submit-success="handleSearch">
-        <t-form-item field="assetName" :label="$t('asset.assetName')">
-          <t-input v-model="searchForm.assetName" :placeholder="$t('common.inputPlaceholder')" allow-clear style="width: 180px" />
+      <t-form :data="searchForm" :label-width="80" @submit-success="handleSearch">
+        <t-form-item name="assetName" :label="$t('asset.assetName')">
+          <t-input v-model="searchForm.assetName" :placeholder="$t('common.inputPlaceholder')" allow-clear />
         </t-form-item>
-        <t-form-item field="assetNo" :label="$t('asset.assetNo')">
-          <t-input v-model="searchForm.assetNo" :placeholder="$t('common.inputPlaceholder')" allow-clear style="width: 160px" />
+        <t-form-item name="assetNo" :label="$t('asset.assetNo')">
+          <t-input v-model="searchForm.assetNo" :placeholder="$t('common.inputPlaceholder')" allow-clear />
         </t-form-item>
-        <t-form-item field="categoryId" :label="$t('asset.category')">
-          <t-select v-model="searchForm.categoryId" :placeholder="$t('common.all')" allow-clear style="width: 140px">
+        <t-form-item name="categoryId" :label="$t('asset.category')">
+          <t-select v-model="searchForm.categoryId" :placeholder="$t('common.all')" allow-clear>
             <t-option v-for="c in categories" :key="c.id" :value="c.id">{{ c.name }}</t-option>
           </t-select>
         </t-form-item>
-        <t-form-item field="status" :label="$t('common.status')">
-          <t-select v-model="searchForm.status" :placeholder="$t('common.all')" allow-clear style="width: 140px">
+        <t-form-item name="status" :label="$t('common.status')">
+          <t-select v-model="searchForm.status" :placeholder="$t('common.all')" allow-clear>
             <t-option value="0">{{ $t('asset.statusStock') }}</t-option>
             <t-option value="1">{{ $t('asset.statusInUse') }}</t-option>
             <t-option value="2">{{ $t('asset.statusRepair') }}</t-option>
@@ -43,27 +43,27 @@
         </div>
       </template>
 
-      <t-loading :loading="loading">
-          <t-table row-key="id" :data="tableData" :columns="tableColumns" :pagination="false">
+      
+          <t-table :loading="loading" row-key="id" :data="tableData" :columns="tableColumns" :pagination="false" :hover="true" vertical-align="top">
     <template #category="{ row }">{{ categoryName(row.categoryId) }}</template>
     <template #brandModel="{ row }">{{ [row.brand, row.model].filter(Boolean).join(' ') || '-' }}</template>
     <template #price="{ row }">{{ row.price ? Number(row.price).toFixed(2) : '-' }}</template>
     <template #status="{ row }">
-                <t-tag :color="statusColor(row.status)">{{ statusText(row.status) }}</t-tag>
+                <t-tag :color="statusColor(row.status)" variant="light">{{ statusText(row.status) }}</t-tag>
               </template>
     <template #operate="{ row }">
                 <t-space>
-                  <t-button v-permission="PERM.asset.itemEdit" size="small" @click="handleEdit(row)">{{ $t('common.edit') }}</t-button>
-                  <t-button v-if="row.status === '0' || row.status === '2'" v-permission="PERM.asset.itemBorrow" size="small" theme="primary" @click="handleBorrow(row)">
+                  <t-link theme="primary" v-permission="PERM.asset.itemEdit" @click="handleEdit(row)">{{ $t('common.edit') }}</t-link>
+                  <t-link theme="primary" v-if="row.status === '0' || row.status === '2'" v-permission="PERM.asset.itemBorrow" @click="handleBorrow(row)">
                     {{ $t('asset.borrow') }}
-                  </t-button>
-                  <t-button v-if="row.status === '1'" v-permission="PERM.asset.itemBorrow" size="small" @click="handleReturn(row)">
+                  </t-link>
+                  <t-link theme="primary" v-if="row.status === '1'" v-permission="PERM.asset.itemBorrow" @click="handleReturn(row)">
                     {{ $t('asset.return') }}
-                  </t-button>
-                  <t-button size="small" @click="handleRecords(row)">{{ $t('asset.records') }}</t-button>
-                  <t-button v-if="row.status !== '3'" v-permission="PERM.asset.itemEdit" size="small" @click="handleScrap(row)">
+                  </t-link>
+                  <t-link theme="primary" @click="handleRecords(row)">{{ $t('asset.records') }}</t-link>
+                  <t-link theme="primary" v-if="row.status !== '3'" v-permission="PERM.asset.itemEdit" @click="handleScrap(row)">
                     {{ $t('asset.scrap') }}
-                  </t-button>
+                  </t-link>
                   <t-popconfirm :content="$t('common.deleteConfirm')" @confirm="handleDelete(row)">
                     <t-button v-permission="PERM.asset.itemDelete" size="small" theme="danger">{{ $t('common.delete') }}</t-button>
                   </t-popconfirm>
@@ -79,33 +79,33 @@
             @change="loadData"
           />
         </div>
-      </t-loading>
+      
     </t-card>
 
     <!-- 编辑弹窗 -->
-    <t-dialog v-model="editVisible" :title="isEdit ? $t('asset.editItem') : $t('asset.addItem')"
+    <t-dialog v-model:visible="editVisible" :title="isEdit ? $t('asset.editItem') : $t('asset.addItem')"
              :width="640" @confirm="handleSave" @cancel="editVisible = false" :ok-loading="saving">
-      <t-form :model="form" layout="vertical">
+      <t-form :data="form" layout="vertical">
         <t-row :gutter="16">
           <t-col :span="12">
-            <t-form-item field="assetNo" :label="$t('asset.assetNo')" required>
+            <t-form-item name="assetNo" :label="$t('asset.assetNo')" required>
               <t-input v-model="form.assetNo" :placeholder="$t('common.inputPlaceholder')" />
             </t-form-item>
           </t-col>
           <t-col :span="12">
-            <t-form-item field="assetName" :label="$t('asset.assetName')" required>
+            <t-form-item name="assetName" :label="$t('asset.assetName')" required>
               <t-input v-model="form.assetName" :placeholder="$t('common.inputPlaceholder')" />
             </t-form-item>
           </t-col>
           <t-col :span="12">
-            <t-form-item field="categoryId" :label="$t('asset.category')">
+            <t-form-item name="categoryId" :label="$t('asset.category')">
               <t-select v-model="form.categoryId" allow-clear>
                 <t-option v-for="c in categories" :key="c.id" :value="c.id">{{ c.name }}</t-option>
               </t-select>
             </t-form-item>
           </t-col>
           <t-col :span="12">
-            <t-form-item field="status" :label="$t('common.status')">
+            <t-form-item name="status" :label="$t('common.status')">
               <t-select v-model="form.status">
                 <t-option value="0">{{ $t('asset.statusStock') }}</t-option>
                 <t-option value="1">{{ $t('asset.statusInUse') }}</t-option>
@@ -115,17 +115,17 @@
             </t-form-item>
           </t-col>
           <t-col :span="12">
-            <t-form-item field="brand" :label="$t('asset.brand')">
+            <t-form-item name="brand" :label="$t('asset.brand')">
               <t-input v-model="form.brand" :placeholder="$t('common.inputPlaceholder')" />
             </t-form-item>
           </t-col>
           <t-col :span="12">
-            <t-form-item field="model" :label="$t('asset.model')">
+            <t-form-item name="model" :label="$t('asset.model')">
               <t-input v-model="form.model" :placeholder="$t('common.inputPlaceholder')" />
             </t-form-item>
           </t-col>
           <t-col :span="12">
-            <t-form-item field="price" :label="$t('asset.price')">
+            <t-form-item name="price" :label="$t('asset.price')">
               <!-- 接口 price 为 string，a-input-number 需要 number，双向桥接转换 -->
               <t-input-number
                 :model-value="form.price != null && form.price !== '' ? Number(form.price) : undefined"
@@ -138,23 +138,23 @@
             </t-form-item>
           </t-col>
           <t-col :span="12">
-            <t-form-item field="purchaseDate" :label="$t('asset.purchaseDate')">
+            <t-form-item name="purchaseDate" :label="$t('asset.purchaseDate')">
               
 <t-date-picker v-model="form.purchaseDate" style="width: 100%"  value-type="YYYY-MM-DD" />
             </t-form-item>
           </t-col>
           <t-col :span="12">
-            <t-form-item field="holderName" :label="$t('asset.holderName')">
+            <t-form-item name="holderName" :label="$t('asset.holderName')">
               <t-input v-model="form.holderName" :placeholder="$t('common.inputPlaceholder')" />
             </t-form-item>
           </t-col>
           <t-col :span="12">
-            <t-form-item field="location" :label="$t('asset.location')">
+            <t-form-item name="location" :label="$t('asset.location')">
               <t-input v-model="form.location" :placeholder="$t('common.inputPlaceholder')" />
             </t-form-item>
           </t-col>
           <t-col :span="24">
-            <t-form-item field="remark" :label="$t('common.remark')">
+            <t-form-item name="remark" :label="$t('common.remark')">
               <t-textarea v-model="form.remark" :placeholder="$t('common.inputPlaceholder')" :max-length="500" show-word-limit />
             </t-form-item>
           </t-col>
@@ -162,26 +162,26 @@
       </t-form>
     </t-dialog>
     <!-- 借用弹窗 -->
-    <t-dialog v-model="borrowVisible" :title="$t('asset.borrow')" :width="480" @confirm="handleBorrowSave" :ok-loading="saving">
-      <t-form :model="borrowForm" layout="vertical">
-        <t-form-item field="borrowerName" :label="$t('asset.borrowerName')" required>
+    <t-dialog v-model:visible="borrowVisible" :title="$t('asset.borrow')" :width="480" @confirm="handleBorrowSave" :ok-loading="saving">
+      <t-form :data="borrowForm" layout="vertical">
+        <t-form-item name="borrowerName" :label="$t('asset.borrowerName')" required>
           <t-input v-model="borrowForm.borrowerName" :placeholder="$t('common.inputPlaceholder')" />
         </t-form-item>
-        <t-form-item field="expectReturnTime" :label="$t('asset.expectReturnTime')">
+        <t-form-item name="expectReturnTime" :label="$t('asset.expectReturnTime')">
           
 <t-date-picker v-model="borrowForm.expectReturnTime" style="width: 100%"  value-type="YYYY-MM-DD" />
         </t-form-item>
-        <t-form-item field="remark" :label="$t('common.remark')">
+        <t-form-item name="remark" :label="$t('common.remark')">
           <t-textarea v-model="borrowForm.remark" :placeholder="$t('common.inputPlaceholder')" :max-length="500" show-word-limit />
         </t-form-item>
       </t-form>
     </t-dialog>
 
     <!-- 借用记录弹窗 -->
-    <t-dialog v-model="recordsVisible" :title="$t('asset.records')" :width="640" footer-only>
-        <t-table row-key="id" :data="records" :columns="tableColumns2" :pagination="false">
+    <t-dialog v-model:visible="recordsVisible" :title="$t('asset.records')" :width="640" footer-only>
+        <t-table row-key="id" :data="records" :columns="tableColumns2" :pagination="false" :hover="true" vertical-align="top">
     <template #status="{ row }">
-                <t-tag :color="row.status === '0' ? 'blue' : 'green'">{{ row.status === '0' ? $t('asset.borrowing') : $t('asset.returned') }}</t-tag>
+                <t-tag :color="row.status === '0' ? 'blue' : 'green'" variant="light">{{ row.status === '0' ? $t('asset.borrowing') : $t('asset.returned') }}</t-tag>
               </template>
   </t-table>
       <t-empty v-if="!records.length" :description="$t('common.noData')" />

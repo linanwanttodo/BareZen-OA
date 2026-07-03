@@ -2,12 +2,12 @@
   <div class="page-container">
     <!-- 搜索区域 -->
     <t-card class="mb-4">
-      <t-form :model="searchForm" layout="inline" @submit-success="handleSearch">
-        <t-form-item field="jobName" :label="$t('monitor.jobs.jobName')">
-          <t-input v-model="searchForm.jobName" :placeholder="$t('common.inputPlaceholder')" allow-clear style="width: 180px" />
+      <t-form :data="searchForm" :label-width="80" @submit-success="handleSearch">
+        <t-form-item name="jobName" :label="$t('monitor.jobs.jobName')">
+          <t-input v-model="searchForm.jobName" :placeholder="$t('common.inputPlaceholder')" allow-clear />
         </t-form-item>
-        <t-form-item field="status" :label="$t('common.status')">
-          <t-select v-model="searchForm.status" :placeholder="$t('common.selectPlaceholder')" clearable style="width: 140px">
+        <t-form-item name="status" :label="$t('common.status')">
+          <t-select v-model="searchForm.status" :placeholder="$t('common.selectPlaceholder')" clearable>
             <t-option value="1" :label="$t('common.normal')" />
             <t-option value="0" :label="$t('common.disable')" />
           </t-select>
@@ -34,8 +34,8 @@
         </div>
       </template>
 
-      <t-loading :loading="loading">
-          <t-table row-key="id" :data="tableData" :columns="tableColumns" :pagination="false">
+      
+          <t-table :loading="loading" row-key="id" :data="tableData" :columns="tableColumns" :pagination="false" :hover="true" vertical-align="top">
     <template #cronExpression="{ row }">
                 <span class="font-mono text-xs">{{ row.cronExpression }}</span>
               </template>
@@ -47,8 +47,8 @@
               </template>
     <template #col_5="{ row }">
                 <t-space>
-                  <t-button v-permission="PERM.monitor.jobEdit" size="small" @click="handleRun(row)">{{ $t('monitor.jobs.execute') }}</t-button>
-                  <t-button v-permission="PERM.monitor.jobEdit" size="small" @click="handleEdit(row)">{{ $t('common.edit') }}</t-button>
+                  <t-link theme="primary" v-permission="PERM.monitor.jobEdit" @click="handleRun(row)">{{ $t('monitor.jobs.execute') }}</t-link>
+                  <t-link theme="primary" v-permission="PERM.monitor.jobEdit" @click="handleEdit(row)">{{ $t('common.edit') }}</t-link>
                   <t-popconfirm v-permission="PERM.monitor.jobDelete" :content="$t('monitor.jobs.deleteConfirm')" @confirm="handleDelete(row)">
                     <t-button size="small" theme="danger">{{ $t('common.delete') }}</t-button>
                   </t-popconfirm>
@@ -64,11 +64,11 @@
             @change="loadData"
           />
         </div>
-      </t-loading>
+      
     </t-card>
 
-    <t-dialog v-model="editVisible" :header="isAdd ? $t('monitor.jobs.addJob') : $t('monitor.jobs.editJob')" @confirm="handleSave" @close="editVisible = false">
-      <t-form :model="editForm" auto-label-width>
+    <t-dialog v-model:visible="editVisible" :header="isAdd ? $t('monitor.jobs.addJob') : $t('monitor.jobs.editJob')" @confirm="handleSave" @close="editVisible = false">
+      <t-form :data="editForm" auto-label-width>
         <t-form-item name="jobName" :label="$t('monitor.jobs.jobName')">
           <t-input v-model="editForm.jobName" :placeholder="$t('common.inputPlaceholder')" />
         </t-form-item>

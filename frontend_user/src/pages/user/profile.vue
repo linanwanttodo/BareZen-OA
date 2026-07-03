@@ -28,22 +28,22 @@
     </t-card>
 
     <!-- 编辑资料对话框 -->
-    <t-dialog v-model="showEditDialog" :title="$t('profile.editProfile')" @confirm="onEditSubmit" @cancel="showEditDialog = false">
-      <t-form :model="editForm" auto-label-width>
-        <t-form-item field="nickName" :label="$t('profile.nickName')" :rules="[{ required: true, message: '请输入昵称' }]">
+    <t-dialog v-model:visible="showEditDialog" :header="$t('profile.editProfile')" @confirm="onEditSubmit" @cancel="showEditDialog = false">
+      <t-form ref="editFormRef" :data="editForm" auto-label-width>
+        <t-form-item name="nickName" :label="$t('profile.nickName')" :rules="[{ required: true, message: '请输入昵称' }]">
           <t-input v-model="editForm.nickName" placeholder="请输入昵称" />
         </t-form-item>
-        <t-form-item field="sex" :label="$t('profile.sex')">
+        <t-form-item name="sex" :label="$t('profile.sex')">
           <t-radio-group v-model="editForm.sex">
             <t-radio value="0">{{ $t('profile.male') }}</t-radio>
             <t-radio value="1">{{ $t('profile.female') }}</t-radio>
             <t-radio value="2">{{ $t('profile.unknown') }}</t-radio>
           </t-radio-group>
         </t-form-item>
-        <t-form-item field="email" :label="$t('profile.email')">
+        <t-form-item name="email" :label="$t('profile.email')">
           <t-input v-model="editForm.email" placeholder="请输入邮箱" />
         </t-form-item>
-        <t-form-item field="phone" :label="$t('profile.phone')">
+        <t-form-item name="phone" :label="$t('profile.phone')">
           <t-input v-model="editForm.phone" placeholder="请输入手机号" />
         </t-form-item>
       </t-form>
@@ -54,7 +54,7 @@
 <script setup lang="ts">
 import { computed, ref, reactive, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { MessagePlugin } from 'tdesign-vue-next'
+import { MessagePlugin, type FormInstanceFunctions } from 'tdesign-vue-next'
 import { useUserStore } from '@/stores/user'
 import { updateProfileApi } from '@/api/enterprise'
 
@@ -79,6 +79,9 @@ const profileData = computed(() => [
 ])
 
 // ---- 编辑资料 ----
+// 表单实例：提交前调 validate() 触发各 t-form-item 的 rules
+const editFormRef = ref<FormInstanceFunctions>()
+
 const showEditDialog = ref(false)
 
 const editForm = reactive({
@@ -98,6 +101,8 @@ watch(showEditDialog, (val) => {
 })
 
 async function onEditSubmit() {
+  // 校验不通过则保持对话框打开，字段错误就地显示（t-dialog 确认不会自行关闭）
+  if (await editFormRef.value?.validate() !== true) return
   try {
     await updateProfileApi({
       nickName: editForm.nickName,

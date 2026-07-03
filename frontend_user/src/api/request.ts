@@ -8,6 +8,10 @@ import { useUserStore } from '@/stores/user'
 
 const BASE_URL = import.meta.env.VITE_APP_BASE_API || '/api'
 
+// 401 跳转防重入标志：并发 401 只允许执行一次跳转与提示
+let redirectingToLogin = false
+let resetHookRegistered = false
+
 const service: AxiosInstance = axios.create({
   baseURL: BASE_URL,
   timeout: 15000,
@@ -69,10 +73,24 @@ service.interceptors.response.use(
     if (status === 401) {
       // 完整清理本地状态：token、用户信息、Pinia 状态、WebSocket 连接
       useUserStore().resetState()
-      // 跳转登录页并带上当前地址，登出后可以跳转回来
-      const redirect = router.currentRoute.value.fullPath
-      router.push({ path: '/auth/login', query: redirect !== '/auth/login' ? { redirect } : {} })
-      Toast.warning('登录已过期，请重新登录')
+      // 401 整页跳转防重入：首页常并发多个请求（用户信息/未读数/待办数），
+      // 全部 401 时会各自 push + 各自弹提示，表现为登录页被反复刷新、提示叠层
+      // 复位钩子必须惰性注册：request.ts 与 router 互相引用，
+      // 在模块顶层调用 router.afterEach 会在初始化期访问尚未就绪的 router 而抛 TDZ 错误
+      if (!resetHookRegistered) {
+        resetHookRegistered = true
+        router.afterEach((to) => {
+          if (to.path !== '/auth/login') redirectingToLogin = false
+        })
+      }
+      if (!redirectingToLogin) {
+        const redirect = router.currentRoute.value.fullPath
+        if (redirect !== '/auth/login') {
+          redirectingToLogin = true
+          router.push({ path: '/auth/login', query: { redirect } })
+          Toast.warning('登录已过期，请重新登录')
+        }
+      }
       return Promise.reject(new Error(res?.msg || '未登录'))
     }
 

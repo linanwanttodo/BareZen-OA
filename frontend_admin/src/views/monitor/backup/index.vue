@@ -18,8 +18,8 @@
         <span>{{ $t('monitor.backup.backupList') }}</span>
       </template>
 
-      <t-loading :loading="loading">
-          <t-table row-key="filename" :data="backupList" :columns="tableColumns" :pagination="false">
+      
+          <t-table :loading="loading" row-key="filename" :data="backupList" :columns="tableColumns" :pagination="false" :hover="true" vertical-align="top">
     <template #filename="{ row }">
                 <span class="font-mono text-sm">{{ row.filename }}</span>
               </template>
@@ -28,14 +28,14 @@
               </template>
     <template #col_3="{ row }">
                 <t-space>
-                  <t-button v-permission="PERM.system.backupList" size="small" @click="handleDownload(row)">{{ $t('monitor.backup.download') }}</t-button>
+                  <t-link theme="primary" v-permission="PERM.system.backupList" @click="handleDownload(row)">{{ $t('monitor.backup.download') }}</t-link>
                   <t-popconfirm v-permission="PERM.system.backupDelete" :content="$t('monitor.backup.deleteConfirm')" @confirm="handleDelete(row)">
                     <t-button size="small" theme="danger">{{ $t('monitor.backup.delete') }}</t-button>
                   </t-popconfirm>
                 </t-space>
               </template>
   </t-table>
-      </t-loading>
+      
     </t-card>
   </div>
 </template>

@@ -2,15 +2,15 @@
   <div class="page-container">
     <!-- 搜索区域 -->
     <t-card class="mb-4">
-      <t-form :model="searchForm" layout="inline" @submit-success="handleSearch">
-        <t-form-item field="logType" :label="$t('worklog.logType')">
-          <t-select v-model="searchForm.logType" :placeholder="$t('common.all')" allow-clear style="width: 140px">
+      <t-form :data="searchForm" :label-width="80" @submit-success="handleSearch">
+        <t-form-item name="logType" :label="$t('worklog.logType')">
+          <t-select v-model="searchForm.logType" :placeholder="$t('common.all')" allow-clear>
             <t-option value="daily">{{ $t('worklog.typeDaily') }}</t-option>
             <t-option value="weekly">{{ $t('worklog.typeWeekly') }}</t-option>
           </t-select>
         </t-form-item>
-        <t-form-item field="userName" :label="$t('worklog.userName')">
-          <t-input v-model="searchForm.userName" :placeholder="$t('common.inputPlaceholder')" allow-clear style="width: 160px" />
+        <t-form-item name="userName" :label="$t('worklog.userName')">
+          <t-input v-model="searchForm.userName" :placeholder="$t('common.inputPlaceholder')" allow-clear />
         </t-form-item>
         <t-form-item>
           <t-space>
@@ -33,21 +33,21 @@
         </div>
       </template>
 
-      <t-loading :loading="loading">
-          <t-table row-key="id" :data="tableData" :columns="tableColumns" :pagination="false">
+      
+          <t-table :loading="loading" row-key="id" :data="tableData" :columns="tableColumns" :pagination="false" :hover="true" vertical-align="top">
     <template #logType="{ row }">
-                <t-tag :theme="row.logType === 'weekly' ? 'primary' : 'default'">
+                <t-tag :theme="row.logType === 'weekly' ? 'primary' : 'default'" variant="light">
                   {{ row.logType === 'weekly' ? $t('worklog.typeWeekly') : $t('worklog.typeDaily') }}
                 </t-tag>
               </template>
     <template #reviewerName="{ row }">{{ row.reviewerName || '-' }}</template>
     <template #operate="{ row }">
                 <t-space>
-                  <t-button v-permission="PERM.hr.worklogList" size="small" @click="handleView(row)">{{ $t('worklog.view') }}</t-button>
-                  <t-button v-if="!row.reviewerName" v-permission="PERM.hr.worklogReview" size="small" theme="primary" @click="openReview(row)">
+                  <t-link theme="primary" v-permission="PERM.hr.worklogList" @click="handleView(row)">{{ $t('worklog.view') }}</t-link>
+                  <t-link theme="primary" v-if="!row.reviewerName" v-permission="PERM.hr.worklogReview" @click="openReview(row)">
                     {{ $t('worklog.review') }}
-                  </t-button>
-                  <t-button v-permission="PERM.hr.worklogEdit" size="small" @click="handleEdit(row)">{{ $t('common.edit') }}</t-button>
+                  </t-link>
+                  <t-link theme="primary" v-permission="PERM.hr.worklogEdit" @click="handleEdit(row)">{{ $t('common.edit') }}</t-link>
                   <t-popconfirm :content="$t('common.deleteConfirm')" @confirm="handleDelete(row)">
                     <t-button v-permission="PERM.hr.worklogDelete" size="small" theme="danger">{{ $t('common.delete') }}</t-button>
                   </t-popconfirm>
@@ -63,16 +63,16 @@
             @change="loadData"
           />
         </div>
-      </t-loading>
+      
     </t-card>
 
     <!-- 新增/编辑弹窗 -->
-    <t-dialog v-model="editVisible" :title="isEdit ? $t('worklog.editLog') : $t('worklog.addLog')"
+    <t-dialog v-model:visible="editVisible" :title="isEdit ? $t('worklog.editLog') : $t('worklog.addLog')"
              :width="640" @confirm="handleSave" @cancel="editVisible = false" :ok-loading="saving">
-      <t-form :model="form" layout="vertical">
+      <t-form :data="form" layout="vertical">
         <t-row :gutter="16">
           <t-col :span="12">
-            <t-form-item field="logType" :label="$t('worklog.logType')" required>
+            <t-form-item name="logType" :label="$t('worklog.logType')" required>
               <t-select v-model="form.logType">
                 <t-option value="daily">{{ $t('worklog.typeDaily') }}</t-option>
                 <t-option value="weekly">{{ $t('worklog.typeWeekly') }}</t-option>
@@ -80,20 +80,20 @@
             </t-form-item>
           </t-col>
           <t-col :span="12">
-            <t-form-item field="logDate" :label="$t('worklog.logDate')">
+            <t-form-item name="logDate" :label="$t('worklog.logDate')">
               
 <t-date-picker v-model="form.logDate" style="width: 100%"  value-type="YYYY-MM-DD" />
             </t-form-item>
           </t-col>
         </t-row>
-        <t-form-item field="content" :label="$t('worklog.content')" required>
+        <t-form-item name="content" :label="$t('worklog.content')" required>
           <t-textarea v-model="form.content" :placeholder="$t('common.inputPlaceholder')" :auto-size="{ minRows: 6, maxRows: 14 }" />
         </t-form-item>
       </t-form>
     </t-dialog>
 
     <!-- 详情弹窗 -->
-    <t-dialog v-model="viewVisible" :title="$t('worklog.view')" :width="640" footer-only>
+    <t-dialog v-model:visible="viewVisible" :title="$t('worklog.view')" :width="640" footer-only>
       <div v-if="currentLog">
         <div class="mb-3 flex items-center gap-2">
           <t-tag :theme="currentLog.logType === 'weekly' ? 'primary' : 'default'">
@@ -112,10 +112,10 @@
     </t-dialog>
 
     <!-- 批阅弹窗 -->
-    <t-dialog v-model="reviewVisible" :title="$t('worklog.review')" :width="480"
+    <t-dialog v-model:visible="reviewVisible" :title="$t('worklog.review')" :width="480"
              @confirm="handleReview" @cancel="reviewVisible = false" :ok-loading="reviewing">
-      <t-form :model="reviewForm" layout="vertical">
-        <t-form-item field="remark" :label="$t('worklog.reviewRemark')">
+      <t-form :data="reviewForm" layout="vertical">
+        <t-form-item name="remark" :label="$t('worklog.reviewRemark')">
           <t-textarea v-model="reviewForm.remark" :placeholder="$t('common.inputPlaceholder')" :max-length="500" show-word-limit />
         </t-form-item>
       </t-form>

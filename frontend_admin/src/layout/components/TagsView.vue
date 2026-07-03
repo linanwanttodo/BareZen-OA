@@ -10,7 +10,7 @@
         v-for="tag in appStore.tagsList"
         :key="tag.path"
         :value="tag.path"
-        :label="$t(getTagTitleKey(tag))"
+        :label="tagLabel(tag)"
         :closable="!tag.affix"
       />
     </t-tabs>
@@ -20,50 +20,18 @@
 <script setup lang="ts">
 import { watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
+import { labelFromPath } from '@/utils/menuLabel'
 import type { TagItem } from '@/stores/app'
 
 const route = useRoute()
 const router = useRouter()
+const { t, te } = useI18n()
 const appStore = useAppStore()
 
-/**
- * 根据 tag 信息获取 i18n 翻译 key
- * 优先使用 route 表中的 key 映射
- */
-function getTagTitleKey(tag: TagItem): string {
-  const routeKeyMap: Record<string, string> = {
-    'Dashboard': 'route.dashboard',
-    'User': 'route.user',
-    'Role': 'route.role',
-    'Menu': 'route.menu',
-    'Dept': 'route.dept',
-    'Dict': 'route.dict',
-    'Notice': 'route.notice',
-    'Config': 'route.config',
-    'Online': 'route.online',
-    'OperLog': 'route.operLog',
-    'Logininfor': 'route.logininfor',
-    'Jobs': 'route.jobs',
-    'JobLog': 'route.jobLog',
-    'Gen': 'route.gen',
-    'Profile': 'route.profile',
-    'Backup': 'route.backup',
-    'RoleDept': 'route.roleDept',
-  }
-  const key = routeKeyMap[tag.name]
-  if (key) return key
-  // 如果 tag.title 直接匹配某个 i18n key，使用它
-  const knownKeys = ['route.dashboard', 'route.user', 'route.role', 'route.menu',
-    'route.dept', 'route.dict', 'route.notice', 'route.config',
-    'route.online', 'route.operLog', 'route.logininfor', 'route.jobs',
-    'route.gen', 'route.profile', 'route.backup', 'route.roleDept']
-  for (const k of knownKeys) {
-    // getTagTitleKey 在模板中经 $t() 调用，此处直接返回原 key 或标题
-    if (knownKeys.includes(k) && tag.title === k) return k
-  }
-  return tag.title
-}
+/** 标签文案按路由 path 末段推导 route.* 键，与导航栏共用同一套约定 */
+const tagLabel = (tag: TagItem) => labelFromPath(tag.path, tag.title, t, te)
 
 watch(
   () => route.path,
@@ -99,14 +67,19 @@ function onRemove({ value }: { value: unknown }) {
 
 <style scoped>
 .tags-view {
-  background: var(--wecom-bg-card);
-  border-bottom: 1px solid var(--wecom-border);
-  padding: 0 var(--wecom-spacing-xl);
+  background: var(--td-bg-color-container);
+  border-bottom: 1px solid var(--td-component-stroke);
+  padding: 0 var(--td-size-8);
 }
 
 /* 对齐企微风格：标签条扁平、紧凑 */
 .tags-view :deep(.t-tabs__nav-item) {
-  font-size: 12px;
+  font-size: var(--td-font-size-body-small);
+  /* card 主题的标签项默认直角，加圆角后与卡片语言一致 */
+  border-radius: var(--td-radius-default);
+}
+.tags-view :deep(.t-tabs--card .t-tabs__nav-item) {
+  padding: 0 var(--td-comp-margin-l);
 }
 .tags-view :deep(.t-tabs__content) {
   display: none;

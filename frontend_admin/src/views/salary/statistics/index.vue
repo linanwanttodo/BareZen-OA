@@ -2,10 +2,10 @@
   <div class="page-container">
     <!-- 筛选 -->
     <t-card class="mb-4">
-      <t-form :model="searchForm" layout="inline" @submit-success="loadData">
-        <t-form-item field="paymentMonth" :label="$t('salary.paymentMonth')">
+      <t-form :data="searchForm" :label-width="80" @submit-success="loadData">
+        <t-form-item name="paymentMonth" :label="$t('salary.paymentMonth')">
           
-<t-date-picker v-model="searchForm.paymentMonth" mode="month" format="YYYY-MM" value-type="YYYY-MM" clearable style="width: 150px" :placeholder="$t('common.all')" />
+<t-date-picker v-model="searchForm.paymentMonth" mode="month" format="YYYY-MM" value-type="YYYY-MM" clearable :placeholder="$t('common.all')" />
         </t-form-item>
         <t-form-item>
           <t-space>
@@ -49,7 +49,7 @@
       </t-col>
       <t-col :span="5">
         <t-card :title="$t('salary.monthlyDetail')">
-          <t-table row-key="paymentMonth" :data="stats.monthly || []" :columns="tableColumns" :pagination="false" size="small">
+          <t-table row-key="paymentMonth" :data="stats.monthly || []" :columns="tableColumns" :pagination="false" size="small" :hover="true" vertical-align="top">
     <template #paidRatio="{ row }">
                 <t-tag :theme="row.headcount > 0 && row.paidCount === row.headcount ? 'success' : row.paidCount > 0 ? 'warning' : 'default'" variant="light">
                   {{ row.headcount > 0 ? Math.round((row.paidCount / row.headcount) * 100) : 0 }}%

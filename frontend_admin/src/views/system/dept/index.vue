@@ -2,12 +2,12 @@
   <div class="page-container">
     <!-- 搜索区域 -->
     <t-card class="mb-4" :bordered="true">
-      <t-form :model="searchForm" layout="inline" @submit-success="handleSearch">
-        <t-form-item field="deptName" :label="$t('dept.deptName')">
-          <t-input v-model="searchForm.deptName" :placeholder="$t('dept.deptName')" allow-clear style="width: 200px" />
+      <t-form :data="searchForm" :label-width="80" @submit-success="handleSearch">
+        <t-form-item name="deptName" :label="$t('dept.deptName')">
+          <t-input v-model="searchForm.deptName" :placeholder="$t('dept.deptName')" allow-clear />
         </t-form-item>
-        <t-form-item field="status" :label="$t('common.status')">
-          <t-select v-model="searchForm.status" :placeholder="$t('common.selectPlaceholder')" allow-clear style="width: 120px">
+        <t-form-item name="status" :label="$t('common.status')">
+          <t-select v-model="searchForm.status" :placeholder="$t('common.selectPlaceholder')" allow-clear>
             <t-option value="0">{{ $t('dept.statusNormal') }}</t-option>
             <t-option value="1">{{ $t('dept.statusDisabled') }}</t-option>
           </t-select>
@@ -38,9 +38,9 @@
         </div>
       </template>
 
-      <t-loading :loading="loading">
-          <t-table row-key="id" :data="flatRows" :columns="tableColumns" :pagination="false">
-    <template #depth="{ row }">
+      
+          <t-table :loading="loading" row-key="id" :data="flatRows" :columns="tableColumns" :pagination="false" :hover="true" vertical-align="top">
+    <template #deptName="{ row }">
                 <div class="flex items-center" :style="{ paddingLeft: row.depth * 16 + 'px' }">
                   <icon-right v-if="row.hasChildren && !isExpanded(row.node.id)" class="cursor-pointer mr-1" @click="toggleExpand(row.node.id)" />
                   <icon-down v-if="row.hasChildren && isExpanded(row.node.id)" class="cursor-pointer mr-1" @click="toggleExpand(row.node.id)" />
@@ -53,11 +53,11 @@
     <template #phone="{ row }">{{ row.node.phone }}</template>
     <template #email="{ row }">{{ row.node.email }}</template>
     <template #status="{ row }">
-                <t-tag :theme="row.node.status === '0' ? 'success' : 'danger'">
+                <t-tag :theme="row.node.status === '0' ? 'success' : 'danger'" variant="light">
                   {{ row.node.status === '0' ? $t('dept.statusNormal') : $t('dept.statusDisabled') }}
                 </t-tag>
               </template>
-    <template #node="{ row }">
+    <template #operate="{ row }">
                 <t-space>
                   <t-button v-permission="PERM.system.deptAdd" size="small" @click="handleAdd(row.node)">{{ $t('common.add') }}</t-button>
                   <t-button v-permission="PERM.system.deptEdit" size="small" @click="handleEdit(row.node)">{{ $t('common.edit') }}</t-button>
@@ -67,7 +67,7 @@
                 </t-space>
               </template>
   </t-table>
-      </t-loading>
+      
     </t-card>
 
     <!-- 新增/编辑弹窗 -->
@@ -79,8 +79,8 @@
       @confirm="onFormSubmit"
       @cancel="formVisible = false"
     >
-      <t-form :model="formData" layout="vertical">
-        <t-form-item field="parentId" :label="$t('dept.parentDept')">
+      <t-form :data="formData" layout="vertical">
+        <t-form-item name="parentId" :label="$t('dept.parentDept')">
           
 <!-- TODO(tree-select): data 字段 key/title 需转为 value/label --><t-tree-select
             v-model="formData.parentId"
@@ -90,17 +90,17 @@
             :field-names="{ key: 'id', title: 'deptName', children: 'children' }"
           />
         </t-form-item>
-        <t-form-item field="deptName" :label="$t('dept.deptName')" :rules="[{ required: true, message: $t('dept.deptName') }]">
+        <t-form-item name="deptName" :label="$t('dept.deptName')" :rules="[{ required: true, message: $t('dept.deptName') }]">
           <t-input v-model="formData.deptName" :placeholder="$t('dept.deptName')" />
         </t-form-item>
         <t-row :gutter="16">
           <t-col :span="12">
-            <t-form-item field="sort" :label="$t('dept.orderNum')">
+            <t-form-item name="sort" :label="$t('dept.orderNum')">
               <t-input-number v-model="formData.sort" placeholder="0" :min="0" style="width: 100%" />
             </t-form-item>
           </t-col>
           <t-col :span="12">
-            <t-form-item field="status" :label="$t('common.status')">
+            <t-form-item name="status" :label="$t('common.status')">
               <t-radio-group v-model="formData.status">
                 <t-radio value="0">{{ $t('dept.statusNormal') }}</t-radio>
                 <t-radio value="1">{{ $t('dept.statusDisabled') }}</t-radio>
@@ -108,13 +108,13 @@
             </t-form-item>
           </t-col>
         </t-row>
-        <t-form-item field="leader" :label="$t('dept.leader')">
+        <t-form-item name="leader" :label="$t('dept.leader')">
           <t-input v-model="formData.leader" :placeholder="$t('dept.leader')" />
         </t-form-item>
-        <t-form-item field="phone" :label="$t('user.phone')">
+        <t-form-item name="phone" :label="$t('user.phone')">
           <t-input v-model="formData.phone" :placeholder="$t('user.phone')" />
         </t-form-item>
-        <t-form-item field="email" :label="$t('user.email')">
+        <t-form-item name="email" :label="$t('user.email')">
           <t-input v-model="formData.email" :placeholder="$t('user.email')" />
         </t-form-item>
       </t-form>

@@ -11,6 +11,13 @@
 
 /* ===== 1. 设计令牌（全部转发 TDesign token，禁止裸色值） ===== */
 :root {
+  /* ── 字体族 ──
+     TDesign 原生 --td-font-family 只列 macOS/Windows 族名且无通用兜底，
+     Linux/Android 上全部落空会退回衬线体，故补本机字体 + sans-serif
+     （与管理端 frontend_admin/src/styles/index.css 保持同源） */
+  --td-font-family: "PingFang SC", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial,
+    "Noto Sans CJK SC", "Source Han Sans SC", sans-serif;
+
   /* ── 品牌色 ── */
   --wecom-primary: var(--td-brand-color-7);
   --wecom-primary-hover: var(--td-brand-color-8);
@@ -47,14 +54,14 @@
   --wecom-border-strong: var(--td-border-level-2-color);
   --wecom-border-focus: var(--td-brand-color);
 
-  /* ── 间距系统（TDesign 无间距 token，保留为布局常量）── */
-  --wecom-spacing-xs: 4px;
-  --wecom-spacing-sm: 8px;
-  --wecom-spacing-md: 12px;
-  --wecom-spacing-lg: 16px;
-  --wecom-spacing-xl: 24px;
-  --wecom-spacing-xxl: 32px;
-  --wecom-spacing-xxxl: 48px;
+  /* ── 间距系统（转发 TDesign --td-size-* 刻度，数值与原常量一致）── */
+  --wecom-spacing-xs: var(--td-size-2);    /* 4px  */
+  --wecom-spacing-sm: var(--td-size-4);    /* 8px  */
+  --wecom-spacing-md: var(--td-size-5);    /* 12px */
+  --wecom-spacing-lg: var(--td-size-6);    /* 16px */
+  --wecom-spacing-xl: var(--td-size-8);    /* 24px */
+  --wecom-spacing-xxl: var(--td-size-10);  /* 32px */
+  --wecom-spacing-xxxl: var(--td-size-13); /* 48px */
 
   /* ── 圆角系统（对齐 TDesign radius token）── */
   --wecom-radius-sm: var(--td-radius-small);
@@ -203,7 +210,21 @@ body {
   background: var(--td-text-color-disabled);
 }
 
-/* ===== 6. NProgress ===== */
+/* ===== 6. 布局工具 ===== */
+/* 相邻按钮间距（对齐 TDesign Starter style/layout.less 的 .t-button + .t-button），
+   与管理端同源；传输器 / 跳页器 / mini 分页内部自带紧凑间距，需排除 */
+.t-button + .t-button {
+  margin-left: var(--td-comp-margin-s);
+}
+.t-transfer,
+.t-jumper,
+.t-pagination-mini {
+  .t-button + .t-button {
+    margin-left: 0;
+  }
+}
+
+/* ===== 7. NProgress ===== */
 #nprogress .bar {
   background: var(--primary) !important;
   height: 2px !important;

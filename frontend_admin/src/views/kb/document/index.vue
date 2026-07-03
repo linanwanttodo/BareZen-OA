@@ -2,17 +2,17 @@
   <div class="page-container">
     <!-- 搜索区域 -->
     <t-card class="mb-4">
-      <t-form :model="searchForm" layout="inline" @submit-success="handleSearch">
-        <t-form-item field="title" :label="$t('kb.title')">
-          <t-input v-model="searchForm.title" :placeholder="$t('common.inputPlaceholder')" allow-clear style="width: 200px" />
+      <t-form :data="searchForm" :label-width="80" @submit-success="handleSearch">
+        <t-form-item name="title" :label="$t('kb.title')">
+          <t-input v-model="searchForm.title" :placeholder="$t('common.inputPlaceholder')" allow-clear />
         </t-form-item>
-        <t-form-item field="categoryId" :label="$t('kb.category')">
-          <t-select v-model="searchForm.categoryId" :placeholder="$t('common.all')" allow-clear style="width: 150px">
+        <t-form-item name="categoryId" :label="$t('kb.category')">
+          <t-select v-model="searchForm.categoryId" :placeholder="$t('common.all')" allow-clear>
             <t-option v-for="c in categories" :key="c.id" :value="c.id">{{ c.name }}</t-option>
           </t-select>
         </t-form-item>
-        <t-form-item field="status" :label="$t('common.status')">
-          <t-select v-model="searchForm.status" :placeholder="$t('common.all')" allow-clear style="width: 140px">
+        <t-form-item name="status" :label="$t('common.status')">
+          <t-select v-model="searchForm.status" :placeholder="$t('common.all')" allow-clear>
             <t-option value="0">{{ $t('kb.statusDraft') }}</t-option>
             <t-option value="1">{{ $t('kb.statusPublished') }}</t-option>
           </t-select>
@@ -38,25 +38,25 @@
         </div>
       </template>
 
-      <t-loading :loading="loading">
-          <t-table row-key="id" :data="tableData" :columns="tableColumns" :pagination="false">
+      
+          <t-table :loading="loading" row-key="id" :data="tableData" :columns="tableColumns" :pagination="false" :hover="true" vertical-align="top">
     <template #categoryId="{ row }">
-                <t-tag>{{ categoryName(row.categoryId) }}</t-tag>
+                <t-tag variant="light">{{ categoryName(row.categoryId) }}</t-tag>
               </template>
     <template #deptName="{ row }">{{ row.deptName || $t('kb.allCompany') }}</template>
     <template #status="{ row }">
-                <t-tag :theme="row.status === '1' ? 'success' : 'default'">
+                <t-tag :theme="row.status === '1' ? 'success' : 'default'" variant="light">
                   {{ row.status === '1' ? $t('kb.statusPublished') : $t('kb.statusDraft') }}
                 </t-tag>
               </template>
     <template #operate="{ row }">
                 <t-space>
-                  <t-button v-permission="PERM.kb.documentList" size="small" @click="handleView(row)">{{ $t('kb.view') }}</t-button>
-                  <t-button v-permission="PERM.kb.documentList" size="small" @click="handleVersions(row)">{{ $t('kb.versions') }}</t-button>
-                  <t-button v-permission="PERM.kb.documentEdit" size="small" @click="handleEdit(row)">{{ $t('common.edit') }}</t-button>
-                  <t-button v-if="row.status === '0'" v-permission="PERM.kb.documentEdit" size="small" theme="primary" @click="handlePublish(row)">
+                  <t-link theme="primary" v-permission="PERM.kb.documentList" @click="handleView(row)">{{ $t('kb.view') }}</t-link>
+                  <t-link theme="primary" v-permission="PERM.kb.documentList" @click="handleVersions(row)">{{ $t('kb.versions') }}</t-link>
+                  <t-link theme="primary" v-permission="PERM.kb.documentEdit" @click="handleEdit(row)">{{ $t('common.edit') }}</t-link>
+                  <t-link theme="primary" v-if="row.status === '0'" v-permission="PERM.kb.documentEdit" @click="handlePublish(row)">
                     {{ $t('kb.publish') }}
-                  </t-button>
+                  </t-link>
                   <t-popconfirm :content="$t('common.deleteConfirm')" @confirm="handleDelete(row)">
                     <t-button v-permission="PERM.kb.documentDelete" size="small" theme="danger">{{ $t('common.delete') }}</t-button>
                   </t-popconfirm>
@@ -72,34 +72,34 @@
             @change="loadData"
           />
         </div>
-      </t-loading>
+      
     </t-card>
 
     <!-- 新增/编辑弹窗 -->
-    <t-dialog v-model="editVisible" :title="isEdit ? $t('kb.editDoc') : $t('kb.addDoc')"
+    <t-dialog v-model:visible="editVisible" :title="isEdit ? $t('kb.editDoc') : $t('kb.addDoc')"
              :width="720" @confirm="handleSave" @cancel="editVisible = false" :ok-loading="saving">
-      <t-form :model="form" layout="vertical">
-        <t-form-item field="title" :label="$t('kb.title')" required>
+      <t-form :data="form" layout="vertical">
+        <t-form-item name="title" :label="$t('kb.title')" required>
           <t-input v-model="form.title" :placeholder="$t('common.inputPlaceholder')" />
         </t-form-item>
         <t-row :gutter="16">
           <t-col :span="12">
-            <t-form-item field="categoryId" :label="$t('kb.category')">
+            <t-form-item name="categoryId" :label="$t('kb.category')">
               <t-select v-model="form.categoryId" allow-clear>
                 <t-option v-for="c in categories" :key="c.id" :value="c.id">{{ c.name }}</t-option>
               </t-select>
             </t-form-item>
           </t-col>
           <t-col :span="12">
-            <t-form-item field="deptName" :label="$t('kb.deptName')">
+            <t-form-item name="deptName" :label="$t('kb.deptName')">
               <t-input v-model="form.deptName" :placeholder="$t('kb.deptPlaceholder')" />
             </t-form-item>
           </t-col>
         </t-row>
-        <t-form-item field="content" :label="$t('kb.content')">
+        <t-form-item name="content" :label="$t('kb.content')">
           <t-textarea v-model="form.content" :placeholder="$t('common.inputPlaceholder')" :auto-size="{ minRows: 8, maxRows: 16 }" />
         </t-form-item>
-        <t-form-item field="status" :label="$t('common.status')">
+        <t-form-item name="status" :label="$t('common.status')">
           <t-select v-model="form.status">
             <t-option value="0">{{ $t('kb.statusDraft') }}</t-option>
             <t-option value="1">{{ $t('kb.statusPublished') }}</t-option>
@@ -109,7 +109,7 @@
     </t-dialog>
 
     <!-- 文档详情弹窗 -->
-    <t-dialog v-model="viewVisible" :title="currentDoc?.title" :width="720" footer-only>
+    <t-dialog v-model:visible="viewVisible" :title="currentDoc?.title" :width="720" footer-only>
       <div class="prose max-w-none">
         <div v-if="currentDoc?.content" class="whitespace-pre-wrap break-words" v-html="safeContent"></div>
         <t-empty v-else :description="$t('kb.noContent')" />
@@ -117,14 +117,14 @@
     </t-dialog>
 
     <!-- 版本历史弹窗 -->
-    <t-dialog v-model="versionsVisible" :title="versionDoc?.title ? $t('kb.versions') + ' - ' + versionDoc.title : $t('kb.versions')" :width="680" footer-only>
-      <t-loading :loading="versionsLoading">
-          <t-table row-key="id" :data="versions" :columns="tableColumns2" :pagination="false">
+    <t-dialog v-model:visible="versionsVisible" :title="versionDoc?.title ? $t('kb.versions') + ' - ' + versionDoc.title : $t('kb.versions')" :width="680" footer-only>
+      
+          <t-table :loading="versionsLoading" row-key="id" :data="versions" :columns="tableColumns2" :pagination="false" :hover="true" vertical-align="top">
     <template #versionNo="{ row }">
-                <t-tag theme="primary">v{{ row.versionNo }}</t-tag>
+                <t-tag theme="primary" variant="light">v{{ row.versionNo }}</t-tag>
               </template>
   </t-table>
-      </t-loading>
+      
     </t-dialog>
   </div>
 </template>

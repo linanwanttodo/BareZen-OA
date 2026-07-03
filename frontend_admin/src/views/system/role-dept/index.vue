@@ -65,7 +65,7 @@
       </template>
         <t-empty v-if="tableLoading" :description="$t('common.loading')" />
         <template v-else-if="userList.length">
-            <t-table row-key="id" :data="userList" :columns="tableColumns" :pagination="false">
+            <t-table row-key="id" :data="userList" :columns="tableColumns" :pagination="false" :hover="true" vertical-align="top">
     <template #loginDate="{ row }">
                   <span class="online-indicator" :class="isOnline(row.loginDate) ? 'online' : 'offline'">
                     <span class="dot"></span>
@@ -74,8 +74,8 @@
                 </template>
     <template #col_5="{ row }">
                   <t-space>
-                    <t-button type="text" size="small" @click="openRoleDialog(row)">{{ $t('roleDept.modifyRoleAction') }}</t-button>
-                    <t-button type="text" size="small" @click="openDeptDialog(row)">{{ $t('roleDept.modifyDeptAction') }}</t-button>
+                    <t-link theme="primary" type="text" @click="openRoleDialog(row)">{{ $t('roleDept.modifyRoleAction') }}</t-link>
+                    <t-link theme="primary" type="text" @click="openDeptDialog(row)">{{ $t('roleDept.modifyDeptAction') }}</t-link>
                   </t-space>
                 </template>
   </t-table>
@@ -88,7 +88,7 @@
     </t-card>
 
     <!-- 分配角色对话框 -->
-    <t-dialog v-model="roleDialogVisible" :header="$t('roleDept.modifyRole')" @close="roleDialogVisible = false">
+    <t-dialog v-model:visible="roleDialogVisible" :header="$t('roleDept.modifyRole')" @close="roleDialogVisible = false">
       <div class="dialog-body">
         <dl class="mb-3 grid grid-cols-2 gap-4">
           <div>
@@ -116,7 +116,7 @@
     </t-dialog>
 
     <!-- 分配部门对话框 -->
-    <t-dialog v-model="deptDialogVisible" :header="$t('roleDept.modifyDept')" @close="deptDialogVisible = false">
+    <t-dialog v-model:visible="deptDialogVisible" :header="$t('roleDept.modifyDept')" @close="deptDialogVisible = false">
       <div class="dialog-body">
         <dl class="mb-3 grid grid-cols-2 gap-4">
           <div>

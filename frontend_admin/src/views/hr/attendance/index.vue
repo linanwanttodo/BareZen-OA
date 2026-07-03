@@ -2,13 +2,13 @@
   <div class="page-container">
     <!-- 搜索区域 -->
     <t-card class="mb-4">
-      <t-form :model="searchForm" layout="inline" @submit-success="handleSearch">
-        <t-form-item field="month" :label="$t('attendanceStat.month')">
-          <t-select v-model="searchForm.month" style="width: 140px" @change="handleSearch">
+      <t-form :data="searchForm" :label-width="80" @submit-success="handleSearch">
+        <t-form-item name="month" :label="$t('attendanceStat.month')">
+          <t-select v-model="searchForm.month" @change="handleSearch">
             <t-option v-for="m in monthOptions" :key="m.value" :value="m.value">{{ m.label }}</t-option>
           </t-select>
         </t-form-item>
-        <t-form-item field="deptId" :label="$t('attendanceStat.dept')">
+        <t-form-item name="deptId" :label="$t('attendanceStat.dept')">
           
 <!-- TODO(tree-select): data 字段 key/title 需转为 value/label --><t-tree-select
             v-model="searchForm.deptId"
@@ -19,12 +19,12 @@
             style="width: 200px"
           />
         </t-form-item>
-        <t-form-item field="userName" :label="$t('attendanceStat.userName')">
+        <t-form-item name="userName" :label="$t('attendanceStat.userName')">
           <t-input
             v-model="searchForm.userName"
             :placeholder="$t('attendanceStat.userNamePlaceholder')"
             allow-clear
-            style="width: 180px"
+           
             @press-enter="handleSearch"
           />
         </t-form-item>
@@ -45,8 +45,8 @@
         </div>
       </template>
 
-      <t-loading :loading="loading">
-          <t-table row-key="userId" :data="tableData" :columns="tableColumns" :pagination="false">
+      
+          <t-table :loading="loading" row-key="userId" :data="tableData" :columns="tableColumns" :pagination="false" :hover="true" vertical-align="top">
     <template #deptName="{ row }">{{ row.deptName || '-' }}</template>
     <template #lateCount="{ row }">
                 <span :class="row.lateCount > 0 ? 'text-[var(--wecom-warning)]' : ''">{{ row.lateCount }}</span>
@@ -68,7 +68,7 @@
           />
         </div>
         <t-empty v-if="!loading && !tableData.length" :description="$t('common.noData')" class="mt-4" />
-      </t-loading>
+      
     </t-card>
   </div>
 </template>

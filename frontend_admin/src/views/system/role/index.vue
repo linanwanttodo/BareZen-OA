@@ -2,15 +2,15 @@
   <div class="page-container">
     <!-- 搜索区域 -->
     <t-card class="mb-4" :bordered="true">
-      <t-form :model="searchForm" layout="inline" @submit-success="handleSearch">
-        <t-form-item field="roleName" :label="$t('role.roleName')">
-          <t-input v-model="searchForm.roleName" :placeholder="$t('role.roleName')" allow-clear style="width: 200px" />
+      <t-form :data="searchForm" :label-width="80" @submit-success="handleSearch">
+        <t-form-item name="roleName" :label="$t('role.roleName')">
+          <t-input v-model="searchForm.roleName" :placeholder="$t('role.roleName')" allow-clear />
         </t-form-item>
-        <t-form-item field="roleKey" :label="$t('role.roleKey')">
-          <t-input v-model="searchForm.roleKey" :placeholder="$t('role.roleKey')" allow-clear style="width: 200px" />
+        <t-form-item name="roleKey" :label="$t('role.roleKey')">
+          <t-input v-model="searchForm.roleKey" :placeholder="$t('role.roleKey')" allow-clear />
         </t-form-item>
-        <t-form-item field="status" :label="$t('common.status')">
-          <t-select v-model="searchForm.status" :placeholder="$t('common.selectPlaceholder')" allow-clear style="width: 120px">
+        <t-form-item name="status" :label="$t('common.status')">
+          <t-select v-model="searchForm.status" :placeholder="$t('common.selectPlaceholder')" allow-clear>
             <t-option value="0">{{ $t('common.normal') }}</t-option>
             <t-option value="1">{{ $t('common.disable') }}</t-option>
           </t-select>
@@ -42,8 +42,8 @@
         </div>
       </template>
 
-      <t-loading :loading="loading">
-          <t-table row-key="id" :data="tableData" :columns="tableColumns" :pagination="false">
+      
+          <t-table :loading="loading" row-key="id" :data="tableData" :columns="tableColumns" :pagination="false" :hover="true" vertical-align="top">
     <template #status="{ row }">
                 <t-switch
                   :model-value="row.status === '0'"
@@ -56,8 +56,8 @@
               </template>
     <template #col_7="{ row }">
                 <t-space>
-                  <t-button v-permission="PERM.system.roleEdit" size="small" @click="handleEdit(row)">{{ $t('common.edit') }}</t-button>
-                  <t-button v-permission="PERM.system.roleEdit" size="small" @click="handleAssignMenu(row)">{{ $t('role.assignMenu') }}</t-button>
+                  <t-link theme="primary" v-permission="PERM.system.roleEdit" @click="handleEdit(row)">{{ $t('common.edit') }}</t-link>
+                  <t-link theme="primary" v-permission="PERM.system.roleEdit" @click="handleAssignMenu(row)">{{ $t('role.assignMenu') }}</t-link>
                   <t-popconfirm v-permission="PERM.system.roleDelete" :content="$t('role.deleteConfirm')" @confirm="handleDelete(row)">
                     <t-button size="small" theme="danger">{{ $t('common.delete') }}</t-button>
                   </t-popconfirm>
@@ -75,7 +75,7 @@
             @change="onPageChange"
           />
         </div>
-      </t-loading>
+      
     </t-card>
 
     <!-- 新增/编辑弹窗 -->
@@ -87,21 +87,21 @@
       @confirm="onFormConfirm"
       @cancel="formDialogVisible = false"
     >
-      <t-form :model="formData" layout="vertical">
-        <t-form-item field="roleName" :label="$t('role.roleName')" :rules="[{ required: true, message: $t('role.roleName') }]">
+      <t-form :data="formData" layout="vertical">
+        <t-form-item name="roleName" :label="$t('role.roleName')" :rules="[{ required: true, message: $t('role.roleName') }]">
           <t-input v-model="formData.roleName" :placeholder="$t('role.roleName')" />
         </t-form-item>
-        <t-form-item field="roleKey" :label="$t('role.roleKey')" :rules="[{ required: true, message: $t('role.roleKey') }]">
+        <t-form-item name="roleKey" :label="$t('role.roleKey')" :rules="[{ required: true, message: $t('role.roleKey') }]">
           <t-input v-model="formData.roleKey" :placeholder="$t('role.roleKey') + ', ' + $t('common.inputPlaceholder')" />
         </t-form-item>
         <t-row :gutter="16">
           <t-col :span="12">
-            <t-form-item field="roleSort" :label="$t('role.roleSort')">
+            <t-form-item name="roleSort" :label="$t('role.roleSort')">
               <t-input-number v-model="formData.roleSort" placeholder="0" :min="0" style="width: 100%" />
             </t-form-item>
           </t-col>
           <t-col :span="12">
-            <t-form-item field="status" :label="$t('common.status')">
+            <t-form-item name="status" :label="$t('common.status')">
               <t-radio-group v-model="formData.status">
                 <t-radio value="0">{{ $t('common.normal') }}</t-radio>
                 <t-radio value="1">{{ $t('common.disable') }}</t-radio>
@@ -109,7 +109,7 @@
             </t-form-item>
           </t-col>
         </t-row>
-        <t-form-item field="remark" :label="$t('common.remark')">
+        <t-form-item name="remark" :label="$t('common.remark')">
           <t-textarea v-model="formData.remark" :placeholder="$t('common.remark')" :max-length="200" show-word-limit />
         </t-form-item>
       </t-form>

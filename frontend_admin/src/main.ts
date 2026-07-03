@@ -4,6 +4,10 @@ import { createPinia } from 'pinia'
 // 图标以 IconXxx 同名全局注册 tdesign-icons-vue-next 图标，模板 <icon-xxx> 标签零改动。
 import {
   AddIcon,
+  TicketIcon,
+  HomeIcon,
+  CopyIcon,
+  CalendarIcon,
   AppIcon,
   BrowseIcon,
   CheckCircleIcon,
@@ -30,7 +34,7 @@ import {
 import 'tdesign-vue-next/es/style/index.css'
 import 'tdesign-vue-next/es/message/style/index.css'
 import 'tdesign-vue-next/es/dialog/style/index.css'
-import './styles/tdesign-theme.css'
+
 import App from './App.vue'
 import router from './router'
 import './router/guard'
@@ -51,6 +55,10 @@ app.use(i18n)
 // 全局注册实际使用的图标（TDesign 实现，沿用原 IconXxx 名称，模板零改动）
 const icons = {
   IconApps: AppIcon,
+  IconCalendar: CalendarIcon,
+  IconCopy: CopyIcon,
+  IconHome: HomeIcon,
+  IconTicket: TicketIcon,
   IconBranch: GitBranchIcon,
   IconCheck: CheckIcon,
   IconCheckCircle: CheckCircleIcon,

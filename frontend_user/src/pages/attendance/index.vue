@@ -17,10 +17,10 @@
     <div v-if="activeTab === 'leave'">
       <!-- 请假申请表单 -->
       <t-card class="mb-6" :title="$t('attendance.applyLeave')">
-        <t-form :model="leaveForm" layout="vertical">
+        <t-form ref="leaveFormRef" :data="leaveForm" layout="vertical">
           <t-row :gutter="16">
             <t-col :span="8">
-              <t-form-item :label="$t('attendance.leaveType')" required>
+              <t-form-item :label="$t('attendance.leaveType')" required name="leaveType" :rules="[{ required: true, message: $t('validation.required', { field: $t('attendance.leaveType') }) }]">
                 <t-select v-model="leaveForm.leaveType" :placeholder="$t('common.selectPlaceholder')">
                   <t-option value="annual">{{ $t('attendance.leaveTypeAnnual') }}</t-option>
                   <t-option value="sick">{{ $t('attendance.leaveTypeSick') }}</t-option>
@@ -33,7 +33,7 @@
               </t-form-item>
             </t-col>
             <t-col :span="16">
-              <t-form-item :label="$t('attendance.timeRange')" required>
+              <t-form-item :label="$t('attendance.timeRange')" required name="startTime" :rules="[{ required: true, message: $t('validation.required', { field: $t('attendance.timeRange') }) }]">
                 
 <t-date-picker v-model="leaveForm.startTime" show-time value-type="YYYY-MM-DD HH:mm" style="width: 100%" :placeholder="$t('attendance.startTime')" />
                 <span class="mx-2">~</span>
@@ -42,7 +42,7 @@
               </t-form-item>
             </t-col>
           </t-row>
-          <t-form-item :label="$t('attendance.reason')" required>
+          <t-form-item :label="$t('attendance.reason')" required name="reason" :rules="[{ required: true, message: $t('validation.required', { field: $t('attendance.reason') }) }]">
             <t-textarea v-model="leaveForm.reason" :placeholder="$t('common.inputPlaceholder')" :max-length="500" show-word-limit />
           </t-form-item>
           <t-button theme="primary" :loading="submitting" @click="handleSubmitLeave">
@@ -81,10 +81,10 @@
     <div v-if="activeTab === 'overtime'">
       <!-- 加班申请表单 -->
       <t-card class="mb-6" :title="$t('attendance.applyOvertime')">
-        <t-form :model="overtimeForm" layout="vertical">
+        <t-form ref="overtimeFormRef" :data="overtimeForm" layout="vertical">
           <t-row :gutter="16">
             <t-col :span="12">
-              <t-form-item :label="$t('attendance.timeRange')" required>
+              <t-form-item :label="$t('attendance.timeRange')" required name="startTime" :rules="[{ required: true, message: $t('validation.required', { field: $t('attendance.timeRange') }) }]">
                 
 <t-date-picker v-model="overtimeForm.startTime" show-time value-type="YYYY-MM-DD HH:mm" style="width: 100%" :placeholder="$t('attendance.startTime')" />
                 <span class="mx-2">~</span>
@@ -104,7 +104,7 @@
               </t-form-item>
             </t-col>
           </t-row>
-          <t-form-item :label="$t('attendance.reason')" required>
+          <t-form-item :label="$t('attendance.reason')" required name="reason" :rules="[{ required: true, message: $t('validation.required', { field: $t('attendance.reason') }) }]">
             <t-textarea v-model="overtimeForm.reason" :placeholder="$t('common.inputPlaceholder')" :max-length="500" show-word-limit />
           </t-form-item>
           <t-button theme="primary" :loading="submitting" @click="handleSubmitOvertime">
@@ -143,15 +143,15 @@
     <div v-else-if="activeTab === 'travel'">
       <!-- 出差申请表单 -->
       <t-card class="mb-6" :title="$t('attendance.applyTravel')">
-        <t-form :model="travelForm" layout="vertical">
+        <t-form ref="travelFormRef" :data="travelForm" layout="vertical">
           <t-row :gutter="16">
             <t-col :span="12">
-              <t-form-item :label="$t('attendance.destination')" required>
+              <t-form-item :label="$t('attendance.destination')" required name="destination" :rules="[{ required: true, message: $t('validation.required', { field: $t('attendance.destination') }) }]">
                 <t-input v-model="travelForm.destination" :placeholder="$t('common.inputPlaceholder')" />
               </t-form-item>
             </t-col>
             <t-col :span="12">
-              <t-form-item :label="$t('attendance.timeRange')" required>
+              <t-form-item :label="$t('attendance.timeRange')" required name="startTime" :rules="[{ required: true, message: $t('validation.required', { field: $t('attendance.timeRange') }) }]">
                 
 <t-date-picker v-model="travelForm.startTime" show-time value-type="YYYY-MM-DD HH:mm" style="width: 100%" :placeholder="$t('attendance.startTime')" />
                 <span class="mx-2">~</span>
@@ -165,7 +165,7 @@
               </t-form-item>
             </t-col>
           </t-row>
-          <t-form-item :label="$t('attendance.purpose')" required>
+          <t-form-item :label="$t('attendance.purpose')" required name="purpose" :rules="[{ required: true, message: $t('validation.required', { field: $t('attendance.purpose') }) }]">
             <t-textarea v-model="travelForm.purpose" :placeholder="$t('common.inputPlaceholder')" :max-length="500" show-word-limit />
           </t-form-item>
           <t-button theme="primary" :loading="submitting" @click="handleSubmitTravel">
@@ -202,7 +202,7 @@
     </div>
 
     <!-- 流程进度弹窗：优先渲染引擎节点链（任务态），未接入引擎回退事件流 -->
-    <t-dialog v-model="flowVisible" :title="$t('attendance.flow')" :width="520" footer-only>
+    <t-dialog v-model:visible="flowVisible" :header="$t('attendance.flow')" :width="520" footer-only>
       <t-steps v-if="flowTasks.length" direction="vertical" :current="taskCurrent">
         <t-step-item
           v-for="task in flowTasks"
@@ -227,7 +227,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
-import { MessagePlugin } from 'tdesign-vue-next'
+import { MessagePlugin, type FormInstanceFunctions } from 'tdesign-vue-next'
 import {
   getMyLeavesApi, submitLeaveApi, revokeLeaveApi,
   getMyOvertimesApi, submitOvertimeApi, revokeOvertimeApi,
@@ -247,13 +247,19 @@ const leaves = ref<LeaveRequest[]>([])
 const overtimes = ref<OvertimeRequest[]>([])
 const travels = ref<TravelRequest[]>([])
 
+const leaveFormRef = ref<FormInstanceFunctions>()
+
 const leaveForm = reactive<Partial<LeaveRequest>>({
   userName: userStore.userInfo?.nickName || '',
 })
+const overtimeFormRef = ref<FormInstanceFunctions>()
+
 const overtimeForm = reactive<Partial<OvertimeRequest>>({
   userName: userStore.userInfo?.nickName || '',
   durationHours: 1,
 })
+const travelFormRef = ref<FormInstanceFunctions>()
+
 const travelForm = reactive<Partial<TravelRequest>>({
   userName: userStore.userInfo?.nickName || '',
   days: 1,
@@ -315,6 +321,8 @@ function onTabChange(key: string | number) {
 }
 
 async function handleSubmitLeave() {
+  // 校验不通过则中止提交，字段错误就地显示
+  if (await leaveFormRef.value?.validate() !== true) return
   if (!leaveForm.leaveType) {
     MessagePlugin.warning('请选择请假类型')
     return
@@ -348,6 +356,8 @@ async function handleSubmitLeave() {
 }
 
 async function handleSubmitOvertime() {
+  // 校验不通过则中止提交，字段错误就地显示
+  if (await overtimeFormRef.value?.validate() !== true) return
   if (!overtimeForm.startTime || !overtimeForm.endTime) {
     MessagePlugin.warning('请选择加班时间')
     return
@@ -378,6 +388,8 @@ async function handleSubmitOvertime() {
 }
 
 async function handleSubmitTravel() {
+  // 校验不通过则中止提交，字段错误就地显示
+  if (await travelFormRef.value?.validate() !== true) return
   if (!travelForm.destination) {
     MessagePlugin.warning('请填写目的地')
     return

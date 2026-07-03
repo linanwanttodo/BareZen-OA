@@ -32,28 +32,28 @@
           <t-loading size="28px" :text="$t('common.loading')" />
         </div>
         <template v-else>
-            <t-table row-key="id" :data="tableData" :columns="tableColumns" :pagination="false">
+            <t-table row-key="id" :data="tableData" :columns="tableColumns" :pagination="false" :hover="true" vertical-align="top">
     <template #noticeTitle="{ row }">
                   <span class="cursor-pointer text-[var(--primary)] hover:underline" @click="handleView(row)">{{ row.noticeTitle }}</span>
                 </template>
     <template #noticeType="{ row }">
-                  <t-tag theme="primary">{{ row.noticeType === '1' ? $t('notice.typeNotice') : $t('notice.typeAnnouncement') }}</t-tag>
+                  <t-tag theme="primary" variant="light">{{ row.noticeType === '1' ? $t('notice.typeNotice') : $t('notice.typeAnnouncement') }}</t-tag>
                 </template>
     <template #scope="{ row }">
-                  <t-tag theme="default">{{ row.scope === 'public' ? $t('notice.public') : row.scope === 'internal' ? $t('notice.internal') : $t('user.unknown') }}</t-tag>
+                  <t-tag theme="default" variant="light">{{ row.scope === 'public' ? $t('notice.public') : row.scope === 'internal' ? $t('notice.internal') : $t('user.unknown') }}</t-tag>
                 </template>
     <template #requireRead="{ row }">
-                  <t-tag v-if="row.requireRead === 'Y'" theme="danger">{{ $t('notice.requireReadYes') }}</t-tag>
-                  <t-tag v-else theme="default">{{ $t('notice.requireReadNo') }}</t-tag>
+                  <t-tag v-if="row.requireRead === 'Y'" theme="danger" variant="light">{{ $t('notice.requireReadYes') }}</t-tag>
+                  <t-tag v-else theme="default" variant="light">{{ $t('notice.requireReadNo') }}</t-tag>
                 </template>
     <template #sendEmail="{ row }">
-                  <t-tag v-if="row.sendEmail === 'Y'" theme="primary">{{ $t('notice.sendEmailYes') }}</t-tag>
-                  <t-tag v-else theme="default">{{ $t('notice.sendEmailNo') }}</t-tag>
+                  <t-tag v-if="row.sendEmail === 'Y'" theme="primary" variant="light">{{ $t('notice.sendEmailYes') }}</t-tag>
+                  <t-tag v-else theme="default" variant="light">{{ $t('notice.sendEmailNo') }}</t-tag>
                 </template>
     <template #status="{ row }">
-                  <t-tag v-if="row.status === '1'" theme="primary">{{ noticeStatusText(row.status) }}</t-tag>
-                  <t-tag v-else-if="row.status === '2'" theme="danger">{{ noticeStatusText(row.status) }}</t-tag>
-                  <t-tag v-else theme="default">{{ noticeStatusText(row.status) }}</t-tag>
+                  <t-tag v-if="row.status === '1'" theme="primary" variant="light">{{ noticeStatusText(row.status) }}</t-tag>
+                  <t-tag v-else-if="row.status === '2'" theme="danger" variant="light">{{ noticeStatusText(row.status) }}</t-tag>
+                  <t-tag v-else theme="default" variant="light">{{ noticeStatusText(row.status) }}</t-tag>
                 </template>
     <template #operate="{ row }">
                   <t-space>
@@ -78,7 +78,7 @@
         </template>
     </t-card>
 
-    <t-dialog v-model="formDialogVisible" :header="formType === 'add' ? $t('notice.addNotice') : $t('notice.editNotice')" @close="formDialogVisible = false">
+    <t-dialog v-model:visible="formDialogVisible" :header="formType === 'add' ? $t('notice.addNotice') : $t('notice.editNotice')" @close="formDialogVisible = false">
       <div class="flex flex-col gap-4">
         <div v-if="formError" class="rounded border border-wecom-error-light bg-wecom-error-light px-3 py-2 text-sm text-wecom-error">{{ formError }}</div>
         <div class="grid grid-cols-3 gap-4">
@@ -124,7 +124,7 @@
       </template>
     </t-dialog>
 
-    <t-dialog v-model="detailVisible" :header="detailData?.noticeTitle || $t('notice.title')" @close="detailVisible = false">
+    <t-dialog v-model:visible="detailVisible" :header="detailData?.noticeTitle || $t('notice.title')" @close="detailVisible = false">
       <div v-if="detailData">
         <div class="mb-4 flex flex-wrap items-center gap-2">
           <t-tag theme="primary">{{ detailData.noticeType === '1' ? $t('notice.typeNotice') : $t('notice.typeAnnouncement') }}</t-tag>
@@ -138,7 +138,7 @@
       </div>
     </t-dialog>
 
-    <t-dialog v-model="receiptVisible" :header="receiptTitle" width="560px" @close="receiptVisible = false">
+    <t-dialog v-model:visible="receiptVisible" :header="receiptTitle" width="560px" @close="receiptVisible = false">
       <div v-if="receiptData">
         <div class="mb-4 flex items-center gap-4">
           <div class="flex flex-col">
@@ -158,7 +158,7 @@
       </div>
     </t-dialog>
 
-    <t-dialog v-model="deleteConfirmVisible" :header="$t('common.confirmDelete')" @close="deleteConfirmVisible = false">
+    <t-dialog v-model:visible="deleteConfirmVisible" :header="$t('common.confirmDelete')" @close="deleteConfirmVisible = false">
       <p class="text-sm text-[var(--foreground)]">{{ $t('notice.deleteConfirm', { title: deleteTarget?.noticeTitle }) }}</p>
       <template #footer>
         <div class="flex justify-end gap-2">

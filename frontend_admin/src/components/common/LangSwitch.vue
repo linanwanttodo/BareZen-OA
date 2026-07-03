@@ -36,18 +36,18 @@ function handleSelect(value: string | number | Record<string, any> | undefined) 
 .lang-switch {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px 8px;
+  gap: var(--td-size-2);
+  padding: var(--td-size-2) var(--td-size-4);
   cursor: pointer;
-  border-radius: var(--wecom-radius-md);
-  color: var(--wecom-text-secondary);
+  border-radius: var(--td-radius-default);
+  color: var(--td-text-color-secondary);
   transition: background var(--wecom-transition-fast), color var(--wecom-transition-fast);
 }
 .lang-switch:hover {
-  background: var(--wecom-bg-hover);
-  color: var(--wecom-text-primary);
+  background: var(--td-bg-color-secondarycontainer-hover);
+  color: var(--td-text-color-primary);
 }
 .lang-switch__label {
-  font-size: 13px;
+  font-size: var(--td-font-size-body-medium);
 }
 </style>

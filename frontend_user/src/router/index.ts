@@ -130,7 +130,9 @@ router.beforeEach(async (to, _from, next) => {
 
   const token = getToken()
 
-  if (to.meta.requiresAuth && !token) {
+  if (token && to.path === '/auth/login') {
+    next({ path: '/' })
+  } else if (to.meta.requiresAuth && !token) {
     next({ path: '/auth/login', query: { redirect: to.fullPath } })
   } else if (token && !whiteList.some(p => to.path === p)) {
     const userStore = useUserStore()

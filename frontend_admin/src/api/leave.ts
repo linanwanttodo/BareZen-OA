@@ -37,6 +37,11 @@ export function submitLeaveApi(data: Partial<AttLeaveRequest>) {
   return request.post<void>('/hr/v1/leaves', data)
 }
 
+/** 修改请假申请（仅本人、仅待审批状态） */
+export function updateLeaveApi(id: string, data: Partial<AttLeaveRequest>) {
+  return request.put<void>(`/hr/v1/leaves/${id}`, data)
+}
+
 /** 审批请假（pass/reject） */
 export function approveLeaveApi(id: string, action: 'pass' | 'reject', remark?: string) {
   return request.put<void>(`/hr/v1/leaves/${id}/approve`, null, {

@@ -63,15 +63,15 @@
           <t-loading size="28px" :text="$t('common.loading')" />
         </div>
         <template v-else-if="tableData.length">
-            <t-table row-key="id" :data="tableData" :columns="tableColumns" :pagination="false">
+            <t-table row-key="id" :data="tableData" :columns="tableColumns" :pagination="false" :hover="true" vertical-align="top">
     <template #businessType="{ row }">
-                  <t-tag :theme="tagTheme(businessTypeVariant(row.businessType))" :bordered="tagBordered(businessTypeVariant(row.businessType))">{{ businessTypeText(row.businessType) }}</t-tag>
+                  <t-tag :theme="tagTheme(businessTypeVariant(row.businessType))" :bordered="tagBordered(businessTypeVariant(row.businessType))" variant="light">{{ businessTypeText(row.businessType) }}</t-tag>
                 </template>
     <template #requestMethod="{ row }">
-                  <t-tag :theme="tagTheme(methodVariant(row.requestMethod))" :bordered="tagBordered(methodVariant(row.requestMethod))">{{ row.requestMethod }}</t-tag>
+                  <t-tag :theme="tagTheme(methodVariant(row.requestMethod))" :bordered="tagBordered(methodVariant(row.requestMethod))" variant="light">{{ row.requestMethod }}</t-tag>
                 </template>
     <template #status="{ row }">
-                  <t-tag :theme="tagTheme(operStatusVariant(row.status))" :bordered="tagBordered(operStatusVariant(row.status))">{{ operStatusText(row.status) }}</t-tag>
+                  <t-tag :theme="tagTheme(operStatusVariant(row.status))" :bordered="tagBordered(operStatusVariant(row.status))" variant="light">{{ operStatusText(row.status) }}</t-tag>
                 </template>
     <template #costTime="{ row }">
                   <span :class="row.costTime > 1000 ? 'text-wecom-warning' : 'text-wecom-success'">{{ row.costTime }}ms</span>
@@ -99,7 +99,7 @@
     </t-card>
 
     <!-- 详情弹窗 -->
-    <t-dialog v-model="detailVisible" :header="$t('monitor.operLog.detailTitle')" @close="detailVisible = false">
+    <t-dialog v-model:visible="detailVisible" :header="$t('monitor.operLog.detailTitle')" @close="detailVisible = false">
       <div v-if="detailData" class="log-detail">
         <dl class="grid grid-cols-2 gap-x-8 gap-y-4">
           <div>

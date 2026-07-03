@@ -29,7 +29,7 @@
               <p class="mt-1 text-sm text-[var(--wecom-text-tertiary)]">{{ $t('login.loginInfo') }}</p>
             </div>
 
-            <t-form :model="formData" layout="vertical" @submit-success="onSubmit" class="space-y-2">
+            <t-form :data="formData" layout="vertical" @submit-success="onSubmit" class="space-y-2">
               <t-form-item name="username" :label="$t('login.username')" :rules="[{ required: true, message: $t('login.usernameRequired') }]">
                 <t-input v-model="formData.username" :placeholder="$t('login.usernameRequired')" size="large" clearable />
               </t-form-item>
@@ -76,7 +76,7 @@
               <p class="mt-1 text-sm text-[var(--wecom-text-tertiary)]">{{ $t('login.registerInfo') }}</p>
             </div>
 
-            <t-form ref="registerFormRef" :model="registerData" layout="vertical" class="space-y-2">
+            <t-form ref="registerFormRef" :data="registerData" layout="vertical" class="space-y-2">
               <t-form-item name="userName" :label="$t('login.username')" :rules="[{ required: true, message: $t('login.usernameRequired') }]">
                 <t-input v-model="registerData.userName" :placeholder="$t('login.usernameRequired')" size="large" clearable />
               </t-form-item>
@@ -217,8 +217,9 @@ async function onSubmit() {
 }
 
 async function onRegister() {
-  const errors = await registerFormRef.value?.validate()
-  if (errors) return
+  // tdesign-vue-next 1.20.7 的 validate() 通过时返回 true、失败时返回错误对象，
+  // 此处必须用 !== true 判定「未通过」，否则校验成功反而被当作失败而中断提交
+  if ((await registerFormRef.value?.validate()) !== true) return
   if (!registerData.userName || !registerData.password || !registerData.confirmPassword) {
     MessagePlugin.warning(t('login.fullRegisterInfo'))
     return

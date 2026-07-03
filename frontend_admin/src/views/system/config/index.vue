@@ -2,12 +2,12 @@
   <div class="page-container">
     <!-- 搜索区域 -->
     <t-card class="mb-4">
-      <t-form :model="searchForm" layout="inline" @submit-success="handleSearch">
+      <t-form :data="searchForm" :label-width="80" @submit-success="handleSearch">
         <t-form-item name="configName" :label="$t('config.configName')">
-          <t-input v-model="searchForm.configName" :placeholder="$t('common.inputPlaceholder')" clearable style="width: 200px" />
+          <t-input v-model="searchForm.configName" :placeholder="$t('common.inputPlaceholder')" clearable />
         </t-form-item>
         <t-form-item name="configKey" :label="$t('config.configKey')">
-          <t-input v-model="searchForm.configKey" :placeholder="$t('common.inputPlaceholder')" clearable style="width: 200px" />
+          <t-input v-model="searchForm.configKey" :placeholder="$t('common.inputPlaceholder')" clearable />
         </t-form-item>
         <t-form-item>
           <t-space>
@@ -32,13 +32,13 @@
         </div>
       </template>
 
-      <t-loading :loading="loading">
-          <t-table row-key="id" :data="tableData" :columns="tableColumns" :pagination="false">
+      
+          <t-table :loading="loading" row-key="id" :data="tableData" :columns="tableColumns" :pagination="false" :hover="true" vertical-align="top">
     <template #configValue="{ row }">
                 <span class="font-mono text-sm">{{ row.configValue }}</span>
               </template>
     <template #configType="{ row }">
-                <t-tag :theme="row.configType === 'Y' ? 'primary' : 'default'">
+                <t-tag :theme="row.configType === 'Y' ? 'primary' : 'default'" variant="light">
                   {{ row.configType === 'Y' ? $t('common.yes') : $t('common.no') }}
                 </t-tag>
               </template>
@@ -49,7 +49,7 @@
                 />
               </template>
     <template #col_5="{ row }">
-                <t-button v-permission="PERM.system.configEdit" size="small" @click="handleEdit(row)">{{ $t('common.edit') }}</t-button>
+                <t-link theme="primary" v-permission="PERM.system.configEdit" @click="handleEdit(row)">{{ $t('common.edit') }}</t-link>
               </template>
   </t-table>
 
@@ -61,12 +61,12 @@
             @change="loadData"
           />
         </div>
-      </t-loading>
+      
     </t-card>
 
     <!-- 编辑弹窗 -->
-    <t-dialog v-model="editVisible" :header="$t('config.editConfig')" @confirm="handleSave" @close="editVisible = false">
-      <t-form :model="editForm" auto-label-width>
+    <t-dialog v-model:visible="editVisible" :header="$t('config.editConfig')" @confirm="handleSave" @close="editVisible = false">
+      <t-form :data="editForm" auto-label-width>
         <t-form-item name="configName" :label="$t('config.configName')">
           <t-input v-model="editForm.configName" disabled />
         </t-form-item>

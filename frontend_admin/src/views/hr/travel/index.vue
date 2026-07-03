@@ -2,9 +2,9 @@
   <div class="page-container">
     <!-- 搜索区域 -->
     <t-card class="mb-4">
-      <t-form :model="searchForm" layout="inline" @submit-success="handleSearch">
-        <t-form-item field="status" :label="$t('travel.status')">
-          <t-select v-model="searchForm.status" :placeholder="$t('common.all')" allow-clear style="width: 140px">
+      <t-form :data="searchForm" :label-width="80" @submit-success="handleSearch">
+        <t-form-item name="status" :label="$t('travel.status')">
+          <t-select v-model="searchForm.status" :placeholder="$t('common.all')" allow-clear>
             <t-option value="0">{{ $t('travel.statusPending') }}</t-option>
             <t-option value="1">{{ $t('travel.statusApproved') }}</t-option>
             <t-option value="2">{{ $t('travel.statusRejected') }}</t-option>
@@ -32,24 +32,24 @@
         </div>
       </template>
 
-      <t-loading :loading="loading">
-          <t-table row-key="id" :data="tableData" :columns="tableColumns" :pagination="false">
+      
+          <t-table :loading="loading" row-key="id" :data="tableData" :columns="tableColumns" :pagination="false" :hover="true" vertical-align="top">
     <template #startTime="{ row }">
                 <span class="text-sm">{{ row.startTime }}<br />{{ row.endTime }}</span>
               </template>
     <template #status="{ row }">
-                <t-tag :color="statusColor(row.status)">{{ statusText(row.status) }}</t-tag>
+                <t-tag :color="statusColor(row.status)" variant="light">{{ statusText(row.status) }}</t-tag>
               </template>
     <template #approverName="{ row }">{{ row.approverName || '-' }}</template>
     <template #operate="{ row }">
                 <t-space>
                   <template v-if="row.status === '0'">
-                    <t-button v-permission="PERM.hr.travelApprove" size="small" theme="primary" @click="openApprove(row)">
+                    <t-link theme="primary" v-permission="PERM.hr.travelApprove" @click="openApprove(row)">
                       {{ $t('travel.approve') }}
-                    </t-button>
-                    <t-button v-permission="PERM.hr.travelEdit" size="small" @click="handleRevoke(row)">
+                    </t-link>
+                    <t-link theme="primary" v-permission="PERM.hr.travelEdit" @click="handleRevoke(row)">
                       {{ $t('travel.revoke') }}
-                    </t-button>
+                    </t-link>
                   </template>
                   <t-button v-if="row.approveRemark" size="small" @click="showRemark(row)">
                     {{ $t('travel.viewRemark') }}
@@ -70,11 +70,11 @@
             @change="loadData"
           />
         </div>
-      </t-loading>
+      
     </t-card>
 
     <!-- 流程进度弹窗：优先渲染引擎节点链（任务态），未接入引擎回退事件流 -->
-    <t-dialog v-model="flowVisible" :title="$t('travel.flow')" :width="520" footer-only>
+    <t-dialog v-model:visible="flowVisible" :title="$t('travel.flow')" :width="520" footer-only>
       <t-steps v-if="flowTasks.length" direction="vertical" :current="taskCurrent">
         <t-step-item
           v-for="task in flowTasks"
@@ -96,39 +96,39 @@
     </t-dialog>
 
     <!-- 出差申请弹窗 -->
-    <t-dialog v-model="addVisible" :title="$t('travel.apply')" :width="560"
+    <t-dialog v-model:visible="addVisible" :title="$t('travel.apply')" :width="560"
              @confirm="handleSubmit" @cancel="addVisible = false" :ok-loading="submitting">
-      <t-form :model="form" layout="vertical">
-        <t-form-item field="destination" :label="$t('travel.destination')" required>
+      <t-form :data="form" layout="vertical">
+        <t-form-item name="destination" :label="$t('travel.destination')" required>
           <t-input v-model="form.destination" :placeholder="$t('common.inputPlaceholder')" :max-length="100" />
         </t-form-item>
-        <t-form-item field="timeRange" :label="$t('travel.timeRange')" required>
+        <t-form-item name="timeRange" :label="$t('travel.timeRange')" required>
           
-<t-date-picker v-model="form.startTime" show-time value-type="YYYY-MM-DD HH:mm" style="width: 260px" :placeholder="$t('travel.startTime')" />
+<t-date-picker v-model="form.startTime" show-time value-type="YYYY-MM-DD HH:mm" :placeholder="$t('travel.startTime')" />
           <span class="mx-2">~</span>
           
-<t-date-picker v-model="form.endTime" show-time value-type="YYYY-MM-DD HH:mm" style="width: 260px" :placeholder="$t('travel.endTime')" />
+<t-date-picker v-model="form.endTime" show-time value-type="YYYY-MM-DD HH:mm" :placeholder="$t('travel.endTime')" />
         </t-form-item>
-        <t-form-item field="days" :label="$t('travel.days')">
+        <t-form-item name="days" :label="$t('travel.days')">
           <t-input-number v-model="form.days" :min="0.5" :step="0.5" style="width: 100%" :placeholder="$t('travel.daysPlaceholder')" />
         </t-form-item>
-        <t-form-item field="purpose" :label="$t('travel.purpose')" required>
+        <t-form-item name="purpose" :label="$t('travel.purpose')" required>
           <t-textarea v-model="form.purpose" :placeholder="$t('common.inputPlaceholder')" :max-length="500" show-word-limit />
         </t-form-item>
       </t-form>
     </t-dialog>
 
     <!-- 审批弹窗 -->
-    <t-dialog v-model="approveVisible" :title="$t('travel.approve')" :width="480"
+    <t-dialog v-model:visible="approveVisible" :title="$t('travel.approve')" :width="480"
              @confirm="handleApprove" @cancel="approveVisible = false" :ok-loading="approving">
-      <t-form :model="approveForm" layout="vertical">
+      <t-form :data="approveForm" layout="vertical">
         <t-form-item :label="$t('travel.approveAction')" required>
           <t-radio-group v-model="approveForm.action" variant="default-filled">
             <t-radio value="pass">{{ $t('travel.approvePass') }}</t-radio>
             <t-radio value="reject">{{ $t('travel.approveReject') }}</t-radio>
           </t-radio-group>
         </t-form-item>
-        <t-form-item field="remark" :label="$t('travel.approveRemark')">
+        <t-form-item name="remark" :label="$t('travel.approveRemark')">
           <t-textarea v-model="approveForm.remark" :placeholder="$t('common.inputPlaceholder')" :max-length="500" show-word-limit />
         </t-form-item>
       </t-form>

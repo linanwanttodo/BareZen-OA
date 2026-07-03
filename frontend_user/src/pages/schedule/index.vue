@@ -58,13 +58,13 @@
     </t-loading>
 
     <!-- 新增/编辑弹窗 -->
-    <t-dialog v-model="dialogVisible" :title="isEdit ? $t('schedule.edit') : $t('schedule.add')"
+    <t-dialog v-model:visible="dialogVisible" :header="isEdit ? $t('schedule.edit') : $t('schedule.add')"
              :width="560" @confirm="handleSave" @cancel="dialogVisible = false" :ok-loading="saving">
-      <t-form :model="form" layout="vertical">
-        <t-form-item :label="$t('schedule.titleLabel')" required>
+      <t-form ref="formRef" :data="form" layout="vertical">
+        <t-form-item :label="$t('schedule.titleLabel')" required name="title" :rules="[{ required: true, message: $t('validation.required', { field: $t('schedule.titleLabel') }) }]">
           <t-input v-model="form.title" :placeholder="$t('common.inputPlaceholder')" />
         </t-form-item>
-        <t-form-item :label="$t('schedule.timeRange')" required>
+        <t-form-item :label="$t('schedule.timeRange')" required name="startTime" :rules="[{ required: true, message: $t('validation.required', { field: $t('schedule.timeRange') }) }]">
           
 <t-date-picker v-model="form.startTime" show-time value-type="YYYY-MM-DD HH:mm" style="width: 100%" :placeholder="$t('schedule.startTime')" />
           <span class="mx-2">~</span>
@@ -94,7 +94,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
-import { MessagePlugin } from 'tdesign-vue-next'
+import { MessagePlugin, type FormInstanceFunctions } from 'tdesign-vue-next'
 import { getMySchedulesApi, addScheduleApi, updateScheduleApi, deleteScheduleApi, type Schedule } from '@/api/enterprise'
 
 const loading = ref(false)
@@ -103,6 +103,8 @@ const schedules = ref<Schedule[]>([])
 const statusFilter = ref('')
 const dialogVisible = ref(false)
 const isEdit = ref(false)
+
+const formRef = ref<FormInstanceFunctions>()
 
 const form = reactive<Partial<Schedule>>({})
 
@@ -140,6 +142,8 @@ function openEdit(item: Schedule) {
 }
 
 async function handleSave() {
+  // 校验不通过则中止提交，字段错误就地显示
+  if (await formRef.value?.validate() !== true) return
   if (!form.title) {
     MessagePlugin.warning('请填写日程标题')
     return

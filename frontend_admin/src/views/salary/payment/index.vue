@@ -2,19 +2,19 @@
   <div class="page-container">
     <!-- 搜索区域 -->
     <t-card class="mb-4">
-      <t-form :model="searchForm" layout="inline" @submit-success="handleSearch">
-        <t-form-item field="paymentMonth" :label="$t('salary.paymentMonth')">
+      <t-form :data="searchForm" :label-width="80" @submit-success="handleSearch">
+        <t-form-item name="paymentMonth" :label="$t('salary.paymentMonth')">
           
-<t-date-picker v-model="searchForm.paymentMonth" mode="month" format="YYYY-MM" value-type="YYYY-MM" clearable style="width: 150px" />
+<t-date-picker v-model="searchForm.paymentMonth" mode="month" format="YYYY-MM" value-type="YYYY-MM" clearable />
         </t-form-item>
-        <t-form-item field="paymentStatus" :label="$t('salary.paymentStatus')">
-          <t-select v-model="searchForm.paymentStatus" :placeholder="$t('common.all')" allow-clear style="width: 140px">
+        <t-form-item name="paymentStatus" :label="$t('salary.paymentStatus')">
+          <t-select v-model="searchForm.paymentStatus" :placeholder="$t('common.all')" allow-clear>
             <t-option value="0">{{ $t('salary.statusUnpaid') }}</t-option>
             <t-option value="1">{{ $t('salary.statusPaid') }}</t-option>
           </t-select>
         </t-form-item>
-        <t-form-item field="keyword" :label="$t('salary.userName')">
-          <t-input v-model="searchForm.keyword" :placeholder="$t('common.inputPlaceholder')" allow-clear style="width: 160px" />
+        <t-form-item name="keyword" :label="$t('salary.userName')">
+          <t-input v-model="searchForm.keyword" :placeholder="$t('common.inputPlaceholder')" allow-clear />
         </t-form-item>
         <t-form-item>
           <t-space>
@@ -42,9 +42,9 @@
         </div>
       </template>
 
-      <t-loading :loading="loading">
-          <t-table row-key="id" :data="tableData" :columns="tableColumns" :pagination="false"
-                   :selected-row-keys="selectedRowKeys" @select-change="onSelectChange">
+      
+          <t-table :loading="loading" row-key="id" :data="tableData" :columns="tableColumns" :pagination="false"
+                   :selected-row-keys="selectedRowKeys" @select-change="onSelectChange" :hover="true" vertical-align="top">
     <template #paymentStatus="{ row }">
                 <t-tag :theme="row.paymentStatus === '1' ? 'success' : 'warning'" variant="light">
                   {{ row.paymentStatus === '1' ? $t('salary.statusPaid') : $t('salary.statusUnpaid') }}
@@ -73,14 +73,14 @@
             @change="loadData"
           />
         </div>
-      </t-loading>
+      
     </t-card>
 
     <!-- 生成草稿弹窗 -->
-    <t-dialog v-model="generateVisible" :title="$t('salary.generate')" :width="440"
+    <t-dialog v-model:visible="generateVisible" :title="$t('salary.generate')" :width="440"
              @confirm="handleGenerate" @cancel="generateVisible = false" :ok-loading="generating">
-      <t-form :model="generateForm" layout="vertical">
-        <t-form-item field="paymentMonth" :label="$t('salary.paymentMonth')" required>
+      <t-form :data="generateForm" layout="vertical">
+        <t-form-item name="paymentMonth" :label="$t('salary.paymentMonth')" required>
           
 <t-date-picker v-model="generateForm.paymentMonth" mode="month" format="YYYY-MM" value-type="YYYY-MM" style="width: 100%" :placeholder="$t('salary.monthPlaceholder')" />
         </t-form-item>
