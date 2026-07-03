@@ -521,8 +521,12 @@ export default {
     editCategory: '编辑分类',
   },
   todoCenter: {
+    unsupportedType: '不支持的待办类型：{type}',
     total: '待办总数',
     leave: '待审批请假',
+    overtime: '待审批加班',
+    travel: '待审批出差',
+    supply: '待审批用品',
     vehicle: '待审批用车',
     pendingList: '待办列表',
     type: '类型',

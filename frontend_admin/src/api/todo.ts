@@ -13,9 +13,12 @@ export interface TodoItem {
 }
 
 export interface TodoSummary {
-  leave: number
-  vehicle: number
   total: number
+  leave: number
+  overtime: number
+  travel: number
+  supply: number
+  vehicle: number
 }
 
 /** 待办分页列表 */

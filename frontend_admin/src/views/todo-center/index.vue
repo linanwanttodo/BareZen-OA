@@ -2,7 +2,7 @@
   <div class="page-container">
     <!-- 统计卡片 -->
     <t-row :gutter="16" class="mb-4">
-      <t-col :span="8">
+      <t-col :span="4">
         <t-card class="stat-card">
           <div class="flex items-center justify-between">
             <div>
@@ -13,7 +13,7 @@
           </div>
         </t-card>
       </t-col>
-      <t-col :span="8">
+      <t-col :span="4">
         <t-card class="stat-card">
           <div class="flex items-center justify-between">
             <div>
@@ -24,7 +24,40 @@
           </div>
         </t-card>
       </t-col>
-      <t-col :span="8">
+      <t-col :span="4">
+        <t-card class="stat-card">
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="text-sm text-[var(--muted-foreground)]">{{ $t('todoCenter.overtime') }}</div>
+              <div class="mt-1 text-2xl font-semibold">{{ summary.overtime ?? '-' }}</div>
+            </div>
+            <icon-command class="text-2xl" style="color: var(--primary)" />
+          </div>
+        </t-card>
+      </t-col>
+      <t-col :span="4">
+        <t-card class="stat-card">
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="text-sm text-[var(--muted-foreground)]">{{ $t('todoCenter.travel') }}</div>
+              <div class="mt-1 text-2xl font-semibold">{{ summary.travel ?? '-' }}</div>
+            </div>
+            <icon-ticket class="text-2xl" style="color: var(--primary)" />
+          </div>
+        </t-card>
+      </t-col>
+      <t-col :span="4">
+        <t-card class="stat-card">
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="text-sm text-[var(--muted-foreground)]">{{ $t('todoCenter.supply') }}</div>
+              <div class="mt-1 text-2xl font-semibold">{{ summary.supply ?? '-' }}</div>
+            </div>
+            <icon-file class="text-2xl" style="color: var(--primary)" />
+          </div>
+        </t-card>
+      </t-col>
+      <t-col :span="4">
         <t-card class="stat-card">
           <div class="flex items-center justify-between">
             <div>
@@ -53,10 +86,23 @@
               </template>
     <template #operate="{ row }">
                 <t-space>
-                  <t-link theme="primary" v-permission="PERM.hr.leaveApprove" v-if="row.type === 'leave'" @click="openApprove(row)">
+                  <!-- 审批按钮按待办类型分发。后端 TodoAggregationServiceImpl 产出 5 种类型：
+                       leave / overtime / travel / supply / vehicle。
+                       此前只覆盖 leave 与 vehicle，其余 3 种待办在列表里没有审批入口，
+                       表现为「这条待办点不动、处理不了」。 -->
+                  <t-link v-if="row.type === 'leave'" theme="primary" v-permission="PERM.hr.leaveApprove" @click="openApprove(row)">
                     {{ $t('todoCenter.approve') }}
                   </t-link>
-                  <t-link theme="primary" v-permission="PERM.office.vehicleApprove" v-if="row.type === 'vehicle'" @click="openApprove(row)">
+                  <t-link v-if="row.type === 'overtime'" theme="primary" v-permission="PERM.hr.overtimeApprove" @click="openApprove(row)">
+                    {{ $t('todoCenter.approve') }}
+                  </t-link>
+                  <t-link v-if="row.type === 'travel'" theme="primary" v-permission="PERM.hr.travelApprove" @click="openApprove(row)">
+                    {{ $t('todoCenter.approve') }}
+                  </t-link>
+                  <t-link v-if="row.type === 'supply'" theme="primary" v-permission="PERM.office.supplyApprove" @click="openApprove(row)">
+                    {{ $t('todoCenter.approve') }}
+                  </t-link>
+                  <t-link v-if="row.type === 'vehicle'" theme="primary" v-permission="PERM.office.vehicleApprove" @click="openApprove(row)">
                     {{ $t('todoCenter.approve') }}
                   </t-link>
                 </t-space>
@@ -112,8 +158,11 @@
 import { PERM } from '@/utils/constants'
 import { ref, computed, reactive, onMounted, onActivated } from 'vue'
 import { MessagePlugin, type FormInstanceFunctions } from 'tdesign-vue-next'
-import { getTodoPageApi, getTodoSummaryApi, type TodoItem } from '@/api/todo'
+import { getTodoPageApi, getTodoSummaryApi, type TodoItem, type TodoSummary } from '@/api/todo'
 import { approveLeaveApi } from '@/api/leave'
+import { approveOvertimeApi } from '@/api/overtime'
+import { approveTravelApi } from '@/api/travel'
+import { approveSupplyRequestApi } from '@/api/supply'
 import { approveVehicleApi } from '@/api/office'
 import { useI18n } from 'vue-i18n'
 
@@ -122,7 +171,8 @@ const loading = ref(false)
 const approving = ref(false)
 const tableData = ref<TodoItem[]>([])
 const approveVisible = ref(false)
-const summary = reactive<{ leave?: number; vehicle?: number; total?: number }>({})
+// 与后端 TodoCenterController.summary 返回的 5 类计数保持一致
+const summary = reactive<TodoSummary>({ total: 0, leave: 0, overtime: 0, travel: 0, supply: 0, vehicle: 0 })
 
 const pagination = reactive({ current: 1, pageSize: 10, total: 0 })
 
@@ -163,10 +213,28 @@ async function handleApprove() {
   if (!item) return
   approving.value = true
   try {
-    if (item.type === 'leave') {
-      await approveLeaveApi(item.id, approveForm.action, approveForm.remark)
-    } else if (item.type === 'vehicle') {
-      await approveVehicleApi(item.id, approveForm.action, approveForm.remark)
+    // 与后端 TodoAggregationServiceImpl 的 5 种类型一一对应。
+    // 此前只处理 leave/vehicle，其余类型走完分支什么都不做却仍提示「审批完成」，
+    // 属于静默失败 —— 现在每类都有明确分支，未知类型显式报错。
+    switch (item.type) {
+      case 'leave':
+        await approveLeaveApi(item.id, approveForm.action, approveForm.remark)
+        break
+      case 'overtime':
+        await approveOvertimeApi(item.id, approveForm.action, approveForm.remark)
+        break
+      case 'travel':
+        await approveTravelApi(item.id, approveForm.action, approveForm.remark)
+        break
+      case 'supply':
+        await approveSupplyRequestApi(item.id, approveForm.action, approveForm.remark)
+        break
+      case 'vehicle':
+        await approveVehicleApi(item.id, approveForm.action, approveForm.remark)
+        break
+      default:
+        MessagePlugin.error(t('todoCenter.unsupportedType', { type: item.type }))
+        return
     }
     MessagePlugin.success(t('common.msg.approveDone'))
     approveVisible.value = false

@@ -521,8 +521,12 @@ export default {
     editCategory: 'Edit Category',
   },
   todoCenter: {
+    unsupportedType: 'Unsupported todo type: {type}',
     total: 'Total Pending',
     leave: 'Pending Leave',
+    overtime: 'Pending Overtime',
+    travel: 'Pending Travel',
+    supply: 'Pending Supplies',
     vehicle: 'Pending Vehicle',
     pendingList: 'Pending List',
     type: 'Type',
