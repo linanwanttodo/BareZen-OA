@@ -266,8 +266,10 @@ body {
   gap: var(--td-comp-margin-s);
 }
 /* 无筛选区的页面工具条就是首个元素，不需要再拉开间距 */
-.bz-list-toolbar:first-child {
+.bz-list-toolbar:first-child,
+.bz-list-toolbar--first {
   margin-top: 0;
+  margin-bottom: var(--td-comp-margin-xl);
 }
 /* 分页右对齐，与表格拉开官方 xx 间距刻度 */
 .bz-list-pager {

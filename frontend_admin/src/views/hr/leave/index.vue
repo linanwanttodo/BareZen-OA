@@ -22,15 +22,14 @@
 
     <!-- 表格 -->
     <t-card>
-      <template #title>
-        <div class="flex items-center justify-between w-full">
-          <span>{{ $t('leave.title') }}</span>
+      <div class="bz-list-toolbar bz-list-toolbar--first">
+        <t-space>
           <t-button v-permission="PERM.hr.leaveAdd" theme="primary" @click="handleAdd">
             <template #icon><icon-plus /></template>
             {{ $t('leave.apply') }}
           </t-button>
-        </div>
-      </template>
+        </t-space>
+      </div>
 
       
           <t-table :loading="loading" row-key="id" :data="tableData" :columns="tableColumns" :pagination="false" :hover="true" vertical-align="top">

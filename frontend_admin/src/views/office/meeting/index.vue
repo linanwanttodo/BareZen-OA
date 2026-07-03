@@ -22,21 +22,18 @@
 
     <!-- 会议室卡片列表 -->
     <t-card class="mb-4">
-      <template #title>
-        <div class="flex items-center justify-between w-full">
-          <span>{{ $t('office.roomList') }}</span>
-          <t-space>
-            <t-button v-permission="PERM.office.meetingAdd" theme="primary" @click="openRoomAdd">
+      <div class="bz-list-toolbar bz-list-toolbar--first">
+        <t-space>
+          <t-button v-permission="PERM.office.meetingAdd" theme="primary" @click="openRoomAdd">
               <template #icon><icon-plus /></template>
               {{ $t('office.addRoom') }}
             </t-button>
-            <t-button v-permission="PERM.office.meetingAdd" variant="outline" @click="bookingVisible = true">
+          <t-button v-permission="PERM.office.meetingAdd" variant="outline" @click="bookingVisible = true">
               <template #icon><icon-calendar /></template>
               {{ $t('office.bookMeeting') }}
             </t-button>
-          </t-space>
-        </div>
-      </template>
+        </t-space>
+      </div>
       <t-loading :loading="roomLoading">
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <t-card v-for="room in rooms" :key="room.id" class="room-card" hoverable>

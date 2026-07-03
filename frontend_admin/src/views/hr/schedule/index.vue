@@ -29,12 +29,13 @@
 
     <!-- 表格 -->
     <t-card>
-      <template #title>
-        <span>{{ $t('schedule.title') }}</span>
-        <t-button v-permission="PERM.hr.scheduleAdd" class="ml-4" theme="primary" size="small" @click="openAdd">
+      <div class="bz-list-toolbar bz-list-toolbar--first">
+        <t-space>
+          <t-button v-permission="PERM.hr.scheduleAdd" class="ml-4" theme="primary" size="small" @click="openAdd">
           {{ $t('common.add') }}
         </t-button>
-      </template>
+        </t-space>
+      </div>
 
       
           <t-table :loading="loading" row-key="id" :data="tableData" :columns="tableColumns" :pagination="false" :hover="true" vertical-align="top">

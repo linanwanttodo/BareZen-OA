@@ -23,20 +23,17 @@
 
     <!-- 树形表格区域 -->
     <t-card :bordered="true">
-      <template #title>
-        <div class="flex items-center justify-between w-full">
-          <span>{{ $t('menu.title') }}</span>
-          <t-space>
-            <t-button @click="toggleExpandAll">
+      <div class="bz-list-toolbar bz-list-toolbar--first">
+        <t-space>
+          <t-button @click="toggleExpandAll">
               {{ isAllExpanded ? $t('common.collapseAll') : $t('common.expandAll') }}
             </t-button>
-            <t-button v-permission="PERM.system.menuAdd" theme="primary" @click="handleAdd()">
+          <t-button v-permission="PERM.system.menuAdd" theme="primary" @click="handleAdd()">
               <template #icon><icon-plus /></template>
               {{ $t('common.add') }}
             </t-button>
-          </t-space>
-        </div>
-      </template>
+        </t-space>
+      </div>
 
       
           <t-table :loading="loading" row-key="id" :data="flatRows" :columns="tableColumns" :pagination="false" :hover="true" vertical-align="top">

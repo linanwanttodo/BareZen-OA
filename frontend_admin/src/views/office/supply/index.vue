@@ -31,15 +31,14 @@
       </t-card>
 
       <t-card>
-        <template #title>
-          <div class="flex items-center justify-between w-full">
-            <span>{{ $t('supply.supplyList') }}</span>
+        <div class="bz-list-toolbar bz-list-toolbar--first">
+          <t-space>
             <t-button v-permission="PERM.office.supplyAdd" theme="primary" @click="openSupplyAdd">
               <template #icon><icon-plus /></template>
               {{ $t('supply.addSupply') }}
             </t-button>
-          </div>
-        </template>
+          </t-space>
+        </div>
 
         
             <t-table :loading="loading" row-key="id" :data="tableData" :columns="tableColumns" :pagination="false" :hover="true" vertical-align="top">

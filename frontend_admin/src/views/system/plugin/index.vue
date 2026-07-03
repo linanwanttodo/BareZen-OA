@@ -1,15 +1,14 @@
 <template>
   <div class="page-container">
     <t-card>
-      <template #title>
-        <div class="flex items-center justify-between w-full">
-          <span>{{ $t('plugin.title') }}</span>
+      <div class="bz-list-toolbar bz-list-toolbar--first">
+        <t-space>
           <t-button theme="primary" variant="outline" @click="loadData">
             <template #icon><icon-refresh /></template>
             {{ $t('common.refresh') }}
           </t-button>
-        </div>
-      </template>
+        </t-space>
+      </div>
 
       
         <t-table :loading="loading" row-key="pluginId" :data="plugins" :columns="tableColumns" :pagination="false" :hover="true" vertical-align="top">

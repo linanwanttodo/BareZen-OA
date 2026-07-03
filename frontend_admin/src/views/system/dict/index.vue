@@ -3,15 +3,14 @@
     <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
       <!-- 左侧：字典类型 -->
       <t-card :bordered="true" class="flex flex-col">
-        <template #title>
-          <div class="flex items-center justify-between w-full">
-            <span>{{ $t('dict.title') }}</span>
+        <div class="bz-list-toolbar bz-list-toolbar--first">
+          <t-space>
             <t-button v-permission="PERM.system.dictAdd" theme="primary" size="small" @click="handleAddType">
               <template #icon><icon-plus /></template>
               {{ $t('common.add') }}
             </t-button>
-          </div>
-        </template>
+          </t-space>
+        </div>
         <div class="mb-3">
           <t-input v-model="typeSearch" :placeholder="$t('dict.searchPlaceholder')" allow-clear />
         </div>
@@ -51,18 +50,20 @@
 
       <!-- 右侧：字典数据 -->
       <t-card :bordered="true" class="flex flex-col">
-        <template #title>
-          <div class="flex items-center justify-between w-full">
-            <div class="flex items-center gap-2">
-              <span>{{ $t('dict.dataTitle') }}</span>
-              <t-tag v-if="selectedType" theme="primary">{{ selectedType.dictName }}</t-tag>
-            </div>
+        <!-- 行级操作：表格上方独立工具条（对齐 TDesign Starter list/base）。
+             标题里的「当前字典类型」标签有信息量，保留在工具条左侧。 -->
+        <div class="bz-list-toolbar bz-list-toolbar--first">
+          <div class="flex items-center gap-2">
+            <span>{{ $t('dict.dataTitle') }}</span>
+            <t-tag v-if="selectedType" theme="primary" variant="light">{{ selectedType.dictName }}</t-tag>
+          </div>
+          <t-space>
             <t-button v-permission="PERM.system.dictAdd" theme="primary" size="small" :disabled="!selectedType" @click="handleAddData">
               <template #icon><icon-plus /></template>
               {{ $t('common.add') }}
             </t-button>
-          </div>
-        </template>
+          </t-space>
+        </div>
         <template v-if="selectedType">
           <div class="mb-3 flex items-center gap-2">
             <t-input v-model="dataSearchForm.dictLabel" :placeholder="$t('dict.dictLabel')" clearable style="width: 180px" />

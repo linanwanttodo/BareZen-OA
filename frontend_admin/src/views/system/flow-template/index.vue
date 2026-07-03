@@ -19,15 +19,14 @@
 
     <!-- 表格 -->
     <t-card>
-      <template #title>
-        <div class="flex items-center justify-between w-full">
-          <span>{{ $t('flowTemplate.title') }}</span>
+      <div class="bz-list-toolbar bz-list-toolbar--first">
+        <t-space>
           <t-button v-permission="PERM.system.flowTemplateAdd" theme="primary" @click="handleAdd">
             <template #icon><icon-plus /></template>
             {{ $t('common.add') }}
           </t-button>
-        </div>
-      </template>
+        </t-space>
+      </div>
 
       <t-alert class="mb-4" :title="$t('flowTemplate.tip')" type="info" />
 

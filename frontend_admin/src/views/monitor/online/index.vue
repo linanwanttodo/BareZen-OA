@@ -1,24 +1,18 @@
 <template>
   <div class="page-container">
     <t-card>
-      <template #title>
-        <div class="flex items-center justify-between w-full">
-          <div class="flex items-center gap-2">
-            <span>{{ $t('monitor.online.title') }}</span>
-            <t-tag theme="primary">{{ $t('monitor.online.onlineCount', { count: onlineCount }) }}</t-tag>
-          </div>
-          <div class="flex gap-2">
-            <t-button @click="loadTable">
+      <div class="bz-list-toolbar bz-list-toolbar--first">
+        <t-space>
+          <t-button @click="loadTable">
               <template #icon><icon-refresh /></template>
               {{ $t('monitor.online.refresh') }}
             </t-button>
-            <t-button v-permission="PERM.monitor.onlineDelete" theme="danger" :disabled="!selectedTokens.length" @click="handleBatchForceLogout">
+          <t-button v-permission="PERM.monitor.onlineDelete" theme="danger" :disabled="!selectedTokens.length" @click="handleBatchForceLogout">
               <template #icon><icon-poweroff /></template>
               {{ $t('monitor.online.batchLogout') }}
             </t-button>
-          </div>
-        </div>
-      </template>
+        </t-space>
+      </div>
             <t-table :loading="loading" row-key="id" :data="tableData" :columns="tableColumns" :pagination="false" :hover="true" vertical-align="top">
     <template #col_0="{ row }">
                   <t-checkbox :model-value="selectedTokens.includes(rowKey(row))" @change="() => toggleRow(rowKey(row))" />

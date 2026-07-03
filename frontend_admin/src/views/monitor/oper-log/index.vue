@@ -38,27 +38,22 @@
 
     <!-- 表格区域 -->
     <t-card>
-      <template #title>
-        <div class="flex items-center justify-between w-full">
-          <span>{{ $t('monitor.operLog.title') }}</span>
-          <t-space>
-            <t-button @click="loadTable">
+      <div class="bz-list-toolbar bz-list-toolbar--first">
+        <t-space>
+          <t-button @click="loadTable">
               <template #icon><icon-refresh /></template>
               {{ $t('monitor.operLog.refresh') }}
             </t-button>
-            <t-button v-permission="PERM.monitor.operlogDelete" theme="danger" :disabled="!selectedIds.length" @click="handleBatchDelete">
+          <t-button v-permission="PERM.monitor.operlogDelete" theme="danger" :disabled="!selectedIds.length" @click="handleBatchDelete">
               <template #icon><icon-delete /></template>
               {{ $t('common.batchDelete') }}
             </t-button>
-            <t-popconfirm v-permission="PERM.monitor.operlogDelete" :content="$t('monitor.operLog.cleanConfirm', { beforeDays: 30 })" @confirm="handleClean">
-              <t-button theme="danger">
+          <t-button theme="danger">
                 <template #icon><icon-delete /></template>
                 {{ $t('monitor.operLog.clean') }}
               </t-button>
-            </t-popconfirm>
-          </t-space>
-        </div>
-      </template>
+        </t-space>
+      </div>
         <div v-if="loading" class="flex items-center justify-center h-64">
           <t-loading size="28px" :text="$t('common.loading')" />
         </div>

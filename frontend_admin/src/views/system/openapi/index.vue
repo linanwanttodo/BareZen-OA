@@ -23,15 +23,14 @@
       </t-card>
 
       <t-card>
-        <template #title>
-          <div class="flex items-center justify-between w-full">
-            <span>{{ $t('openapi.apiKeyTab') }}</span>
+        <div class="bz-list-toolbar bz-list-toolbar--first">
+          <t-space>
             <t-button v-permission="PERM.system.apiKeyAdd" theme="primary" @click="openKeyCreate">
               <template #icon><icon-plus /></template>
               {{ $t('openapi.addApiKey') }}
             </t-button>
-          </div>
-        </template>
+          </t-space>
+        </div>
 
         
             <t-table :loading="keyLoading" row-key="id" :data="keyData" :columns="tableColumns" :pagination="false" :hover="true" vertical-align="top">
@@ -85,15 +84,16 @@
       </t-card>
 
       <t-card>
-        <template #title>
-          <div class="flex items-center justify-between w-full">
-            <span>{{ $t('openapi.webhookTab') }}</span>
+        <!-- 行级操作：表格上方独立工具条（对齐 TDesign Starter list/base），
+             不放 t-card #title 插槽 -->
+        <div class="bz-list-toolbar bz-list-toolbar--first">
+          <t-space>
             <t-button v-permission="PERM.system.webhookAdd" theme="primary" @click="openHookCreate">
               <template #icon><icon-plus /></template>
               {{ $t('openapi.addWebhook') }}
             </t-button>
-          </div>
-        </template>
+          </t-space>
+        </div>
 
         
             <t-table :loading="hookLoading" row-key="id" :data="hookData" :columns="tableColumns2" :pagination="false" :hover="true" vertical-align="top">

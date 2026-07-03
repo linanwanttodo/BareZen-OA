@@ -27,20 +27,17 @@
 
     <!-- 表格 -->
     <t-card>
-      <template #title>
-        <div class="flex items-center justify-between w-full">
-          <span>{{ $t('salary.paymentTitle') }}</span>
-          <t-space>
-            <t-button v-permission="PERM.salary.paymentExecute" theme="primary" @click="openGenerate">
+      <div class="bz-list-toolbar bz-list-toolbar--first">
+        <t-space>
+          <t-button v-permission="PERM.salary.paymentExecute" theme="primary" @click="openGenerate">
               <template #icon><icon-plus /></template>
               {{ $t('salary.generate') }}
             </t-button>
-            <t-button v-permission="PERM.salary.paymentExecute" theme="success" :disabled="!selectedRowKeys.length" @click="handleExecute">
+          <t-button v-permission="PERM.salary.paymentExecute" theme="success" :disabled="!selectedRowKeys.length" @click="handleExecute">
               {{ $t('salary.executePay') }}
             </t-button>
-          </t-space>
-        </div>
-      </template>
+        </t-space>
+      </div>
 
       
           <t-table :loading="loading" row-key="id" :data="tableData" :columns="tableColumns" :pagination="false"

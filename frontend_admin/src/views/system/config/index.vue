@@ -20,17 +20,14 @@
 
     <!-- 表格 -->
     <t-card>
-      <template #title>
-        <div class="flex items-center justify-between w-full">
-          <span>{{ $t('config.systemConfig') }}</span>
-          <t-space>
-            <t-button v-permission="PERM.system.configEdit" @click="handleClearCache" :loading="clearing">
+      <div class="bz-list-toolbar bz-list-toolbar--first">
+        <t-space>
+          <t-button v-permission="PERM.system.configEdit" @click="handleClearCache" :loading="clearing">
               <template #icon><icon-refresh /></template>
               {{ $t('config.clearCache') }}
             </t-button>
-          </t-space>
-        </div>
-      </template>
+        </t-space>
+      </div>
 
       
           <t-table :loading="loading" row-key="id" :data="tableData" :columns="tableColumns" :pagination="false" :hover="true" vertical-align="top">

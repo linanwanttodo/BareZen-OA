@@ -1,29 +1,22 @@
 <template>
   <div class="page-container">
     <t-card>
-      <template #title>
-        <div class="flex items-center justify-between w-full">
-          <div class="flex items-center gap-2">
-            <span>{{ $t('file.title') }}</span>
-            <t-tag theme="primary">{{ pagination.total }}</t-tag>
-          </div>
-          <div class="flex gap-2">
-            <input ref="fileInputRef" type="file" class="hidden" multiple @change="onFileSelected" />
-            <t-button v-permission="PERM.system.fileUpload" theme="primary" :loading="uploading" @click="triggerUpload">
+      <div class="bz-list-toolbar bz-list-toolbar--first">
+        <t-space>
+          <t-button v-permission="PERM.system.fileUpload" theme="primary" :loading="uploading" @click="triggerUpload">
               <template #icon><icon-upload /></template>
               {{ $t('file.upload') }}
             </t-button>
-            <t-button v-permission="PERM.system.fileAdd" @click="openCreateFolder">
+          <t-button v-permission="PERM.system.fileAdd" @click="openCreateFolder">
               <template #icon><icon-plus /></template>
               {{ $t('file.createFolder') }}
             </t-button>
-            <t-button @click="loadList">
+          <t-button @click="loadList">
               <template #icon><icon-refresh /></template>
               {{ $t('file.refresh') }}
             </t-button>
-          </div>
-        </div>
-      </template>
+        </t-space>
+      </div>
         <!-- 面包屑导航 -->
         <div class="mb-4 flex flex-wrap items-center gap-1">
           <a class="cursor-pointer text-sm text-[var(--primary)] hover:underline" @click="goToLevel(-1)">{{ $t('file.root') }}</a>

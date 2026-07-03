@@ -26,25 +26,22 @@
 
     <!-- 表格区域 -->
     <t-card :bordered="true">
-      <template #title>
-        <div class="flex items-center justify-between w-full">
-          <span>{{ $t('user.userManagement') }}</span>
-          <t-space>
-            <t-button v-permission="PERM.system.userAdd" theme="primary" @click="handleAdd">
+      <div class="bz-list-toolbar bz-list-toolbar--first">
+        <t-space>
+          <t-button v-permission="PERM.system.userAdd" theme="primary" @click="handleAdd">
               <template #icon><icon-plus /></template>
               {{ $t('user.addUser') }}
             </t-button>
-            <t-button v-permission="PERM.system.userAdd" @click="batchVisible = true">
+          <t-button v-permission="PERM.system.userAdd" @click="batchVisible = true">
               <template #icon><icon-user-group /></template>
               {{ $t('user.batchAdd') }}
             </t-button>
-            <t-button v-permission="PERM.system.userDelete" theme="danger" :disabled="!selectedIds.length" @click="handleBatchDelete">
+          <t-button v-permission="PERM.system.userDelete" theme="danger" :disabled="!selectedIds.length" @click="handleBatchDelete">
               <template #icon><icon-delete /></template>
               {{ $t('user.batchDelete') }}
             </t-button>
-          </t-space>
-        </div>
-      </template>
+        </t-space>
+      </div>
 
       
           <t-table :loading="loading" row-key="id" :data="tableData" :columns="tableColumns" :pagination="false" :hover="true" vertical-align="top">

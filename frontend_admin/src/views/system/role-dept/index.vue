@@ -2,12 +2,11 @@
   <div class="role-dept-layout">
     <!-- 左侧筛选侧边栏 -->
     <t-card class="filter-sidebar" :style="{ width: '280px', minWidth: '280px' }">
-      <template #title>
-        <div class="flex items-center justify-between w-full">
-          <span>{{ $t('roleDept.filterTitle') }}</span>
+      <div class="bz-list-toolbar bz-list-toolbar--first">
+        <t-space>
           <t-button type="text" size="small" @click="resetFilters">{{ $t('common.reset') }}</t-button>
-        </div>
-      </template>
+        </t-space>
+      </div>
         <!-- 角色筛选 -->
         <div class="filter-section">
           <div class="filter-title">

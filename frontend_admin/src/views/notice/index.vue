@@ -19,15 +19,14 @@
     </t-card>
 
     <t-card class="mt-4">
-      <template #title>
-        <div class="flex items-center justify-between w-full">
-          <span>{{ $t('notice.title') }}</span>
+      <div class="bz-list-toolbar bz-list-toolbar--first">
+        <t-space>
           <t-button v-permission="PERM.system.noticeAdd" theme="primary" @click="handleAdd">
             <template #icon><icon-plus /></template>
             {{ $t('common.add') }}
           </t-button>
-        </div>
-      </template>
+        </t-space>
+      </div>
         <div v-if="loading" class="flex items-center justify-center h-64">
           <t-loading size="28px" :text="$t('common.loading')" />
         </div>
