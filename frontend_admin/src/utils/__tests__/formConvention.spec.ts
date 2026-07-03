@@ -94,3 +94,35 @@ describe('表单提交按钮约定', () => {
     expect(offenders).toEqual([])
   })
 })
+
+describe('必填标记约定', () => {
+  it('t-form-item 不用裸 required，必须写 :rules', () => {
+    // tdesign-vue-next 的 t-form-item 没有 required 属性：写了只画一个红星号，
+    // 不产生任何校验，空值照样能提交到后端。
+    // 必须写 :rules="[{ required: true, message: ... }]"，validate() 才会拦。
+    const offenders: string[] = []
+    for (const f of files) {
+      const src = readFileSync(f, 'utf-8')
+      for (const m of src.matchAll(/<t-form-item\b[^>]*>/g)) {
+        // 排除已写 :rules 的
+        if (/\s:rules=/.test(m[0])) continue
+        if (/\srequired>/.test(m[0])) offenders.push(rel(f))
+      }
+    }
+    expect([...new Set(offenders)]).toEqual([])
+  })
+
+  it('区间类字段的 name 指向真实字段，不用展示用的 timeRange', () => {
+    // name 是校验锚点，必须命中 :data 里的真实键。
+    // 起止时间区间历史上写 name="timeRange"（纯展示用），
+    // 而控件绑的是 form.startTime / form.endTime —— timeRange 恒为 undefined，
+    // 挂 required 要么永不校验，要么在换成 :rules 后永远报错并阻塞提交。
+    const offenders: string[] = []
+    for (const f of files) {
+      // 去掉注释后再匹配，避免「历史说明」注释里的 name="timeRange" 被误判
+      const src = readFileSync(f, 'utf-8').replace(/<!--[\s\S]*?-->/g, '')
+      if (/name="timeRange"/.test(src)) offenders.push(rel(f))
+    }
+    expect(offenders).toEqual([])
+  })
+})

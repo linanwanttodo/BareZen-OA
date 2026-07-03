@@ -77,7 +77,7 @@
     <t-dialog v-model:visible="generateVisible" :title="$t('salary.generate')" :width="440"
              @confirm="handleGenerate" @cancel="generateVisible = false" :ok-loading="generating">
       <t-form ref="generateFormRef" :data="generateForm" layout="vertical">
-        <t-form-item name="paymentMonth" :label="$t('salary.paymentMonth')" required>
+        <t-form-item name="paymentMonth" :label="$t('salary.paymentMonth')" :rules="[{ required: true, message: t('validation.required', { field: t('salary.paymentMonth') }) }]">
           
 <t-date-picker v-model="generateForm.paymentMonth" mode="month" format="YYYY-MM" value-type="YYYY-MM" style="width: 100%" :placeholder="$t('salary.monthPlaceholder')" />
         </t-form-item>

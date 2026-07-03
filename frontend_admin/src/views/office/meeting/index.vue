@@ -93,7 +93,7 @@
     <t-dialog v-model:visible="roomDialogVisible" :title="isRoomEdit ? $t('office.editRoom') : $t('office.addRoom')" :width="520"
              @confirm="handleSaveRoom" @cancel="cancelRoomEdit" :ok-loading="saving">
       <t-form ref="roomFormRef" :data="roomForm" layout="vertical">
-        <t-form-item name="roomName" :label="$t('office.roomName')" required>
+        <t-form-item name="roomName" :label="$t('office.roomName')" :rules="[{ required: true, message: t('validation.required', { field: t('office.roomName') }) }]">
           <t-input v-model="roomForm.roomName" :placeholder="$t('common.inputPlaceholder')" />
         </t-form-item>
         <t-form-item name="capacity" :label="$t('office.capacity')">
@@ -118,15 +118,17 @@
     <t-dialog v-model:visible="bookingVisible" :title="isBookingEdit ? $t('office.editBooking') : $t('office.bookMeeting')" :width="560"
              @confirm="handleSaveBooking" @cancel="cancelBooking" :ok-loading="saving">
       <t-form ref="bookingFormRef" :data="bookingForm" layout="vertical">
-        <t-form-item name="roomId" :label="$t('office.roomName')" required>
+        <t-form-item name="roomId" :label="$t('office.roomName')" :rules="[{ required: true, message: t('validation.required', { field: t('office.roomName') }) }]">
           <t-select v-model="bookingForm.roomId" :placeholder="$t('common.selectPlaceholder')">
             <t-option v-for="room in roomOptions" :key="room.id" :value="room.id">{{ room.roomName }}</t-option>
           </t-select>
         </t-form-item>
-        <t-form-item name="title" :label="$t('office.bookingTitle')" required>
+        <t-form-item name="title" :label="$t('office.bookingTitle')" :rules="[{ required: true, message: t('validation.required', { field: t('office.bookingTitle') }) }]">
           <t-input v-model="bookingForm.title" :placeholder="$t('common.inputPlaceholder')" />
         </t-form-item>
-        <t-form-item name="timeRange" :label="$t('office.timeRange')" required>
+        <!-- name 必须指向 :data 里真实存在的字段。timeRange 只是展示用锚点，
+             该键恒为 undefined，校验永不生效；此处锚定 startTime。 -->
+        <t-form-item name="startTime" :label="$t('office.timeRange')" :rules="[{ required: true, message: t('validation.required', { field: t('office.startTime') }) }]">
           
 <t-date-picker v-model="bookingForm.startTime" show-time value-type="YYYY-MM-DD HH:mm" :placeholder="$t('office.startTime')" />
           <span class="mx-2">~</span>

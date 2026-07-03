@@ -106,7 +106,7 @@
     <t-dialog v-model:visible="supplyDialogVisible" :title="isSupplyEdit ? $t('supply.editSupply') : $t('supply.addSupply')"
              :width="520" @confirm="handleSaveSupply" @cancel="supplyDialogVisible = false" :ok-loading="saving">
       <t-form ref="supplyFormRef" :data="supplyForm" layout="vertical">
-        <t-form-item name="supplyName" :label="$t('supply.supplyName')" required>
+        <t-form-item name="supplyName" :label="$t('supply.supplyName')" :rules="[{ required: true, message: t('validation.required', { field: t('supply.supplyName') }) }]">
           <t-input v-model="supplyForm.supplyName" :placeholder="$t('common.inputPlaceholder')" />
         </t-form-item>
         <t-row :gutter="16">
@@ -126,7 +126,7 @@
             </t-form-item>
           </t-col>
           <t-col :span="12">
-            <t-form-item name="stock" :label="$t('supply.stock')" required>
+            <t-form-item name="stock" :label="$t('supply.stock')" :rules="[{ required: true, message: t('validation.required', { field: t('supply.stock') }) }]">
               <t-input-number v-model="supplyForm.stock" :min="0" style="width: 100%" />
             </t-form-item>
           </t-col>
@@ -159,7 +159,7 @@
     <t-dialog v-model:visible="approveVisible" :title="$t('supply.approve')" :width="480"
              @confirm="handleApprove" @cancel="approveVisible = false" :ok-loading="approving">
       <t-form ref="approveFormRef" :data="approveForm" layout="vertical">
-        <t-form-item :label="$t('supply.approveAction')" required>
+        <t-form-item :label="$t('supply.approveAction')">
           <t-radio-group v-model="approveForm.action" variant="default-filled">
             <t-radio value="pass">{{ $t('supply.approvePass') }}</t-radio>
             <t-radio value="reject">{{ $t('supply.approveReject') }}</t-radio>

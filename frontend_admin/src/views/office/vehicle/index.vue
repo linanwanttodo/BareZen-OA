@@ -102,7 +102,7 @@
     <t-dialog v-model:visible="addVisible" :title="$t('office.applyVehicle')" :width="560"
              @confirm="handleSubmit" @cancel="addVisible = false" :ok-loading="submitting">
       <t-form ref="formRef" :data="form" layout="vertical">
-        <t-form-item name="vehicleType" :label="$t('office.vehicleType')" required>
+        <t-form-item name="vehicleType" :label="$t('office.vehicleType')" :rules="[{ required: true, message: t('validation.required', { field: t('office.vehicleType') }) }]">
           <t-select v-model="form.vehicleType">
             <t-option value="car">{{ $t('office.typeCar') }}</t-option>
             <t-option value="van">{{ $t('office.typeVan') }}</t-option>
@@ -110,14 +110,16 @@
             <t-option value="other">{{ $t('office.typeOther') }}</t-option>
           </t-select>
         </t-form-item>
-        <t-form-item name="timeRange" :label="$t('office.timeRange')" required>
+        <!-- name 必须指向 :data 里真实存在的字段。timeRange 只是展示用锚点，
+             该键恒为 undefined，校验永不生效；此处锚定 startTime。 -->
+        <t-form-item name="startTime" :label="$t('office.timeRange')" :rules="[{ required: true, message: t('validation.required', { field: t('office.startTime') }) }]">
           
 <t-date-picker v-model="form.startTime" show-time value-type="YYYY-MM-DD HH:mm" :placeholder="$t('office.startTime')" />
           <span class="mx-2">~</span>
           
 <t-date-picker v-model="form.endTime" show-time value-type="YYYY-MM-DD HH:mm" :placeholder="$t('office.endTime')" />
         </t-form-item>
-        <t-form-item name="purpose" :label="$t('office.purpose')" required>
+        <t-form-item name="purpose" :label="$t('office.purpose')" :rules="[{ required: true, message: t('validation.required', { field: t('office.purpose') }) }]">
           <t-textarea v-model="form.purpose" :placeholder="$t('common.inputPlaceholder')" :max-length="200" show-word-limit />
         </t-form-item>
         <t-form-item name="destination" :label="$t('office.destination')">
@@ -136,7 +138,7 @@
     <t-dialog v-model:visible="approveVisible" :title="$t('office.approve')" :width="480"
              @confirm="handleApprove" @cancel="approveVisible = false" :ok-loading="approving">
       <t-form ref="approveFormRef" :data="approveForm" layout="vertical">
-        <t-form-item :label="$t('office.approveAction')" required>
+        <t-form-item :label="$t('office.approveAction')">
           <t-radio-group v-model="approveForm.action" variant="default-filled">
             <t-radio value="pass">{{ $t('office.approvePass') }}</t-radio>
             <t-radio value="reject">{{ $t('office.approveReject') }}</t-radio>

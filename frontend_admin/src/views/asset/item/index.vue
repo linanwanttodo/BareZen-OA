@@ -87,12 +87,12 @@
       <t-form ref="formRef" :data="form" layout="vertical">
         <t-row :gutter="16">
           <t-col :span="12">
-            <t-form-item name="assetNo" :label="$t('asset.assetNo')" required>
+            <t-form-item name="assetNo" :label="$t('asset.assetNo')" :rules="[{ required: true, message: t('validation.required', { field: t('asset.assetNo') }) }]">
               <t-input v-model="form.assetNo" :placeholder="$t('common.inputPlaceholder')" />
             </t-form-item>
           </t-col>
           <t-col :span="12">
-            <t-form-item name="assetName" :label="$t('asset.assetName')" required>
+            <t-form-item name="assetName" :label="$t('asset.assetName')" :rules="[{ required: true, message: t('validation.required', { field: t('asset.assetName') }) }]">
               <t-input v-model="form.assetName" :placeholder="$t('common.inputPlaceholder')" />
             </t-form-item>
           </t-col>
@@ -163,7 +163,7 @@
     <!-- 借用弹窗 -->
     <t-dialog v-model:visible="borrowVisible" :title="$t('asset.borrow')" :width="480" @confirm="handleBorrowSave" :ok-loading="saving">
       <t-form ref="borrowFormRef" :data="borrowForm" layout="vertical">
-        <t-form-item name="borrowerName" :label="$t('asset.borrowerName')" required>
+        <t-form-item name="borrowerName" :label="$t('asset.borrowerName')" :rules="[{ required: true, message: t('validation.required', { field: t('asset.borrowerName') }) }]">
           <t-input v-model="borrowForm.borrowerName" :placeholder="$t('common.inputPlaceholder')" />
         </t-form-item>
         <t-form-item name="expectReturnTime" :label="$t('asset.expectReturnTime')">

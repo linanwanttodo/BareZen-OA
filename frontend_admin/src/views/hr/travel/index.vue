@@ -98,10 +98,12 @@
     <t-dialog v-model:visible="addVisible" :title="$t('travel.apply')" :width="560"
              @confirm="handleSubmit" @cancel="addVisible = false" :ok-loading="submitting">
       <t-form ref="formRef" :data="form" layout="vertical">
-        <t-form-item name="destination" :label="$t('travel.destination')" required>
+        <t-form-item name="destination" :label="$t('travel.destination')" :rules="[{ required: true, message: t('validation.required', { field: t('travel.destination') }) }]">
           <t-input v-model="form.destination" :placeholder="$t('common.inputPlaceholder')" :max-length="100" />
         </t-form-item>
-        <t-form-item name="timeRange" :label="$t('travel.timeRange')" required>
+        <!-- name 必须指向 :data 里真实存在的字段。timeRange 只是展示用锚点，
+             该键恒为 undefined，校验永不生效；此处锚定 startTime。 -->
+        <t-form-item name="startTime" :label="$t('travel.timeRange')" :rules="[{ required: true, message: t('validation.required', { field: t('travel.startTime') }) }]">
           
 <t-date-picker v-model="form.startTime" show-time value-type="YYYY-MM-DD HH:mm" :placeholder="$t('travel.startTime')" />
           <span class="mx-2">~</span>
@@ -111,7 +113,7 @@
         <t-form-item name="days" :label="$t('travel.days')">
           <t-input-number v-model="form.days" :min="0.5" :step="0.5" style="width: 100%" :placeholder="$t('travel.daysPlaceholder')" />
         </t-form-item>
-        <t-form-item name="purpose" :label="$t('travel.purpose')" required>
+        <t-form-item name="purpose" :label="$t('travel.purpose')" :rules="[{ required: true, message: t('validation.required', { field: t('travel.purpose') }) }]">
           <t-textarea v-model="form.purpose" :placeholder="$t('common.inputPlaceholder')" :max-length="500" show-word-limit />
         </t-form-item>
       </t-form>
@@ -121,7 +123,7 @@
     <t-dialog v-model:visible="approveVisible" :title="$t('travel.approve')" :width="480"
              @confirm="handleApprove" @cancel="approveVisible = false" :ok-loading="approving">
       <t-form ref="approveFormRef" :data="approveForm" layout="vertical">
-        <t-form-item :label="$t('travel.approveAction')" required>
+        <t-form-item :label="$t('travel.approveAction')">
           <t-radio-group v-model="approveForm.action" variant="default-filled">
             <t-radio value="pass">{{ $t('travel.approvePass') }}</t-radio>
             <t-radio value="reject">{{ $t('travel.approveReject') }}</t-radio>

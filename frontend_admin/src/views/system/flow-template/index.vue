@@ -67,15 +67,15 @@
     <t-dialog v-model:visible="editVisible" :title="isEdit ? $t('flowTemplate.editNode') : $t('flowTemplate.addNode')"
              :width="480" @confirm="handleSave" @cancel="editVisible = false" :ok-loading="saving">
       <t-form ref="formRef" :data="form" layout="vertical">
-        <t-form-item name="bizType" :label="$t('flowTemplate.bizType')" required>
+        <t-form-item name="bizType" :label="$t('flowTemplate.bizType')" :rules="[{ required: true, message: t('validation.required', { field: t('flowTemplate.bizType') }) }]">
           <t-select v-model="form.bizType" :disabled="isEdit" :placeholder="$t('flowTemplate.bizTypePlaceholder')">
             <t-option v-for="item in bizTypeOptions" :key="item.value" :value="item.value">{{ item.label }}</t-option>
           </t-select>
         </t-form-item>
-        <t-form-item name="nodeSeq" :label="$t('flowTemplate.nodeSeq')" required>
+        <t-form-item name="nodeSeq" :label="$t('flowTemplate.nodeSeq')" :rules="[{ required: true, message: t('validation.required', { field: t('flowTemplate.nodeSeq') }) }]">
           <t-input-number v-model="form.nodeSeq" :min="1" :max="99" :disabled="isEdit" style="width: 100%" />
         </t-form-item>
-        <t-form-item name="nodeName" :label="$t('flowTemplate.nodeName')" required>
+        <t-form-item name="nodeName" :label="$t('flowTemplate.nodeName')" :rules="[{ required: true, message: t('validation.required', { field: t('flowTemplate.nodeName') }) }]">
           <t-input v-model="form.nodeName" :placeholder="$t('common.inputPlaceholder')" />
         </t-form-item>
         <t-form-item name="enabled" :label="$t('common.status')">

@@ -71,7 +71,7 @@
       <t-form ref="formRef" :data="form" layout="vertical">
         <t-row :gutter="16">
           <t-col :span="12">
-            <t-form-item name="logType" :label="$t('worklog.logType')" required>
+            <t-form-item name="logType" :label="$t('worklog.logType')" :rules="[{ required: true, message: t('validation.required', { field: t('worklog.logType') }) }]">
               <t-select v-model="form.logType">
                 <t-option value="daily">{{ $t('worklog.typeDaily') }}</t-option>
                 <t-option value="weekly">{{ $t('worklog.typeWeekly') }}</t-option>
@@ -85,7 +85,7 @@
             </t-form-item>
           </t-col>
         </t-row>
-        <t-form-item name="content" :label="$t('worklog.content')" required>
+        <t-form-item name="content" :label="$t('worklog.content')" :rules="[{ required: true, message: t('validation.required', { field: t('worklog.content') }) }]">
           <t-textarea v-model="form.content" :placeholder="$t('common.inputPlaceholder')" :auto-size="{ minRows: 6, maxRows: 14 }" />
         </t-form-item>
       </t-form>

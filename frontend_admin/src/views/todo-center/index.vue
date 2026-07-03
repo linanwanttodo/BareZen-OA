@@ -94,7 +94,7 @@
         </t-card>
       </template>
       <t-form ref="approveFormRef" :data="approveForm" layout="vertical">
-        <t-form-item :label="$t('todoCenter.approveAction')" required>
+        <t-form-item :label="$t('todoCenter.approveAction')">
           <t-radio-group v-model="approveForm.action" variant="default-filled">
             <t-radio value="pass">{{ $t('todoCenter.approvePass') }}</t-radio>
             <t-radio value="reject">{{ $t('todoCenter.approveReject') }}</t-radio>
