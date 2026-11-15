@@ -1,5 +1,7 @@
 # BareZen_OA — 极简模块化全栈开发骨架
 
+（此项目正在逐渐完善打磨中，拥有良好的开发骨架）
+
 **BareZen_OA** 是一个面向现代个人开发者和小型团队的全栈开发骨架，基于 Java 21 + Spring Boot 3.2 + Vue 3.4 + TypeScript。
 
 ## 核心特性
