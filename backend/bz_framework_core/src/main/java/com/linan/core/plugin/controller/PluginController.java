@@ -2,7 +2,9 @@ package com.linan.core.plugin.controller;
 
 import com.linan.core.common.api.Result;
 import com.linan.core.plugin.Plugin;
+import com.linan.core.plugin.PluginGateState;
 import com.linan.core.plugin.PluginManager;
+import com.linan.core.plugin.PluginManifest;
 import com.linan.core.plugin.PluginStatus;
 import com.linan.core.security.RequirePermission;
 import io.swagger.v3.oas.annotations.Operation;
@@ -12,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -28,6 +31,7 @@ import java.util.stream.Collectors;
 public class PluginController {
 
     private final PluginManager pluginManager;
+    private final PluginGateState pluginGateState;
 
     @RequirePermission("system:plugin:manage")
     @Operation(summary = "查询所有插件")
@@ -92,16 +96,64 @@ public class PluginController {
     }
 
     @RequirePermission("system:plugin:manage")
-    @Operation(summary = "获取插件详情")
+    @Operation(summary = "获取插件详情（清单内容 + 运行状态）")
     @GetMapping("/{pluginId}")
-    public Result<PluginInfo> getPlugin(
+    public Result<PluginDetail> getPlugin(
             @Parameter(description = "插件ID", required = true)
             @PathVariable String pluginId) {
         Plugin plugin = pluginManager.getPlugin(pluginId);
-        if (plugin == null) {
+        PluginManifest manifest = pluginManager.getManifest(pluginId);
+        if (plugin == null && manifest == null) {
             return Result.error("插件不存在");
         }
-        return Result.success(toPluginInfo(plugin));
+
+        PluginDetail detail = new PluginDetail();
+        if (manifest != null) {
+            detail.setPluginId(manifest.getPluginId());
+            detail.setPluginName(manifest.getPluginName());
+            detail.setVersion(manifest.getVersion());
+            detail.setDescription(manifest.getDescription());
+            detail.setAuthor(manifest.getAuthor());
+            detail.setDependencies(manifest.getDependencies());
+            detail.setControllers(manifest.getControllers());
+            detail.setServices(manifest.getServices());
+            detail.setEntities(manifest.getEntities());
+            detail.setMigrations(manifest.getMigrations());
+            detail.setFrontendRoutes(manifest.getFrontendRoutes());
+            detail.setPermissions(manifest.getPermissions());
+        } else {
+            detail.setPluginId(plugin.getPluginId());
+            detail.setPluginName(plugin.getPluginName());
+            detail.setVersion(plugin.getVersion());
+            detail.setDescription(plugin.getDescription());
+            detail.setAuthor(plugin.getAuthor());
+            detail.setDependencies(plugin.getDependencies());
+        }
+        String status = resolveStatus(plugin, pluginId);
+        detail.setLoaded(plugin != null);
+        detail.setStatus(status);
+        detail.setEnabled(PluginStatus.ENABLED.name().equals(status));
+        detail.setAvailable(isAvailableStatus(status));
+        return Result.success(detail);
+    }
+
+    /**
+     * 运行状态解析：优先取插件实例状态，实例已被卸载时回退门控状态
+     */
+    private String resolveStatus(Plugin plugin, String pluginId) {
+        if (plugin != null) {
+            return plugin.getStatus().name();
+        }
+        PluginStatus gateStatus = pluginGateState.getStatus(pluginId);
+        return gateStatus != null ? gateStatus.name() : PluginStatus.LOADED.name();
+    }
+
+    /**
+     * 是否可用：与 Plugin.isAvailable 口径一致（ENABLED 或 ACTIVE）
+     */
+    private boolean isAvailableStatus(String status) {
+        return PluginStatus.ACTIVE.name().equals(status)
+                || PluginStatus.ENABLED.name().equals(status);
     }
 
     /**
@@ -206,6 +258,156 @@ public class PluginController {
 
         public void setDependencies(List<String> dependencies) {
             this.dependencies = dependencies;
+        }
+    }
+
+    /**
+     * 插件详情DTO：清单内容 + 运行状态
+     */
+    public static class PluginDetail {
+        private String pluginId;
+        private String pluginName;
+        private String version;
+        private String description;
+        private String author;
+        private List<String> dependencies;
+        private List<String> controllers;
+        private List<String> services;
+        private List<String> entities;
+        private List<String> migrations;
+        private List<Map<String, Object>> frontendRoutes;
+        private List<String> permissions;
+        private String status;
+        private boolean loaded;
+        private boolean enabled;
+        private boolean available;
+
+        public String getPluginId() {
+            return pluginId;
+        }
+
+        public void setPluginId(String pluginId) {
+            this.pluginId = pluginId;
+        }
+
+        public String getPluginName() {
+            return pluginName;
+        }
+
+        public void setPluginName(String pluginName) {
+            this.pluginName = pluginName;
+        }
+
+        public String getVersion() {
+            return version;
+        }
+
+        public void setVersion(String version) {
+            this.version = version;
+        }
+
+        public String getDescription() {
+            return description;
+        }
+
+        public void setDescription(String description) {
+            this.description = description;
+        }
+
+        public String getAuthor() {
+            return author;
+        }
+
+        public void setAuthor(String author) {
+            this.author = author;
+        }
+
+        public List<String> getDependencies() {
+            return dependencies;
+        }
+
+        public void setDependencies(List<String> dependencies) {
+            this.dependencies = dependencies;
+        }
+
+        public List<String> getControllers() {
+            return controllers;
+        }
+
+        public void setControllers(List<String> controllers) {
+            this.controllers = controllers;
+        }
+
+        public List<String> getServices() {
+            return services;
+        }
+
+        public void setServices(List<String> services) {
+            this.services = services;
+        }
+
+        public List<String> getEntities() {
+            return entities;
+        }
+
+        public void setEntities(List<String> entities) {
+            this.entities = entities;
+        }
+
+        public List<String> getMigrations() {
+            return migrations;
+        }
+
+        public void setMigrations(List<String> migrations) {
+            this.migrations = migrations;
+        }
+
+        public List<Map<String, Object>> getFrontendRoutes() {
+            return frontendRoutes;
+        }
+
+        public void setFrontendRoutes(List<Map<String, Object>> frontendRoutes) {
+            this.frontendRoutes = frontendRoutes;
+        }
+
+        public List<String> getPermissions() {
+            return permissions;
+        }
+
+        public void setPermissions(List<String> permissions) {
+            this.permissions = permissions;
+        }
+
+        public String getStatus() {
+            return status;
+        }
+
+        public void setStatus(String status) {
+            this.status = status;
+        }
+
+        public boolean isLoaded() {
+            return loaded;
+        }
+
+        public void setLoaded(boolean loaded) {
+            this.loaded = loaded;
+        }
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
+
+        public boolean isAvailable() {
+            return available;
+        }
+
+        public void setAvailable(boolean available) {
+            this.available = available;
         }
     }
 }

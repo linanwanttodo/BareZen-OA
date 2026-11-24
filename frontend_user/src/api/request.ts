@@ -80,14 +80,14 @@ service.interceptors.response.use(
       if (!resetHookRegistered) {
         resetHookRegistered = true
         router.afterEach((to) => {
-          if (to.path !== '/auth/login') redirectingToLogin = false
+          if (to.path !== '/login') redirectingToLogin = false
         })
       }
       if (!redirectingToLogin) {
         const redirect = router.currentRoute.value.fullPath
-        if (redirect !== '/auth/login') {
+        if (redirect !== '/login') {
           redirectingToLogin = true
-          router.push({ path: '/auth/login', query: { redirect } })
+          router.push({ path: '/login', query: { redirect } })
           Toast.warning('登录已过期，请重新登录')
         }
       }

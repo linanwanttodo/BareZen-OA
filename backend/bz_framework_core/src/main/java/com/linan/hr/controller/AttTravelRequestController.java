@@ -17,6 +17,7 @@ import com.linan.system.service.ApprovalFlowFacade;
 import com.linan.system.service.ApprovalNotifyTexts;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -89,6 +90,7 @@ public class AttTravelRequestController {
     @Operation(summary = "提交出差申请")
     @OperLog(title = "出差申请", businessType = 1)
     @RequirePermission("hr:travel:add")
+    @Transactional(rollbackFor = Exception.class)
     @PostMapping
     public Result<Void> submit(@Valid @RequestBody AttTravelRequest request) {
         if (request.getStartTime() == null || request.getEndTime() == null) {
@@ -264,7 +266,7 @@ public class AttTravelRequestController {
         if (request == null) {
             return Result.error("出差记录不存在");
         }
-        if (!"0".equals(request.getStatus())) {
+        if (!ApprovalStatus.PENDING.matches(request.getStatus())) {
             return Result.error("仅待审批状态的单据可删除");
         }
         boolean ok = travelService.removeById(id);

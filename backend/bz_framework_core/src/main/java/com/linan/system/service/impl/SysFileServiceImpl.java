@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.linan.core.common.exception.BusinessException;
 import com.linan.core.storage.FileStorage;
 import com.linan.system.entity.SysFile;
 import com.linan.system.mapper.SysFileMapper;
@@ -62,7 +63,14 @@ public class SysFileServiceImpl extends ServiceImpl<SysFileMapper, SysFile> impl
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public SysFile uploadFile(MultipartFile file, Long folderId, String scope) throws IOException {
+        return uploadFile(file, folderId, scope, null);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public SysFile uploadFile(MultipartFile file, Long folderId, String scope, Long uploaderId) throws IOException {
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("上传文件不能为空");
         }
@@ -130,6 +138,13 @@ public class SysFileServiceImpl extends ServiceImpl<SysFileMapper, SysFile> impl
             sysFile.setFolderId(folderId != null ? folderId : 0L);
             sysFile.setScope(StringUtils.hasText(scope) ? scope : "admin");
             sysFile.setSortOrder(0);
+            // 上传人：显式指定优先，否则由 MetaObjectHandler 按登录态自动填充 create_by。
+            // 显式赋值可覆盖自动填充（strictFillStrategy 已有值不覆盖），
+            // 用于用户端「上传人=当前登录用户」不可伪造的口径
+            if (uploaderId != null) {
+                sysFile.setCreateBy(uploaderId);
+                sysFile.setUpdateBy(uploaderId);
+            }
             this.save(sysFile);
 
             // save 后获取 ID，构造访问 URL
@@ -147,10 +162,10 @@ public class SysFileServiceImpl extends ServiceImpl<SysFileMapper, SysFile> impl
     public void downloadFile(Long id, HttpServletResponse response) {
         SysFile sysFile = this.getById(id);
         if (sysFile == null) {
-            throw new RuntimeException("文件不存在");
+            throw new BusinessException("文件不存在");
         }
         if (sysFile.getIsFolder() != null && sysFile.getIsFolder() == 1) {
-            throw new RuntimeException("文件夹不可下载");
+            throw new BusinessException("文件夹不可下载");
         }
 
         // 路径遍历防御：filePath 虽由服务端生成（yyyy/MM/dd + UUID），
@@ -160,7 +175,7 @@ public class SysFileServiceImpl extends ServiceImpl<SysFileMapper, SysFile> impl
                 || relativePath.contains("..")
                 || relativePath.startsWith("/")
                 || relativePath.contains("\\")) {
-            throw new RuntimeException("非法文件路径");
+            throw new BusinessException("非法文件路径");
         }
 
         try (InputStream is = storage.load(relativePath);
@@ -183,7 +198,7 @@ public class SysFileServiceImpl extends ServiceImpl<SysFileMapper, SysFile> impl
             }
             os.flush();
         } catch (IOException e) {
-            throw new RuntimeException("文件下载失败: " + e.getMessage());
+            throw new BusinessException("文件下载失败: " + e.getMessage());
         }
     }
 
@@ -274,7 +289,7 @@ public class SysFileServiceImpl extends ServiceImpl<SysFileMapper, SysFile> impl
         }
         SysFile entity = this.getById(id);
         if (entity == null) {
-            throw new RuntimeException("文件或文件夹不存在");
+            throw new BusinessException("文件或文件夹不存在");
         }
         entity.setFileName(newName);
         entity.setOriginalName(newName);
@@ -350,12 +365,23 @@ public class SysFileServiceImpl extends ServiceImpl<SysFileMapper, SysFile> impl
         List<SysFile> children = this.list(new LambdaQueryWrapper<SysFile>()
                 .eq(SysFile::getFolderId, folderId)
                 .eq(SysFile::getDelFlag, 0));
-        for (SysFile child : children) {
+        List<Long> idsToDelete = new ArrayList<>();
+        collectChildrenIds(children, idsToDelete, physicalPaths);
+        if (!idsToDelete.isEmpty()) {
+            this.removeByIds(idsToDelete);
+        }
+    }
+
+    private void collectChildrenIds(List<SysFile> nodes, List<Long> ids, List<String> physicalPaths) {
+        for (SysFile child : nodes) {
             if (child.getIsFolder() != null && child.getIsFolder() == 1) {
-                removeChildrenRecursively(child.getId(), physicalPaths);
+                List<SysFile> subChildren = this.list(new LambdaQueryWrapper<SysFile>()
+                        .eq(SysFile::getFolderId, child.getId())
+                        .eq(SysFile::getDelFlag, 0));
+                collectChildrenIds(subChildren, ids, physicalPaths);
             }
             collectPhysicalPaths(child, physicalPaths);
-            this.removeById(child.getId());
+            ids.add(child.getId());
         }
     }
 

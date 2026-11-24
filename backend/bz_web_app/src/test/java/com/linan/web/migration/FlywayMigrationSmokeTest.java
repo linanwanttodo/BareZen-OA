@@ -18,6 +18,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -190,5 +191,94 @@ class FlywayMigrationSmokeTest {
         assertEquals(List.of("admin"),
                 firstColumn("SELECT user_name FROM sys_user WHERE user_name = 'admin' AND del_flag = 0 AND status = '0'"),
                 "迁移后应可直接以 admin 登录");
+    }
+
+    @Test
+    @DisplayName("salary 唯一键契约：uk_user_month 含 del_flag，物理删除结构后 user_id 可重建")
+    void salaryUniqueKeysAllowRecreateAfterDelete() throws SQLException {
+        requireDb();
+        // uk_user_month 必须扩为三列（V56）：软删后同月才能重新生成发放记录
+        List<String> ukColumns = firstColumn(
+                "SELECT COLUMN_NAME FROM information_schema.STATISTICS "
+                        + "WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'salary_payment_record' "
+                        + "AND INDEX_NAME = 'uk_user_month' ORDER BY SEQ_IN_INDEX");
+        assertEquals(List.of("user_id", "payment_month", "del_flag"), ukColumns,
+                "uk_user_month 未扩入 del_flag，删除发放草稿后同月无法重新生成（V56 未生效？）");
+
+        // salary_structure 物理删除（实体已去 @TableLogic）：DELETE 后同 user_id 立即可重建
+        long userId = 999001L;
+        try (Connection conn = scratchConnection()) {
+            assertEquals(1, insertStructure(conn, userId), "工资结构首次插入应成功");
+            assertEquals(1, deleteStructure(conn, userId), "工资结构物理删除应命中一行");
+            assertEquals(1, insertStructure(conn, userId),
+                    "物理删除工资结构后，同 user_id 必须可重建（uk_user_id 冲突说明删除未真删）");
+        }
+        assertEquals(1L, countStructureByUser(userId), "删除后重建只应剩一行");
+    }
+
+    @Test
+    @DisplayName("salary_payment_record：软删后同月可重新生成，但同月二次软删仍冲突（V56 已知边界）")
+    void salaryPaymentRecordSoftDeleteBoundary() throws SQLException {
+        requireDb();
+        long userId = 999002L;
+        String month = "2099-01";
+        try (Connection conn = scratchConnection()) {
+            assertEquals(1, insertPaymentRecord(conn, userId, month), "发放记录首次插入应成功");
+            assertEquals(1, softDeletePaymentRecord(conn, userId, month), "逻辑删除应命中一行");
+            assertEquals(1, insertPaymentRecord(conn, userId, month),
+                    "软删后同月重新生成必须成功（uk_user_month 含 del_flag）");
+
+            // 边界：同一 (user_id, payment_month) 至多一个墓碑行，第二次软删撞唯一键
+            SQLException conflict = assertThrows(SQLException.class, () -> softDeletePaymentRecord(conn, userId, month),
+                    "第二次软删同月应触发 uk_user_month 唯一冲突（del_flag 入键的已知边界）");
+            assertTrue(conflict.getMessage() != null && conflict.getMessage().contains("Duplicate entry"),
+                    "第二次软删未报 Duplicate entry，而是其他数据库错误");
+        }
+    }
+
+    private Connection scratchConnection() throws SQLException {
+        return DriverManager.getConnection(scratchUrl, adminUser, adminPassword);
+    }
+
+    private int insertStructure(Connection conn, long userId) throws SQLException {
+        try (var ps = conn.prepareStatement("INSERT INTO salary_structure (user_id) VALUES (?)")) {
+            ps.setLong(1, userId);
+            return ps.executeUpdate();
+        }
+    }
+
+    private int deleteStructure(Connection conn, long userId) throws SQLException {
+        try (var ps = conn.prepareStatement("DELETE FROM salary_structure WHERE user_id = ?")) {
+            ps.setLong(1, userId);
+            return ps.executeUpdate();
+        }
+    }
+
+    private long countStructureByUser(long userId) throws SQLException {
+        try (Connection conn = scratchConnection();
+             var ps = conn.prepareStatement("SELECT COUNT(*) FROM salary_structure WHERE user_id = ?")) {
+            ps.setLong(1, userId);
+            try (ResultSet rs = ps.executeQuery()) {
+                rs.next();
+                return rs.getLong(1);
+            }
+        }
+    }
+
+    private int insertPaymentRecord(Connection conn, long userId, String month) throws SQLException {
+        try (var ps = conn.prepareStatement("INSERT INTO salary_payment_record (user_id, payment_month) VALUES (?, ?)")) {
+            ps.setLong(1, userId);
+            ps.setString(2, month);
+            return ps.executeUpdate();
+        }
+    }
+
+    private int softDeletePaymentRecord(Connection conn, long userId, String month) throws SQLException {
+        try (var ps = conn.prepareStatement(
+                "UPDATE salary_payment_record SET del_flag = 1 WHERE user_id = ? AND payment_month = ? AND del_flag = 0")) {
+            ps.setLong(1, userId);
+            ps.setString(2, month);
+            return ps.executeUpdate();
+        }
     }
 }

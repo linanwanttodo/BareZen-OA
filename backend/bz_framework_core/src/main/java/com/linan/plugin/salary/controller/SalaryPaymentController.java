@@ -2,6 +2,7 @@ package com.linan.plugin.salary.controller;
 
 import com.linan.core.common.api.PageResult;
 import com.linan.core.common.api.Result;
+import com.linan.core.common.exception.BusinessException;
 import com.linan.core.security.RequirePermission;
 import com.linan.plugin.salary.entity.SalaryPaymentRecord;
 import com.linan.plugin.salary.service.ISalaryPaymentRecordService;
@@ -52,6 +53,9 @@ public class SalaryPaymentController {
     @RequirePermission("salary:payment:execute")
     @PostMapping("/payments/generate")
     public Result<Integer> generate(@RequestBody GenerateRequest request) {
+        if (request.getUserIds() != null && request.getUserIds().size() > 200) {
+            throw new BusinessException("批量生成单次不超过 200 人");
+        }
         int created = salaryPaymentRecordService.generateFromStructures(request.getPaymentMonth(), request.getUserIds());
         return Result.success(created);
     }
@@ -60,6 +64,12 @@ public class SalaryPaymentController {
     @RequirePermission("salary:payment:execute")
     @PostMapping("/payments/execute")
     public Result<Integer> execute(@RequestBody List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            throw new BusinessException("发放记录列表不能为空");
+        }
+        if (ids.size() > 200) {
+            throw new BusinessException("批量发放单次不超过 200 条");
+        }
         return Result.success(salaryPaymentRecordService.executePayment(ids));
     }
 

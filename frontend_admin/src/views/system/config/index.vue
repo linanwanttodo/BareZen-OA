@@ -31,6 +31,12 @@
               <template #icon><icon-refresh /></template>
               {{ $t('config.clearCache') }}
             </t-button>
+          <t-popconfirm v-permission="PERM.system.configEdit" :content="$t('config.clearAllCacheConfirm')" @confirm="handleClearAllCache">
+            <t-button theme="danger" variant="outline" :loading="clearingAll">
+              <template #icon><icon-delete /></template>
+              {{ $t('config.clearAllCache') }}
+            </t-button>
+          </t-popconfirm>
         </t-space>
       </div>
 
@@ -97,11 +103,12 @@ import { PERM } from '@/utils/constants'
 import { ref, computed, reactive, onMounted } from 'vue'
 import { MessagePlugin, type FormInstanceFunctions } from 'tdesign-vue-next'
 import { useI18n } from 'vue-i18n'
-import { getConfigPageApi, updateConfigApi, clearConfigCacheApi, type SysConfig } from '@/api/config'
+import { getConfigPageApi, updateConfigApi, clearConfigCacheApi, clearConfigCacheAllApi, type SysConfig } from '@/api/config'
 
 const { t } = useI18n()
 const loading = ref(false)
 const clearing = ref(false)
+const clearingAll = ref(false)
 const tableData = ref<SysConfig[]>([])
 const pagination = reactive({ current: 1, pageSize: 10, total: 0 })
 const searchForm = reactive({ configName: '', configKey: '' })
@@ -155,6 +162,16 @@ async function handleClearCache() {
     MessagePlugin.success(t('config.cacheCleared'))
   } finally {
     clearing.value = false
+  }
+}
+
+async function handleClearAllCache() {
+  clearingAll.value = true
+  try {
+    await clearConfigCacheAllApi()
+    MessagePlugin.success(t('config.cacheCleared'))
+  } finally {
+    clearingAll.value = false
   }
 }
 

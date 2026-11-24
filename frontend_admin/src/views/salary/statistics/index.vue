@@ -142,6 +142,8 @@ function handleResize() {
 onMounted(() => {
   loadData()
   window.addEventListener('resize', handleResize)
+  // 主题切换时以新 token 重绘图表（与 dashboard/index.vue 同一口径）
+  window.addEventListener('bz-theme-change', renderChart)
 })
 onActivated(() => {
   loadData()
@@ -149,6 +151,7 @@ onActivated(() => {
 })
 onUnmounted(() => {
   window.removeEventListener('resize', handleResize)
+  window.removeEventListener('bz-theme-change', renderChart)
   chart?.dispose()
   chart = null
 })

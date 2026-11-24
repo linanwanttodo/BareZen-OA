@@ -38,3 +38,8 @@ export function updateConfigApi(data: Partial<SysConfig>) {
 export function clearConfigCacheApi(configKey: string) {
   return request.delete<void>(`/system/v1/config/cache/${encodeURIComponent(configKey)}`)
 }
+
+/** 清除全部配置缓存 */
+export function clearConfigCacheAllApi() {
+  return request.delete<void>('/system/v1/config/cache/all')
+}

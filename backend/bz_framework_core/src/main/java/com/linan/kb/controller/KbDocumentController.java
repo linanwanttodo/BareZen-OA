@@ -102,10 +102,16 @@ public class KbDocumentController {
     @Operation(summary = "查询文档版本历史")
     @RequirePermission("kb:document:list")
     @GetMapping("/{id}/versions")
-    public Result<List<KbDocumentVersion>> versions(@PathVariable Long id) {
-        return Result.success(versionService.list(new LambdaQueryWrapper<KbDocumentVersion>()
+    public Result<PageResult<KbDocumentVersion>> versions(
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "1") Integer pageNum,
+            @RequestParam(defaultValue = "20") Integer pageSize) {
+        Page<KbDocumentVersion> page = new Page<>(pageNum, pageSize);
+        LambdaQueryWrapper<KbDocumentVersion> wrapper = new LambdaQueryWrapper<KbDocumentVersion>()
                 .eq(KbDocumentVersion::getDocId, id)
-                .orderByDesc(KbDocumentVersion::getVersionNo)));
+                .orderByDesc(KbDocumentVersion::getVersionNo);
+        IPage<KbDocumentVersion> result = versionService.page(page, wrapper);
+        return Result.page(result);
     }
 
     /**

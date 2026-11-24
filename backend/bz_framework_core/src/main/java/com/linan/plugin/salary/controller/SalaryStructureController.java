@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.linan.core.common.api.PageResult;
 import com.linan.core.common.api.Result;
+import com.linan.core.common.exception.BusinessException;
 import com.linan.core.security.RequirePermission;
 import com.linan.plugin.salary.entity.SalaryStructure;
 import com.linan.plugin.salary.service.ISalaryStructureService;
@@ -64,6 +65,12 @@ public class SalaryStructureController {
     @RequirePermission("salary:structure:calculate")
     @PostMapping("/calculate/batch")
     public Result<List<SalaryStructure>> batchCalculate(@RequestBody List<Long> userIds) {
+        if (userIds == null || userIds.isEmpty()) {
+            throw new BusinessException("员工列表不能为空");
+        }
+        if (userIds.size() > 200) {
+            throw new BusinessException("批量计算单次不超过 200 人");
+        }
         return Result.success(salaryStructureService.batchCalculateActualSalary(userIds));
     }
 

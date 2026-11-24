@@ -10,7 +10,9 @@ import com.linan.hr.service.IAttLeaveRequestService;
 import com.linan.hr.service.IAttOvertimeRequestService;
 import com.linan.hr.service.IAttTravelRequestService;
 import com.linan.office.entity.OfficeSupplyRequest;
+import com.linan.office.entity.OfficeVehicleRequest;
 import com.linan.office.service.IOfficeSupplyRequestService;
+import com.linan.office.service.IOfficeVehicleRequestService;
 import com.linan.system.entity.ApprovalFlowLog;
 import com.linan.system.entity.ApprovalFlowTask;
 import com.linan.system.service.ApprovalFlowEngineService;
@@ -50,6 +52,8 @@ public class AppFlowLogController {
 
     private final IOfficeSupplyRequestService supplyRequestService;
 
+    private final IOfficeVehicleRequestService vehicleRequestService;
+
     /** 多级审批引擎（V36） */
     private final ApprovalFlowEngineService flowEngine;
 
@@ -85,6 +89,10 @@ public class AppFlowLogController {
             case "supply" -> {
                 OfficeSupplyRequest r = supplyRequestService.getById(bizId);
                 yield r != null && userId.equals(r.getUserId());
+            }
+            case "vehicle" -> {
+                OfficeVehicleRequest r = vehicleRequestService.getById(bizId);
+                yield r != null && userId.equals(r.getApplicantId());
             }
             default -> false;
         };
@@ -133,6 +141,10 @@ public class AppFlowLogController {
             case "supply" -> {
                 OfficeSupplyRequest r = supplyRequestService.getById(bizId);
                 yield r != null && userId.equals(r.getUserId());
+            }
+            case "vehicle" -> {
+                OfficeVehicleRequest r = vehicleRequestService.getById(bizId);
+                yield r != null && userId.equals(r.getApplicantId());
             }
             default -> false;
         };

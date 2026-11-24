@@ -1,5 +1,11 @@
 # BareZen_OA 插件开发详细指南
 
+> **现状说明（2026-11 核对）**：本指南描述的是目标开发流程。当前实际状态：
+> - 插件主类（extends AbstractPlugin + @Component）会被 `PluginAutoConfiguration` 在启动时发现并注册到 PluginManager，这条链路可用
+> - 但 `plugins/` 目录下的清单 JSON 暂无代码读取，"步骤4：创建插件清单" 目前只起文档作用；前端路由与权限实际通过 Flyway 菜单脚本（sys_menu 表）注册
+> - 迁移脚本统一放 `backend/bz_web_app/src/main/resources/db/migration/`（bz_framework_core 下的 migration 目录是空的），版本号顺延现有最大号（当前到 V50+）
+> - 文中 `V37__customer_plugin.sql`、菜单 ID 10031+ 等均为示例编号，实际以迁移目录里现有最大版本为准
+
 ## 目录
 1. [插件开发概述](#插件开发概述)
 2. [快速开始](#快速开始)

@@ -235,8 +235,8 @@ async function onPwdSubmit() {
   background: var(--td-bg-color-container);
 }
 .top-navbar--dark {
-  background: var(--td-gray-color-13);
-  border-bottom-color: var(--td-gray-color-13);
+  background: var(--bz-navbar-dark);
+  border-bottom-color: var(--bz-navbar-dark);
 }
 .top-navbar--dark .top-navbar__brand,
 .top-navbar--dark .top-navbar__username,

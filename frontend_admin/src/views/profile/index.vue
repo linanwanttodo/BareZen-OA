@@ -3,7 +3,8 @@
     <!-- 个人信息头部 -->
     <t-card :bordered="true" class="mb-6">
       <div class="flex items-center gap-6">
-        <t-avatar size="64px" style="background-color: var(--primary)">
+        <t-avatar v-if="userStore.userInfo?.avatar" size="64px" :image="userStore.userInfo.avatar" />
+        <t-avatar v-else size="64px" style="background-color: var(--primary)">
           {{ userInitial }}
         </t-avatar>
         <div class="flex-1 min-w-0">
@@ -13,10 +14,17 @@
             <t-tag v-for="role in userStore.roles" :key="role" theme="primary">{{ role }}</t-tag>
           </div>
         </div>
-        <t-button @click="showEditDialog = true">
-          <template #icon><icon-edit /></template>
-          {{ $t('profile.editProfile') }}
-        </t-button>
+        <t-space direction="vertical" size="small" align="end">
+          <t-button @click="showEditDialog = true">
+            <template #icon><icon-edit /></template>
+            {{ $t('profile.editProfile') }}
+          </t-button>
+          <t-button variant="outline" :loading="avatarUploading" @click="avatarInputRef?.click()">
+            <template #icon><icon-upload /></template>
+            {{ $t('profile.uploadAvatar') }}
+          </t-button>
+        </t-space>
+        <input ref="avatarInputRef" type="file" accept="image/*" class="hidden" @change="onAvatarChange" />
       </div>
     </t-card>
 
@@ -61,11 +69,43 @@ import { useI18n } from 'vue-i18n'
 import { MessagePlugin, type FormInstanceFunctions } from 'tdesign-vue-next'
 import { useUserStore } from '@/stores/user'
 import { updateUserApi } from '@/api/user'
+import { uploadAvatarApi } from '@/api/auth'
 
 const { t } = useI18n()
 
 const userStore = useUserStore()
 const userInitial = computed(() => (userStore.userInfo?.nickName || t('user.adminUser')).charAt(0).toUpperCase())
+
+// ---- 头像上传 ----
+const avatarInputRef = ref<HTMLInputElement>()
+const avatarUploading = ref(false)
+const AVATAR_MAX_MB = 5
+
+async function onAvatarChange(e: Event) {
+  const input = e.target as HTMLInputElement
+  const file = input.files?.[0]
+  // 允许重复选择同一文件：先清空 value 再校验
+  input.value = ''
+  if (!file) return
+  if (!file.type.startsWith('image/')) {
+    MessagePlugin.warning(t('profile.avatarTypeError'))
+    return
+  }
+  if (file.size > AVATAR_MAX_MB * 1024 * 1024) {
+    MessagePlugin.warning(t('profile.avatarTooLarge', { max: AVATAR_MAX_MB }))
+    return
+  }
+  avatarUploading.value = true
+  try {
+    await uploadAvatarApi(file)
+    await userStore.fetchUserInfo()
+    MessagePlugin.success(t('profile.avatarUploaded'))
+  } catch {
+    // 错误已在拦截器中处理
+  } finally {
+    avatarUploading.value = false
+  }
+}
 
 const profileData = computed(() => [
   { label: t('user.userName'), value: userStore.userInfo?.userName || '-' },

@@ -126,47 +126,48 @@ public class SalaryPaymentRecordServiceImpl extends ServiceImpl<SalaryPaymentRec
 
     @Override
     public Map<String, Object> statistics(String paymentMonth) {
-        List<SalaryPaymentRecord> records = list(new LambdaQueryWrapper<SalaryPaymentRecord>()
-                .eq(paymentMonth != null && !paymentMonth.isBlank(), SalaryPaymentRecord::getPaymentMonth, paymentMonth));
+        // 总体汇总：SQL 层聚合，不加载明细到内存
+        List<Map<String, Object>> aggRows = baseMapper.selectMaps(
+                new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<SalaryPaymentRecord>()
+                        .select("COUNT(*) as headcount",
+                                "SUM(CASE WHEN payment_status = '1' THEN 1 ELSE 0 END) as paidCount",
+                                "SUM(CASE WHEN payment_status = '0' THEN 1 ELSE 0 END) as unpaidCount",
+                                "COALESCE(SUM(total_income), 0) as totalIncome",
+                                "COALESCE(SUM(total_deduction), 0) as totalDeduction",
+                                "COALESCE(SUM(actual_salary), 0) as totalActual")
+                        .eq(paymentMonth != null && !paymentMonth.isBlank(), "payment_month", paymentMonth));
+
+        Map<String, Object> summary = aggRows.isEmpty() ? emptySummary() : aggRows.get(0);
+
+        // 按月分布：SQL GROUP BY 聚合
+        List<Map<String, Object>> monthlyRows = baseMapper.selectMaps(
+                new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<SalaryPaymentRecord>()
+                        .select("payment_month",
+                                "COUNT(*) as headcount",
+                                "SUM(CASE WHEN payment_status = '1' THEN 1 ELSE 0 END) as paidCount",
+                                "SUM(CASE WHEN payment_status = '0' THEN 1 ELSE 0 END) as unpaidCount",
+                                "COALESCE(SUM(total_income), 0) as totalIncome",
+                                "COALESCE(SUM(total_deduction), 0) as totalDeduction",
+                                "COALESCE(SUM(actual_salary), 0) as totalActual")
+                        .eq(paymentMonth != null && !paymentMonth.isBlank(), "payment_month", paymentMonth)
+                        .groupBy("payment_month")
+                        .orderByAsc("payment_month"));
 
         Map<String, Object> result = new LinkedHashMap<>();
-        result.put("summary", summarize(records));
-
-        // 按月分布（全量数据分组，供报表画趋势；指定月份时仅该月一组）
-        Map<String, List<SalaryPaymentRecord>> byMonth = records.stream()
-                .collect(Collectors.groupingBy(SalaryPaymentRecord::getPaymentMonth, LinkedHashMap::new, Collectors.toList()));
-        List<Map<String, Object>> monthly = byMonth.entrySet().stream()
-                .sorted(Map.Entry.comparingByKey())
-                .map(e -> {
-                    Map<String, Object> item = new LinkedHashMap<>();
-                    item.put("paymentMonth", e.getKey());
-                    item.putAll(summarize(e.getValue()));
-                    return item;
-                })
-                .collect(Collectors.toList());
-        result.put("monthly", monthly);
+        result.put("summary", summary);
+        result.put("monthly", monthlyRows);
         return result;
     }
 
-    private Map<String, Object> summarize(List<SalaryPaymentRecord> records) {
-        Map<String, Object> summary = new LinkedHashMap<>();
-        BigDecimal totalIncome = ZERO, totalDeduction = ZERO, totalActual = ZERO;
-        int paidCount = 0;
-        for (SalaryPaymentRecord r : records) {
-            totalIncome = totalIncome.add(nvl(r.getTotalIncome()));
-            totalDeduction = totalDeduction.add(nvl(r.getTotalDeduction()));
-            totalActual = totalActual.add(nvl(r.getActualSalary()));
-            if ("1".equals(r.getPaymentStatus())) {
-                paidCount++;
-            }
-        }
-        summary.put("headcount", records.size());
-        summary.put("paidCount", paidCount);
-        summary.put("unpaidCount", records.size() - paidCount);
-        summary.put("totalIncome", totalIncome);
-        summary.put("totalDeduction", totalDeduction);
-        summary.put("totalActual", totalActual);
-        return summary;
+    private Map<String, Object> emptySummary() {
+        Map<String, Object> s = new LinkedHashMap<>();
+        s.put("headcount", 0L);
+        s.put("paidCount", 0L);
+        s.put("unpaidCount", 0L);
+        s.put("totalIncome", BigDecimal.ZERO);
+        s.put("totalDeduction", BigDecimal.ZERO);
+        s.put("totalActual", BigDecimal.ZERO);
+        return s;
     }
 
     /**

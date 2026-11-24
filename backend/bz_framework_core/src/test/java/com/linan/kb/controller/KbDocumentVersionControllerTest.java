@@ -2,7 +2,10 @@ package com.linan.kb.controller;
 
 import com.baomidou.mybatisplus.core.MybatisConfiguration;
 import com.baomidou.mybatisplus.core.conditions.Wrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.linan.core.common.api.PageResult;
 import com.linan.core.common.api.Result;
 import com.linan.core.common.exception.BusinessException;
 import com.linan.core.security.interceptor.AuthInterceptor;
@@ -25,8 +28,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  * 知识文档 Controller 单测（2.3）
@@ -126,15 +128,19 @@ class KbDocumentVersionControllerTest {
     @Test
     @DisplayName("版本历史：按 docId 过滤且 version_no 倒序")
     void versions_orderedDesc() {
-        when(versionService.list(any(Wrapper.class))).thenReturn(List.of(
-                version(10L, 3), version(10L, 2), version(10L, 1)));
+        List<KbDocumentVersion> versions = List.of(
+                version(10L, 3), version(10L, 2), version(10L, 1));
+        IPage<KbDocumentVersion> page = new Page<>(1, 20);
+        page.setRecords(versions);
+        page.setTotal(3);
+        doReturn(page).when(versionService).page(any(Page.class), any(Wrapper.class));
 
-        Result<List<KbDocumentVersion>> result = controller.versions(10L);
+        Result<PageResult<KbDocumentVersion>> result = controller.versions(10L, 1, 20);
 
         assertEquals(200, result.getCode());
-        assertEquals(3, result.getData().size());
-        assertEquals(3, result.getData().get(0).getVersionNo());
-        assertEquals(1, result.getData().get(2).getVersionNo());
+        assertEquals(3, result.getData().getList().size());
+        assertEquals(3, result.getData().getList().get(0).getVersionNo());
+        assertEquals(1, result.getData().getList().get(2).getVersionNo());
     }
 
     private KbDocumentVersion version(Long docId, Integer no) {

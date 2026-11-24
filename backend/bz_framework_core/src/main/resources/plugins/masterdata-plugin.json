@@ -1,0 +1,84 @@
+{
+  "pluginId": "com.linan.plugin.masterdata",
+  "pluginName": "主数据模块",
+  "version": "1.0.0",
+  "description": "提供供应商、客户、物料主数据管理与单据号发号服务",
+  "author": "BareZen Team",
+  "dependencies": [],
+  "configuration": {
+    "masterdata.docnumber.enabled": true
+  },
+  "controllers": [
+    "com.linan.plugin.masterdata.controller.SupplierInfoController",
+    "com.linan.plugin.masterdata.controller.CustomerInfoController",
+    "com.linan.plugin.masterdata.controller.MaterialInfoController"
+  ],
+  "services": [
+    "com.linan.plugin.masterdata.service.ISupplierInfoService",
+    "com.linan.plugin.masterdata.service.ICustomerInfoService",
+    "com.linan.plugin.masterdata.service.IMaterialInfoService",
+    "com.linan.plugin.masterdata.service.IDocNumberService"
+  ],
+  "entities": [
+    "com.linan.plugin.masterdata.entity.SupplierInfo",
+    "com.linan.plugin.masterdata.entity.CustomerInfo",
+    "com.linan.plugin.masterdata.entity.MaterialInfo",
+    "com.linan.plugin.masterdata.entity.DocNumberRule"
+  ],
+  "migrations": [
+    "V58__masterdata_plugin.sql"
+  ],
+  "frontendRoutes": [
+    {
+      "path": "/masterdata",
+      "component": "Layout",
+      "redirect": "/masterdata/supplier",
+      "children": [
+        {
+          "path": "masterdata/supplier",
+          "component": "masterdata/supplier/index",
+          "name": "MasterdataSupplier",
+          "meta": {
+            "title": "供应商",
+            "icon": "peoples",
+            "roles": ["masterdata:supplier:list"]
+          }
+        },
+        {
+          "path": "masterdata/customer",
+          "component": "masterdata/customer/index",
+          "name": "MasterdataCustomer",
+          "meta": {
+            "title": "客户",
+            "icon": "user",
+            "roles": ["masterdata:customer:list"]
+          }
+        },
+        {
+          "path": "masterdata/material",
+          "component": "masterdata/material/index",
+          "name": "MasterdataMaterial",
+          "meta": {
+            "title": "物料",
+            "icon": "tags",
+            "roles": ["masterdata:material:list"]
+          }
+        }
+      ]
+    }
+  ],
+  "permissions": [
+    "masterdata:supplier:list",
+    "masterdata:supplier:add",
+    "masterdata:supplier:edit",
+    "masterdata:supplier:delete",
+    "masterdata:customer:list",
+    "masterdata:customer:add",
+    "masterdata:customer:edit",
+    "masterdata:customer:delete",
+    "masterdata:material:list",
+    "masterdata:material:add",
+    "masterdata:material:edit",
+    "masterdata:material:delete"
+  ]
+}

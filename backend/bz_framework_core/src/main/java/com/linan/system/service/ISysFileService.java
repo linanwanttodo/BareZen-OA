@@ -11,8 +11,16 @@ import java.io.IOException;
 import java.util.List;
 
 public interface ISysFileService extends IService<SysFile> {
-    /** 上传文件到指定文件夹 */
+    /** 上传文件到指定文件夹（上传人由登录态自动填充） */
     SysFile uploadFile(MultipartFile file, Long folderId, String scope) throws IOException;
+
+    /**
+     * 上传文件到指定文件夹并显式指定上传人
+     *
+     * <p>用户端口径：上传人强制为当前登录用户，接口不信任前端传入的身份。
+     * 传 null 时与三参重载一致，由登录态自动填充 create_by。</p>
+     */
+    SysFile uploadFile(MultipartFile file, Long folderId, String scope, Long uploaderId) throws IOException;
 
     /** 下载文件 */
     void downloadFile(Long id, HttpServletResponse response);

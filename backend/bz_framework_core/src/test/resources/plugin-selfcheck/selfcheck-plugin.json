@@ -1,0 +1,13 @@
+{
+  "pluginId": "com.linan.plugin.selfcheck",
+  "pluginName": "自检测试插件",
+  "version": "1.0.0",
+  "description": "启动自检测试用清单",
+  "author": "BareZen Team",
+  "dependencies": [],
+  "controllers": [
+    "com.linan.plugin.salary.controller.SalaryStructureController",
+    "com.linan.plugin.notexist.MissingController"
+  ],
+  "permissions": ["selfcheck:view"]
+}

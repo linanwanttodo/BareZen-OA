@@ -262,6 +262,26 @@ export interface SupplyRequest {
   createTime: string
 }
 
+/** 用车申请 */
+export interface VehicleRequest {
+  id: string
+  applicantId: string
+  applicantName: string
+  deptName: string
+  vehicleType: string // car=轿车 van=商务车 bus=客车 other=其他
+  departure: string
+  destination: string
+  purpose: string
+  startTime: string
+  endTime: string
+  passengerCount: number
+  status: string
+  approverName: string
+  approveTime: string
+  approveRemark: string
+  createTime: string
+}
+
 /** 审批流程节点 */
 export interface FlowLog {
   id: string
@@ -290,6 +310,33 @@ export interface FlowTask {
   createTime: string
 }
 
+/** 会议室 */
+export interface MeetingRoom {
+  id: string
+  roomName: string
+  capacity: number
+  location: string
+  equipment: string // 投影/白板/视频会议，逗号分隔
+  status: string // 0=可用 1=停用
+  remark: string
+  createTime: string
+}
+
+/** 会议预订（不走审批流，取消即释放房间占用） */
+export interface MeetingBooking {
+  id: string
+  roomId: string
+  roomName: string
+  title: string
+  bookerId: string
+  bookerName: string
+  startTime: string // yyyy-MM-dd HH:mm
+  endTime: string // yyyy-MM-dd HH:mm
+  attendees: string // 参会人员（逗号分隔）
+  remark: string
+  createTime: string
+}
+
 /** 考勤打卡记录（对应后端 AttClockRecord，同一用户同日仅一行） */
 export interface AttClockRecord {
   id: string
@@ -304,4 +351,121 @@ export interface AttClockRecord {
   status: string // normal=正常 late=迟到 early=早退 absent=缺卡 abnormal=异常
   createTime: string
   updateTime: string
+}
+
+/** 工资发放记录（工资条，各金额字段为发放时快照） */
+export interface SalaryPaymentRecord {
+  id: string
+  userId: string
+  userName: string
+  paymentMonth: string // YYYY-MM
+  baseSalary: number | null
+  performanceSalary: number | null
+  positionAllowance: number | null
+  transportAllowance: number | null
+  mealAllowance: number | null
+  otherAllowance: number | null
+  totalIncome: number | null
+  socialInsurancePersonal: number | null
+  housingFundPersonal: number | null
+  incomeTax: number | null
+  totalDeduction: number | null
+  actualSalary: number | null
+  paymentStatus: string // 0=未发放 1=已发放
+  paymentTime: string | null
+  remark: string | null
+  createTime: string
+}
+
+/** 工资结构（当前生效版本） */
+export interface SalaryStructure {
+  id: string
+  userId: string
+  userName: string
+  baseSalary: number | null
+  performanceSalary: number | null
+  positionAllowance: number | null
+  transportAllowance: number | null
+  mealAllowance: number | null
+  otherAllowance: number | null
+  socialInsurancePersonal: number | null
+  housingFundPersonal: number | null
+  incomeTax: number | null
+  remark: string | null
+  createTime: string
+}
+
+/** 知识库分类（用户端仅返回启用状态） */
+export interface KbCategory {
+  id: string
+  name: string
+  parentId: string
+  sort: number
+  status: number
+  createTime: string
+}
+
+/** 知识文档（用户端仅返回已发布文档，正文为 HTML 富文本） */
+export interface KbDocument {
+  id: string
+  title: string
+  category: string
+  categoryId: string | null
+  content: string
+  deptName: string | null
+  authorName: string | null
+  status: string // 0=草稿 1=已发布
+  viewCount: number | null
+  remark: string | null
+  createTime: string
+  updateTime: string
+}
+
+/** 资产分类（用户端仅返回启用状态） */
+export interface AssetCategory {
+  id: string
+  name: string
+  parentId: string
+  sort: number
+  status: number
+  createTime: string
+}
+
+/** 可借用资产（用户端公开视图，仅在库资产，屏蔽价格/使用人等管理字段） */
+export interface AssetItem {
+  id: string
+  assetNo: string
+  assetName: string
+  categoryId: string | null
+  category: string
+  brand: string | null
+  model: string | null
+  location: string | null
+  status: string // 0=在库（用户端仅返回该状态）
+}
+
+/** 资产借用记录（用户端仅返回本人记录） */
+export interface AssetBorrowRecord {
+  id: string
+  assetId: string
+  borrowerId: string | null
+  borrowerName: string
+  borrowTime: string | null
+  expectReturnTime: string | null
+  returnTime: string | null
+  remark: string | null
+  status: string // 0=借用中 1=已归还
+  assetNo: string | null
+  assetName: string | null
+  createTime: string
+}
+
+/** 我的文件（用户端仅返回本人上传的文件，屏蔽存储路径等内部字段） */
+export interface UserFile {
+  id: string
+  fileName: string
+  fileSize: number
+  fileType: string // image/document/video/audio/other
+  storageType: string // local/s3
+  createTime: string
 }

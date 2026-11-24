@@ -41,4 +41,10 @@ public class AssetBorrowRecordDTO {
 
     @Schema(description = "状态：0=借用中 1=已归还", example = "0", allowableValues = {"0", "1"})
     private String status;
+
+    @Schema(description = "资产编号（列表展示用冗余字段，可空）", example = "ZC-2024-001")
+    private String assetNo;
+
+    @Schema(description = "资产名称（列表展示用冗余字段，可空）", example = "ThinkPad X1 笔记本")
+    private String assetName;
 }

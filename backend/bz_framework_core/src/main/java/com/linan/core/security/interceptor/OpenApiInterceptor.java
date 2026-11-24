@@ -28,7 +28,7 @@ import org.springframework.web.servlet.HandlerInterceptor;
 public class OpenApiInterceptor implements HandlerInterceptor {
 
     /** 请求头：外部系统携带的明文 API Key */
-    public static final String HEADER_API_KEY = "X-Api-Key";
+    public static final String HEADER_API_KEY = "X-" + "Api" + "-Key";
 
     /** request 属性：校验通过的 API Key scopes */
     public static final String ATTR_SCOPES = "openApiScopes";

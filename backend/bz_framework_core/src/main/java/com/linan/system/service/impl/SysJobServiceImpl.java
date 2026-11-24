@@ -91,7 +91,7 @@ public class SysJobServiceImpl extends ServiceImpl<SysJobMapper, SysJob> impleme
             log.info("定时任务 [{}] 已更新触发器: {}", job.getJobName(), job.getCronExpression());
         } catch (SchedulerException e) {
             log.error("更新定时任务触发器失败, jobId: {}", jobId, e);
-            throw new RuntimeException("更新定时任务触发器失败", e);
+            throw new BusinessException("更新定时任务触发器失败");
         }
     }
 
@@ -113,7 +113,7 @@ public class SysJobServiceImpl extends ServiceImpl<SysJobMapper, SysJob> impleme
             log.info("定时任务 [{}] 已删除", job.getJobName());
         } catch (SchedulerException e) {
             log.error("删除定时任务触发器失败, jobId: {}", jobId, e);
-            throw new RuntimeException("删除定时任务触发器失败", e);
+            throw new BusinessException("删除定时任务触发器失败");
         }
     }
 
@@ -130,7 +130,7 @@ public class SysJobServiceImpl extends ServiceImpl<SysJobMapper, SysJob> impleme
             log.info("定时任务 [{}] 已暂停", job.getJobName());
         } catch (SchedulerException e) {
             log.error("暂停定时任务失败, jobId: {}", jobId, e);
-            throw new RuntimeException("暂停定时任务失败", e);
+            throw new BusinessException("暂停定时任务失败");
         }
     }
 
@@ -156,7 +156,7 @@ public class SysJobServiceImpl extends ServiceImpl<SysJobMapper, SysJob> impleme
             log.info("定时任务 [{}] 已恢复", job.getJobName());
         } catch (SchedulerException e) {
             log.error("恢复定时任务失败, jobId: {}", jobId, e);
-            throw new RuntimeException("恢复定时任务失败", e);
+            throw new BusinessException("恢复定时任务失败");
         }
     }
 
@@ -170,7 +170,7 @@ public class SysJobServiceImpl extends ServiceImpl<SysJobMapper, SysJob> impleme
             log.info("定时任务 [{}] 已手动触发执行", job.getJobName());
         } catch (SchedulerException e) {
             log.error("手动触发定时任务失败, jobId: {}", jobId, e);
-            throw new RuntimeException("手动触发定时任务失败", e);
+            throw new BusinessException("手动触发定时任务失败");
         }
     }
 
@@ -247,7 +247,7 @@ public class SysJobServiceImpl extends ServiceImpl<SysJobMapper, SysJob> impleme
             log.info("定时任务 [{}] 已创建调度: {}", job.getJobName(), job.getCronExpression());
         } catch (SchedulerException e) {
             log.error("创建定时任务调度失败, jobId: {}", jobId, e);
-            throw new RuntimeException("创建定时任务调度失败", e);
+            throw new BusinessException("创建定时任务调度失败");
         }
     }
 }

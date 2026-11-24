@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.linan.core.common.annotation.OperLog;
 import com.linan.core.common.api.PageResult;
 import com.linan.core.common.api.Result;
+import com.linan.core.common.enums.ApprovalStatus;
 import com.linan.core.security.RequirePermission;
 import com.linan.office.entity.OfficeSupply;
 import com.linan.office.entity.OfficeSupplyRequest;
@@ -163,7 +164,7 @@ public class OfficeSupplyController {
         if (request == null) {
             return Result.error("申领记录不存在");
         }
-        if (!"0".equals(request.getStatus())) {
+        if (!ApprovalStatus.PENDING.matches(request.getStatus())) {
             return Result.error("仅待审批状态的单据可删除");
         }
         boolean ok = requestService.removeById(id);

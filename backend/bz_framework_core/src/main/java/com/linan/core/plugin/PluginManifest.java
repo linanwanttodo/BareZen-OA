@@ -23,7 +23,7 @@ public class PluginManifest {
     private List<String> services;
     private List<String> entities;
     private List<String> migrations;
-    private List<String> frontendRoutes;
+    private List<Map<String, Object>> frontendRoutes;
     private List<String> permissions;
 
     // Getters and Setters
@@ -116,11 +116,11 @@ public class PluginManifest {
         this.migrations = migrations;
     }
 
-    public List<String> getFrontendRoutes() {
+    public List<Map<String, Object>> getFrontendRoutes() {
         return frontendRoutes;
     }
 
-    public void setFrontendRoutes(List<String> frontendRoutes) {
+    public void setFrontendRoutes(List<Map<String, Object>> frontendRoutes) {
         this.frontendRoutes = frontendRoutes;
     }
 

@@ -68,6 +68,11 @@ export function getDictDataPageApi(params: { pageNum?: number; pageSize?: number
   return request.get<PageData<SysDictData>>('/system/v1/dict/data/page', { params })
 }
 
+/** 字典数据详情 */
+export function getDictDataApi(id: string) {
+  return request.get<SysDictData>(`/system/v1/dict/data/${encodeURIComponent(id)}`)
+}
+
 /** 新增字典数据 */
 export function addDictDataApi(data: Partial<SysDictData>) {
   return request.post<void>('/system/v1/dict/data', data)

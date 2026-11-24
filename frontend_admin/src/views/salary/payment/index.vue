@@ -59,6 +59,8 @@
               </template>
     <template #operate="{ row }">
                 <t-space>
+                  <t-link theme="primary" v-permission="PERM.salary.paymentList" @click="openDetail(row)">{{ $t('common.detail') }}</t-link>
+                  <t-link v-if="row.paymentStatus === '0'" theme="primary" v-permission="PERM.salary.paymentExecute" @click="openEdit(row)">{{ $t('common.edit') }}</t-link>
                   <t-popconfirm v-if="row.paymentStatus === '1'" :content="$t('salary.revokeConfirm')" @confirm="handleRevoke(row)">
                     <t-button v-permission="PERM.salary.paymentExecute" size="small" theme="warning">{{ $t('salary.revoke') }}</t-button>
                   </t-popconfirm>
@@ -93,6 +95,37 @@
         </t-form-item>
       </t-form>
     </t-dialog>
+
+    <!-- 详情抽屉 -->
+    <t-drawer v-model:visible="detailVisible" :header="$t('salary.paymentDetailTitle')" size="440px" :footer="false">
+      <t-loading v-if="detailLoading" size="28px" :text="$t('common.loading')" />
+      <t-descriptions v-if="detail" :column="1" :data="detailItems" layout="inline-vertical" />
+    </t-drawer>
+
+    <!-- 编辑弹窗：金额由生成逻辑维护，后端仅放行备注等修正 -->
+    <t-dialog
+      v-model:visible="editVisible"
+      :header="$t('salary.editPaymentTitle')"
+      :width="480"
+      @confirm="handleEditSave"
+      @cancel="editVisible = false"
+      :ok-loading="saving"
+    >
+      <t-form ref="editFormRef" :data="editForm" layout="vertical">
+        <t-form-item :label="$t('salary.userName')">
+          <t-input :model-value="editForm.userName" disabled />
+        </t-form-item>
+        <t-form-item :label="$t('salary.paymentMonth')">
+          <t-input :model-value="editForm.paymentMonth" disabled />
+        </t-form-item>
+        <t-form-item :label="$t('salary.actualSalary')">
+          <t-input :model-value="`¥${Number(editForm.actualSalary || 0).toFixed(2)}`" disabled />
+        </t-form-item>
+        <t-form-item name="remark" :label="$t('common.remark')">
+          <t-textarea v-model="editForm.remark" :placeholder="$t('common.inputPlaceholder')" :max-length="500" show-word-limit />
+        </t-form-item>
+      </t-form>
+    </t-dialog>
   </div>
 </template>
 
@@ -102,7 +135,8 @@ import { ref, computed, reactive, onMounted } from 'vue'
 import { MessagePlugin, type FormInstanceFunctions } from 'tdesign-vue-next'
 import { useI18n } from 'vue-i18n'
 import {
-  getSalaryPaymentPageApi, generateSalaryPaymentApi, executeSalaryPaymentApi,
+  getSalaryPaymentPageApi, getSalaryPaymentApi, updateSalaryPaymentApi,
+  generateSalaryPaymentApi, executeSalaryPaymentApi,
   revokeSalaryPaymentApi, deleteSalaryPaymentApi,
   type SalaryPaymentRecord,
 } from '@/api/salary'
@@ -129,7 +163,7 @@ const tableColumns = computed(() => [
   { colKey: 'actualSalary', title: t('salary.actualSalary'), width: 120, align: 'right' },
   { colKey: 'paymentStatus', title: t('salary.paymentStatus'), width: 90 },
   { colKey: 'paymentTime', title: t('salary.paymentTime'), width: 170 },
-  { colKey: 'operate', title: t('common.operate'), width: 110, align: 'right' },
+  { colKey: 'operate', title: t('common.operate'), width: 210, align: 'right' },
 ])
 
 function onSelectChange(keys: (string | number)[]) {
@@ -209,6 +243,78 @@ async function handleRevoke(record: SalaryPaymentRecord) {
   await revokeSalaryPaymentApi(record.id)
   MessagePlugin.success(t('salary.revoked'))
   loadData()
+}
+
+// ---- 详情抽屉 ----
+const detailVisible = ref(false)
+const detailLoading = ref(false)
+const detail = ref<SalaryPaymentRecord | null>(null)
+
+const detailItems = computed(() => {
+  const d = detail.value
+  if (!d) return []
+  const money = (v: unknown) => `¥${Number(v || 0).toFixed(2)}`
+  return [
+    { label: t('salary.userName'), value: `${d.userName || '-'}（${d.userId}）` },
+    { label: t('salary.paymentMonth'), value: d.paymentMonth || '-' },
+    { label: t('salary.baseSalary'), value: money(d.baseSalary) },
+    { label: t('salary.performanceSalary'), value: money(d.performanceSalary) },
+    { label: t('salary.positionAllowance'), value: money(d.positionAllowance) },
+    { label: t('salary.transportAllowance'), value: money(d.transportAllowance) },
+    { label: t('salary.mealAllowance'), value: money(d.mealAllowance) },
+    { label: t('salary.otherAllowance'), value: money(d.otherAllowance) },
+    { label: t('salary.totalIncome'), value: money(d.totalIncome) },
+    { label: t('salary.socialInsurance'), value: money(d.socialInsurancePersonal) },
+    { label: t('salary.housingFund'), value: money(d.housingFundPersonal) },
+    { label: t('salary.incomeTax'), value: money(d.incomeTax) },
+    { label: t('salary.totalDeduction'), value: money(d.totalDeduction) },
+    { label: t('salary.actualSalary'), value: money(d.actualSalary) },
+    { label: t('salary.paymentStatus'), value: d.paymentStatus === '1' ? t('salary.statusPaid') : t('salary.statusUnpaid') },
+    { label: t('salary.paymentTime'), value: d.paymentTime || '-' },
+    { label: t('common.remark'), value: d.remark || '-' },
+  ]
+})
+
+async function openDetail(row: SalaryPaymentRecord) {
+  detailVisible.value = true
+  detailLoading.value = true
+  detail.value = null
+  try {
+    const res = await getSalaryPaymentApi(row.id)
+    detail.value = res.data || null
+  } finally {
+    detailLoading.value = false
+  }
+}
+
+// ---- 编辑弹窗（仅备注）----
+const editVisible = ref(false)
+const saving = ref(false)
+const editFormRef = ref<FormInstanceFunctions>()
+const editForm = reactive({ id: '', userName: '', paymentMonth: '', actualSalary: '' as unknown, remark: '' })
+
+function openEdit(row: SalaryPaymentRecord) {
+  Object.assign(editForm, {
+    id: row.id,
+    userName: row.userName,
+    paymentMonth: row.paymentMonth,
+    actualSalary: row.actualSalary,
+    remark: row.remark || '',
+  })
+  editVisible.value = true
+}
+
+async function handleEditSave() {
+  if ((await editFormRef.value?.validate()) !== true) return
+  saving.value = true
+  try {
+    await updateSalaryPaymentApi({ id: editForm.id, remark: editForm.remark })
+    MessagePlugin.success(t('common.saveSuccess'))
+    editVisible.value = false
+    loadData()
+  } finally {
+    saving.value = false
+  }
 }
 
 async function handleDelete(record: SalaryPaymentRecord) {

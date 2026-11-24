@@ -1,8 +1,8 @@
 import request from './request'
-import type { ApiResult, DashboardData, Notice, Contact, TodoItem, CreateTodoDTO, UpdateTodoDTO, PageData, OvertimeRequest, TravelRequest, LeaveRequest, WorkLog, Schedule, Supply, SupplyRequest, FlowLog, FlowTask } from '@/types/api'
+import type { ApiResult, DashboardData, Notice, Contact, TodoItem, CreateTodoDTO, UpdateTodoDTO, PageData, OvertimeRequest, TravelRequest, LeaveRequest, WorkLog, Schedule, Supply, SupplyRequest, VehicleRequest, MeetingRoom, MeetingBooking, FlowLog, FlowTask } from '@/types/api'
 
 // 页面组件从 @/api/enterprise 导入业务实体类型，此处 re-export 保持入口统一
-export type { OvertimeRequest, TravelRequest, LeaveRequest, WorkLog, Schedule, Supply, SupplyRequest, FlowLog, FlowTask } from '@/types/api'
+export type { OvertimeRequest, TravelRequest, LeaveRequest, WorkLog, Schedule, Supply, SupplyRequest, VehicleRequest, MeetingRoom, MeetingBooking, FlowLog, FlowTask } from '@/types/api'
 
 // ==================== 工作台 ====================
 
@@ -174,6 +174,60 @@ export function submitSupplyRequestApi(data: Partial<SupplyRequest>) {
 /** 撤销申领 */
 export function revokeSupplyRequestApi(id: string) {
   return request.put<any, ApiResult<void>>(`/app/v1/supplies/requests/${encodeURIComponent(id)}/revoke`)
+}
+
+// ==================== 用车申请 ====================
+
+/** 我的用车申请列表 */
+export function getMyVehiclesApi(params: { page?: number; pageSize?: number; status?: string }) {
+  return request.get<any, ApiResult<PageData<VehicleRequest>>>('/app/v1/vehicles', { params })
+}
+
+/** 用车申请详情 */
+export function getVehicleDetailApi(id: string) {
+  return request.get<any, ApiResult<VehicleRequest>>(`/app/v1/vehicles/${encodeURIComponent(id)}`)
+}
+
+/** 提交用车申请 */
+export function submitVehicleApi(data: Partial<VehicleRequest>) {
+  return request.post<any, ApiResult<void>>('/app/v1/vehicles', data)
+}
+
+/** 撤销用车申请 */
+export function revokeVehicleApi(id: string) {
+  return request.put<any, ApiResult<void>>(`/app/v1/vehicles/${encodeURIComponent(id)}/revoke`)
+}
+
+// ==================== 会议预订 ====================
+
+/** 可用会议室列表（启用状态） */
+export function getMeetingRoomsApi() {
+  return request.get<any, ApiResult<MeetingRoom[]>>('/app/v1/meetings/rooms')
+}
+
+/** 指定时段可用会议室列表（排除已被预订的会议室） */
+export function getAvailableMeetingRoomsApi(params: { start: string; end: string }) {
+  return request.get<any, ApiResult<MeetingRoom[]>>('/app/v1/meetings/rooms/available', { params })
+}
+
+/** 我的会议预订列表 */
+export function getMyMeetingsApi(params: { page?: number; pageSize?: number }) {
+  return request.get<any, ApiResult<PageData<MeetingBooking>>>('/app/v1/meetings', { params })
+}
+
+/** 会议预订详情 */
+export function getMeetingDetailApi(id: string) {
+  return request.get<any, ApiResult<MeetingBooking>>(`/app/v1/meetings/${encodeURIComponent(id)}`)
+}
+
+/** 提交会议预订 */
+export function submitMeetingApi(data: Partial<MeetingBooking>) {
+  return request.post<any, ApiResult<void>>('/app/v1/meetings', data)
+}
+
+/** 取消会议预订 */
+export function cancelMeetingApi(id: string) {
+  return request.put<any, ApiResult<void>>(`/app/v1/meetings/${encodeURIComponent(id)}/cancel`)
 }
 
 // ==================== 审批流程进度 ====================

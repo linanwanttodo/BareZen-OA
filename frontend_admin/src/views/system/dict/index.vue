@@ -29,10 +29,10 @@
             <t-tag v-if="item.status === '0'" theme="danger" size="small">{{ $t('common.disable') }}</t-tag>
             <t-dropdown>
               <icon-more class="cursor-pointer" style="color: var(--wecom-text-tertiary)" />
-              <template #content>
+              <t-dropdown-menu>
                 <t-dropdown-item v-permission="PERM.system.dictEdit" @click="handleEditType(item)">{{ $t('common.edit') }}</t-dropdown-item>
-                <t-dropdown-item v-permission="PERM.system.dictDelete" @click="handleDeleteType(item)" status="danger">{{ $t('common.delete') }}</t-dropdown-item>
-              </template>
+                <t-dropdown-item v-permission="PERM.system.dictDelete" @click="handleDeleteType(item)" theme="danger">{{ $t('common.delete') }}</t-dropdown-item>
+              </t-dropdown-menu>
             </t-dropdown>
           </div>
           <t-empty v-if="!filteredDictTypes.length" :description="$t('common.noData')" />
@@ -212,6 +212,7 @@ import {
   updateDictTypeApi,
   deleteDictTypeApi,
   getDictDataPageApi,
+  getDictDataApi,
   addDictDataApi,
   updateDictDataApi,
   deleteDictDataApi,
@@ -375,18 +376,26 @@ function handleAddData() {
   dataFormVisible.value = true
 }
 
-function handleEditData(row: SysDictData) {
+async function handleEditData(row: SysDictData) {
   dataFormType.value = 'edit'
+  // 编辑前按 id 取最新数据，避免弹窗回显过期行；失败回退当前行
+  let target = row
+  try {
+    const res = await getDictDataApi(row.id)
+    if (res.data) target = res.data
+  } catch {
+    // ignore
+  }
   Object.assign(dataFormData, {
-    id: row.id,
-    dictType: row.dictType,
-    dictLabel: row.dictLabel,
-    dictValue: row.dictValue,
-    dictSort: row.dictSort,
-    cssClass: row.cssClass,
-    listClass: row.listClass,
-    isDefault: row.isDefault,
-    status: row.status,
+    id: target.id,
+    dictType: target.dictType,
+    dictLabel: target.dictLabel,
+    dictValue: target.dictValue,
+    dictSort: target.dictSort,
+    cssClass: target.cssClass,
+    listClass: target.listClass,
+    isDefault: target.isDefault,
+    status: target.status,
   })
   dataFormVisible.value = true
 }

@@ -7,10 +7,11 @@
             <template #icon><icon-refresh /></template>
             {{ $t('common.refresh') }}
           </t-button>
+          <t-checkbox v-model="onlyEnabled" @change="loadData">{{ $t('plugin.onlyEnabled') }}</t-checkbox>
         </t-space>
       </div>
 
-      
+
         <t-table :loading="loading" row-key="pluginId" :data="plugins" :columns="tableColumns" :pagination="false" :hover="true" vertical-align="top">
           <template #status="{ row }">
             <t-tag :theme="statusTheme(row.status)" variant="light">{{ statusText(row.status) }}</t-tag>
@@ -22,18 +23,33 @@
           </template>
           <template #operate="{ row }">
             <t-space>
+              <t-link theme="primary" @click="openDetail(row.pluginId)">{{ $t('plugin.detail') }}</t-link>
               <t-popconfirm v-if="row.status !== 'STARTED'" :content="$t('plugin.startConfirm')" @confirm="handleStart(row)">
                 <t-button v-permission="PERM.system.pluginManage" size="small" theme="success">{{ $t('plugin.start') }}</t-button>
               </t-popconfirm>
               <t-popconfirm v-else :content="$t('plugin.stopConfirm')" @confirm="handleStop(row)">
                 <t-button v-permission="PERM.system.pluginManage" size="small" theme="warning">{{ $t('plugin.stop') }}</t-button>
               </t-popconfirm>
+              <t-popconfirm :content="$t('plugin.unloadConfirm')" @confirm="handleUnload(row)">
+                <t-button v-permission="PERM.system.pluginManage" size="small" theme="danger">{{ $t('plugin.unload') }}</t-button>
+              </t-popconfirm>
             </t-space>
           </template>
         </t-table>
         <t-empty v-if="!loading && !plugins.length" :description="$t('common.noData')" />
-      
+
     </t-card>
+
+    <!-- 详情抽屉 -->
+    <t-drawer v-model:visible="detailVisible" :header="$t('plugin.detailTitle')" size="420px" :footer="false">
+      <t-loading v-if="detailLoading" size="28px" :text="$t('common.loading')" />
+      <t-descriptions v-if="detail" :column="1" :data="detailItems" layout="inline-vertical" />
+      <template v-if="detail">
+        <p class="mt-4 mb-2 text-sm font-medium">{{ $t('plugin.dependencies') }}</p>
+        <t-tag v-for="dep in detail.dependencies" :key="dep" variant="outline" class="mr-2 mb-2">{{ dep }}</t-tag>
+        <t-empty v-if="!detail.dependencies?.length" :description="$t('common.noData')" />
+      </template>
+    </t-drawer>
   </div>
 </template>
 
@@ -42,11 +58,35 @@ import { PERM } from '@/utils/constants'
 import { ref, computed, onMounted } from 'vue'
 import { MessagePlugin } from 'tdesign-vue-next'
 import { useI18n } from 'vue-i18n'
-import { getPluginListApi, startPluginApi, stopPluginApi, type PluginInfo } from '@/api/plugin'
+import {
+  getPluginListApi, getEnabledPluginsApi, getPluginDetailApi,
+  startPluginApi, stopPluginApi, unloadPluginApi, type PluginInfo,
+} from '@/api/plugin'
 
 const { t } = useI18n()
 const loading = ref(false)
 const plugins = ref<PluginInfo[]>([])
+const onlyEnabled = ref(false)
+
+// ---- 详情抽屉 ----
+const detailVisible = ref(false)
+const detailLoading = ref(false)
+const detail = ref<PluginInfo | null>(null)
+
+const detailItems = computed(() => {
+  const d = detail.value
+  if (!d) return []
+  return [
+    { label: t('plugin.name'), value: d.pluginName || '-' },
+    { label: t('plugin.id'), value: d.pluginId || '-' },
+    { label: t('plugin.version'), value: d.version || '-' },
+    { label: t('plugin.author'), value: d.author || '-' },
+    { label: t('plugin.status'), value: statusText(d.status) },
+    { label: t('plugin.enabledState'), value: d.enabled ? t('plugin.running') : t('plugin.stopped') },
+    { label: t('plugin.available'), value: d.available ? t('common.yes') : t('common.no') },
+    { label: t('plugin.description'), value: d.description || '-' },
+  ]
+})
 
 function statusText(status: string): string {
   const map: Record<string, string> = {
@@ -71,10 +111,25 @@ function statusTheme(status: string): 'success' | 'warning' | 'danger' | 'primar
 async function loadData() {
   loading.value = true
   try {
-    const res = await getPluginListApi()
+    const res = onlyEnabled.value ? await getEnabledPluginsApi() : await getPluginListApi()
     plugins.value = res.data || []
   } finally {
     loading.value = false
+  }
+}
+
+async function openDetail(pluginId: string) {
+  detailVisible.value = true
+  detailLoading.value = true
+  detail.value = null
+  try {
+    const res = await getPluginDetailApi(pluginId)
+    detail.value = res.data || null
+  } catch (e) {
+    detailVisible.value = false
+    MessagePlugin.error((e as Error)?.message || t('common.failed'))
+  } finally {
+    detailLoading.value = false
   }
 }
 
@@ -98,6 +153,16 @@ async function handleStop(row: PluginInfo) {
   }
 }
 
+async function handleUnload(row: PluginInfo) {
+  try {
+    await unloadPluginApi(row.pluginId)
+    MessagePlugin.success(t('plugin.unloaded'))
+    loadData()
+  } catch (e) {
+    MessagePlugin.error((e as Error)?.message || t('common.failed'))
+  }
+}
+
 onMounted(loadData)
 
 const tableColumns = computed(() => [
@@ -108,6 +173,6 @@ const tableColumns = computed(() => [
   { colKey: 'description', title: t('plugin.description'), ellipsis: true },
   { colKey: 'status', title: t('plugin.status'), width: 110 },
   { colKey: 'enabled', title: t('plugin.enabledState'), width: 90 },
-  { colKey: 'operate', title: t('common.operate'), width: 100, align: 'right' },
+  { colKey: 'operate', title: t('common.operate'), width: 200, align: 'right' },
 ])
 </script>

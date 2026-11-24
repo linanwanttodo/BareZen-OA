@@ -14,6 +14,7 @@ public enum ResultCodeEnum {
     FORBIDDEN(403, "没有访问权限"),
     VALIDATE_FAILED(400, "参数检验失败"),
     NOT_FOUND(404, "资源不存在"),
+    PLUGIN_DISABLED(503, "插件已停用"),
     FAILED(500, "系统异常，请稍后重试");
 
     private final int code;

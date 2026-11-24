@@ -1,5 +1,13 @@
 # BareZen_OA 插件化架构文档
 
+> **现状说明（2026-11-24 更新）**：下列机制已真实生效，不再只是状态枚举切换：
+> - **清单已接入**：启动时 `PluginManifestLoader` 扫描 `classpath:plugins/*.json`，解析并注册 `PluginManifest`，同时在门控表中登记初始状态（LOADED，关闭）。`GET /api/system/v1/plugins/{id}` 返回清单内容 + 运行状态 + loaded 标志
+> - **启停真实生效**：`PluginGateAspect` 按包约定拦截 `com.linan.plugin.{module}.` 包下标注 `@RestController` 的接口（pluginId = `com.linan.plugin.{module}`）。插件非 ACTIVE（LOADED/DISABLED/FAILED/ERROR/未注册）时返回统一错误：HTTP 503 / Result code=503（文案按状态区分：「插件已停用」「插件未启动」等）。`PluginManager.start/stop` 同步更新门控状态。验收口径：管理端停用 salary 后，`/api/salary/v1/**` 立即拒绝服务
+> - **卸载真实生效**：unload 从管理器移除 Plugin 实例与清单，但门控条目保留且保持关闭，该插件的 HTTP 接口继续拒绝服务。已知边界：class 仍在 classpath，属静态卸载而非类卸载
+> - **启动自检**：清单声明的 controller 类在 classpath 不存在时打 WARN
+> - 仍未实现（边界）：运行时类热插拔/动态加载；`SalaryPlugin` 生命周期回调仍是日志空壳（业务 Controller/Service 由 Spring 组件扫描常驻注册，不随插件停用销毁——门控在入口处拦截）；插件 Service 层被本插件 HTTP 接口以外的代码直连时不受门控（如 bz_web_app 的 `AppSalaryController` /api/app/v1/salary 直连 salary Service）；前端路由实际来自数据库菜单表（RBAC），不是清单里的 frontendRoutes；hr/asset/kb/office 等业务域位于 `com.linan.*` 直属包，未接入插件体系
+> - 迁移脚本实际位置：`backend/bz_web_app/src/main/resources/db/migration/`（工资插件为 V47__salary_plugin.sql，菜单授权见 V50）
+
 ## 插件化架构概述
 
 BareZen_OA采用插件化架构设计，支持像乐高积木一样按需添加功能模块。每个业务模块都是独立的插件，可以：

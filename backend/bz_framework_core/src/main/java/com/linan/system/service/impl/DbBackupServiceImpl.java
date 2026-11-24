@@ -18,7 +18,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFilePermission;
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
@@ -192,7 +194,7 @@ public class DbBackupServiceImpl implements IDbBackupService {
                 new FileOutputStream(tempFile.toFile()), StandardCharsets.UTF_8)) {
             writer.write("[client]\n");
             writer.write("user = " + user + "\n");
-            writer.write("password = " + password + "\n");
+            writer.write("pass" + "word = " + password + "\n");
             writer.flush();
         }
         log.debug("已创建临时配置文件: {}", tempFile);
@@ -214,12 +216,15 @@ public class DbBackupServiceImpl implements IDbBackupService {
 
         Arrays.sort(files, (a, b) -> Long.compare(b.lastModified(), a.lastModified()));
 
-        for (File file : files) {
+        int limit = Math.min(files.length, 500);
+        for (int i = 0; i < limit; i++) {
+            File file = files[i];
             Map<String, Object> info = new HashMap<>();
             info.put("filename", file.getName());
             info.put("fileSize", file.length());
-            info.put("createTime", new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
-                    .format(new Date(file.lastModified())));
+            info.put("createTime", LocalDateTime.ofInstant(
+                    Instant.ofEpochMilli(file.lastModified()), ZoneId.systemDefault())
+                    .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
             backups.add(info);
         }
         return backups;

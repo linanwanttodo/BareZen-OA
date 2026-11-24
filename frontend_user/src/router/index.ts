@@ -85,20 +85,52 @@ const router = createRouter({
           component: () => import('@/pages/supply/index.vue'),
           meta: { title: '办公用品', requiresAuth: true },
         },
-      ],
-    },
-    {
-      path: '/auth',
-      component: () => import('@/layouts/AuthLayout.vue'),
-      children: [
         {
-          path: 'login',
-          name: 'Login',
-          component: () => import('@/pages/auth/login.vue'),
-          meta: { title: '登录' },
+          path: 'vehicles',
+          name: 'Vehicles',
+          component: () => import('@/pages/vehicle/index.vue'),
+          meta: { title: '用车申请', requiresAuth: true },
+        },
+        {
+          path: 'meetings',
+          name: 'Meetings',
+          component: () => import('@/pages/meeting/index.vue'),
+          meta: { title: '会议预订', requiresAuth: true },
+        },
+        {
+          path: 'salary',
+          name: 'Salary',
+          component: () => import('@/pages/salary/index.vue'),
+          meta: { title: '我的工资条', requiresAuth: true },
+        },
+        {
+          path: 'kb',
+          name: 'Kb',
+          component: () => import('@/pages/kb/index.vue'),
+          meta: { title: '知识库', requiresAuth: true },
+        },
+        {
+          path: 'assets',
+          name: 'Assets',
+          component: () => import('@/pages/asset/index.vue'),
+          meta: { title: '资产借用', requiresAuth: true },
+        },
+        {
+          path: 'files',
+          name: 'Files',
+          component: () => import('@/pages/files/index.vue'),
+          meta: { title: '我的文件', requiresAuth: true },
         },
       ],
     },
+    {
+      path: '/login',
+      name: 'Login',
+      component: () => import('@/pages/auth/login.vue'),
+      meta: { title: '登录' },
+    },
+    // 旧地址兼容：统一登录路由为 /login
+    { path: '/auth/login', redirect: '/login' },
     {
       path: '/user',
       component: () => import('@/layouts/UserLayout.vue'),
@@ -122,7 +154,7 @@ const router = createRouter({
 })
 
 // 白名单路由：不需要登录即可访问的页面
-const whiteList = ['/notices', '/auth/login']
+const whiteList = ['/notices', '/login']
 
 router.beforeEach(async (to, _from, next) => {
   NProgress.start()
@@ -130,10 +162,10 @@ router.beforeEach(async (to, _from, next) => {
 
   const token = getToken()
 
-  if (token && to.path === '/auth/login') {
+  if (token && to.path === '/login') {
     next({ path: '/' })
   } else if (to.meta.requiresAuth && !token) {
-    next({ path: '/auth/login', query: { redirect: to.fullPath } })
+    next({ path: '/login', query: { redirect: to.fullPath } })
   } else if (token && !whiteList.some(p => to.path === p)) {
     const userStore = useUserStore()
     if (!userStore.userInfo) {
@@ -141,7 +173,7 @@ router.beforeEach(async (to, _from, next) => {
         await userStore.fetchUserInfo()
       } catch {
         userStore.resetState()
-        next({ path: '/auth/login', query: { redirect: to.fullPath } })
+        next({ path: '/login', query: { redirect: to.fullPath } })
         return
       }
     }

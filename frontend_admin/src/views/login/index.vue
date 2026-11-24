@@ -1,6 +1,6 @@
 <template>
   <div class="login-page" :class="{ 'mode-register': mode === 'register' }">
-    <!-- 图片面板：登录时在左，注册时滑到右 -->
+    <!-- 图片面板：登录时在左，注册时换到右 -->
     <div class="login-visual">
       <div class="login-visual__inner">
         <img src="/login-visual.png" alt="BareZen" class="login-visual__img" />
@@ -11,16 +11,7 @@
     <!-- 表单面板：登录时在右，注册时滑到左 -->
     <div class="login-form-panel">
       <div class="login-form-wrap">
-        <!-- 品牌头 -->
-        <div class="login-brand">
-          <img src="/logo.png" alt="BareZen" class="login-brand__logo" />
-          <div class="login-brand__text">
-            <h1 class="login-brand__title">BareZen</h1>
-            <p class="login-brand__subtitle">{{ $t('login.title') }}</p>
-          </div>
-        </div>
-
-        <!-- 登录 / 注册 双层表单：翻转过程中交叉淡入淡出 -->
+        <!-- 登录 / 注册 双层表单：注册态瞬间互换面板 -->
         <div class="form-stack">
           <!-- ===== 登录 ===== -->
           <div class="form-layer" :class="{ 'form-layer--active': mode === 'login' }" :aria-hidden="mode !== 'login'">
@@ -29,7 +20,7 @@
               <p class="mt-1 text-sm text-[var(--wecom-text-tertiary)]">{{ $t('login.loginInfo') }}</p>
             </div>
 
-            <t-form :data="formData" layout="vertical" :on-submit="onSubmit" class="space-y-2">
+            <t-form :data="formData" layout="vertical" label-align="top" :on-submit="onSubmit">
               <t-form-item name="username" :label="$t('login.username')" :rules="[{ required: true, message: $t('login.usernameRequired') }]">
                 <t-input v-model="formData.username" :placeholder="$t('login.usernameRequired')" size="large" clearable />
               </t-form-item>
@@ -56,7 +47,7 @@
 
               <t-checkbox v-model="formData.remember" class="login-remember">{{ $t('login.rememberMe') }}</t-checkbox>
 
-              <t-form-item class="!mb-0 mt-2">
+              <t-form-item class="!mb-0">
                 <t-button theme="primary" type="submit" block size="large" :loading="loading">
                   {{ $t('login.login') }}
                 </t-button>
@@ -76,7 +67,7 @@
               <p class="mt-1 text-sm text-[var(--wecom-text-tertiary)]">{{ $t('login.registerInfo') }}</p>
             </div>
 
-            <t-form ref="registerFormRef" :data="registerData" layout="vertical" class="space-y-2">
+            <t-form ref="registerFormRef" :data="registerData" layout="vertical" label-align="top">
               <t-form-item name="userName" :label="$t('login.username')" :rules="[{ required: true, message: $t('login.usernameRequired') }]">
                 <t-input v-model="registerData.userName" :placeholder="$t('login.usernameRequired')" size="large" clearable />
               </t-form-item>
@@ -101,7 +92,7 @@
                 <t-input v-model="registerData.confirmPassword" :placeholder="$t('login.confirmPasswordRequired')" size="large" @keyup.enter="onRegister" />
               </t-form-item>
 
-              <t-form-item class="!mb-0 mt-2">
+              <t-form-item class="!mb-0">
                 <t-button theme="primary" block size="large" :loading="registering" @click="onRegister">
                   {{ $t('login.registerNow') }}
                 </t-button>
@@ -126,6 +117,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { getCaptchaApi, registerApi } from '@/api/auth'
+import { persistToken } from '@/utils/auth'
 import { MessagePlugin, type FormInstanceFunctions } from 'tdesign-vue-next'
 import { useI18n } from 'vue-i18n'
 import type { LoginParams } from '@/types/api'
@@ -136,7 +128,7 @@ const router = useRouter()
 const route = useRoute()
 const userStore = useUserStore()
 
-/** 当前面板：login 图左表单右；register 左右互换（CSS transform 过渡） */
+/** 当前面板：login 图左表单右；register 左右互换 */
 const mode = ref<'login' | 'register'>('login')
 
 const loading = ref(false)
@@ -198,6 +190,7 @@ async function onSubmit() {
     } as LoginParams)
 
     if (formData.remember) {
+      persistToken(userStore.token)
       localStorage.setItem('bz_admin_remember', JSON.stringify({ username: formData.username }))
     } else {
       localStorage.removeItem('bz_admin_remember')
@@ -233,7 +226,7 @@ async function onRegister() {
       password: registerData.password,
     })
     MessagePlugin.success(t('login.registerSuccess'))
-    // 注册成功：回填用户名并翻回登录面板
+    // 注册成功：回填用户名并切回登录面板
     formData.username = registerData.userName
     formData.password = ''
     registerData.userName = ''
@@ -267,22 +260,22 @@ onMounted(() => {
 /* ============================================================
    左右分栏登录页：
    - 登录态：图片面板在左、表单面板在右
-   - 注册态：两面板 translateX 互换位置（0.6s 平滑过渡）
-   - 表单内容在翻转中途交叉淡切
+   - 注册态：两面板位置互换（瞬间切换，无动效）
    ============================================================ */
 .login-page {
   position: relative;
   min-height: 100vh;
   overflow: hidden;
-  /* 根容器兜底纯白：body 用的是 --td-bg-color-page（#f3f3f3 灰），
-     登录页按官方口径整屏纯白，避免两面板之间的缝隙透出灰底 */
+  /* 根容器兜底纯白：body 用的是 --td-bg-color-page（浅色 #f5f7fa），
+     登录页按官方口径整屏纯白；暗色模式在下方切到页面底色 */
   background: #fff;
 }
 
-/* 暗色模式：登录页跟随页面底色（官方 .dark.login-wrapper 的口径）。
-   本项目暗色用 <html theme-mode="dark"> 属性而非 class，见 utils/theme.ts。 */
-:global(html[theme-mode='dark']) .login-page,
-:global(html[theme-mode='dark']) .login-form-panel {
+/* 暗色模式：登录页跟随页面底色。本项目暗色用 <html theme-mode="dark"> 属性驱动，
+   见 utils/theme.ts。注意 scoped 样式里 :global(前缀)+后代选择器的组合不会被编译，
+   必须直接写 html[theme-mode='dark'] 后代选择器 */
+html[theme-mode='dark'] .login-page,
+html[theme-mode='dark'] .login-form-panel {
   background: var(--td-bg-color-page);
 }
 
@@ -293,8 +286,6 @@ onMounted(() => {
   top: 0;
   bottom: 0;
   width: 50%;
-  transition: transform 0.6s cubic-bezier(0.65, 0, 0.35, 1);
-  will-change: transform;
 }
 
 /* ---- 图片面板 ----
@@ -304,16 +295,13 @@ onMounted(() => {
 .login-visual {
   left: 0;
   background: #fff;
-  border-right: 1px solid var(--wecom-border);
   display: flex;
   align-items: center;
   justify-content: center;
 }
-/* 暗色模式跟随页面底色（官方 .dark.login-wrapper 的口径）。
-   本项目暗色用 <html theme-mode="dark"> 属性而非 class，见 utils/theme.ts。 */
-:global(html[theme-mode='dark']) .login-visual {
+/* 暗色模式跟随页面底色（与 .login-page 同一口径） */
+html[theme-mode='dark'] .login-visual {
   background: var(--td-bg-color-page);
-  border-right-color: var(--td-component-stroke);
 }
 .mode-register .login-visual {
   transform: translateX(100%);
@@ -329,6 +317,10 @@ onMounted(() => {
   width: min(56vh, 420px);
   max-width: 80%;
   height: auto;
+}
+/* 暗色下图片自带白底与深色页面反差生硬，加圆角做成白色徽章卡 */
+html[theme-mode='dark'] .login-visual__img {
+  border-radius: var(--td-radius-large);
 }
 .login-visual__caption {
   font-size: 14px;
@@ -356,30 +348,12 @@ onMounted(() => {
   width: 100%;
   max-width: 400px;
 }
-
-.login-brand {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: var(--wecom-spacing-xl);
-}
-.login-brand__logo {
-  width: 40px;
-  height: 40px;
-}
-.login-brand__title {
-  font-size: 20px;
-  font-weight: 600;
-  line-height: 1.3;
-  color: var(--wecom-text-primary);
-}
-.login-brand__subtitle {
-  margin-top: 2px;
-  font-size: 13px;
-  color: var(--wecom-text-tertiary);
+/* 统一表单行距：覆盖 TDesign 默认的过大 item 间距 */
+.login-form-wrap :deep(.t-form__item) {
+  margin-bottom: 16px;
 }
 
-/* ---- 双层表单：绝对堆叠，翻转中途交叉淡切 ---- */
+/* ---- 双层表单：绝对堆叠，注册态瞬间切换 ---- */
 .form-stack {
   position: relative;
   min-height: 520px;
@@ -388,13 +362,10 @@ onMounted(() => {
   position: absolute;
   inset: 0;
   opacity: 0;
-  transform: translateY(10px);
   pointer-events: none;
-  transition: opacity 0.28s ease-in-out 0.22s, transform 0.28s ease-in-out 0.22s;
 }
 .form-layer--active {
   opacity: 1;
-  transform: translateY(0);
   pointer-events: auto;
 }
 
@@ -413,6 +384,7 @@ onMounted(() => {
 }
 
 .login-remember {
+  margin: 0 0 16px;
   font-size: 14px;
   color: var(--wecom-text-secondary);
 }
@@ -431,7 +403,7 @@ onMounted(() => {
   color: var(--wecom-text-tertiary);
 }
 
-/* ---- 窄屏：隐藏图片面板，仅做表单交叉淡切 ---- */
+/* ---- 窄屏：隐藏图片面板，仅保留表单 ---- */
 @media (max-width: 900px) {
   .login-visual {
     display: none;
@@ -442,19 +414,6 @@ onMounted(() => {
   }
   .mode-register .login-form-panel {
     transform: none;
-  }
-  .form-layer {
-    transition-delay: 0s;
-  }
-}
-
-/* ---- 尊重系统「减少动效」偏好 ---- */
-@media (prefers-reduced-motion: reduce) {
-  .login-visual,
-  .login-form-panel,
-  .form-layer {
-    transition-duration: 0.01ms;
-    transition-delay: 0s;
   }
 }
 </style>

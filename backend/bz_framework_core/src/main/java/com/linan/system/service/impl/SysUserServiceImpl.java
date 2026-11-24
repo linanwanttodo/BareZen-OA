@@ -119,9 +119,7 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
             throw new BusinessException("用户名 [" + taken.get(0).getUserName() + "] 已存在，已回滚");
         }
 
-        int created = 0;
         for (SysUser user : users) {
-            // 昵称缺省取用户名
             if (user.getNickName() == null || user.getNickName().isBlank()) {
                 user.setNickName(user.getUserName().trim());
             }
@@ -129,13 +127,12 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
                 user.setStatus("0");
             }
             user.setPassword(PasswordUtil.encode(user.getPassword()));
-            int rows = baseMapper.insert(user);
-            if (rows <= 0) {
-                throw new BusinessException("新增用户失败，已回滚");
-            }
-            created++;
         }
-        return created;
+        boolean ok = saveBatch(users);
+        if (!ok) {
+            throw new BusinessException("批量新增用户失败，已回滚");
+        }
+        return users.size();
     }
 
     @Override

@@ -80,7 +80,7 @@ public class LocalFileStorage implements FileStorage {
         } catch (IllegalArgumentException e) {
             log.warn("路径校验失败，跳过删除: {}", e.getMessage());
         } catch (IOException e) {
-            log.warn("物理文件删除失败: {}", basePath + relativePath);
+            log.warn("物理文件删除失败: {}{}", basePath, relativePath);
         }
     }
 }

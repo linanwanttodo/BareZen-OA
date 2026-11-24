@@ -22,6 +22,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -111,6 +112,7 @@ public class AttLeaveRequestController {
     })
     @OperLog(title = "请假审批", businessType = 1)
     @RequirePermission("hr:leave:add")
+    @Transactional(rollbackFor = Exception.class)
     @PostMapping
     public Result<Void> submit(@Valid @RequestBody AttLeaveRequest request) {
         Long userId = AuthInterceptor.getCurrentUserId();

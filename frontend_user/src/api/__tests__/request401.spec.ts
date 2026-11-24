@@ -52,7 +52,7 @@ describe('用户端 401 拦截', () => {
     expect(resetState).toHaveBeenCalledTimes(3)
     expect(push).toHaveBeenCalledTimes(1)
     expect(warning).toHaveBeenCalledTimes(1)
-    expect(push.mock.calls[0][0]).toEqual({ path: '/auth/login', query: { redirect: '/dashboard' } })
+    expect(push.mock.calls[0][0]).toEqual({ path: '/login', query: { redirect: '/dashboard' } })
   })
 
   it('离开登录页后再次 401 仍能跳转（防重入标志不得变成一次性）', async () => {
@@ -62,8 +62,8 @@ describe('用户端 401 拦截', () => {
 
     // 本端是 SPA 内跳转，不像管理端整页刷新会重置模块作用域：
     // 没有 afterEach 复位时，第二次会话过期将永远不再跳登录页
-    currentFullPath = '/auth/login'
-    afterEachCbs.forEach((cb) => cb({ path: '/auth/login' }))
+    currentFullPath = '/login'
+    afterEachCbs.forEach((cb) => cb({ path: '/login' }))
     await service.get('/x').catch(() => null)
     expect(push).toHaveBeenCalledTimes(1)
 
@@ -74,7 +74,7 @@ describe('用户端 401 拦截', () => {
   })
 
   it('已在登录页时不再重复跳转', async () => {
-    currentFullPath = '/auth/login'
+    currentFullPath = '/login'
     const service = await freshService()
     await service.get('/x').catch(() => null)
     expect(push).not.toHaveBeenCalled()

@@ -30,6 +30,15 @@ public class PluginManager {
     private final Map<String, PluginManifest> pluginManifests = new ConcurrentHashMap<>();
 
     /**
+     * 插件门控状态表（PluginGateAspect 据此拦截非 ACTIVE 插件的接口）
+     */
+    private final PluginGateState pluginGateState;
+
+    public PluginManager(PluginGateState pluginGateState) {
+        this.pluginGateState = pluginGateState;
+    }
+
+    /**
      * 加载插件
      *
      * @param plugin 插件实例
@@ -56,6 +65,7 @@ public class PluginManager {
 
         } catch (Exception e) {
             plugin.setStatus(PluginStatus.FAILED);
+            pluginGateState.update(pluginId, PluginStatus.FAILED);
             throw new PluginException(pluginId, "插件加载失败: " + e.getMessage(), e);
         }
 
@@ -66,6 +76,7 @@ public class PluginManager {
             log.warn("插件已存在: {}", pluginId);
             throw new PluginException(pluginId, "插件已存在");
         }
+        pluginGateState.update(pluginId, PluginStatus.LOADED);
         log.info("插件加载成功: {}", pluginId);
     }
 
@@ -91,10 +102,12 @@ public class PluginManager {
         try {
             plugin.start();
             plugin.setStatus(PluginStatus.ACTIVE);
+            pluginGateState.update(pluginId, PluginStatus.ACTIVE);
             log.info("插件启动成功: {}", pluginId);
 
         } catch (Exception e) {
             plugin.setStatus(PluginStatus.FAILED);
+            pluginGateState.update(pluginId, PluginStatus.FAILED);
             throw new PluginException(pluginId, "插件启动失败: " + e.getMessage(), e);
         }
     }
@@ -116,10 +129,12 @@ public class PluginManager {
         try {
             plugin.stop();
             plugin.setStatus(PluginStatus.DISABLED);
+            pluginGateState.update(pluginId, PluginStatus.DISABLED);
             log.info("插件停止成功: {}", pluginId);
 
         } catch (Exception e) {
             plugin.setStatus(PluginStatus.ERROR);
+            pluginGateState.update(pluginId, PluginStatus.ERROR);
             throw new PluginException(pluginId, "插件停止失败: " + e.getMessage(), e);
         }
     }
@@ -148,9 +163,13 @@ public class PluginManager {
             loadedPlugins.remove(pluginId);
             pluginManifests.remove(pluginId);
 
+            // 门控条目保留且保持关闭：class 仍在 classpath，卸载后必须继续拒绝服务
+            pluginGateState.update(pluginId, PluginStatus.DISABLED);
+
             log.info("插件卸载成功: {}", pluginId);
 
         } catch (Exception e) {
+            pluginGateState.update(pluginId, PluginStatus.ERROR);
             throw new PluginException(pluginId, "插件卸载失败: " + e.getMessage(), e);
         }
     }

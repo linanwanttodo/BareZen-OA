@@ -28,6 +28,9 @@ public class OfficeVehicleRequest extends BaseEntity {
     /** 车型：car=轿车 van=商务车 bus=客车 other=其他 */
     private String vehicleType;
 
+    /** 出发地（V54 新增） */
+    private String departure;
+
     /** 用车事由 */
     @NotBlank(message = "用车事由不能为空")
     private String purpose;

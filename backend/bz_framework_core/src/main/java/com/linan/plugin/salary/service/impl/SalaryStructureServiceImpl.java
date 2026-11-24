@@ -8,7 +8,6 @@ import com.linan.plugin.salary.mapper.SalaryStructureMapper;
 import com.linan.plugin.salary.service.ISalaryStructureService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -46,17 +45,9 @@ public class SalaryStructureServiceImpl extends ServiceImpl<SalaryStructureMappe
     }
 
     @Override
-    @Transactional(rollbackFor = Exception.class)
     public List<SalaryStructure> batchCalculateActualSalary(List<Long> userIds) {
-        List<SalaryStructure> structures = list(new LambdaQueryWrapper<SalaryStructure>()
+        return list(new LambdaQueryWrapper<SalaryStructure>()
                 .in(SalaryStructure::getUserId, userIds));
-
-        for (SalaryStructure structure : structures) {
-            BigDecimal actualSalary = calculateActualSalary(structure.getUserId());
-            // 可以添加一个字段存储计算结果，或者临时计算
-        }
-
-        return structures;
     }
 
     @Override

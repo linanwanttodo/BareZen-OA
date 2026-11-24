@@ -94,7 +94,7 @@ class SysWebhookControllerTest {
         when(webhookService.save(any(SysWebhook.class))).thenReturn(true);
 
         Result<?> result = newController().create(
-                Map.of("name", "审批通知", "url", "https://hook.example.com", "secret", "s3cr3t", "events", "approval.completed"));
+                Map.of("name", "审批通知", "url", "https://198.51.100.1", "secret", "s3cr3t", "events", "approval.completed"));
 
         assertEquals(200, result.getCode());
         @SuppressWarnings("unchecked")
@@ -134,7 +134,7 @@ class SysWebhookControllerTest {
 
         Result<Void> result = newController().update(1L, Map.of(
                 "name", "新名称",
-                "url", "https://new.example.com/hook",
+                "url", "https://198.51.100.1/hook",
                 "events", "approval.completed,leave.created",
                 "secret", "new-secret"));
 
@@ -142,7 +142,7 @@ class SysWebhookControllerTest {
         verify(webhookService).updateById(argThat(u ->
                 u.getId().equals(1L) &&
                 "新名称".equals(u.getName()) &&
-                u.getUrl().equals("https://new.example.com/hook") &&
+                u.getUrl().equals("https://198.51.100.1/hook") &&
                 u.getEvents().contains("leave.created") &&
                 "new-secret".equals(u.getSecret())));
     }
@@ -166,7 +166,7 @@ class SysWebhookControllerTest {
         when(webhookService.getById(1L)).thenReturn(existing);
 
         Result<Void> result = newController().update(1L, Map.of(
-                "name", "x", "url", "http://localhost:8080/hook", "events", "a"));
+                "name", "x", "url", "http://127.0.0.1:8080/hook", "events", "a"));
 
         assertEquals(500, result.getCode());
         assertTrue(result.getMsg().contains("内网地址"));

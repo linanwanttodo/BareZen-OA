@@ -44,3 +44,12 @@ export function logoutApi() {
 export function refreshTokenApi() {
   return request.post<{ token: string }>('/auth/v1/refresh')
 }
+
+/** 上传头像（multipart 字段名 file，后端 AuthController#uploadAvatar） */
+export function uploadAvatarApi(file: File) {
+  const formData = new FormData()
+  formData.append('file', file)
+  return request.post<{ avatar: string }>('/auth/v1/avatar', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  })
+}

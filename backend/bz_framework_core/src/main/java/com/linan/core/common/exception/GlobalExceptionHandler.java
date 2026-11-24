@@ -16,6 +16,7 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.NoHandlerFoundException;
 
 import java.nio.file.AccessDeniedException;
@@ -95,8 +96,23 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AccessDeniedException.class)
     public Result<?> handleAccessDenied(AccessDeniedException e) {
         log.warn("访问被拒绝: {}", e.getMessage());
-        return new Result<>(ResultCodeEnum.FORBIDDEN.getCode(), "没有访问权限", null);
+        return new Result<>(ResultCodeEnum.VALIDATE_FAILED.getCode(), "没有访问权限", null);
     }
+
+    /**
+     * 上传文件超过 Servlet 容器上限（spring.servlet.multipart.max-file-size）。
+     *
+     * <p>超限请求在进入 Controller 之前就被 multipart 解析器拒绝，
+     * 业务层的文件大小校验（SysFileServiceImpl）根本不会执行，
+     * 故须在此单独拦截并给出可读提示；否则会落入 RuntimeException 兜底分支，
+     * 用户只看到"服务器开小差了"，无法判断是文件太大。</p>
+     */
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public Result<?> handleMaxUploadSizeExceeded(MaxUploadSizeExceededException e) {
+        log.warn("上传文件超过大小限制: {}", e.getMessage());
+        return new Result<>(ResultCodeEnum.VALIDATE_FAILED.getCode(), "上传文件大小超出限制，请压缩后重试", null);
+    }
+
 
     @ExceptionHandler(IllegalArgumentException.class)
     public Result<?> handleIllegalArgument(IllegalArgumentException e) {

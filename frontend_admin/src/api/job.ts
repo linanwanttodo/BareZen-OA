@@ -49,6 +49,18 @@ export function runJobApi(id: string) {
   return request.put<void>(`/system/v1/jobs/${encodeURIComponent(id)}/run`)
 }
 
+/** 定时任务详情 */
+export function getJobApi(id: string) {
+  return request.get<SysJob>(`/system/v1/jobs/${encodeURIComponent(id)}`)
+}
+
+/** 校验 Cron 表达式（合法返回 true） */
+export function checkCronApi(cronExpression: string) {
+  return request.get<boolean>('/system/v1/jobs/check-cron', {
+    params: { cronExpression },
+  })
+}
+
 /* ==================== 任务日志（sys_job_log） ==================== */
 
 export interface SysJobLog {

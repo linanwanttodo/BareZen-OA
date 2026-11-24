@@ -23,9 +23,10 @@
         <t-dropdown
           v-for="group in dropdownGroups"
           :key="group.title"
+          :options="dropdownOptions(group)"
           trigger="hover"
-          position="bl"
-          :hide-on-select="false"
+          placement="bottom-left"
+          @click="onNavDropdownClick"
         >
           <div
             class="user-header__nav-item user-header__nav-group"
@@ -34,11 +35,6 @@
             <span>{{ group.title }}</span>
             <ChevronDownIcon size="14px" class="user-header__nav-group-icon" />
           </div>
-          <template #content>
-            <t-dropdown-item v-for="child in group.children" :key="child.path" @click="router.push(child.path)">
-              {{ child.title }}
-            </t-dropdown-item>
-          </template>
         </t-dropdown>
       </nav>
 
@@ -51,20 +47,15 @@
               <icon-notification size="18px" />
             </t-badge>
           </div>
-          <t-dropdown>
+          <t-dropdown :options="userMenuOptions" trigger="hover" placement="bottom-right" @click="onUserMenuClick">
             <div class="user-header__user">
               <div class="user-header__avatar">{{ userInitial }}</div>
               <span class="user-header__username">{{ nickName }}</span>
             </div>
-            <template #content>
-              <t-dropdown-item @click="router.push('/user/profile')">个人中心</t-dropdown-item>
-              <t-dropdown-item @click="pwdDialogVisible = true">修改密码</t-dropdown-item>
-              <t-dropdown-item @click="onLogout" status="danger">退出登录</t-dropdown-item>
-            </template>
           </t-dropdown>
         </template>
         <template v-else>
-          <t-button theme="primary" size="small" @click="router.push('/auth/login')">登录</t-button>
+          <t-button theme="primary" size="small" @click="router.push('/login')">登录</t-button>
         </template>
       </div>
     </header>
@@ -185,11 +176,22 @@ const dropdownGroups: { title: string; children: NavItem[] }[] = [
       { title: '日程安排', path: '/schedules' },
     ],
   },
+      {
+        title: '行政服务',
+        children: [
+          { title: '办公用品', path: '/supplies' },
+          { title: '用车申请', path: '/vehicles' },
+          { title: '会议预订', path: '/meetings' },
+          { title: '通讯录', path: '/contacts' },
+          { title: '知识库', path: '/kb' },
+          { title: '资产借用', path: '/assets' },
+          { title: '我的文件', path: '/files' },
+        ],
+      },
   {
-    title: '行政服务',
+    title: '薪资福利',
     children: [
-      { title: '办公用品', path: '/supplies' },
-      { title: '通讯录', path: '/contacts' },
+      { title: '我的工资条', path: '/salary' },
     ],
   },
 ]
@@ -201,6 +203,27 @@ function isNavActive(path: string): boolean {
 
 function isGroupActive(group: { children: NavItem[] }): boolean {
   return group.children.some((child) => isNavActive(child.path))
+}
+
+// TDesign Dropdown 只认 options 属性或 t-dropdown-menu 子组件，#content 插槽不会被读取
+function dropdownOptions(group: { children: NavItem[] }) {
+  return group.children.map((child) => ({ content: child.title, value: child.path }))
+}
+
+function onNavDropdownClick(data: { value?: unknown }) {
+  if (typeof data.value === 'string') router.push(data.value)
+}
+
+const userMenuOptions: { content: string; value: string; theme?: 'default' | 'success' | 'warning' | 'danger' }[] = [
+  { content: '个人中心', value: 'profile' },
+  { content: '修改密码', value: 'password' },
+  { content: '退出登录', value: 'logout', theme: 'danger' },
+]
+
+function onUserMenuClick(data: { value?: unknown }) {
+  if (data.value === 'profile') router.push('/user/profile')
+  else if (data.value === 'password') pwdDialogVisible.value = true
+  else if (data.value === 'logout') onLogout()
 }
 
 async function onLogout() {
@@ -298,7 +321,7 @@ async function onPwdSubmit() {
     pwdForm.newPassword = ''
     pwdForm.confirmPassword = ''
     await userStore.logout()
-    router.push('/auth/login')
+    router.push('/login')
   } catch (e) {
     const msg = (e as Error)?.message || '密码修改失败'
     MessagePlugin.error(msg)

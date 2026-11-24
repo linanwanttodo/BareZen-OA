@@ -50,6 +50,7 @@
               </template>
     <template #col_5="{ row }">
                 <t-space>
+                  <t-link theme="primary" v-permission="PERM.monitor.jobList" @click="openDetail(row)">{{ $t('common.detail') }}</t-link>
                   <t-link theme="primary" v-permission="PERM.monitor.jobEdit" @click="handleRun(row)">{{ $t('monitor.jobs.execute') }}</t-link>
                   <t-link theme="primary" v-permission="PERM.monitor.jobEdit" @click="handleEdit(row)">{{ $t('common.edit') }}</t-link>
                   <t-popconfirm v-permission="PERM.monitor.jobDelete" :content="$t('monitor.jobs.deleteConfirm')" @confirm="handleDelete(row)">
@@ -80,6 +81,16 @@
         </t-form-item>
         <t-form-item name="cronExpression" :label="$t('monitor.jobs.cronExpression')" :rules="[{ required: true, message: t('validation.required', { field: t('monitor.jobs.cronExpression') }) }]">
           <t-input v-model="editForm.cronExpression" placeholder="例: 0 0 2 * * ?" />
+          <div v-if="cronState === 'checking'" class="mt-1 text-xs" style="color: var(--wecom-text-tertiary)">
+            {{ $t('monitor.jobs.cronChecking') }}
+          </div>
+          <div v-else-if="cronState === 'valid'" class="mt-1 flex items-center gap-1 text-xs" style="color: var(--td-success-color)">
+            <icon-check-circle size="14px" />
+            {{ $t('monitor.jobs.cronValid') }}
+          </div>
+          <div v-else-if="cronState === 'invalid'" class="mt-1 text-xs" style="color: var(--td-error-color)">
+            {{ $t('monitor.jobs.cronInvalid') }}
+          </div>
         </t-form-item>
         <t-form-item name="status" :label="$t('common.status')">
           <t-radio-group v-model="editForm.status">
@@ -92,15 +103,21 @@
         </t-form-item>
       </t-form>
     </t-dialog>
+
+    <!-- 详情抽屉 -->
+    <t-drawer v-model:visible="detailVisible" :header="$t('monitor.jobs.detailTitle')" size="420px" :footer="false">
+      <t-loading v-if="detailLoading" size="28px" :text="$t('common.loading')" />
+      <t-descriptions v-if="detail" :column="1" :data="detailItems" layout="inline-vertical" />
+    </t-drawer>
   </div>
 </template>
 
 <script setup lang="ts">
 import { PERM } from '@/utils/constants'
-import { ref, computed, reactive, onMounted } from 'vue'
+import { ref, computed, reactive, onMounted, watch } from 'vue'
 import { MessagePlugin, type FormInstanceFunctions } from 'tdesign-vue-next'
 import { useI18n } from 'vue-i18n'
-import { getJobPageApi, addJobApi, updateJobApi, deleteJobApi, resumeJobApi, pauseJobApi, runJobApi } from '@/api/job'
+import { getJobPageApi, getJobApi, checkCronApi, addJobApi, updateJobApi, deleteJobApi, resumeJobApi, pauseJobApi, runJobApi } from '@/api/job'
 import type { SysJob } from '@/api/job'
 
 const { t } = useI18n()
@@ -147,6 +164,7 @@ function handleReset() {
 function handleAdd() {
   isAdd.value = true; editingId = null
   editForm.jobName = ''; editForm.invokeTarget = ''; editForm.cronExpression = ''; editForm.status = '1'; editForm.remark = ''
+  resetCronState()
   editVisible.value = true
 }
 
@@ -154,12 +172,17 @@ function handleEdit(row: SysJob) {
   isAdd.value = false; editingId = row.id
   editForm.jobName = row.jobName; editForm.invokeTarget = row.invokeTarget
   editForm.cronExpression = row.cronExpression; editForm.status = row.status; editForm.remark = row.remark
+  resetCronState()
   editVisible.value = true
 }
 
 async function handleSave() {
   // tdesign 1.20.7 的 validate() 通过时返回 true；用 !== true 判定「未通过」
   if ((await editFormRef.value?.validate()) !== true) return
+  if (cronState.value === 'invalid') {
+    MessagePlugin.warning(t('monitor.jobs.cronInvalid'))
+    return
+  }
   if (isAdd.value) {
     await addJobApi(editForm)
     MessagePlugin.success(t('monitor.jobs.addSuccess'))
@@ -187,6 +210,70 @@ async function handleRun(row: SysJob) {
 async function handleDelete(row: SysJob) {
   await deleteJobApi(row.id)
   MessagePlugin.success(t('monitor.jobs.deleteSuccess')); loadData()
+}
+
+// ---- 详情抽屉 ----
+const detailVisible = ref(false)
+const detailLoading = ref(false)
+const detail = ref<SysJob | null>(null)
+
+const detailItems = computed(() => {
+  const d = detail.value
+  if (!d) return []
+  return [
+    { label: t('monitor.jobs.jobName'), value: d.jobName || '-' },
+    { label: t('monitor.jobs.jobGroup'), value: d.jobGroup || '-' },
+    { label: t('monitor.jobs.invokeTarget'), value: d.invokeTarget || '-' },
+    { label: t('monitor.jobs.cronExpression'), value: d.cronExpression || '-' },
+    { label: t('common.status'), value: d.status === '1' ? t('common.normal') : t('common.disable') },
+    { label: t('monitor.jobs.misfirePolicy'), value: d.misfirePolicy || '-' },
+    { label: t('monitor.jobs.concurrent'), value: d.concurrent === '1' ? t('common.yes') : t('common.no') },
+    { label: t('common.remark'), value: d.remark || '-' },
+    { label: t('common.creationTime'), value: d.createTime || '-' },
+  ]
+})
+
+async function openDetail(row: SysJob) {
+  detailVisible.value = true
+  detailLoading.value = true
+  detail.value = null
+  try {
+    const res = await getJobApi(row.id)
+    detail.value = res.data || null
+  } finally {
+    detailLoading.value = false
+  }
+}
+
+// ---- Cron 表达式防抖实时校验（调后端 check-cron）----
+type CronState = 'idle' | 'checking' | 'valid' | 'invalid'
+const cronState = ref<CronState>('idle')
+let cronTimer: ReturnType<typeof setTimeout> | null = null
+
+watch(
+  () => editForm.cronExpression,
+  (val) => {
+    if (cronTimer) clearTimeout(cronTimer)
+    const expr = val.trim()
+    if (!expr) {
+      cronState.value = 'idle'
+      return
+    }
+    cronTimer = setTimeout(async () => {
+      cronState.value = 'checking'
+      try {
+        const res = await checkCronApi(expr)
+        cronState.value = res.data ? 'valid' : 'invalid'
+      } catch {
+        cronState.value = 'idle'
+      }
+    }, 500)
+  },
+)
+
+function resetCronState() {
+  if (cronTimer) clearTimeout(cronTimer)
+  cronState.value = 'idle'
 }
 
 /** 表格列定义（由 Arco 列模板迁移，自定义单元格见模板同名插槽） */

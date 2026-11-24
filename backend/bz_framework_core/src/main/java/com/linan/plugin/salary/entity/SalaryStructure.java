@@ -2,7 +2,6 @@ package com.linan.plugin.salary.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -75,8 +74,11 @@ public class SalaryStructure {
     @Schema(description = "更新时间")
     private LocalDateTime updateTime;
 
+    /**
+     * 配置数据无审计价值，本表为物理删除（V56 起契约），del_flag 仅作历史列保留。
+     * 不标 @TableLogic：标了会把 removeById 变成软删，user_id 永久占用 uk_user_id，员工无法重建工资结构。
+     */
     @Schema(description = "删除标记")
-    @TableLogic
     @JsonIgnore
     private Integer delFlag;
 }

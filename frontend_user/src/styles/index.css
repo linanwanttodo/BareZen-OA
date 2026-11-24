@@ -93,6 +93,11 @@
   --bz-warning: var(--wecom-warning);
   --bz-danger: var(--wecom-error);
 
+  /* ── 页面底色 ──
+     官方浅色页面底为 gray-2 #eee，偏灰发闷；改为干净的蓝白浅底。
+     暗色页面底在下方暗色覆盖层单独定义 */
+  --td-bg-color-page: #f5f7fa;
+
   /* ── 历史遗留变量别名（统一转发到 TDesign token）──
      说明：存量代码中仍有 --primary/--muted-foreground 等引用，
      全部转发到 --td-* 官方 token 作为单一色值来源，逐步直连后可删除本层 */
@@ -116,6 +121,35 @@
   --input: var(--td-component-stroke);
   --ring: var(--td-brand-color);
   --radius: var(--td-radius-medium);
+}
+
+/* ===== 1.1 暗色覆盖层 =====
+   与管理端同源：官方暗色为纯中性灰，层次弱且与品牌蓝不搭，
+   此处将中性面 token 整体替换为深蓝灰系；文字与品牌/功能色阶保持官方值 */
+:root[theme-mode='dark'] {
+  --td-bg-color-page: #111827;
+  --td-bg-color-container: #1f2937;
+  --td-bg-color-container-hover: #273245;
+  --td-bg-color-container-active: #2d3a4e;
+  --td-bg-color-container-select: #2a3b55;
+  --td-bg-color-secondarycontainer: #1a2231;
+  --td-bg-color-secondarycontainer-hover: #232e40;
+  --td-bg-color-secondarycontainer-active: #2a3b55;
+  --td-bg-color-component: #374151;
+  --td-bg-color-component-hover: #415065;
+  --td-bg-color-component-active: #4b5c74;
+  --td-bg-color-secondarycomponent: #415065;
+  --td-bg-color-secondarycomponent-hover: #4b5c74;
+  --td-bg-color-secondarycomponent-active: #56677f;
+  --td-bg-color-component-disabled: #26303f;
+  --td-component-stroke: #334155;
+  --td-border-level-1-color: #334155;
+  --td-border-level-2-color: #475569;
+  --td-component-border: #475569;
+  --td-mask-background: rgba(9, 14, 22, 0.88);
+  --td-scrollbar-track-color: #1a2231;
+  --td-scrollbar-color: rgba(255, 255, 255, 0.08);
+  --td-scrollbar-hover-color: rgba(255, 255, 255, 0.2);
 }
 
 /* ===== 2. 全局重置 ===== */

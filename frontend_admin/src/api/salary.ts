@@ -119,3 +119,28 @@ export function deleteSalaryPaymentApi(id: string) {
 export function getSalaryStatisticsApi(paymentMonth?: string) {
   return request.get<SalaryStatistics>('/salary/v1/statistics', { params: { paymentMonth } })
 }
+
+/** 查询员工工资结构 */
+export function getSalaryStructureByUserApi(userId: string | number) {
+  return request.get<SalaryStructure>(`/salary/v1/structures/user/${encodeURIComponent(String(userId))}`)
+}
+
+/** 计算员工实发工资（后端 BigDecimal 以 string 返回） */
+export function calculateSalaryApi(userId: string | number) {
+  return request.get<string>(`/salary/v1/structures/calculate/${encodeURIComponent(String(userId))}`)
+}
+
+/** 批量计算实发工资（返回对应员工的结构列表） */
+export function batchCalculateSalaryApi(userIds: Array<string | number>) {
+  return request.post<SalaryStructure[]>('/salary/v1/structures/calculate/batch', userIds)
+}
+
+/** 发放记录详情 */
+export function getSalaryPaymentApi(id: string) {
+  return request.get<SalaryPaymentRecord>(`/salary/v1/payments/${encodeURIComponent(id)}`)
+}
+
+/** 修改发放记录（已发放记录后端拒绝；未发放记录仅放行备注等修正） */
+export function updateSalaryPaymentApi(data: Partial<SalaryPaymentRecord> & { id: string }) {
+  return request.put<void>('/salary/v1/payments', data)
+}

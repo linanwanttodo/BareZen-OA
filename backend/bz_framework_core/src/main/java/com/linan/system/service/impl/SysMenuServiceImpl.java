@@ -10,7 +10,9 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -56,29 +58,28 @@ public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper, SysMenu> impl
     }
 
     /**
-     * 构建菜单树
+     * 构建菜单树（单次遍历 O(n log n)，用 HashMap 按 parentId 分组替代递归全表扫描）
      */
     private List<SysMenu> buildTree(List<SysMenu> list) {
-        List<SysMenu> tree = new ArrayList<>();
+        Map<Long, List<SysMenu>> childrenByParent = new LinkedHashMap<>();
         for (SysMenu menu : list) {
-            if (menu.getParentId() == 0) {
-                menu.setChildren(getChildren(menu.getId(), list));
-                tree.add(menu);
-            }
+            childrenByParent.computeIfAbsent(menu.getParentId(), k -> new ArrayList<>()).add(menu);
         }
-        tree.sort(Comparator.comparingInt(m -> m.getOrderNum() == null ? 0 : m.getOrderNum()));
-        return tree;
+        Comparator<SysMenu> byOrder = Comparator.comparingInt(m -> m.getOrderNum() == null ? 0 : m.getOrderNum());
+        childrenByParent.values().forEach(group -> group.sort(byOrder));
+
+        List<SysMenu> roots = childrenByParent.getOrDefault(0L, List.of());
+        for (SysMenu root : roots) {
+            attachChildren(root, childrenByParent);
+        }
+        return roots;
     }
 
-    private List<SysMenu> getChildren(Long parentId, List<SysMenu> all) {
-        List<SysMenu> children = new ArrayList<>();
-        for (SysMenu menu : all) {
-            if (parentId.equals(menu.getParentId())) {
-                menu.setChildren(getChildren(menu.getId(), all));
-                children.add(menu);
-            }
+    private void attachChildren(SysMenu parent, Map<Long, List<SysMenu>> childrenByParent) {
+        List<SysMenu> children = childrenByParent.getOrDefault(parent.getId(), List.of());
+        parent.setChildren(children);
+        for (SysMenu child : children) {
+            attachChildren(child, childrenByParent);
         }
-        children.sort(Comparator.comparingInt(m -> m.getOrderNum() == null ? 0 : m.getOrderNum()));
-        return children;
     }
 }
