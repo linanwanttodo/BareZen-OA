@@ -86,6 +86,32 @@ class PluginManifestLoaderTest {
     }
 
     @Test
+    @DisplayName("启动自检：命名空间外的声明拒绝自检并打 WARN，命名空间内缺失仍报类不存在")
+    void rejectsOutOfNamespaceDeclaredControllers() {
+        Logger logger = (Logger) LoggerFactory.getLogger(PluginManifestLoader.class);
+        ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        try {
+            PluginManifestLoader loader = new PluginManifestLoader(pluginManager, gateState,
+                    "classpath:plugin-namespace/outsider-plugin.json");
+            loader.loadManifests();
+        } finally {
+            logger.detachAppender(appender);
+        }
+
+        List<String> warns = appender.list.stream()
+                .filter(event -> event.getLevel() == Level.WARN)
+                .map(event -> event.getFormattedMessage())
+                .toList();
+        assertEquals(2, warns.size());
+        assertTrue(warns.get(0).contains("java.lang.Runtime"));
+        assertTrue(warns.get(0).contains("不在允许命名空间内"));
+        assertTrue(warns.get(1).contains("com.linan.plugin.notexist.OutsideMissing"));
+        assertTrue(warns.get(1).contains("类不存在"));
+    }
+
+    @Test
     @DisplayName("坏 JSON 清单不阻断其他清单：正常清单仍注册，坏清单未注册")
     void brokenJsonDoesNotBlockOtherManifests() {
         PluginManifestLoader loader = new PluginManifestLoader(pluginManager, gateState,

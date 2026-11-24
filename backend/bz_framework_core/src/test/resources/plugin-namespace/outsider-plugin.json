@@ -1,0 +1,6 @@
+{
+  "pluginId": "com.linan.plugin.outsider",
+  "pluginName": "命名空间外声明自检",
+  "version": "1.0.0",
+  "controllers": ["java.lang.Runtime", "com.linan.plugin.notexist.OutsideMissing"]
+}

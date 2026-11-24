@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 
 import java.io.InputStream;
 import java.util.List;
+import java.util.regex.Pattern;
 
 /**
  * 插件清单加载器
@@ -29,6 +30,13 @@ import java.util.List;
 public class PluginManifestLoader {
 
     static final String DEFAULT_LOCATION_PATTERN = "classpath:plugins/*.json";
+
+    /**
+     * 允许自检的类名命名空间：清单虽来自 classpath 内部资源，
+     * 仍限定在本项目包前缀内，杜绝清单字符串驱动反射加载任意类（CWE-470）
+     */
+    static final Pattern ALLOWED_CLASS_NAME =
+            Pattern.compile("^com\\.linan\\.[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)*$");
 
     private final PluginManager pluginManager;
     private final PluginGateState pluginGateState;
@@ -81,7 +89,9 @@ public class PluginManifestLoader {
 
     /**
      * 启动自检：清单声明的 controller 类不存在时打 WARN
-     * （插件代码未随包部署时清单先行注册，启动期暴露配置与代码不一致）
+     * （插件代码未随包部署时清单先行注册，启动期暴露配置与代码不一致）。
+     * 存在性检查走 classloader 资源查找而非 {@code Class.forName}：
+     * 不触发类加载，从根上避免清单字符串驱动反射（CWE-470）。
      */
     private void checkDeclaredControllers(PluginManifest manifest) {
         List<String> controllers = manifest.getControllers();
@@ -93,9 +103,13 @@ public class PluginManifestLoader {
             if (controllerName == null || controllerName.isBlank()) {
                 continue;
             }
-            try {
-                Class.forName(controllerName, false, classLoader);
-            } catch (ClassNotFoundException e) {
+            if (!ALLOWED_CLASS_NAME.matcher(controllerName).matches()) {
+                log.warn("插件清单声明的 controller 不在允许命名空间内，跳过自检: {} (插件: {})",
+                        controllerName, manifest.getPluginId());
+                continue;
+            }
+            String resourcePath = controllerName.replace('.', '/') + ".class";
+            if (classLoader.getResource(resourcePath) == null) {
                 log.warn("插件清单声明的 controller 类不存在: {} (插件: {})",
                         controllerName, manifest.getPluginId());
             }
